@@ -1,4 +1,4 @@
-// src/app/index.jsx
+// src/app/signup.jsx
 import React, { useState } from 'react';
 import {
   SafeAreaView,
@@ -13,16 +13,16 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import AuthInput from '../components/AuthInput';
-import SocialButton from '../components/SocialButton';
 
-export default function SignInScreen() {
+export default function SignUpScreen() {
   const router = useRouter();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
-  const handleSignIn = () => {
-    console.log('Sign In:', email, password);
+  const handleSignUp = () => {
+    console.log('Sign Up:', email, password, confirmPassword);
   };
 
   return (
@@ -38,6 +38,10 @@ export default function SignInScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.card}>
+            <Pressable style={styles.backButton} onPress={() => router.back()}>
+              <Text style={styles.backText}>←</Text>
+            </Pressable>
+
             <View style={styles.logoWrapper}>
               <View style={styles.logoShape}>
                 <View style={styles.dotTop} />
@@ -47,14 +51,12 @@ export default function SignInScreen() {
               </View>
             </View>
 
-            <Text style={styles.title}>Sign In</Text>
-            <Text style={styles.subtitle}>
-              Let’s experience the joy of telecare AI.
-            </Text>
+            <Text style={styles.title}>Sign Up For Free</Text>
+            <Text style={styles.subtitle}>Sign up in 1 minute for free!</Text>
 
             <AuthInput
               label="Email Address"
-              placeholder="example@gmail.com"
+              placeholder="Enter your email..."
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
@@ -70,37 +72,32 @@ export default function SignInScreen() {
               icon="lock-closed-outline"
             />
 
-            <Pressable style={styles.signInButton} onPress={handleSignIn}>
-              <Text style={styles.signInText}>Sign In</Text>
+            <AuthInput
+              label="Password Confirmation"
+              placeholder="Confirm password"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              secureTextEntry={true}
+              icon="lock-closed-outline"
+            />
+
+            <View style={styles.errorBox}>
+              <Text style={styles.errorText}>
+                ERROR: Password do not match!
+              </Text>
+            </View>
+
+            <Pressable style={styles.signUpButton} onPress={handleSignUp}>
+              <Text style={styles.signUpText}>Sign Up</Text>
+              <Text style={styles.arrow}>→</Text>
             </Pressable>
 
-            <View style={styles.socialRow}>
-              <SocialButton
-                label="logo-facebook"
-                onPress={() => console.log('facebook')}
-              />
-              <SocialButton
-                label="logo-google"
-                onPress={() => console.log('google')}
-              />
-              <SocialButton
-                label="logo-instagram"
-                onPress={() => console.log('instagram')}
-              />
-            </View>
-
-            <View style={styles.footer}>
-              <Pressable onPress={() => router.push('/signup')}>
-                <Text style={styles.footerText}>
-                  Don’t have an account?
-                  <Text style={styles.greenText}> Sign Up</Text>
-                </Text>
-              </Pressable>
-
-              <Pressable onPress={() => router.push('/forgot-password')}>
-                <Text style={styles.forgotText}>Forgot password?</Text>
-              </Pressable>
-            </View>
+            <Pressable onPress={() => router.push('/')}>
+              <Text style={styles.footerText}>
+                Already have an account?{' '}
+                <Text style={styles.greenText}>Sign In.</Text>
+              </Text>
+            </Pressable>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -109,6 +106,7 @@ export default function SignInScreen() {
 }
 
 const GREEN = '#8CCB1F';
+const RED = '#F15B6C';
 
 const styles = StyleSheet.create({
   safeArea: {
@@ -128,13 +126,26 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 32,
     paddingHorizontal: 22,
-    paddingTop: 32,
+    paddingTop: 18,
     paddingBottom: 28,
     elevation: 5,
     shadowColor: '#000',
     shadowOpacity: 0.08,
     shadowRadius: 18,
     shadowOffset: { width: 0, height: 10 },
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F1F1F1',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 18,
+  },
+  backText: {
+    fontSize: 20,
+    color: '#444',
   },
   logoWrapper: {
     alignItems: 'center',
@@ -182,7 +193,7 @@ const styles = StyleSheet.create({
     backgroundColor: GREEN,
   },
   title: {
-    fontSize: 32,
+    fontSize: 30,
     fontWeight: '800',
     textAlign: 'center',
     color: '#2B2B2B',
@@ -194,39 +205,47 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginBottom: 28,
   },
-  signInButton: {
+  errorBox: {
+    marginBottom: 16,
+    borderRadius: 14,
+    backgroundColor: '#FDECEF',
+    borderWidth: 1,
+    borderColor: RED,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+  },
+  errorText: {
+    color: '#D94B5B',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  signUpButton: {
     height: 56,
     borderRadius: 18,
     backgroundColor: GREEN,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 8,
+    flexDirection: 'row',
+    marginTop: 6,
   },
-  signInText: {
+  signUpText: {
     color: '#FFF',
     fontSize: 16,
     fontWeight: '800',
+    marginRight: 8,
   },
-  socialRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 14,
-    marginTop: 24,
-  },
-  footer: {
-    alignItems: 'center',
-    marginTop: 26,
+  arrow: {
+    color: '#FFF',
+    fontSize: 18,
+    fontWeight: '800',
   },
   footerText: {
+    marginTop: 22,
+    textAlign: 'center',
     fontSize: 14,
     color: '#555',
   },
   greenText: {
-    color: GREEN,
-    fontWeight: '700',
-  },
-  forgotText: {
-    marginTop: 10,
     color: GREEN,
     fontWeight: '700',
   },
