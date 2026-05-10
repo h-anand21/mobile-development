@@ -1,28 +1,22 @@
+// src/components/SocialButton.jsx
 
 import React from 'react';
 
+import { Pressable, StyleSheet } from 'react-native';
 
-import { Pressable, Text, StyleSheet } from 'react-native';
+// Import Ionicons
+import { Ionicons } from '@expo/vector-icons';
 
-
-export default function SocialButton({
-
-  label,
-
-  onPress,
-}) {
+export default function SocialButton({ label, onPress }) {
   return (
-    
     <Pressable style={styles.button} onPress={onPress}>
-      {/* Text */}
-      <Text style={styles.text}>{label}</Text>
+      {/* Real Icon */}
+      <Ionicons name={label} size={24} color="#333" />
     </Pressable>
   );
 }
 
-
 const styles = StyleSheet.create({
-
   button: {
     width: 54,
     height: 54,
@@ -32,12 +26,5 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-
-
-  text: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#333',
   },
 });

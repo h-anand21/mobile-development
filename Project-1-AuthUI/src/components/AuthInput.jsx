@@ -1,23 +1,23 @@
 // src/components/AuthInput.jsx
 
-// Import React
 import React from 'react';
 
-// Import React Native components
 import { View, Text, TextInput, StyleSheet } from 'react-native';
 
-// Create reusable input component
+// Import Ionicons
+import { Ionicons } from '@expo/vector-icons';
+
 export default function AuthInput({
-  // Text above input
+  // Input label
   label,
 
-  // Placeholder text
+  // Placeholder
   placeholder,
 
-  // Current input value
+  // Input state value
   value,
 
-  // Function when typing happens
+  // Function when typing
   onChangeText,
 
   // Password hide/show
@@ -25,31 +25,29 @@ export default function AuthInput({
 
   // Keyboard type
   keyboardType = 'default',
+
+  // Icon name
+  icon,
 }) {
   return (
-    // Main wrapper
     <View style={styles.wrapper}>
-      {/* Input label */}
+      {/* Label */}
       <Text style={styles.label}>{label}</Text>
 
-      {/* Input box */}
+      {/* Input container */}
       <View style={styles.inputContainer}>
-        {/* Actual input */}
+        {/* Input icon */}
+        <Ionicons name={icon} size={20} color="#777" style={styles.icon} />
+
+        {/* Input */}
         <TextInput
           style={styles.input}
-          // Placeholder text
           placeholder={placeholder}
-          // Placeholder color
           placeholderTextColor="#999"
-          // Current value
           value={value}
-          // Event handling
           onChangeText={onChangeText}
-          // Password hidden
           secureTextEntry={secureTextEntry}
-          // Email keyboard etc
           keyboardType={keyboardType}
-          // Prevent first letter uppercase
           autoCapitalize="none"
         />
       </View>
@@ -57,14 +55,11 @@ export default function AuthInput({
   );
 }
 
-// Styles
 const styles = StyleSheet.create({
-  // Main wrapper
   wrapper: {
     marginBottom: 18,
   },
 
-  // Label style
   label: {
     fontSize: 14,
     fontWeight: '700',
@@ -72,19 +67,26 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
 
-  // Input container
   inputContainer: {
     height: 56,
     backgroundColor: '#F8F8F8',
     borderRadius: 16,
     borderWidth: 1,
     borderColor: '#E5E5E5',
-    justifyContent: 'center',
+
+    // IMPORTANT
+    flexDirection: 'row',
+    alignItems: 'center',
+
     paddingHorizontal: 14,
   },
 
-  // Input style
+  icon: {
+    marginRight: 10,
+  },
+
   input: {
+    flex: 1,
     fontSize: 15,
     color: '#222',
   },
