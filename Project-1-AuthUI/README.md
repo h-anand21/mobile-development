@@ -1,5 +1,15 @@
 # Welcome to your Expo app 👋
 
+<img src="../Screenshot_20260510_181012.jpg" alt="Alt text" width="500">
+
+<img src="../Screenshot_20260510_181019.jpg" alt="Alt text" width="500">
+
+<img src="../Screenshot_20260510_181030.jpg" alt="Alt text" width="500">
+
+
+
+
+
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
 
 ## Get started
