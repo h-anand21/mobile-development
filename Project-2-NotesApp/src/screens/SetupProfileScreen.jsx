@@ -15,11 +15,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const AVATARS = [
-  'https://api.dicebear.com/7.x/avataaars/png?seed=Christian&mouth=smile',
-  'https://api.dicebear.com/7.x/avataaars/png?seed=Vivian&mouth=smile',
-  'https://api.dicebear.com/7.x/avataaars/png?seed=Adrian&mouth=smile',
+  'https://api.dicebear.com/7.x/avataaars/png?seed=Kevin&mouth=smile',
+  'https://api.dicebear.com/7.x/avataaars/png?seed=Aneka&mouth=smile',
+  'https://api.dicebear.com/7.x/avataaars/png?seed=Caleb&mouth=smile',
   'https://api.dicebear.com/7.x/avataaars/png?seed=Aria&mouth=smile',
-  'https://api.dicebear.com/7.x/avataaars/png?seed=Julian&mouth=smile',
+  'https://api.dicebear.com/7.x/avataaars/png?seed=Alex&mouth=smile',
+  'https://api.dicebear.com/7.x/avataaars/png?seed=Vivian&mouth=smile',
 ];
 
 export default function SetupProfileScreen({ onComplete }) {
@@ -41,11 +42,11 @@ export default function SetupProfileScreen({ onComplete }) {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
           <Text style={styles.title}>Setup Profile</Text>
-          <Text style={styles.subtitle}>Tell us a bit about yourself to personalize your experience.</Text>
+          <Text style={styles.subtitle}>Choose your avatar and enter your name.</Text>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.label}>Choose your Avatar</Text>
+          <Text style={styles.label}>Choose Avatar</Text>
           <View style={styles.avatarList}>
             {AVATARS.map((uri) => (
               <Pressable
@@ -59,7 +60,7 @@ export default function SetupProfileScreen({ onComplete }) {
                 <Image source={{ uri }} style={styles.avatar} />
                 {selectedAvatar === uri && (
                   <View style={styles.checkIcon}>
-                    <Ionicons name="checkmark-circle" size={20} color="#FF8C00" />
+                    <Ionicons name="checkmark-circle" size={24} color="#FF8C00" />
                   </View>
                 )}
               </Pressable>
@@ -72,8 +73,8 @@ export default function SetupProfileScreen({ onComplete }) {
           <TextInput
             value={name}
             onChangeText={setName}
-            placeholder="Enter your name"
-            placeholderTextColor="rgba(51,51,51,0.4)"
+            placeholder="Enter name"
+            placeholderTextColor="#A1A1A1"
             style={styles.input}
           />
         </View>
@@ -92,7 +93,7 @@ export default function SetupProfileScreen({ onComplete }) {
             end={{ x: 1, y: 1 }}
             style={styles.button}
           >
-            <Text style={styles.buttonText}>Complete Setup</Text>
+            <Text style={styles.buttonText}>Get Started</Text>
             <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
           </LinearGradient>
         </Pressable>
@@ -125,8 +126,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666666',
     textAlign: 'center',
-    lineHeight: 22,
-    maxWidth: 280,
   },
   section: {
     width: '100%',
@@ -142,12 +141,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
-    gap: 16,
+    gap: 20,
   },
   avatarWrapper: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     borderWidth: 3,
     borderColor: 'transparent',
     padding: 2,
@@ -159,15 +158,15 @@ const styles = StyleSheet.create({
   avatar: {
     width: '100%',
     height: '100%',
-    borderRadius: 35,
+    borderRadius: 40,
     backgroundColor: '#FFFFFF',
   },
   checkIcon: {
     position: 'absolute',
-    bottom: -2,
-    right: -2,
+    bottom: -5,
+    right: -5,
     backgroundColor: '#FFFFFF',
-    borderRadius: 10,
+    borderRadius: 12,
   },
   input: {
     width: '100%',
@@ -179,11 +178,6 @@ const styles = StyleSheet.create({
     color: '#333333',
     borderWidth: 1,
     borderColor: '#E5E5E5',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
   },
   buttonContainer: {
     width: '100%',

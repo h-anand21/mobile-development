@@ -2,12 +2,16 @@ import React, { useMemo, useState } from 'react';
 import {
   FlatList,
   Image,
+  Modal,
+  Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
   useWindowDimensions,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -20,12 +24,37 @@ export default function NotesListScreen({
   theme, 
   isDark, 
   setIsDark,
-  userProfile
+  userProfile,
+  onLogout
 }) {
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   const isTablet = width >= 768;
   const [query, setQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  const [selectedNote, setSelectedNote] = useState(null);
+
+  const handleProfilePress = () => {
+    Alert.alert(
+      "Profile Settings",
+      "What would you like to do?",
+      [
+        {
+          text: "Logout (Keep Notes)",
+          onPress: () => onLogout(false),
+          style: "default"
+        },
+        {
+          text: "Clear All Data & Logout",
+          onPress: () => onLogout(true),
+          style: "destructive"
+        },
+        {
+          text: "Cancel",
+          style: "cancel"
+        }
+      ]
+    );
+  };
 
   const greetingPrefix = useMemo(() => {
     const prefixes = ['Hello', 'Hi', 'Hey'];
@@ -174,6 +203,92 @@ export default function NotesListScreen({
         columnWrapper: {
           gap: 16,
         },
+        // Premium Stylish Modal Styles
+        modalOverlay: {
+          flex: 1,
+          backgroundColor: 'rgba(0,0,0,0.75)',
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: 20,
+        },
+        modalPaper: {
+          width: '100%',
+          maxHeight: '85%',
+          backgroundColor: '#FFF9C4', // Soft Sticky Note Yellow
+          borderRadius: 2,
+          padding: 24,
+          elevation: 25,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 15 },
+          shadowOpacity: 0.5,
+          shadowRadius: 25,
+          transform: [{ rotate: '-1deg' }], // Slight stylish tilt
+        },
+        modalTape: {
+          position: 'absolute',
+          top: -15,
+          alignSelf: 'center',
+          width: 120,
+          height: 40,
+          backgroundColor: 'rgba(255,255,255,0.4)',
+          borderWidth: 1,
+          borderColor: 'rgba(0,0,0,0.05)',
+          zIndex: 20,
+        },
+        modalPin: {
+          position: 'absolute',
+          top: 10,
+          right: 20,
+          width: 20,
+          height: 20,
+          borderRadius: 10,
+          backgroundColor: '#FF5252',
+          borderWidth: 2,
+          borderColor: '#D32F2F',
+          elevation: 5,
+          zIndex: 20,
+        },
+        modalHeader: {
+          marginTop: 10,
+          marginBottom: 20,
+          borderBottomWidth: 1,
+          borderBottomColor: 'rgba(0,0,0,0.05)',
+          paddingBottom: 12,
+        },
+        modalTitle: {
+          fontSize: 28,
+          fontWeight: '900',
+          color: '#333333',
+          fontFamily: Platform.OS === 'ios' ? 'Avenir-Heavy' : 'sans-serif-medium',
+        },
+        modalDate: {
+          fontSize: 14,
+          color: '#757575',
+          fontWeight: '600',
+          marginTop: 4,
+        },
+        modalBody: {
+          flexGrow: 0,
+          marginBottom: 20,
+        },
+        modalContent: {
+          fontSize: 18,
+          lineHeight: 28,
+          color: '#444444',
+          fontFamily: Platform.OS === 'ios' ? 'Avenir' : 'serif',
+        },
+        modalCloseBtn: {
+          marginTop: 10,
+          alignSelf: 'center',
+        },
+        closeBtnGradient: {
+          width: 50,
+          height: 50,
+          borderRadius: 25,
+          alignItems: 'center',
+          justifyContent: 'center',
+          elevation: 5,
+        },
       }),
     [theme, isDark, isTablet]
   );
@@ -203,10 +318,12 @@ export default function NotesListScreen({
           {!isSearching ? (
             <>
               <View style={styles.profileSection}>
-                <Image 
-                  source={{ uri: userProfile?.avatar || 'https://api.dicebear.com/7.x/avataaars/png?seed=Felix' }} 
-                  style={styles.avatar} 
-                />
+                <Pressable onPress={handleProfilePress}>
+                  <Image 
+                    source={{ uri: userProfile?.avatar || 'https://api.dicebear.com/7.x/avataaars/png?seed=Felix' }} 
+                    style={styles.avatar} 
+                  />
+                </Pressable>
                 <Text style={styles.greeting}>{greetingPrefix}, {userProfile?.name || 'H.Anand'} 👋</Text>
               </View>
 
@@ -241,7 +358,7 @@ export default function NotesListScreen({
           )}
         </View>
 
-        {/* Title Section (Hide when searching to focus on results) */}
+        {/* Title Section (Hide when searching) */}
         {!isSearching && (
           <View style={styles.titleSection}>
             <Text style={styles.mainTitle}>My Notes</Text>
@@ -277,7 +394,7 @@ export default function NotesListScreen({
           <NoteCard
             note={item}
             index={index}
-            onPress={() => console.log('Pressed note:', item.title)}
+            onPress={() => setSelectedNote(item)}
             onDelete={() => onDelete(item.id)}
           />
         )}
@@ -287,6 +404,50 @@ export default function NotesListScreen({
         columnWrapperStyle={styles.columnWrapper}
         showsVerticalScrollIndicator={false}
       />
+
+      {/* Premium Stylish Note Modal */}
+      <Modal
+        visible={!!selectedNote}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setSelectedNote(null)}
+      >
+        <Pressable 
+          style={styles.modalOverlay} 
+          onPress={() => setSelectedNote(null)}
+        >
+          <Pressable style={styles.modalPaper} onPress={() => {}}>
+            {/* Decorative Tape & Pin */}
+            <View style={styles.modalTape} />
+            <View style={styles.modalPin} />
+
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>{selectedNote?.title}</Text>
+              <Text style={styles.modalDate}>{selectedNote?.date}</Text>
+            </View>
+
+            <ScrollView 
+              style={styles.modalBody} 
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: 20 }}
+            >
+              <Text style={styles.modalContent}>{selectedNote?.content}</Text>
+            </ScrollView>
+
+            <Pressable 
+              style={styles.modalCloseBtn} 
+              onPress={() => setSelectedNote(null)}
+            >
+              <LinearGradient
+                colors={['#FF8C00', '#FFD700']}
+                style={styles.closeBtnGradient}
+              >
+                <Ionicons name="checkmark" size={28} color="#FFFFFF" />
+              </LinearGradient>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }

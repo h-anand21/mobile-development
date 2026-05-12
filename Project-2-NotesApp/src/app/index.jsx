@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { StyleSheet, View, useColorScheme, ActivityIndicator } from 'react-native';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { StyleSheet, View, useColorScheme, ActivityIndicator, BackHandler } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -23,6 +23,28 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(true);
 
   const theme = useMemo(() => (isDark ? darkTheme : lightTheme), [isDark]);
+
+  // Handle Hardware Back Button (Android)
+  useEffect(() => {
+    const backAction = () => {
+      if (screen === 'editor') {
+        setScreen('list');
+        return true; // Stop default behavior (closing app)
+      }
+      if (screen === 'setup') {
+        setScreen('welcome');
+        return true;
+      }
+      return false; // Default behavior (exit app)
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      backAction
+    );
+
+    return () => backHandler.remove();
+  }, [screen]);
 
   // Load Data on Startup
   useEffect(() => {
@@ -89,6 +111,21 @@ export default function App() {
     }
   };
 
+  const handleLogout = async (clearAllData) => {
+    try {
+      if (clearAllData) {
+        await AsyncStorage.multiRemove([STORAGE_KEYS.NOTES, STORAGE_KEYS.USER_PROFILE]);
+        setNotes([]);
+      } else {
+        await AsyncStorage.removeItem(STORAGE_KEYS.USER_PROFILE);
+      }
+      setUserProfile(null);
+      setScreen('welcome');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
+
   const currentBackgroundColor = screen === 'welcome' 
     ? '#FF8C00' 
     : (screen === 'setup' ? '#F9F7F2' : (screen === 'list' && isDark ? '#121212' : theme.background));
@@ -117,6 +154,7 @@ export default function App() {
             theme={theme}
             onCreateNew={() => setScreen('editor')}
             onDelete={handleDeleteNote}
+            onLogout={handleLogout}
           />
         ) : (
           <NoteEditorScreen
