@@ -218,7 +218,7 @@ export default function NotesListScreen({
                   <Ionicons 
                     name={isDark ? "sunny" : "moon"} 
                     size={24} 
-                    color={isDark ? "#FFD700" : "#7C3AED"} 
+                    color={isDark ? "#FFD700" : "#000000"} 
                   />
                 </Pressable>
               </View>

@@ -1,21 +1,63 @@
-import React, { useState, useMemo } from 'react';
-import { StyleSheet, View, useColorScheme } from 'react-native';
+import React, { useState, useMemo, useEffect } from 'react';
+import { StyleSheet, View, useColorScheme, ActivityIndicator } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import NotesListScreen from '../screens/NotesListScreen';
 import NoteEditorScreen from '../screens/NoteEditorScreen';
 import WelcomeScreen from '../screens/WelcomeScreen';
 import SetupProfileScreen from '../screens/SetupProfileScreen';
 import { lightTheme, darkTheme } from '../constants/theme';
-import { NOTES } from '../constants/notes';
+
+const STORAGE_KEYS = {
+  NOTES: 'wordsy_notes',
+  USER_PROFILE: 'wordsy_user_profile',
+};
 
 export default function App() {
   const systemScheme = useColorScheme();
   const [isDark, setIsDark] = useState(systemScheme === 'dark');
   const [screen, setScreen] = useState('welcome');
-  const [notes, setNotes] = useState(NOTES);
+  const [notes, setNotes] = useState([]);
   const [userProfile, setUserProfile] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const theme = useMemo(() => (isDark ? darkTheme : lightTheme), [isDark]);
+
+  // Load Data on Startup
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [savedNotes, savedProfile] = await Promise.all([
+          AsyncStorage.getItem(STORAGE_KEYS.NOTES),
+          AsyncStorage.getItem(STORAGE_KEYS.USER_PROFILE),
+        ]);
+
+        if (savedNotes) setNotes(JSON.parse(savedNotes));
+        
+        if (savedProfile) {
+          const profile = JSON.parse(savedProfile);
+          setUserProfile(profile);
+          setScreen('list'); // Skip welcome if user already has a profile
+        }
+      } catch (error) {
+        console.error('Failed to load data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  // Save Notes whenever they change
+  useEffect(() => {
+    if (!isLoading) {
+      AsyncStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify(notes)).catch(err => 
+        console.error('Failed to save notes:', err)
+      );
+    }
+  }, [notes, isLoading]);
 
   const handleSaveNote = (newNote) => {
     const noteWithId = {
@@ -37,7 +79,27 @@ export default function App() {
     setNotes((prev) => prev.filter((note) => note.id !== id));
   };
 
-  const currentBackgroundColor = screen === 'welcome' ? '#FF8C00' : (screen === 'setup' ? '#F9F7F2' : (screen === 'list' && isDark ? '#121212' : theme.background));
+  const handleProfileComplete = async (profile) => {
+    try {
+      setUserProfile(profile);
+      await AsyncStorage.setItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(profile));
+      setScreen('list');
+    } catch (error) {
+      console.error('Failed to save profile:', error);
+    }
+  };
+
+  const currentBackgroundColor = screen === 'welcome' 
+    ? '#FF8C00' 
+    : (screen === 'setup' ? '#F9F7F2' : (screen === 'list' && isDark ? '#121212' : theme.background));
+
+  if (isLoading) {
+    return (
+      <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
+        <ActivityIndicator size="large" color="#FF8C00" />
+      </View>
+    );
+  }
 
   return (
     <SafeAreaProvider>
@@ -45,12 +107,7 @@ export default function App() {
         {screen === 'welcome' ? (
           <WelcomeScreen onGetStarted={() => setScreen('setup')} />
         ) : screen === 'setup' ? (
-          <SetupProfileScreen 
-            onComplete={(profile) => {
-              setUserProfile(profile);
-              setScreen('list');
-            }} 
-          />
+          <SetupProfileScreen onComplete={handleProfileComplete} />
         ) : screen === 'list' ? (
           <NotesListScreen
             notes={notes}
@@ -76,5 +133,10 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
