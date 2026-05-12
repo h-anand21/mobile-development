@@ -1,56 +1,98 @@
-# Welcome to your Expo app 👋
+# Wordsy - Premium Sticky Notes App 👋
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+**Wordsy** is a sophisticated, offline-first notes application designed for users who appreciate both aesthetics and functionality. Built with a modern **Sticky Note** theme and a vibrant **Orange-Yellow** color palette, it offers a high-end, native experience for organizing thoughts, missions, and ideas.
 
-## Get started
+Developed by **H. Anand**, this project demonstrates premium mobile UI/UX principles, robust local data persistence, and intuitive gesture-based navigation.
 
-1. Install dependencies
+---
 
+## 📸 App Showcase
+
+<div align="center">
+  <img src="./assets/1.jpg" width="24%" alt="Welcome Screen" />
+  <img src="./assets/2.jpg" width="24%" alt="Setup Profile" />
+  <img src="./assets/3.jpg" width="24%" alt="Dashboard Light" />
+  <img src="./assets/4.jpg" width="24%" alt="Dashboard Dark" />
+</div>
+
+<div align="center">
+  <img src="./assets/5.jpg" width="24%" alt="Note Editor" />
+  <img src="./assets/6.jpg" width="24%" alt="Detailed View" />
+  <img src="./assets/7.jpg" width="24%" alt="Search Interface" />
+  <img src="./assets/8.jpg" width="24%" alt="Settings/Logout" />
+</div>
+
+---
+
+## ✨ Key Features
+
+- **Premium Post-it Aesthetic**: A unique visual style featuring pastel colors, decorative washi tapes, and pushpin icons for a nostalgic sticky-note feel.
+- **Personalized Onboarding**: Profile setup with a choice of 6 happy young-adult avatars and personalized dashboard greetings.
+- **Persistent Local Storage**: Full offline support using `AsyncStorage`. Your notes and profile stay secure on your phone.
+- **Dynamic Search**: Real-time filtering system to find your notes instantly.
+- **Theme Toggle**: Seamless switching between a vibrant Light mode and a sleek Dark mode (with a professional midnight black theme).
+- **Interactive Detail View**: A stylish, centered modal view for reading long notes without cluttering the main dashboard.
+- **Native Gesture Support**: Intelligent handling of Android hardware back buttons to navigate between search, modals, and screens.
+- **Session Management**: Flexible logout options to either clear only the profile or completely wipe all data for a fresh start.
+
+---
+
+## 🛠️ Tech Stack
+
+- **Core**: [React Native](https://reactnative.dev/)
+- **Framework**: [Expo](https://expo.dev/) (SDK 55)
+- **Navigation**: [Expo Router](https://docs.expo.dev/router/introduction/) (File-based routing)
+- **Persistence**: [@react-native-async-storage/async-storage](https://react-native-async-storage.github.io/async-storage/)
+- **Styling**: Vanilla React Native StyleSheet with [Expo Linear Gradient](https://docs.expo.dev/versions/latest/sdk/linear-gradient/)
+- **Icons**: [@expo/vector-icons](https://icons.expo.fyi/) (Ionicons)
+
+---
+
+## 🚀 Getting Started
+
+To get a local copy up and running, follow these simple steps:
+
+### Prerequisites
+- Node.js installed
+- Expo Go app on your mobile device (to test) or an Android/iOS emulator
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/h-anand21/mobile-development.git
+   ```
+
+2. **Navigate to the project directory**
+   ```bash
+   cd Project-2-NotesApp
+   ```
+
+3. **Install dependencies**
    ```bash
    npm install
    ```
 
-2. Start the app
-
+4. **Start the development server**
    ```bash
    npx expo start
    ```
 
-In the output, you'll find options to open the app in a
+5. **Run on your device**
+   - Scan the QR code with your **Expo Go** app (Android) or Camera app (iOS).
+   - Or press `a` for Android emulator or `i` for iOS simulator.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+---
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## 👨‍💻 Author
 
-## Get a fresh project
+**H. Anand**
+- [GitHub Profile](https://github.com/h-anand21)
 
-When you're ready, run:
+---
 
-```bash
-npm run reset-project
-```
+## ⚖️ License
+Distributed under the MIT License. See `LICENSE` for more information.
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-### Other setup steps
-
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+---
+*Created with ❤️ for a premium note-taking experience.*

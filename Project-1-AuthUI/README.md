@@ -1,10 +1,10 @@
 # Welcome to your Expo app 👋
 
-<img src="../Screenshot_20260510_181012.jpg" alt="Alt text" width="500">
+<img src="./assets/readme assets/Screenshot_20260510_181012.jpg" alt="Alt text" width="500">
 
-<img src="../Screenshot_20260510_181019.jpg" alt="Alt text" width="500">
+<img src="./assets/readme assets/Screenshot_20260510_181019.jpg" alt="Alt text" width="500">
 
-<img src="../Screenshot_20260510_181030.jpg" alt="Alt text" width="500">
+<img src="./assets/readme assets/Screenshot_20260510_181030.jpg" alt="Alt text" width="500">
 
 
 
