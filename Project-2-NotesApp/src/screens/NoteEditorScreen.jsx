@@ -12,10 +12,8 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import useAppTheme from '../hooks/useAppTheme';
 
-export default function NoteEditorScreen({ onBack }) {
-  const { theme } = useAppTheme();
+export default function NoteEditorScreen({ onSave, onBack, theme }) {
   const { width } = useWindowDimensions();
   const isTablet = width >= 768;
 
@@ -235,7 +233,13 @@ export default function NoteEditorScreen({ onBack }) {
             </Pressable>
 
             <Pressable
-              onPress={() => setStatus('Saved locally')}
+              onPress={() => {
+                if (title.trim() || body.trim()) {
+                  onSave({ title: title || 'Untitled Note', content: body });
+                } else {
+                  setStatus('Please add a title or content');
+                }
+              }}
               style={[styles.actionButton, styles.saveButton]}
             >
               <Ionicons

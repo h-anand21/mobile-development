@@ -1,29 +1,29 @@
 export const lightTheme = {
-  background: '#F6F7FB',
+  background: '#F9F7F2', // Soft Paper
   surface: '#FFFFFF',
   card: '#FFFFFF',
-  border: '#E5E7EB',
-  text: '#0F172A',
-  mutedText: '#64748B',
-  primary: '#2563EB',
+  border: '#F0EAD6',
+  text: '#1A1A1A',
+  mutedText: '#666666',
+  primary: '#FF8C00', // Orange
   primaryText: '#FFFFFF',
-  accent: '#7C3AED',
-  placeholder: '#94A3B8',
-  overlay: 'rgba(15, 23, 42, 0.38)',
+  accent: '#FFD700', // Yellow
+  placeholder: '#A1A1A1',
+  overlay: 'rgba(0, 0, 0, 0.05)',
   danger: '#EF4444',
 };
 
 export const darkTheme = {
-  background: '#0B1220',
-  surface: '#111827',
-  card: '#111827',
-  border: '#243041',
-  text: '#F8FAFC',
-  mutedText: '#94A3B8',
-  primary: '#60A5FA',
-  primaryText: '#08111F',
-  accent: '#A78BFA',
-  placeholder: '#64748B',
-  overlay: 'rgba(0, 0, 0, 0.36)',
+  background: '#121212', // Deep Dark
+  surface: '#1E1E1E',
+  card: '#252525',
+  border: '#333333',
+  text: '#F5F5F5',
+  mutedText: '#AAAAAA',
+  primary: '#FF9800', // Bright Orange
+  primaryText: '#121212',
+  accent: '#FFEB3B', // Bright Yellow
+  placeholder: '#777777',
+  overlay: 'rgba(255, 255, 255, 0.05)',
   danger: '#F87171',
 };
