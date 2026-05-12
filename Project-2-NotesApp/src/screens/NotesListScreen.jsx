@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   FlatList,
   Image,
@@ -12,6 +12,7 @@ import {
   View,
   useWindowDimensions,
   Alert,
+  BackHandler,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -32,6 +33,29 @@ export default function NotesListScreen({
   const [query, setQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [selectedNote, setSelectedNote] = useState(null);
+
+  // Handle Back Button to close Search or Modal
+  useEffect(() => {
+    const backAction = () => {
+      if (selectedNote) {
+        setSelectedNote(null);
+        return true;
+      }
+      if (isSearching) {
+        setIsSearching(false);
+        setQuery('');
+        return true;
+      }
+      return false; // Let parent App.jsx handle it (exit logic)
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      backAction
+    );
+
+    return () => backHandler.remove();
+  }, [isSearching, selectedNote]);
 
   const handleProfilePress = () => {
     Alert.alert(

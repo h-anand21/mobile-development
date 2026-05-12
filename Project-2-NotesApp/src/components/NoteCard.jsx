@@ -12,17 +12,14 @@ const STICKY_COLORS = [
 ];
 
 export default function NoteCard({ note, index, onPress, onDelete }) {
-  // Use index to pick a color so it's consistent for that note in the list
   const backgroundColor = STICKY_COLORS[index % STICKY_COLORS.length];
   
-  // Random slight rotation for that "pinned" look
   const rotation = useMemo(() => {
-    const rotations = ['-2deg', '1deg', '-1.5deg', '2.5deg', '-0.5deg'];
+    const rotations = ['-1.5deg', '1deg', '-1deg', '1.5deg', '-0.5deg'];
     return rotations[index % rotations.length];
   }, [index]);
 
-  // Determine decoration (Pin or Tape)
-  const decorationType = index % 3; // 0: Pin, 1: Tape, 2: Paperclip (we'll use Tape for 2 too)
+  const decorationType = index % 3;
 
   return (
     <View style={[styles.wrapper, { transform: [{ rotate: rotation }] }]}>
@@ -34,11 +31,9 @@ export default function NoteCard({ note, index, onPress, onDelete }) {
           pressed && styles.cardPressed
         ]}
       >
-        {/* Decoration: Pin or Tape */}
         {decorationType === 0 ? (
           <View style={styles.pinContainer}>
             <View style={styles.pinHead} />
-            <View style={styles.pinShadow} />
           </View>
         ) : (
           <View style={styles.tape} />
@@ -48,19 +43,21 @@ export default function NoteCard({ note, index, onPress, onDelete }) {
           onPress={onDelete}
           style={styles.deleteButton}
         >
-          <Ionicons name="close-circle" size={20} color="rgba(0,0,0,0.3)" />
+          <Ionicons name="close-circle" size={20} color="rgba(0,0,0,0.2)" />
         </Pressable>
 
         <View style={styles.content}>
-          <Text style={styles.title} numberOfLines={2}>
-            {note.title}
-          </Text>
-          <Text style={styles.preview} numberOfLines={4}>
-            {note.content}
-          </Text>
+          <View>
+            <Text style={styles.title} numberOfLines={1}>
+              {note.title}
+            </Text>
+            <Text style={styles.preview} numberOfLines={3}>
+              {note.content}
+            </Text>
+          </View>
           
           <View style={styles.footer}>
-            <Text style={styles.date}>{note.date}</Text>
+            <Text style={styles.dateText}>{note.date}</Text>
           </View>
         </View>
       </Pressable>
@@ -72,19 +69,20 @@ const styles = StyleSheet.create({
   wrapper: {
     flex: 1,
     margin: 8,
-    paddingTop: 10, // Space for the pin
+    paddingTop: 10,
   },
   card: {
     flex: 1,
-    aspectRatio: 1, // Make it square like a post-it
-    padding: 16,
+    aspectRatio: 1,
+    padding: 14,
     paddingTop: 24,
-    borderRadius: 2, // Sharp edges with very slight roundness
-    elevation: 5,
+    paddingBottom: 10, // Added more bottom padding to prevent cut-off
+    borderRadius: 2,
+    elevation: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 2, height: 4 },
+    shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.15,
-    shadowRadius: 6,
+    shadowRadius: 5,
   },
   cardPressed: {
     transform: [{ scale: 0.98 }],
@@ -95,34 +93,22 @@ const styles = StyleSheet.create({
     left: '50%',
     marginLeft: -8,
     zIndex: 10,
-    alignItems: 'center',
   },
   pinHead: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
     backgroundColor: '#FF4444',
     borderWidth: 1,
     borderColor: '#CC0000',
-    zIndex: 2,
-  },
-  pinShadow: {
-    position: 'absolute',
-    top: 4,
-    left: 4,
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: 'rgba(0,0,0,0.1)',
-    zIndex: 1,
   },
   tape: {
     position: 'absolute',
     top: -10,
     left: '30%',
-    width: 60,
-    height: 24,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    width: 50,
+    height: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.4)',
     transform: [{ rotate: '5deg' }],
     zIndex: 10,
     borderWidth: 1,
@@ -136,27 +122,28 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+    justifyContent: 'space-between',
   },
   title: {
     fontSize: 16,
-    fontWeight: '800',
-    color: '#333333',
-    marginBottom: 8,
-    fontFamily: 'System', // Use a handwriting font if loaded, but System is safe
+    fontWeight: '900',
+    color: '#1A1A1A',
+    marginBottom: 4,
   },
   preview: {
-    fontSize: 14,
+    fontSize: 13,
     lineHeight: 18,
     color: '#444444',
     fontStyle: 'italic',
   },
   footer: {
     marginTop: 'auto',
+    paddingTop: 4,
   },
-  date: {
-    fontSize: 11,
-    color: 'rgba(0,0,0,0.4)',
-    fontWeight: '600',
+  dateText: {
+    fontSize: 10,
+    color: 'rgba(0,0,0,0.5)',
+    fontWeight: '700',
     textAlign: 'right',
   },
 });
