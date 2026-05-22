@@ -1,16 +1,23 @@
 {
   "expo": {
-    "name": "Project-2-NotesApp",
+    "name": "Wordsy",
     "slug": "Project-2-NotesApp",
     "version": "1.0.0",
     "orientation": "portrait",
+    "icon": "./assets/icon.png",
     "scheme": "project2notesapp",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.himu21.project2notesapp"
     },
     "android": {
-      "predictiveBackGestureEnabled": false
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#FF8C00"
+      },
+      "package": "com.himu21.project2notesapp",
+      "versionCode": 1
     },
     "web": {
       "output": "static"
@@ -20,13 +27,22 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF"
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#FF8C00"
         }
       ]
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "0594d116-5b17-4667-a86a-ccb920c72bb3"
+      }
     }
   }
 }

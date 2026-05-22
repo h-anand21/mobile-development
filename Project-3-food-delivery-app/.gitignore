@@ -1,0 +1,92 @@
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+
+# ── Dependencies ─────────────────────────────────────────
+node_modules/
+.pnp
+.pnp.js
+
+# ── Expo ─────────────────────────────────────────────────
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# ── Native build output ───────────────────────────────────
+/ios
+/android
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.keystore
+.kotlin/
+
+# ── Metro bundler ─────────────────────────────────────────
+.metro-health-check*
+metro.config.js.cache
+
+# ── Build & cache ─────────────────────────────────────────
+build/
+out/
+.cache/
+*.tsbuildinfo
+
+# ── Environment & secrets ─────────────────────────────────
+.env
+.env.*
+.env*.local
+!.env.example
+*.pem
+
+# ── Logs ─────────────────────────────────────────────────
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+*.log
+logs/
+
+# ── OS generated ─────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ── Editor & IDE ─────────────────────────────────────────
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ── Testing ───────────────────────────────────────────────
+coverage/
+.nyc_output/
+
+# ── Misc ─────────────────────────────────────────────
+*.tgz
+*.zip
+
+# ── Expo EAS / credentials ────────────────────────────
+eas.json.local
+credentials.json
+google-services.json
+GoogleService-Info.plist
+
+# ── Debug APK / IPA ───────────────────────────────────
+*.apk
+*.aab
+*.ipa
+
+# ── Gemini / AI tooling ───────────────────────────────
+.gemini/
+
+# ── Patch files ───────────────────────────────────────
+*.patch
