@@ -6,7 +6,7 @@
 
 <p align="center">
   A full-featured, production-ready <strong>Food Delivery App</strong> built with <strong>React Native + Expo</strong>.<br/>
-  Dark-themed premium UI, smooth navigation, real cart & order management — all offline-ready.
+  Dark-themed premium UI, smooth navigation, real cart &amp; order management — all offline-ready.
 </p>
 
 <p align="center">
@@ -18,6 +18,21 @@
 </p>
 
 ---
+
+## 🎬 Live Demo
+
+<p align="center">
+  <a href="https://youtube.com/shorts/J_DCM76vQXU" target="_blank">
+    <img src="https://img.shields.io/badge/▶%20Watch%20Demo-YouTube-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="Watch Demo on YouTube" height="48"/>
+  </a>
+</p>
+
+<p align="center">
+  👆 Click to watch the full app walkthrough on YouTube Shorts
+</p>
+
+---
+
 
 ## 📸 App Screens & Features
 
