@@ -51,6 +51,8 @@ function RootLayoutNav() {
   );
 }
 
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+
 export default function RootLayout() {
   const [isReady, setIsReady] = useState(false);
   const loadSettings = useSettingsStore(s => s.loadSettings);
@@ -83,9 +85,11 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <StatusBar style="light" backgroundColor={Colors.bg.primary} />
-      <RootLayoutNav />
-      <Toast />
+      <BottomSheetModalProvider>
+        <StatusBar style="light" backgroundColor={Colors.bg.primary} />
+        <RootLayoutNav />
+        <Toast />
+      </BottomSheetModalProvider>
     </GestureHandlerRootView>
   );
 }
