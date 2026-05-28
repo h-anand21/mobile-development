@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Plus, Sparkles, Folder, Star, LayoutTemplate, Search, ScanLine, FileDown, SlidersHorizontal, Code } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { Colors } from '@/theme/colors';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -17,21 +18,28 @@ import { SnippetCard } from '@/components/cards/SnippetCard';
 const { width } = Dimensions.get('window');
 const cardWidth = (width - 48 - 36) / 4; // 48 padding, 3x12 gap
 
-function StatCard({ icon: Icon, title, count }: { icon: any, title: string, count: number }) {
+function StatCard({ icon: Icon, title, count, delay, onPress }: { icon: any, title: string, count: number, delay: number, onPress?: () => void }) {
   return (
-    <View style={styles.statCard}>
-      <View style={styles.statIconWrap}>
-        <Icon size={18} color={Colors.bg.primary} fill={Colors.bg.primary} />
-      </View>
-      <Text style={styles.statCount}>{count}</Text>
-      <Text style={styles.statTitle}>{title}</Text>
-      
-      {/* Decorative chart line placeholder */}
-      <View style={styles.chartLine}>
-        <View style={styles.chartSegment1} />
-        <View style={styles.chartSegment2} />
-      </View>
-    </View>
+    <Animated.View entering={FadeInDown.delay(delay).springify()}>
+      <TouchableOpacity 
+        style={styles.statCard} 
+        activeOpacity={onPress ? 0.7 : 1} 
+        onPress={onPress}
+        disabled={!onPress}
+      >
+        <View style={styles.statIconWrap}>
+          <Icon size={18} color={Colors.bg.primary} fill={Colors.bg.primary} />
+        </View>
+        <Text style={styles.statCount}>{count}</Text>
+        <Text style={styles.statTitle}>{title}</Text>
+        
+        {/* Decorative chart line placeholder */}
+        <View style={styles.chartLine}>
+          <View style={styles.chartSegment1} />
+          <View style={styles.chartSegment2} />
+        </View>
+      </TouchableOpacity>
+    </Animated.View>
   );
 }
 
@@ -108,10 +116,10 @@ export function HomeScreen() {
 
         {/* Stats Grid (4 items side by side) */}
         <View style={styles.statsGrid}>
-          <StatCard icon={Code} title="Snippets" count={snippets.length} />
-          <StatCard icon={Folder} title="Folders" count={folders.length} />
-          <StatCard icon={Star} title="Favorites" count={favoritesCount} />
-          <StatCard icon={LayoutTemplate} title="Templates" count={6} />
+          <StatCard icon={Code} title="Snippets" count={snippets.length} delay={100} onPress={() => router.push('/(tabs)/search')} />
+          <StatCard icon={Folder} title="Folders" count={folders.length} delay={200} onPress={() => router.push('/(tabs)/files')} />
+          <StatCard icon={Star} title="Favorites" count={favoritesCount} delay={300} onPress={() => router.push('/favorites' as any)} />
+          <StatCard icon={LayoutTemplate} title="Templates" count={6} delay={400} onPress={() => router.push('/templates')} />
         </View>
 
         {/* AI Banner */}

@@ -1,9 +1,10 @@
 // ============================================================
 // DevNest — AI Chat Modal
 // ============================================================
-import React, { forwardRef, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
-import { BottomSheetModal, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
+import React, { forwardRef, useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
+import { BottomSheetModal, BottomSheetBackdrop, BottomSheetView, BottomSheetScrollView, BottomSheetTextInput, BottomSheetFooter } from '@gorhom/bottom-sheet';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Sparkles, Send, X, Code2 } from 'lucide-react-native';
 import Toast from 'react-native-toast-message';
 
@@ -15,20 +16,60 @@ interface AIChatModalProps {
   initialLanguage?: string;
 }
 
+// Separate component to hold input state so typing doesn't re-render the whole modal
+const ChatInputFooter = (props: any) => {
+  const { onSend, isLoading, bottomInset, ...footerProps } = props;
+  const [prompt, setPrompt] = useState('');
+
+  return (
+    <BottomSheetFooter {...footerProps} bottomInset={bottomInset}>
+      <View style={styles.inputWrap}>
+        <BottomSheetTextInput
+          style={styles.input}
+          placeholder="Ask me to explain, optimize, or write code..."
+          placeholderTextColor={Colors.text.tertiary}
+          value={prompt}
+          onChangeText={setPrompt}
+          multiline
+          editable={!isLoading}
+        />
+        <TouchableOpacity 
+          style={[styles.sendBtn, (!prompt.trim() || isLoading) && { opacity: 0.5 }]} 
+          onPress={() => {
+            if (prompt.trim() && !isLoading) {
+              onSend(prompt.trim());
+              setPrompt('');
+            }
+          }}
+          disabled={!prompt.trim() || isLoading}
+        >
+          <Send size={20} color="#000" />
+        </TouchableOpacity>
+      </View>
+    </BottomSheetFooter>
+  );
+};
+
 export const AIChatModal = forwardRef<BottomSheetModal, AIChatModalProps>(
   ({ initialCode, initialLanguage }, ref) => {
-    const [prompt, setPrompt] = useState('');
+    const insets = useSafeAreaInsets();
+    const snapPoints = useMemo(() => ['85%', '100%'], []);
+    const scrollViewRef = useRef<any>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [messages, setMessages] = useState<{ role: 'user' | 'ai', text: string }[]>([
       { role: 'ai', text: 'Hi there! I am your AI assistant. How can I help you with your code today?' }
     ]);
 
-    const handleSend = async () => {
-      if (!prompt.trim() || isLoading) return;
-      
-      const userPrompt = prompt.trim();
+    useEffect(() => {
+      if (messages.length > 0) {
+        setTimeout(() => {
+          scrollViewRef.current?.scrollToEnd({ animated: true });
+        }, 100);
+      }
+    }, [messages]);
+
+    const handleSend = async (userPrompt: string) => {
       setMessages(prev => [...prev, { role: 'user', text: userPrompt }]);
-      setPrompt('');
       setIsLoading(true);
 
       try {
@@ -41,17 +82,34 @@ export const AIChatModal = forwardRef<BottomSheetModal, AIChatModalProps>(
       }
     };
 
+    // Render sticky footer for input
+    const renderFooter = useCallback(
+      (props: any) => (
+        <ChatInputFooter 
+          {...props} 
+          bottomInset={Platform.OS === 'ios' ? insets.bottom : 0}
+          onSend={handleSend}
+          isLoading={isLoading}
+        />
+      ),
+      [isLoading, insets.bottom]
+    );
+
     return (
       <BottomSheetModal
         ref={ref}
-        snapPoints={['85%']}
+        snapPoints={snapPoints}
+        index={0}
+        keyboardBehavior="interactive"
+        keyboardBlurBehavior="restore"
+        footerComponent={renderFooter}
         handleIndicatorStyle={{ backgroundColor: Colors.text.tertiary }}
         backgroundStyle={{ backgroundColor: Colors.bg.secondary }}
         backdropComponent={(props) => (
           <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} opacity={0.6} />
         )}
       >
-        <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <View style={styles.container}>
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.headerLeft}>
@@ -72,34 +130,20 @@ export const AIChatModal = forwardRef<BottomSheetModal, AIChatModalProps>(
           )}
 
           {/* Chat History */}
-          <ScrollView contentContainerStyle={styles.chatScroll} showsVerticalScrollIndicator={false}>
+          <BottomSheetScrollView 
+            ref={scrollViewRef}
+            style={{ flex: 1 }}
+            contentContainerStyle={[styles.chatScroll, { paddingBottom: 140 }]} 
+            showsVerticalScrollIndicator={true}
+            keyboardShouldPersistTaps="handled"
+          >
             {messages.map((msg, index) => (
               <View key={index} style={[styles.messageBubble, msg.role === 'user' ? styles.userBubble : styles.aiBubble]}>
                 <Text style={[styles.messageText, msg.role === 'user' && styles.userText]}>{msg.text}</Text>
               </View>
             ))}
-          </ScrollView>
-
-          {/* Input Area */}
-          <View style={styles.inputWrap}>
-            <TextInput
-              style={styles.input}
-              placeholder="Ask me to explain, optimize, or write code..."
-              placeholderTextColor={Colors.text.tertiary}
-              value={prompt}
-              onChangeText={setPrompt}
-              multiline
-              editable={!isLoading}
-            />
-            <TouchableOpacity 
-              style={[styles.sendBtn, (!prompt.trim() || isLoading) && { opacity: 0.5 }]} 
-              onPress={handleSend}
-              disabled={!prompt.trim() || isLoading}
-            >
-              <Send size={20} color="#000" />
-            </TouchableOpacity>
-          </View>
-        </KeyboardAvoidingView>
+          </BottomSheetScrollView>
+        </View>
       </BottomSheetModal>
     );
   }

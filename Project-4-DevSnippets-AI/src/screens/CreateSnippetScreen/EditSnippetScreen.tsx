@@ -267,7 +267,7 @@ const styles = StyleSheet.create({
   saveTopBtn: { backgroundColor: Colors.accent.primary, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12 },
   saveTopText: { color: '#000', fontWeight: '700', fontSize: 14 },
 
-  scrollContent: { padding: 20, paddingBottom: 40 },
+  scrollContent: { padding: 20, paddingBottom: 400 },
   
   inputGroup: { marginBottom: 24 },
   labelRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },

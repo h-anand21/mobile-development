@@ -49,6 +49,7 @@ function RootLayoutNav() {
       <Stack.Screen name="folder/[id]" options={{ headerShown: false, animation: 'slide_from_right' }} />
       <Stack.Screen name="ai-history" options={{ headerShown: false, animation: 'slide_from_right' }} />
       <Stack.Screen name="templates" options={{ headerShown: false, animation: 'slide_from_right' }} />
+      <Stack.Screen name="favorites" options={{ headerShown: false, animation: 'slide_from_right' }} />
     </Stack>
   );
 }

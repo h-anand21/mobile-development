@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 20, fontWeight: '800', color: Colors.text.primary },
   green: { color: Colors.accent.primary },
   
-  scrollContent: { padding: 20, paddingBottom: 40 },
+  scrollContent: { padding: 20, paddingBottom: 400 },
   
   inputGroup: { marginBottom: 24 },
   labelRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },

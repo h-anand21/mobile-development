@@ -41,3 +41,11 @@ yarn-error.*
 /android
 
 demo-screen/
+
+# Project Plans
+detailed_project_checklist.md
+DEV_NESTimplementation_plan.md
+ui-implementation_plan.md
+progress_tracker.md
+recovered_task_log_2.json
+recovered_task_log.json

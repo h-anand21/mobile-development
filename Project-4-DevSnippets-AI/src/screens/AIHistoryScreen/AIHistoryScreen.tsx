@@ -1,31 +1,41 @@
 // ============================================================
 // DevNest — AI History Screen
 // ============================================================
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, Sparkles, Filter, Code2, Zap, Shuffle, Database, Bug, Star } from 'lucide-react-native';
 
 import { Colors } from '@/theme/colors';
+import { useAIStore } from '@/store/aiStore';
+import { timeAgo } from '@/utils/formatters/dateFormatter';
 
 const FILTERS = ['All', 'Explain', 'Optimize', 'Generate'];
 
-const MOCK_HISTORY = [
-  { id: '1', action: 'Explain', title: 'React useEffect Hook', preview: 'The useEffect hook allows you to perform side effects...', date: '2 hours ago', icon: Code2, color: Colors.status.info },
-  { id: '2', action: 'Optimize', title: 'Nested Loops Refactor', preview: 'By using a Map, we reduced the time complexity from O(n^2) to...', date: 'Yesterday', icon: Zap, color: Colors.accent.primary },
-  { id: '3', action: 'Generate', title: 'Axios Interceptor', preview: 'Here is the boilerplate for setting up an Axios interceptor...', date: '2 days ago', icon: Shuffle, color: Colors.status.warning },
-  { id: '4', action: 'SQL', title: 'Join Query Fix', preview: 'You missed the ON clause in your LEFT JOIN. Here is the fixed...', date: '1 week ago', icon: Database, color: Colors.text.secondary },
-  { id: '5', action: 'Debug', title: 'Undefined Error', preview: 'The variable data is undefined before the API returns. Add optional...', date: '2 weeks ago', icon: Bug, color: Colors.status.error },
-];
-
 export function AIHistoryScreen() {
   const router = useRouter();
+  const { history, loadHistory, toggleSaved } = useAIStore();
   const [activeFilter, setActiveFilter] = useState('All');
 
-  const filteredHistory = MOCK_HISTORY.filter(h => 
-    activeFilter === 'All' || h.action === activeFilter
+  useEffect(() => {
+    loadHistory();
+  }, []);
+
+  const filteredHistory = history.filter(h => 
+    activeFilter === 'All' || h.actionType.toLowerCase() === activeFilter.toLowerCase()
   );
+
+  const getIconForAction = (actionType: string) => {
+    switch (actionType.toLowerCase()) {
+      case 'explain': return { icon: Code2, color: Colors.status.info };
+      case 'optimize': return { icon: Zap, color: Colors.accent.primary };
+      case 'generate': return { icon: Shuffle, color: Colors.status.warning };
+      case 'debug': return { icon: Bug, color: Colors.status.error };
+      case 'refactor': return { icon: Shuffle, color: Colors.accent.secondary || Colors.status.info };
+      default: return { icon: Code2, color: Colors.text.secondary };
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -72,19 +82,19 @@ export function AIHistoryScreen() {
           </View>
         ) : (
           filteredHistory.map((item) => {
-            const Icon = item.icon;
+            const { icon: Icon, color } = getIconForAction(item.actionType);
             return (
               <TouchableOpacity key={item.id} style={styles.historyCard}>
-                <View style={[styles.iconWrap, { backgroundColor: item.color + '15' }]}>
-                  <Icon size={20} color={item.color} />
+                <View style={[styles.iconWrap, { backgroundColor: color + '15' }]}>
+                  <Icon size={20} color={color} />
                 </View>
                 <View style={styles.textWrap}>
-                  <Text style={styles.historyTitle}>{item.title}</Text>
-                  <Text style={styles.historyPreview} numberOfLines={1}>{item.preview}</Text>
-                  <Text style={styles.historyDate}>{item.date}</Text>
+                  <Text style={styles.historyTitle}>{item.snippetTitle || item.actionType.toUpperCase()}</Text>
+                  <Text style={styles.historyPreview} numberOfLines={1}>{item.response}</Text>
+                  <Text style={styles.historyDate}>{timeAgo(item.createdAt)}</Text>
                 </View>
-                <TouchableOpacity style={styles.starBtn}>
-                  <Star size={20} color={Colors.text.tertiary} />
+                <TouchableOpacity style={styles.starBtn} onPress={() => toggleSaved(item.id)}>
+                  <Star size={20} color={item.isSaved ? Colors.status.warning : Colors.text.tertiary} fill={item.isSaved ? Colors.status.warning : 'transparent'} />
                 </TouchableOpacity>
               </TouchableOpacity>
             );

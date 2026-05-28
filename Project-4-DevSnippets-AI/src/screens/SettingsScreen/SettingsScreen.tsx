@@ -9,9 +9,9 @@ import { ArrowLeft, Moon, Bell, Database, HelpCircle, FileText, Smartphone, Fing
 
 import { Colors } from '@/theme/colors';
 
-function SettingRow({ icon: Icon, title, subtitle, value, onToggle }: any) {
-  return (
-    <View style={styles.settingRow}>
+function SettingRow({ icon: Icon, title, subtitle, value, onToggle, onPress }: any) {
+  const content = (
+    <>
       <View style={[styles.iconWrap, { backgroundColor: Colors.bg.tertiary }]}>
         <Icon size={20} color={Colors.text.primary} />
       </View>
@@ -29,9 +29,27 @@ function SettingRow({ icon: Icon, title, subtitle, value, onToggle }: any) {
       ) : (
         <Text style={{ color: Colors.text.tertiary, fontSize: 18 }}>›</Text>
       )}
-    </View>
+    </>
+  );
+
+  if (onToggle !== undefined) {
+    return <View style={styles.settingRow}>{content}</View>;
+  }
+
+  return (
+    <TouchableOpacity style={styles.settingRow} onPress={onPress}>
+      {content}
+    </TouchableOpacity>
   );
 }
+
+import { useSnippetStore } from '@/store/snippetStore';
+import { useFolderStore } from '@/store/folderStore';
+import { getDB } from '@/database/db';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
+import { Alert } from 'react-native';
+import Toast from 'react-native-toast-message';
 
 export function SettingsScreen() {
   const router = useRouter();
@@ -39,6 +57,52 @@ export function SettingsScreen() {
   const [isDark, setIsDark] = useState(true);
   const [isNotifications, setIsNotifications] = useState(true);
   const [isBiometric, setIsBiometric] = useState(false);
+
+  const { snippets } = useSnippetStore();
+  const { folders } = useFolderStore();
+
+  const handleAppLock = (val: boolean) => {
+    setIsBiometric(val);
+    if (val) {
+      Toast.show({ type: 'info', text1: 'App Lock enabled (Mock)' });
+    }
+  };
+
+  const handleBackup = async () => {
+    try {
+      const backupData = {
+        version: "1.0",
+        date: new Date().toISOString(),
+        snippets,
+        folders
+      };
+      
+      const fileUri = `${FileSystem.documentDirectory}DevNest_Backup_${Date.now()}.json`;
+      await FileSystem.writeAsStringAsync(fileUri, JSON.stringify(backupData, null, 2));
+      
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(fileUri);
+      } else {
+        Toast.show({ type: 'success', text1: 'Backup saved locally!' });
+      }
+    } catch (e: any) {
+      Toast.show({ type: 'error', text1: 'Backup failed', text2: e.message });
+    }
+  };
+
+  const handleClearCache = () => {
+    Alert.alert('Clear Cache', 'This will remove offline AI history. Your snippets are safe.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Clear', style: 'destructive', onPress: async () => {
+          try {
+            await getDB().runAsync(`DELETE FROM ai_history WHERE isSaved = 0`);
+            Toast.show({ type: 'success', text1: 'Cache cleared' });
+          } catch(e) {
+            Toast.show({ type: 'error', text1: 'Failed to clear cache' });
+          }
+      }}
+    ]);
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -87,15 +151,17 @@ export function SettingsScreen() {
         <View style={styles.card}>
           <SettingRow 
             icon={Fingerprint} title="App Lock" subtitle="Require biometrics to open"
-            value={isBiometric} onToggle={setIsBiometric}
+            value={isBiometric} onToggle={handleAppLock}
           />
           <View style={styles.divider} />
           <SettingRow 
             icon={Database} title="Backup Data" subtitle="Export a full JSON backup"
+            onPress={handleBackup}
           />
           <View style={styles.divider} />
           <SettingRow 
             icon={Smartphone} title="Clear Cache" subtitle="Free up local space"
+            onPress={handleClearCache}
           />
         </View>
 

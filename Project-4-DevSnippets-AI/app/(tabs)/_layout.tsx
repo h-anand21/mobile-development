@@ -1,6 +1,7 @@
 import { Tabs } from 'expo-router';
 import { Home, Search, Folder, Settings, Plus } from 'lucide-react-native';
 import { View, Platform } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { Colors } from '@/theme/colors';
 
 export default function TabLayout() {
@@ -34,7 +35,13 @@ export default function TabLayout() {
         tabBarItemStyle: {
           paddingTop: 12,
         },
-      }}>
+      }}
+      screenListeners={{
+        tabPress: () => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackType.Light);
+        },
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
@@ -73,6 +80,7 @@ export default function TabLayout() {
         listeners={({ navigation }) => ({
           tabPress: (e) => {
             e.preventDefault();
+            Haptics.impactAsync(Haptics.ImpactFeedbackType.Heavy);
             navigation.navigate('snippet/create');
           },
         })}
