@@ -8,6 +8,7 @@ import { useRouter } from 'expo-router';
 import { Plus, Sparkles, Folder, Star, LayoutTemplate, Search, ScanLine, FileDown, SlidersHorizontal, Code } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import Svg, { Path } from 'react-native-svg';
 
 import { useThemeColors } from '@/theme/colors';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -21,25 +22,21 @@ import { askGeminiVision } from '@/services/aiService';
 
 const { width } = Dimensions.get('window');
 
-function StatCard({ icon: Icon, title, count, delay, colors, styles, onPress }: { icon: any, title: string, count: number, delay: number, colors: any, styles: any, onPress?: () => void }) {
+function StatCard({ icon: Icon, title, count, delay, iconBgColor, styles, onPress }: { icon: any, title: string, count: number, delay: number, iconBgColor: string, styles: any, onPress?: () => void }) {
   return (
-    <Animated.View entering={FadeInDown.delay(delay).springify()}>
-      <TouchableOpacity 
-        style={styles.statCard} 
-        activeOpacity={onPress ? 0.7 : 1} 
-        onPress={onPress}
-        disabled={!onPress}
-      >
-        <View style={styles.statIconWrap}>
-          <Icon size={18} color={colors.bg.primary} fill={colors.bg.primary} />
+    <Animated.View entering={FadeInDown.delay(delay).springify()} style={{ flex: 1 }}>
+      <TouchableOpacity style={styles.statCard} onPress={onPress} activeOpacity={0.8}>
+        <View style={[styles.statIconContainer, { backgroundColor: iconBgColor + '20' }]}>
+          <Icon size={18} color={iconBgColor} />
         </View>
-        <Text style={styles.statCount}>{count}</Text>
-        <Text style={styles.statTitle}>{title}</Text>
-        
-        {/* Decorative chart line placeholder */}
-        <View style={styles.chartLine}>
-          <View style={styles.chartSegment1} />
-          <View style={styles.chartSegment2} />
+        <View style={styles.statContent}>
+          <Text style={styles.statCount}>{count}</Text>
+          <Text style={styles.statTitle} numberOfLines={1}>{title}</Text>
+        </View>
+        <View style={{ marginTop: 8, height: 16, width: '100%', overflow: 'hidden' }}>
+          <Svg width="100%" height="100%" viewBox="0 0 100 20" preserveAspectRatio="none">
+            <Path d="M 0,10 Q 15,0 25,10 T 50,10 T 75,10 T 100,10" fill="none" stroke={iconBgColor} strokeWidth="2.5" />
+          </Svg>
         </View>
       </TouchableOpacity>
     </Animated.View>
@@ -155,16 +152,24 @@ export function HomeScreen() {
 
         {/* Hero Section */}
         <View style={styles.heroSection}>
-          <Text style={styles.greeting}>Good Morning, <Text style={styles.greetingName}>{userProfile?.name || 'Developer'} 👋</Text></Text>
-          <Text style={styles.headline}>Ready to code something <Text style={styles.neonText}>amazing?</Text></Text>
+          <View style={styles.heroTextContent}>
+            <Text style={styles.greeting}>Good Morning, <Text style={styles.greetingName}>{userProfile?.name || 'Developer'} 👋</Text></Text>
+            <Text style={styles.headline}>Ready to code{'\n'}something <Text style={styles.neonText}>amazing?</Text></Text>
+          </View>
+          {/* Full image for Developer */}
+          <Image 
+            source={require('../../../assets/iamge-aste/062ac288-f81d-4a4c-b1d9-6462174bcafb.pngfgf.png')} 
+            style={{ width: 160, height: 160, position: 'absolute', right: 20, top: -5, zIndex: -1 }} 
+            resizeMode="contain" 
+          />
         </View>
 
         {/* Stats Grid (4 items side by side) */}
         <View style={styles.statsGrid}>
-          <StatCard icon={Code} title="Snippets" count={snippets.length} delay={100} colors={colors} styles={styles} onPress={() => router.push('/(tabs)/search')} />
-          <StatCard icon={Folder} title="Folders" count={folders.length} delay={200} colors={colors} styles={styles} onPress={() => router.push('/(tabs)/files')} />
-          <StatCard icon={Star} title="Favorites" count={favoritesCount} delay={300} colors={colors} styles={styles} onPress={() => router.push('/favorites' as any)} />
-          <StatCard icon={LayoutTemplate} title="Templates" count={6} delay={400} colors={colors} styles={styles} onPress={() => router.push('/templates')} />
+          <StatCard icon={Code} title="Snippets" count={snippets.length} delay={100} iconBgColor="#a3e635" styles={styles} onPress={() => router.push('/(tabs)/search')} />
+          <StatCard icon={Folder} title="Folders" count={folders.length} delay={200} iconBgColor="#3b82f6" styles={styles} onPress={() => router.push('/(tabs)/files')} />
+          <StatCard icon={Star} title="Favorites" count={favoritesCount} delay={300} iconBgColor="#f59e0b" styles={styles} onPress={() => router.push('/favorites' as any)} />
+          <StatCard icon={LayoutTemplate} title="Templates" count={6} delay={400} iconBgColor="#ec4899" styles={styles} onPress={() => router.push('/templates')} />
         </View>
 
         {/* AI Banner */}
@@ -176,13 +181,19 @@ export function HomeScreen() {
           <View style={styles.aiBannerContent}>
             <View style={styles.aiBadge}>
               <Sparkles size={16} color={colors.accent.primary} fill={colors.accent.primary} />
-              <Text style={styles.aiBadgeText}>AI Assistant</Text>
+              <Text style={[styles.aiBadgeText, { color: colors.text.primary }]}>AI Assistant</Text>
             </View>
-            <Text style={styles.aiSubtitle}>Ask AI to explain, optimize or refactor your code.</Text>
+            <Text style={[styles.aiSubtitle, { color: colors.text.secondary }]}>Ask AI to explain, optimize{'\n'}or refactor your code.</Text>
             <View style={styles.aiActionBtn}>
               <Text style={styles.aiActionText}>Ask AI →</Text>
             </View>
           </View>
+          {/* Full image for Robot */}
+          <Image 
+            source={require('../../../assets/iamge-aste/062ac288-f81d-4a4c-b1d9-6462174bcafb.pngfbfj.png')} 
+            style={{ width: 130, height: 130, position: 'absolute', right: 5, bottom: -5 }} 
+            resizeMode="contain" 
+          />
         </TouchableOpacity>
 
         {/* Quick Actions */}
@@ -218,7 +229,7 @@ export function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.listContainer}>
+        <View style={[styles.listContainer, { position: 'relative' }]}>
           {recentSnippets.length === 0 ? (
             <View style={styles.emptyState}>
               <Text style={styles.emptyEmoji}>📝</Text>
@@ -258,60 +269,52 @@ const getStyles = (colors: any) => ({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
   },
   navAiText: { color: colors.bg.primary === '#000000' ? '#000' : '#FFF', fontSize: 15, fontWeight: '800' },
-  iconBtn: {
-    width: 44, height: 44, borderRadius: 12, backgroundColor: colors.bg.secondary,
-    justifyContent: 'center', paddingHorizontal: 12, gap: 5,
-  },
-  hamburgerLine: { width: 18, height: 2, backgroundColor: colors.text.primary, borderRadius: 1 },
-  topBarRight: { flexDirection: 'row', gap: 12, alignItems: 'center' },
-  iconBtnCircle: {
-    width: 44, height: 44, borderRadius: 22, backgroundColor: colors.bg.secondary,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  notificationDot: {},
   avatarWrap: {
     width: 44, height: 44, borderRadius: 22, backgroundColor: colors.accent.primary,
     alignItems: 'center', justifyContent: 'center',
   },
   avatarEmoji: { fontSize: 24 },
 
-  heroSection: { paddingHorizontal: 24, paddingBottom: 32, position: 'relative' },
-  greeting: { fontSize: 16, color: colors.text.secondary, marginBottom: 8, fontWeight: '500' },
-  greetingName: { color: colors.text.primary },
-  headline: { fontSize: 32, color: colors.text.primary, fontWeight: '800', lineHeight: 40, width: '70%' },
-  neonText: { color: colors.accent.primary },
-  heroIllustrationPlaceholder: {
-    position: 'absolute', right: 0, top: -20, width: 140, height: 140,
+  heroSection: {
+    position: 'relative',
+    paddingHorizontal: 24, marginBottom: 32, marginTop: 16, minHeight: 140,
   },
-
-  searchBar: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: colors.bg.secondary,
-    marginHorizontal: 24, paddingLeft: 16, paddingRight: 8, height: 56, borderRadius: 28,
-    marginBottom: 32, borderWidth: 1, borderColor: colors.border.primary,
-  },
-  searchText: { flex: 1, color: colors.text.tertiary, fontSize: 15, marginLeft: 12 },
-  filterBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', borderColor: colors.accent.primary, borderWidth: 1 },
+  heroTextContent: { width: '65%', zIndex: 1 },
+  greeting: { fontSize: 16, fontFamily: 'Inter-Medium', color: colors.text.secondary },
+  greetingName: { color: colors.accent.primary, fontWeight: '700' },
+  headline: { fontSize: 28, fontFamily: 'SpaceGrotesk-Bold', color: colors.text.primary, lineHeight: 36, marginTop: 8 },
+  neonText: { color: colors.accent.primary, textShadowColor: colors.accent.primary + '80', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 10 },
 
   statsGrid: {
-    flexDirection: 'row', paddingHorizontal: 24, justifyContent: 'space-between', marginBottom: 32, gap: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 24,
+    marginBottom: 32,
+    gap: 8,
   },
   statCard: {
-    flex: 1, backgroundColor: colors.bg.secondary, padding: 12, borderRadius: 20, borderWidth: 1, borderColor: colors.border.primary,
+    flex: 1,
+    padding: 10, borderRadius: 16,
+    backgroundColor: colors.bg.secondary,
+    borderWidth: 1, borderColor: colors.border.primary,
   },
-  statIconWrap: { width: 36, height: 36, borderRadius: 12, backgroundColor: colors.accent.primary, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
-  statCount: { color: colors.text.primary, fontSize: 20, fontWeight: '800', marginBottom: 4 },
-  statTitle: { color: colors.text.secondary, fontSize: 11, fontWeight: '500', marginBottom: 12 },
-  chartLine: { height: 16, flexDirection: 'row', alignItems: 'flex-end', gap: 2 },
-  chartSegment1: { flex: 1, height: 8, backgroundColor: colors.accent.primary, borderTopLeftRadius: 4, borderTopRightRadius: 4, opacity: 0.5 },
-  chartSegment2: { flex: 1, height: 16, backgroundColor: colors.accent.primary, borderTopLeftRadius: 4, borderTopRightRadius: 4 },
+  statIconContainer: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
+  statContent: {},
+  statCount: { fontSize: 18, fontWeight: '800', color: colors.text.primary, marginBottom: 2 },
+  statTitle: { fontSize: 10, color: colors.text.secondary },
 
   aiBanner: {
-    marginHorizontal: 24, backgroundColor: colors.bg.primary === '#000000' ? '#0B1C0A' : '#EAF2E6', borderRadius: 24,
-    padding: 24, marginBottom: 32,
-    borderWidth: 1, borderColor: colors.bg.primary === '#000000' ? 'rgba(204, 255, 0, 0.2)' : 'rgba(110, 144, 0, 0.2)',
+    marginHorizontal: 24, marginBottom: 32, borderRadius: 24,
+    backgroundColor: colors.bg.secondary, padding: 20,
+    borderWidth: 1, borderColor: colors.border.primary,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    position: 'relative', overflow: 'visible', zIndex: 1
   },
-  aiBannerContent: { width: '65%' },
-  aiBadge: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
+  aiBannerContent: { flex: 1, paddingRight: 90 },
+  aiBannerImage: { width: 140, height: 140, marginRight: 16 },
+  aiBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12,
+  },
   aiBadgeText: { color: colors.text.primary, fontSize: 16, fontWeight: '700' },
   aiSubtitle: { color: colors.text.secondary, fontSize: 13, lineHeight: 20, marginBottom: 16 },
   aiActionBtn: { backgroundColor: colors.accent.primary, alignSelf: 'flex-start', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20 },

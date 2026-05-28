@@ -61,7 +61,7 @@ export const ColorsDark = {
 
 export const ColorsLight = {
   bg: {
-    primary: '#F4F4F5',    // soft light background
+    primary: '#FFFFFF',    // Pure white background for light mode
     secondary: '#FFFFFF',  // Cards, sheets
     tertiary: '#E4E4E7',   // Input fields, borders
     elevated: '#E4E4E7',   // Modals, overlays, active states

@@ -3,6 +3,7 @@
 // ============================================================
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
+import { SvgUri } from 'react-native-svg';
 import { Star, MoreHorizontal } from 'lucide-react-native';
 import { Snippet } from '@/types/snippet.types';
 import { useThemeColors } from '@/theme/colors';
@@ -24,7 +25,21 @@ export function SnippetCard({ snippet, onPress, style }: SnippetCardProps) {
   const colors = useThemeColors();
   const styles = getStyles(colors);
   
+  const LANGUAGE_LOGOS: Record<string, string> = {
+    'JavaScript': 'javascript/javascript-original.svg',
+    'TypeScript': 'typescript/typescript-original.svg',
+    'React': 'react/react-original.svg',
+    'Python': 'python/python-original.svg',
+    'Java': 'java/java-original.svg',
+    'C++': 'cplusplus/cplusplus-original.svg',
+    'HTML': 'html5/html5-original.svg',
+    'CSS': 'css3/css3-original.svg',
+    'Go': 'go/go-original.svg',
+  };
+
   const languageConfig = LANGUAGES.find(l => l.label === snippet.language) || LANGUAGES[0];
+  const logoPath = LANGUAGE_LOGOS[snippet.language] || LANGUAGE_LOGOS[languageConfig.label];
+  const logoUrl = logoPath ? `https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/${logoPath}` : null;
   const router = useRouter();
   const { toggleFavorite, deleteSnippet } = useSnippetStore();
 
@@ -56,11 +71,17 @@ export function SnippetCard({ snippet, onPress, style }: SnippetCardProps) {
     >
       <View style={styles.contentRow}>
         {/* Language Square Badge */}
-        <View style={[styles.langBadge, { backgroundColor: languageConfig.color }]}>
-          <Text style={[styles.langBadgeText, { color: languageConfig.textColor }]}>
-            {languageConfig.shortLabel}
-          </Text>
-        </View>
+        {logoUrl ? (
+          <View style={[styles.langBadge, { backgroundColor: colors.bg.secondary, borderWidth: 1, borderColor: colors.border.primary, padding: 4 }]}>
+            <SvgUri uri={logoUrl} width="100%" height="100%" />
+          </View>
+        ) : (
+          <View style={[styles.langBadge, { backgroundColor: languageConfig.color }]}>
+            <Text style={[styles.langBadgeText, { color: languageConfig.textColor }]}>
+              {languageConfig.shortLabel}
+            </Text>
+          </View>
+        )}
 
         {/* Text Content */}
         <View style={styles.textWrap}>
