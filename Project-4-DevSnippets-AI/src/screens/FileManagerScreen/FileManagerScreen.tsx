@@ -40,7 +40,7 @@ export function FileManagerScreen() {
   );
 
   const handleCreateFolder = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.light);
     setEditFolderId(null);
     setFolderName('');
     setFolderColor(FOLDER_COLORS[0]);
@@ -48,7 +48,7 @@ export function FileManagerScreen() {
   };
 
   const openEditModal = (folder: DevNestFolder) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.medium);
     setEditFolderId(folder.id);
     setFolderName(folder.name);
     setFolderColor(folder.color || FOLDER_COLORS[0]);

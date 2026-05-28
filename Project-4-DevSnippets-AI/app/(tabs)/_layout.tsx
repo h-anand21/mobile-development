@@ -38,7 +38,7 @@ export default function TabLayout() {
       }}
       screenListeners={{
         tabPress: () => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackType.Light);
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.light);
         },
       }}
     >
@@ -80,7 +80,7 @@ export default function TabLayout() {
         listeners={({ navigation }) => ({
           tabPress: (e) => {
             e.preventDefault();
-            Haptics.impactAsync(Haptics.ImpactFeedbackType.Heavy);
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.heavy);
             navigation.navigate('snippet/create');
           },
         })}

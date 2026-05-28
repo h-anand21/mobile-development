@@ -63,7 +63,7 @@ export function SnippetDetailsScreen() {
   };
 
   const handleFavorite = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.light);
     toggleFavorite(snippet.id);
   };
 

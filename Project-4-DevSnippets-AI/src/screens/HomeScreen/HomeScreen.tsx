@@ -50,7 +50,7 @@ export function HomeScreen() {
   const { folders } = useFolderStore();
 
   const handleRefresh = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.light);
     loadSnippets();
   }, [loadSnippets]);
 
