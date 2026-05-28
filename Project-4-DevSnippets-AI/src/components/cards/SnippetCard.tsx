@@ -8,6 +8,11 @@ import { Snippet } from '@/types/snippet.types';
 import { Colors } from '@/theme/colors';
 import { timeAgo } from '@/utils/formatters/dateFormatter';
 import { LANGUAGES } from '@/constants/languages';
+import { useRouter } from 'expo-router';
+import { useSnippetStore } from '@/store/snippetStore';
+import { Alert } from 'react-native';
+import * as Haptics from 'expo-haptics';
+import Toast from 'react-native-toast-message';
 
 interface SnippetCardProps {
   snippet: Snippet;
@@ -17,6 +22,28 @@ interface SnippetCardProps {
 
 export function SnippetCard({ snippet, onPress, style }: SnippetCardProps) {
   const languageConfig = LANGUAGES.find(l => l.label === snippet.language) || LANGUAGES[0];
+  const router = useRouter();
+  const { toggleFavorite, deleteSnippet } = useSnippetStore();
+
+  const handleFavoriteToggle = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    toggleFavorite(snippet.id);
+  };
+
+  const handleMorePress = () => {
+    Alert.alert(
+      'Snippet Options',
+      snippet.title,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Edit', onPress: () => router.push(`/snippet/edit/${snippet.id}`) },
+        { text: 'Delete', style: 'destructive', onPress: () => {
+          deleteSnippet(snippet.id);
+          Toast.show({ type: 'success', text1: 'Snippet deleted' });
+        }},
+      ]
+    );
+  };
 
   return (
     <TouchableOpacity
@@ -46,14 +73,21 @@ export function SnippetCard({ snippet, onPress, style }: SnippetCardProps) {
 
         {/* Actions */}
         <View style={styles.actionsWrap}>
-          <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+          <TouchableOpacity 
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            onPress={handleFavoriteToggle}
+          >
             <Star 
               size={20} 
               color={snippet.isFavorite ? Colors.status.warning : Colors.text.tertiary} 
               fill={snippet.isFavorite ? Colors.status.warning : 'transparent'} 
             />
           </TouchableOpacity>
-          <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} style={styles.moreBtn}>
+          <TouchableOpacity 
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} 
+            style={styles.moreBtn}
+            onPress={handleMorePress}
+          >
             <MoreHorizontal size={20} color={Colors.text.tertiary} />
           </TouchableOpacity>
         </View>

@@ -57,3 +57,49 @@ ${prompt}`;
 
   return text;
 };
+
+export const askGeminiVision = async (prompt: string, base64Image: string, mimeType: string): Promise<string> => {
+  if (!API_KEY || API_KEY === 'your_gemini_api_key_here') {
+    throw new Error('Gemini API key is not configured.');
+  }
+
+  const body = {
+    contents: [
+      {
+        parts: [
+          { text: prompt },
+          {
+            inlineData: {
+              mimeType,
+              data: base64Image,
+            }
+          }
+        ],
+      },
+    ],
+    generationConfig: {
+      temperature: 0.2,
+      maxOutputTokens: 2048,
+    },
+  };
+
+  const response = await fetch(GEMINI_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`Gemini API error ${response.status}: ${errText}`);
+  }
+
+  const data = await response.json();
+  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+  
+  if (!text) {
+    throw new Error('No response received from Gemini Vision.');
+  }
+
+  return text;
+};

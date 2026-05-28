@@ -15,6 +15,7 @@ export default function SearchScreen() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
+  const [showFilters, setShowFilters] = useState(false);
   
   const debouncedQuery = useDebounce(searchQuery, 300);
   
@@ -84,26 +85,31 @@ export default function SearchScreen() {
                 <Text style={styles.clearBtnText}>×</Text>
               </TouchableOpacity>
             )}
-            <View style={styles.filterIconWrap}>
+            <TouchableOpacity 
+              style={[styles.filterIconWrap, showFilters && { backgroundColor: Colors.accent.primary + '30' }]}
+              onPress={() => setShowFilters(!showFilters)}
+            >
               <SlidersHorizontal size={20} color={Colors.accent.primary} />
-            </View>
+            </TouchableOpacity>
           </View>
         </View>
 
         {/* Filter Chips */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
-          {FILTERS.map(filter => (
-            <TouchableOpacity 
-              key={filter}
-              style={[styles.filterChip, activeFilter === filter && styles.filterChipActive]}
-              onPress={() => setActiveFilter(filter)}
-            >
-              <Text style={[styles.filterText, activeFilter === filter && styles.filterTextActive]}>
-                {filter}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+        {showFilters && (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
+            {FILTERS.map(filter => (
+              <TouchableOpacity 
+                key={filter}
+                style={[styles.filterChip, activeFilter === filter && styles.filterChipActive]}
+                onPress={() => setActiveFilter(filter)}
+              >
+                <Text style={[styles.filterText, activeFilter === filter && styles.filterTextActive]}>
+                  {filter}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        )}
 
         {debouncedQuery.trim().length > 0 && searchResults.snippets.length === 0 && searchResults.folders.length === 0 ? (
           <View style={styles.emptyWrap}>

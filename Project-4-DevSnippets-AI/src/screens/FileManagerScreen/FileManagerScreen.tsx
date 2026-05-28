@@ -1,9 +1,8 @@
 // ============================================================
 // DevNest — File Manager Screen (Neon UI)
 // ============================================================
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, TextInput, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, TextInput, Alert, Modal, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRef, useMemo, useCallback, useState } from 'react';
-import { BottomSheetModal, BottomSheetBackdrop, BottomSheetTextInput } from '@gorhom/bottom-sheet';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Folder, Plus, Search, ScanLine, FileDown, Sparkles } from 'lucide-react-native';
@@ -11,11 +10,14 @@ import * as Haptics from 'expo-haptics';
 
 import { Colors } from '@/theme/colors';
 import { useFolderStore } from '@/store/folderStore';
+import { useSnippetStore } from '@/store/snippetStore';
+import { SnippetCard } from '@/components/cards/SnippetCard';
 import { DevNestFolder } from '@/types/file.types';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
 import Toast from 'react-native-toast-message';
+import { askGeminiVision } from '@/services/aiService';
 
 const { width } = Dimensions.get('window');
 const FOLDER_MARGIN = 12;
@@ -26,25 +28,20 @@ const FOLDER_COLORS = ['#58A6FF', '#39D353', '#D29922', '#F78166', '#A371F7', '#
 export function FileManagerScreen() {
   const router = useRouter();
   const { folders, createFolder, updateFolder, deleteFolder } = useFolderStore();
+  const { snippets } = useSnippetStore();
   const [searchQuery, setSearchQuery] = useState('');
 
-  const bottomSheetRef = useRef<BottomSheetModal>(null);
+  const [isModalVisible, setIsModalVisible] = useState(false);
   const [editFolderId, setEditFolderId] = useState<string | null>(null);
   const [folderName, setFolderName] = useState('');
   const [folderColor, setFolderColor] = useState(FOLDER_COLORS[0]);
-
-  const snapPoints = useMemo(() => ['55%'], []);
-  const renderBackdrop = useCallback(
-    (props: any) => <BottomSheetBackdrop {...props} appearsOnIndex={0} disappearsOnIndex={-1} />,
-    []
-  );
 
   const handleCreateFolder = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.light);
     setEditFolderId(null);
     setFolderName('');
     setFolderColor(FOLDER_COLORS[0]);
-    bottomSheetRef.current?.present();
+    setIsModalVisible(true);
   };
 
   const openEditModal = (folder: DevNestFolder) => {
@@ -52,7 +49,7 @@ export function FileManagerScreen() {
     setEditFolderId(folder.id);
     setFolderName(folder.name);
     setFolderColor(folder.color || FOLDER_COLORS[0]);
-    bottomSheetRef.current?.present();
+    setIsModalVisible(true);
   };
 
   const handleSave = async () => {
@@ -69,7 +66,7 @@ export function FileManagerScreen() {
         await createFolder(folderName.trim(), folderColor, 'Folder');
         Toast.show({ type: 'success', text1: 'Folder created' });
       }
-      bottomSheetRef.current?.dismiss();
+      setIsModalVisible(false);
     } catch (e: any) {
       Toast.show({ type: 'error', text1: 'Failed to save folder' });
     }
@@ -83,7 +80,7 @@ export function FileManagerScreen() {
         try {
           await deleteFolder(editFolderId);
           Toast.show({ type: 'success', text1: 'Folder deleted' });
-          bottomSheetRef.current?.dismiss();
+          setIsModalVisible(false);
         } catch(e) {
           Toast.show({ type: 'error', text1: 'Failed to delete' });
         }
@@ -102,8 +99,9 @@ export function FileManagerScreen() {
         const fileUri = result.assets[0].uri;
         const fileName = result.assets[0].name;
         
-        // Read file contents
-        const content = await FileSystem.readAsStringAsync(fileUri);
+        // Read file contents using fetch
+        const response = await fetch(fileUri);
+        const content = await response.text();
         
         // Go to create screen with content
         router.push({
@@ -127,13 +125,23 @@ export function FileManagerScreen() {
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ['images'],
         quality: 0.8,
+        base64: true,
       });
 
-      if (!result.canceled) {
-        Toast.show({ 
-          type: 'success', 
-          text1: 'Image captured! 📸', 
-          text2: 'AI OCR parsing will be available in the next phase.' 
+      if (!result.canceled && result.assets && result.assets.length > 0 && result.assets[0].base64) {
+        Toast.show({ type: 'info', text1: 'Analyzing image with AI...' });
+        
+        const extractedCode = await askGeminiVision(
+          "Extract the code snippet from this image. Do not add any conversational text or markdown formatting blocks like ```javascript. Just output the pure code exactly as it appears in the image.",
+          result.assets[0].base64,
+          result.assets[0].mimeType || 'image/jpeg'
+        );
+
+        Toast.show({ type: 'success', text1: 'Code Extracted Successfully!' });
+
+        router.push({
+          pathname: '/snippet/create',
+          params: { importedContent: extractedCode, importedTitle: 'Scanned Code' }
         });
       }
     } catch (e: any) {
@@ -165,6 +173,20 @@ export function FileManagerScreen() {
           <Text style={styles.headerSubtitle}>Organize your snippets into beautiful folders.</Text>
         </View>
 
+        {/* Top Search Bar */}
+        <View style={styles.topSearchBarWrap}>
+          <View style={styles.searchBar}>
+            <Search size={20} color={Colors.text.tertiary} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search folders & snippets..."
+              placeholderTextColor={Colors.text.tertiary}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+          </View>
+        </View>
+
         {/* Tip Banner */}
         <View style={styles.tipBanner}>
           <View style={styles.tipIconWrap}>
@@ -187,7 +209,7 @@ export function FileManagerScreen() {
           </TouchableOpacity>
 
           {/* Render Actual Folders */}
-          {folders.map(renderFolder)}
+          {folders.filter(f => f.name.toLowerCase().includes(searchQuery.toLowerCase())).map(renderFolder)}
         </View>
 
         {/* Quick Actions */}
@@ -204,68 +226,78 @@ export function FileManagerScreen() {
             <Text style={styles.quickActionText}>Import File</Text>
           </TouchableOpacity>
         </View>
+
+        {/* All Snippets */}
+        <View style={[styles.sectionHeader, { marginTop: 32 }]}>
+          <Text style={styles.sectionTitle}>All Snippets</Text>
+        </View>
+        <View style={styles.snippetsContainer}>
+          {snippets
+            .filter(s => s.title.toLowerCase().includes(searchQuery.toLowerCase()) || s.description?.toLowerCase().includes(searchQuery.toLowerCase()))
+            .map(snippet => (
+              <SnippetCard 
+                key={snippet.id} 
+                snippet={snippet} 
+                onPress={() => router.push(`/snippet/${snippet.id}`)} 
+              />
+          ))}
+          {snippets.filter(s => s.title.toLowerCase().includes(searchQuery.toLowerCase()) || s.description?.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
+             <Text style={styles.emptyText}>No snippets found.</Text>
+          )}
+        </View>
       </ScrollView>
 
-      {/* Floating Bottom Search Bar (similar to tab bar style) */}
-      <View style={styles.bottomSearchBarWrap}>
-        <View style={styles.bottomSearchBar}>
-          <Search size={20} color={Colors.text.tertiary} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search folders..."
-            placeholderTextColor={Colors.text.tertiary}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-        </View>
-      </View>
-
-      {/* Bottom Sheet Modal */}
-      <BottomSheetModal
-        ref={bottomSheetRef}
-        index={0}
-        snapPoints={snapPoints}
-        backdropComponent={renderBackdrop}
-        backgroundStyle={{ backgroundColor: Colors.bg.secondary }}
-        handleIndicatorStyle={{ backgroundColor: Colors.border.primary }}
+      {/* Custom Bottom Sheet Modal using React Native Modal */}
+      <Modal
+        visible={isModalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setIsModalVisible(false)}
       >
-        <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>{editFolderId ? 'Edit Folder' : 'New Folder'}</Text>
-          
-          <Text style={styles.inputLabel}>Folder Name</Text>
-          <BottomSheetTextInput
-            style={styles.modalInput}
-            value={folderName}
-            onChangeText={setFolderName}
-            placeholder="e.g. React Hooks"
-            placeholderTextColor={Colors.text.tertiary}
-            autoFocus
-          />
-
-          <Text style={styles.inputLabel}>Folder Color</Text>
-          <View style={styles.colorsGrid}>
-            {FOLDER_COLORS.map(c => (
-              <TouchableOpacity 
-                key={c} 
-                style={[styles.colorCircle, { backgroundColor: c }, folderColor === c && styles.colorCircleActive]} 
-                onPress={() => setFolderColor(c)}
-              />
-            ))}
-          </View>
-
-          <View style={styles.modalActions}>
-            {editFolderId ? (
-              <TouchableOpacity style={styles.modalDeleteBtn} onPress={handleDelete}>
-                <Text style={styles.modalDeleteText}>Delete</Text>
-              </TouchableOpacity>
-            ) : <View style={{ flex: 1 }} />}
+        <KeyboardAvoidingView 
+          style={styles.modalOverlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={() => setIsModalVisible(false)} />
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHandle} />
+            <Text style={styles.modalTitle}>{editFolderId ? 'Edit Folder' : 'New Folder'}</Text>
             
-            <TouchableOpacity style={styles.modalSaveBtn} onPress={handleSave}>
-              <Text style={styles.modalSaveText}>Save</Text>
-            </TouchableOpacity>
+            <Text style={styles.inputLabel}>Folder Name</Text>
+            <TextInput
+              style={styles.modalInput}
+              value={folderName}
+              onChangeText={setFolderName}
+              placeholder="e.g. React Hooks"
+              placeholderTextColor={Colors.text.tertiary}
+              autoFocus
+            />
+
+            <Text style={styles.inputLabel}>Folder Color</Text>
+            <View style={styles.colorsGrid}>
+              {FOLDER_COLORS.map(c => (
+                <TouchableOpacity 
+                  key={c} 
+                  style={[styles.colorCircle, { backgroundColor: c }, folderColor === c && styles.colorCircleActive]} 
+                  onPress={() => setFolderColor(c)}
+                />
+              ))}
+            </View>
+
+            <View style={styles.modalActions}>
+              {editFolderId ? (
+                <TouchableOpacity style={styles.modalDeleteBtn} onPress={handleDelete}>
+                  <Text style={styles.modalDeleteText}>Delete</Text>
+                </TouchableOpacity>
+              ) : <View style={{ flex: 1 }} />}
+              
+              <TouchableOpacity style={styles.modalSaveBtn} onPress={handleSave}>
+                <Text style={styles.modalSaveText}>Save</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
-      </BottomSheetModal>
+        </KeyboardAvoidingView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -313,18 +345,24 @@ const styles = StyleSheet.create({
   },
   quickActionText: { color: Colors.text.primary, fontSize: 14, fontWeight: '600', marginTop: 12 },
 
-  bottomSearchBarWrap: {
-    position: 'absolute', bottom: 100, left: 24, right: 24,
+  snippetsContainer: { paddingHorizontal: 24, gap: 12 },
+  emptyText: { color: Colors.text.tertiary, fontSize: 14, textAlign: 'center', marginTop: 16 },
+
+  topSearchBarWrap: {
+    paddingHorizontal: 24,
+    marginBottom: 24,
   },
-  bottomSearchBar: {
+  searchBar: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.bg.secondary,
-    borderWidth: 1, borderColor: Colors.border.primary, borderRadius: 30,
-    height: 56, paddingHorizontal: 16,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.5, shadowRadius: 20, elevation: 10,
+    borderWidth: 1, borderColor: Colors.border.primary, borderRadius: 16,
+    height: 52, paddingHorizontal: 16,
   },
   searchInput: { flex: 1, color: Colors.text.primary, fontSize: 15, marginLeft: 12 },
 
-  modalContent: { padding: 24, flex: 1 },
+  modalOverlay: { flex: 1, justifyContent: 'flex-end' },
+  modalBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)' },
+  modalContainer: { backgroundColor: Colors.bg.secondary, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
+  modalHandle: { width: 40, height: 4, backgroundColor: Colors.border.primary, borderRadius: 2, alignSelf: 'center', marginBottom: 24 },
   modalTitle: { fontSize: 20, fontWeight: '700', color: Colors.text.primary, marginBottom: 24 },
   inputLabel: { fontSize: 13, color: Colors.text.secondary, fontWeight: '600', textTransform: 'uppercase', marginBottom: 8 },
   modalInput: { backgroundColor: Colors.bg.tertiary, borderRadius: 12, padding: 16, color: Colors.text.primary, fontSize: 16, marginBottom: 24, borderWidth: 1, borderColor: Colors.border.primary },

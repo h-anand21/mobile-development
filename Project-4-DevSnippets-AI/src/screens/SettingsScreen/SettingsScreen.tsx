@@ -46,7 +46,7 @@ function SettingRow({ icon: Icon, title, subtitle, value, onToggle, onPress }: a
 import { useSnippetStore } from '@/store/snippetStore';
 import { useFolderStore } from '@/store/folderStore';
 import { getDB } from '@/database/db';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { Alert } from 'react-native';
 import Toast from 'react-native-toast-message';

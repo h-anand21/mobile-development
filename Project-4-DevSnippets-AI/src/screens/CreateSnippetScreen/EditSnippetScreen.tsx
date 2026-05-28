@@ -14,6 +14,7 @@ import * as Haptics from 'expo-haptics';
 
 import { Colors } from '@/theme/colors';
 import { useSnippetStore } from '@/store/snippetStore';
+import { useFolderStore } from '@/store/folderStore';
 import { LANGUAGES } from '@/constants/languages';
 import { Language } from '@/types/snippet.types';
 
@@ -21,6 +22,7 @@ export function EditSnippetScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { getSnippetById, updateSnippet, deleteSnippet } = useSnippetStore();
+  const { folders } = useFolderStore();
   
   const snippet = getSnippetById(id as string);
 
@@ -30,6 +32,7 @@ export function EditSnippetScreen() {
   const [description, setDescription] = useState('');
   const [tagsInput, setTagsInput] = useState('');
   const [tags, setTags] = useState<string[]>([]);
+  const [folderId, setFolderId] = useState<string | undefined>(undefined);
   const [isPrivate, setIsPrivate] = useState(false);
 
   useEffect(() => {
@@ -39,6 +42,7 @@ export function EditSnippetScreen() {
       setCode(snippet.content);
       setDescription(snippet.description || '');
       setTags(snippet.tags || []);
+      setFolderId(snippet.folderId);
     }
   }, [snippet]);
 
@@ -84,6 +88,7 @@ export function EditSnippetScreen() {
         language,
         description: description.trim() || undefined,
         tags,
+        folderId,
       });
 
       Toast.show({
@@ -240,6 +245,32 @@ export function EditSnippetScreen() {
             )}
           </View>
 
+          {/* Folder Picker */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Folder (Optional)</Text>
+            {folders.length === 0 ? (
+              <Text style={{ color: Colors.text.tertiary, fontSize: 13 }}>No folders created yet. Create one in "My Files".</Text>
+            ) : (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.folderScroll}>
+                <TouchableOpacity
+                  style={[styles.folderChip, folderId === undefined && styles.folderChipActive]}
+                  onPress={() => setFolderId(undefined)}
+                >
+                  <Text style={[styles.folderChipText, folderId === undefined && styles.folderChipTextActive]}>None</Text>
+                </TouchableOpacity>
+                {folders.map(f => (
+                  <TouchableOpacity
+                    key={f.id}
+                    style={[styles.folderChip, { borderColor: f.color }, folderId === f.id && { backgroundColor: f.color }]}
+                    onPress={() => setFolderId(f.id)}
+                  >
+                    <Text style={[styles.folderChipText, folderId === f.id && { color: '#000' }]}>{f.name}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            )}
+          </View>
+
           {/* Delete Action */}
           <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete}>
             <Trash2 size={20} color={Colors.status.error} />
@@ -289,10 +320,20 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.bg.secondary,
     borderRadius: 12, borderWidth: 1, borderColor: Colors.border.primary,
   },
-  langChipActive: { backgroundColor: Colors.accent.primary + '15', borderColor: Colors.accent.primary },
+  langChipActive: { backgroundColor: Colors.accent.primary, borderColor: Colors.accent.primary },
   langDot: { width: 10, height: 10, borderRadius: 5 },
-  langChipText: { color: Colors.text.primary, fontSize: 14, fontWeight: '500' },
-  langChipTextActive: { color: Colors.accent.primary, fontWeight: '700' },
+  langChipText: { color: Colors.text.secondary, fontSize: 14, fontWeight: '600' },
+  langChipTextActive: { color: '#000' },
+
+  folderScroll: { gap: 8, paddingRight: 20 },
+  folderChip: {
+    paddingHorizontal: 16, paddingVertical: 10,
+    backgroundColor: Colors.bg.secondary,
+    borderRadius: 12, borderWidth: 1, borderColor: Colors.border.primary,
+  },
+  folderChipActive: { backgroundColor: Colors.accent.primary, borderColor: Colors.accent.primary },
+  folderChipText: { color: Colors.text.secondary, fontSize: 14, fontWeight: '600' },
+  folderChipTextActive: { color: '#000' },
 
   codeContainer: {
     backgroundColor: Colors.bg.secondary,

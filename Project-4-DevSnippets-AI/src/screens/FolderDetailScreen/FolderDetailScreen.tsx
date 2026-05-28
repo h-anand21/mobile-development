@@ -1,11 +1,12 @@
 // ============================================================
 // DevNest — Folder Detail Screen
 // ============================================================
-import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput } from 'react-native';
+import React, { useState, useMemo, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Modal, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { ArrowLeft, MoreVertical, Search, SlidersHorizontal, Folder as FolderIcon } from 'lucide-react-native';
+import Toast from 'react-native-toast-message';
 
 import { Colors } from '@/theme/colors';
 import { useFolderStore } from '@/store/folderStore';
@@ -13,18 +14,54 @@ import { useSnippetStore } from '@/store/snippetStore';
 import { SnippetCard } from '@/components/cards/SnippetCard';
 
 const FILTERS = ['All', 'Favorites', 'Recently Used'];
+const FOLDER_COLORS = ['#58A6FF', '#39D353', '#D29922', '#F78166', '#A371F7', '#FF66B2'];
 
 export function FolderDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   
-  const { getFolderById } = useFolderStore();
+  const { getFolderById, updateFolder, deleteFolder } = useFolderStore();
   const { snippets } = useSnippetStore();
   
   const folder = getFolderById(id as string);
   
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Edit Modal State
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [folderName, setFolderName] = useState('');
+  const [folderColor, setFolderColor] = useState(FOLDER_COLORS[0]);
+
+  useEffect(() => {
+    if (folder) {
+      setFolderName(folder.name);
+      setFolderColor(folder.color || FOLDER_COLORS[0]);
+    }
+  }, [folder]);
+
+  const handleSaveFolder = async () => {
+    if (!folderName.trim()) return;
+    try {
+      await updateFolder(folder.id, { name: folderName.trim(), color: folderColor });
+      Toast.show({ type: 'success', text1: 'Folder updated' });
+      setIsEditModalVisible(false);
+    } catch (e) {
+      Toast.show({ type: 'error', text1: 'Failed to update folder' });
+    }
+  };
+
+  const handleDeleteFolder = async () => {
+    try {
+      await deleteFolder(folder.id);
+      Toast.show({ type: 'success', text1: 'Folder deleted' });
+      setIsEditModalVisible(false);
+      router.back();
+    } catch(e) {
+      Toast.show({ type: 'error', text1: 'Failed to delete' });
+    }
+  };
 
   const folderSnippets = useMemo(() => {
     return snippets.filter(s => s.folderId === id);
@@ -81,7 +118,7 @@ export function FolderDetailScreen() {
             </View>
           </View>
         </View>
-        <TouchableOpacity style={styles.iconBtn}>
+        <TouchableOpacity style={styles.iconBtn} onPress={() => setIsEditModalVisible(true)}>
           <MoreVertical size={20} color={Colors.text.primary} />
         </TouchableOpacity>
       </View>
@@ -102,29 +139,34 @@ export function FolderDetailScreen() {
               <Text style={styles.clearBtnText}>×</Text>
             </TouchableOpacity>
           )}
-          <View style={styles.filterIconWrap}>
+          <TouchableOpacity 
+            style={[styles.filterIconWrap, showFilters && { backgroundColor: Colors.accent.primary + '30' }]}
+            onPress={() => setShowFilters(!showFilters)}
+          >
             <SlidersHorizontal size={20} color={Colors.accent.primary} />
-          </View>
+          </TouchableOpacity>
         </View>
       </View>
 
       {/* Filter Chips */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
-        {FILTERS.map(filter => (
-          <TouchableOpacity 
-            key={filter}
-            style={[styles.filterChip, activeFilter === filter && styles.filterChipActive]}
-            onPress={() => setActiveFilter(filter)}
-          >
-            <Text style={[styles.filterText, activeFilter === filter && styles.filterTextActive]}>
-              {filter}
-            </Text>
+      {showFilters && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
+          {FILTERS.map(filter => (
+            <TouchableOpacity 
+              key={filter}
+              style={[styles.filterChip, activeFilter === filter && styles.filterChipActive]}
+              onPress={() => setActiveFilter(filter)}
+            >
+              <Text style={[styles.filterText, activeFilter === filter && styles.filterTextActive]}>
+                {filter}
+              </Text>
+            </TouchableOpacity>
+          ))}
+          <TouchableOpacity style={styles.sortChip}>
+            <Text style={styles.sortText}>Newest ⌄</Text>
           </TouchableOpacity>
-        ))}
-        <TouchableOpacity style={styles.sortChip}>
-          <Text style={styles.sortText}>Newest ⌄</Text>
-        </TouchableOpacity>
-      </ScrollView>
+        </ScrollView>
+      )}
 
       {/* Snippets List */}
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.listContent}>
@@ -144,6 +186,55 @@ export function FolderDetailScreen() {
           ))
         )}
       </ScrollView>
+
+      {/* Edit Folder Modal */}
+      <Modal
+        visible={isEditModalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setIsEditModalVisible(false)}
+      >
+        <KeyboardAvoidingView 
+          style={styles.modalOverlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={() => setIsEditModalVisible(false)} />
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHandle} />
+            <Text style={styles.modalTitle}>Edit Folder</Text>
+            
+            <Text style={styles.inputLabel}>Folder Name</Text>
+            <TextInput
+              style={styles.modalInput}
+              value={folderName}
+              onChangeText={setFolderName}
+              placeholder="e.g. React Hooks"
+              placeholderTextColor={Colors.text.tertiary}
+            />
+
+            <Text style={styles.inputLabel}>Folder Color</Text>
+            <View style={styles.colorsGrid}>
+              {FOLDER_COLORS.map(c => (
+                <TouchableOpacity 
+                  key={c} 
+                  style={[styles.colorCircle, { backgroundColor: c }, folderColor === c && styles.colorCircleActive]} 
+                  onPress={() => setFolderColor(c)}
+                />
+              ))}
+            </View>
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.modalDeleteBtn} onPress={handleDeleteFolder}>
+                <Text style={styles.modalDeleteText}>Delete</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity style={styles.modalSaveBtn} onPress={handleSaveFolder}>
+                <Text style={styles.modalSaveText}>Save</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -189,4 +280,20 @@ const styles = StyleSheet.create({
   emptyEmoji: { fontSize: 48, marginBottom: 16 },
   emptyText: { color: Colors.text.primary, fontSize: 18, fontWeight: '700', marginBottom: 8 },
   emptySubText: { color: Colors.text.secondary, fontSize: 14, textAlign: 'center' },
+
+  modalOverlay: { flex: 1, justifyContent: 'flex-end' },
+  modalBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)' },
+  modalContainer: { backgroundColor: Colors.bg.secondary, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
+  modalHandle: { width: 40, height: 4, backgroundColor: Colors.border.primary, borderRadius: 2, alignSelf: 'center', marginBottom: 24 },
+  modalTitle: { fontSize: 20, fontWeight: '700', color: Colors.text.primary, marginBottom: 24 },
+  inputLabel: { fontSize: 13, color: Colors.text.secondary, fontWeight: '600', textTransform: 'uppercase', marginBottom: 8 },
+  modalInput: { backgroundColor: Colors.bg.tertiary, borderRadius: 12, padding: 16, color: Colors.text.primary, fontSize: 16, marginBottom: 24, borderWidth: 1, borderColor: Colors.border.primary },
+  colorsGrid: { flexDirection: 'row', gap: 16, marginBottom: 32 },
+  colorCircle: { width: 36, height: 36, borderRadius: 18, opacity: 0.5 },
+  colorCircleActive: { opacity: 1, borderWidth: 3, borderColor: '#fff' },
+  modalActions: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  modalDeleteBtn: { padding: 12 },
+  modalDeleteText: { color: Colors.status.error, fontSize: 15, fontWeight: '600' },
+  modalSaveBtn: { backgroundColor: Colors.accent.primary, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 20 },
+  modalSaveText: { color: '#000', fontSize: 15, fontWeight: '700' },
 });
