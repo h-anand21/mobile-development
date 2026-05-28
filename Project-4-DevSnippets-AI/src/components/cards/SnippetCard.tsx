@@ -32,9 +32,25 @@ export function SnippetCard({ snippet, onPress, style }: SnippetCardProps) {
     'Python': 'python/python-original.svg',
     'Java': 'java/java-original.svg',
     'C++': 'cplusplus/cplusplus-original.svg',
+    'C': 'c/c-original.svg',
+    'C#': 'csharp/csharp-original.svg',
     'HTML': 'html5/html5-original.svg',
     'CSS': 'css3/css3-original.svg',
     'Go': 'go/go-original.svg',
+    'Rust': 'rust/rust-plain.svg',
+    'PHP': 'php/php-original.svg',
+    'Ruby': 'ruby/ruby-original.svg',
+    'Swift': 'swift/swift-original.svg',
+    'Kotlin': 'kotlin/kotlin-original.svg',
+    'Dart': 'dart/dart-original.svg',
+    'Vue': 'vuejs/vuejs-original.svg',
+    'Svelte': 'svelte/svelte-original.svg',
+    'Markdown': 'markdown/markdown-original.svg',
+    'Bash': 'bash/bash-original.svg',
+    'Shell': 'bash/bash-original.svg',
+    'Dockerfile': 'docker/docker-original.svg',
+    'SQL': 'mysql/mysql-original.svg',
+    'GraphQL': 'graphql/graphql-plain.svg',
   };
 
   const languageConfig = LANGUAGES.find(l => l.label === snippet.language) || LANGUAGES[0];
@@ -72,7 +88,7 @@ export function SnippetCard({ snippet, onPress, style }: SnippetCardProps) {
       <View style={styles.contentRow}>
         {/* Language Square Badge */}
         {logoUrl ? (
-          <View style={[styles.langBadge, { backgroundColor: colors.bg.secondary, borderWidth: 1, borderColor: colors.border.primary, padding: 4 }]}>
+          <View style={[styles.langBadge, { backgroundColor: colors.bg.secondary, borderWidth: 1, borderColor: colors.border.primary, overflow: 'hidden' }]}>
             <SvgUri uri={logoUrl} width="100%" height="100%" />
           </View>
         ) : (
