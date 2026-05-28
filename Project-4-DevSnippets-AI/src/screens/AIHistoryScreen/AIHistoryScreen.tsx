@@ -1,13 +1,10 @@
-// ============================================================
-// DevNest — AI History Screen
-// ============================================================
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, Sparkles, Filter, Code2, Zap, Shuffle, Database, Bug, Star } from 'lucide-react-native';
 
-import { Colors } from '@/theme/colors';
+import { useThemeColors } from '@/theme/colors';
 import { useAIStore } from '@/store/aiStore';
 import { timeAgo } from '@/utils/formatters/dateFormatter';
 
@@ -15,6 +12,8 @@ const FILTERS = ['All', 'Explain', 'Optimize', 'Generate'];
 
 export function AIHistoryScreen() {
   const router = useRouter();
+  const colors = useThemeColors();
+  const styles = getStyles(colors);
   const { history, loadHistory, toggleSaved } = useAIStore();
   const [activeFilter, setActiveFilter] = useState('All');
 
@@ -28,12 +27,12 @@ export function AIHistoryScreen() {
 
   const getIconForAction = (actionType: string) => {
     switch (actionType.toLowerCase()) {
-      case 'explain': return { icon: Code2, color: Colors.status.info };
-      case 'optimize': return { icon: Zap, color: Colors.accent.primary };
-      case 'generate': return { icon: Shuffle, color: Colors.status.warning };
-      case 'debug': return { icon: Bug, color: Colors.status.error };
-      case 'refactor': return { icon: Shuffle, color: Colors.accent.secondary || Colors.status.info };
-      default: return { icon: Code2, color: Colors.text.secondary };
+      case 'explain': return { icon: Code2, color: colors.status.info };
+      case 'optimize': return { icon: Zap, color: colors.accent.primary };
+      case 'generate': return { icon: Shuffle, color: colors.status.warning };
+      case 'debug': return { icon: Bug, color: colors.status.error };
+      case 'refactor': return { icon: Shuffle, color: colors.accent.secondary || colors.status.info };
+      default: return { icon: Code2, color: colors.text.secondary };
     }
   };
 
@@ -43,15 +42,15 @@ export function AIHistoryScreen() {
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <ArrowLeft size={24} color={Colors.text.primary} />
+            <ArrowLeft size={24} color={colors.text.primary} />
           </TouchableOpacity>
           <View style={styles.headerTitleWrap}>
             <Text style={styles.headerTitle}>AI <Text style={styles.green}>History</Text></Text>
-            <Sparkles size={16} color={Colors.accent.primary} style={{ marginLeft: 6, marginTop: 4 }} />
+            <Sparkles size={16} color={colors.accent.primary} style={{ marginLeft: 6, marginTop: 4 }} />
           </View>
         </View>
         <TouchableOpacity style={styles.filterBtn}>
-          <Filter size={20} color={Colors.text.primary} />
+          <Filter size={20} color={colors.text.primary} />
         </TouchableOpacity>
       </View>
 
@@ -94,7 +93,7 @@ export function AIHistoryScreen() {
                   <Text style={styles.historyDate}>{timeAgo(item.createdAt)}</Text>
                 </View>
                 <TouchableOpacity style={styles.starBtn} onPress={() => toggleSaved(item.id)}>
-                  <Star size={20} color={item.isSaved ? Colors.status.warning : Colors.text.tertiary} fill={item.isSaved ? Colors.status.warning : 'transparent'} />
+                  <Star size={20} color={item.isSaved ? colors.status.warning : colors.text.tertiary} fill={item.isSaved ? colors.status.warning : 'transparent'} />
                 </TouchableOpacity>
               </TouchableOpacity>
             );
@@ -105,42 +104,42 @@ export function AIHistoryScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.bg.primary },
+const getStyles = (colors: any) => ({
+  container: { flex: 1, backgroundColor: colors.bg.primary },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 24, paddingTop: 16, marginBottom: 8,
   },
   headerLeft: { flexDirection: 'row', alignItems: 'center' },
-  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.bg.secondary, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.bg.secondary, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
   headerTitleWrap: { flexDirection: 'row', alignItems: 'center' },
-  headerTitle: { fontSize: 24, fontWeight: '800', color: Colors.text.primary, letterSpacing: -0.5 },
-  green: { color: Colors.accent.primary },
-  filterBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.bg.secondary, alignItems: 'center', justifyContent: 'center' },
+  headerTitle: { fontSize: 24, fontWeight: '800', color: colors.text.primary, letterSpacing: -0.5 },
+  green: { color: colors.accent.primary },
+  filterBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.bg.secondary, alignItems: 'center', justifyContent: 'center' },
   
-  headerSubtitle: { paddingHorizontal: 24, color: Colors.text.secondary, fontSize: 14, marginBottom: 20 },
+  headerSubtitle: { paddingHorizontal: 24, color: colors.text.secondary, fontSize: 14, marginBottom: 20 },
 
   filterScroll: { paddingHorizontal: 24, gap: 12, paddingBottom: 16, maxHeight: 60, marginBottom: 8 },
-  filterChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: Colors.bg.secondary, borderWidth: 1, borderColor: Colors.border.primary },
-  filterChipActive: { backgroundColor: Colors.accent.primary, borderColor: Colors.accent.primary },
-  filterText: { color: Colors.text.secondary, fontSize: 14, fontWeight: '600' },
+  filterChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: colors.bg.secondary, borderWidth: 1, borderColor: colors.border.primary },
+  filterChipActive: { backgroundColor: colors.accent.primary, borderColor: colors.accent.primary },
+  filterText: { color: colors.text.secondary, fontSize: 14, fontWeight: '600' },
   filterTextActive: { color: '#000' },
 
   listContent: { paddingHorizontal: 24, paddingBottom: 60 },
 
   historyCard: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.bg.secondary,
-    padding: 16, borderRadius: 20, marginBottom: 12, borderWidth: 1, borderColor: Colors.border.primary,
+    flexDirection: 'row', alignItems: 'center', backgroundColor: colors.bg.secondary,
+    padding: 16, borderRadius: 20, marginBottom: 12, borderWidth: 1, borderColor: colors.border.primary,
   },
   iconWrap: { width: 48, height: 48, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginRight: 16 },
   textWrap: { flex: 1 },
-  historyTitle: { color: Colors.text.primary, fontSize: 15, fontWeight: '700', marginBottom: 4 },
-  historyPreview: { color: Colors.text.secondary, fontSize: 13, marginBottom: 6 },
-  historyDate: { color: Colors.text.tertiary, fontSize: 11, fontWeight: '500' },
+  historyTitle: { color: colors.text.primary, fontSize: 15, fontWeight: '700', marginBottom: 4 },
+  historyPreview: { color: colors.text.secondary, fontSize: 13, marginBottom: 6 },
+  historyDate: { color: colors.text.tertiary, fontSize: 11, fontWeight: '500' },
   starBtn: { padding: 8 },
 
-  emptyWrap: { alignItems: 'center', justifyContent: 'center', marginTop: 40, padding: 40, backgroundColor: Colors.bg.secondary, borderRadius: 20 },
+  emptyWrap: { alignItems: 'center', justifyContent: 'center', marginTop: 40, padding: 40, backgroundColor: colors.bg.secondary, borderRadius: 20 },
   emptyEmoji: { fontSize: 48, marginBottom: 16 },
-  emptyText: { color: Colors.text.primary, fontSize: 18, fontWeight: '700', marginBottom: 8 },
-  emptySubText: { color: Colors.text.secondary, fontSize: 14, textAlign: 'center' },
-});
+  emptyText: { color: colors.text.primary, fontSize: 18, fontWeight: '700', marginBottom: 8 },
+  emptySubText: { color: colors.text.secondary, fontSize: 14, textAlign: 'center' },
+} as any);

@@ -24,14 +24,18 @@ function rowToSnippet(row: SnippetRow): Snippet {
 
 interface SnippetState {
   snippets: Snippet[];
+  deletedSnippets: Snippet[];
   isLoading: boolean;
   error: string | null;
 
   // Actions
   loadSnippets: () => Promise<void>;
+  loadDeletedSnippets: () => Promise<void>;
   createSnippet: (input: CreateSnippetInput) => Promise<Snippet>;
   updateSnippet: (id: string, updates: UpdateSnippetInput) => Promise<void>;
   deleteSnippet: (id: string) => Promise<void>;
+  restoreSnippet: (id: string) => Promise<void>;
+  permanentlyDeleteSnippet: (id: string) => Promise<void>;
   toggleFavorite: (id: string) => Promise<void>;
   togglePin: (id: string) => Promise<void>;
 
@@ -44,14 +48,27 @@ interface SnippetState {
 
 export const useSnippetStore = create<SnippetState>((set, get) => ({
   snippets: [],
+  deletedSnippets: [],
   isLoading: false,
   error: null,
 
   loadSnippets: async () => {
     set({ isLoading: true, error: null });
     try {
+      // 30-day auto-cleanup running first
+      await Q.autoCleanDeletedSnippets();
       const rows = await Q.getAllSnippets();
       set({ snippets: rows.map(rowToSnippet), isLoading: false });
+    } catch (e: any) {
+      set({ error: e.message, isLoading: false });
+    }
+  },
+
+  loadDeletedSnippets: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const rows = await Q.getDeletedSnippets();
+      set({ deletedSnippets: rows.map(rowToSnippet), isLoading: false });
     } catch (e: any) {
       set({ error: e.message, isLoading: false });
     }
@@ -96,7 +113,35 @@ export const useSnippetStore = create<SnippetState>((set, get) => ({
 
   deleteSnippet: async (id) => {
     await Q.softDeleteSnippet(id);
-    set(state => ({ snippets: state.snippets.filter(s => s.id !== id) }));
+    const deletedSnippet = get().snippets.find(s => s.id === id);
+    if (deletedSnippet) {
+      const updatedDeleted = { ...deletedSnippet, isDeleted: true, updatedAt: nowISO() };
+      set(state => ({
+        snippets: state.snippets.filter(s => s.id !== id),
+        deletedSnippets: [updatedDeleted, ...state.deletedSnippets]
+      }));
+    } else {
+      set(state => ({ snippets: state.snippets.filter(s => s.id !== id) }));
+    }
+  },
+
+  restoreSnippet: async (id) => {
+    await Q.restoreSnippet(id);
+    const restoredSnippet = get().deletedSnippets.find(s => s.id === id);
+    if (restoredSnippet) {
+      const updatedRestored = { ...restoredSnippet, isDeleted: false, updatedAt: nowISO() };
+      set(state => ({
+        deletedSnippets: state.deletedSnippets.filter(s => s.id !== id),
+        snippets: [updatedRestored, ...state.snippets]
+      }));
+    }
+  },
+
+  permanentlyDeleteSnippet: async (id) => {
+    await Q.hardDeleteSnippet(id);
+    set(state => ({
+      deletedSnippets: state.deletedSnippets.filter(s => s.id !== id)
+    }));
   },
 
   toggleFavorite: async (id) => {

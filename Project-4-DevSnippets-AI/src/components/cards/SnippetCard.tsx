@@ -5,7 +5,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
 import { Star, MoreHorizontal } from 'lucide-react-native';
 import { Snippet } from '@/types/snippet.types';
-import { Colors } from '@/theme/colors';
+import { useThemeColors } from '@/theme/colors';
 import { timeAgo } from '@/utils/formatters/dateFormatter';
 import { LANGUAGES } from '@/constants/languages';
 import { useRouter } from 'expo-router';
@@ -21,6 +21,9 @@ interface SnippetCardProps {
 }
 
 export function SnippetCard({ snippet, onPress, style }: SnippetCardProps) {
+  const colors = useThemeColors();
+  const styles = getStyles(colors);
+  
   const languageConfig = LANGUAGES.find(l => l.label === snippet.language) || LANGUAGES[0];
   const router = useRouter();
   const { toggleFavorite, deleteSnippet } = useSnippetStore();
@@ -79,8 +82,8 @@ export function SnippetCard({ snippet, onPress, style }: SnippetCardProps) {
           >
             <Star 
               size={20} 
-              color={snippet.isFavorite ? Colors.status.warning : Colors.text.tertiary} 
-              fill={snippet.isFavorite ? Colors.status.warning : 'transparent'} 
+              color={snippet.isFavorite ? colors.status.warning : colors.text.tertiary} 
+              fill={snippet.isFavorite ? colors.status.warning : 'transparent'} 
             />
           </TouchableOpacity>
           <TouchableOpacity 
@@ -88,7 +91,7 @@ export function SnippetCard({ snippet, onPress, style }: SnippetCardProps) {
             style={styles.moreBtn}
             onPress={handleMorePress}
           >
-            <MoreHorizontal size={20} color={Colors.text.tertiary} />
+            <MoreHorizontal size={20} color={colors.text.tertiary} />
           </TouchableOpacity>
         </View>
       </View>
@@ -96,12 +99,14 @@ export function SnippetCard({ snippet, onPress, style }: SnippetCardProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any) => ({
   card: {
-    backgroundColor: Colors.bg.secondary,
+    backgroundColor: colors.bg.secondary,
     borderRadius: 20,
     padding: 16,
     marginBottom: 12,
+    borderWidth: 1,
+    borderColor: colors.border.primary,
   },
   contentRow: {
     flexDirection: 'row',
@@ -126,7 +131,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 15,
     fontWeight: '600',
-    color: Colors.text.primary,
+    color: colors.text.primary,
     marginBottom: 6,
   },
   metaRow: {
@@ -135,7 +140,7 @@ const styles = StyleSheet.create({
   },
   metaText: {
     fontSize: 12,
-    color: Colors.text.secondary,
+    color: colors.text.secondary,
     fontWeight: '500',
   },
   metaDot: {
@@ -151,11 +156,11 @@ const styles = StyleSheet.create({
   },
   moreBtn: {
     marginLeft: 16,
-    backgroundColor: Colors.bg.tertiary,
+    backgroundColor: colors.bg.tertiary,
     width: 32,
     height: 32,
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },
-});
+} as any);

@@ -8,7 +8,7 @@ import { useRouter } from 'expo-router';
 import { Folder, Plus, Search, ScanLine, FileDown, Sparkles } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
-import { Colors } from '@/theme/colors';
+import { useThemeColors } from '@/theme/colors';
 import { useFolderStore } from '@/store/folderStore';
 import { useSnippetStore } from '@/store/snippetStore';
 import { SnippetCard } from '@/components/cards/SnippetCard';
@@ -27,6 +27,8 @@ const FOLDER_COLORS = ['#58A6FF', '#39D353', '#D29922', '#F78166', '#A371F7', '#
 
 export function FileManagerScreen() {
   const router = useRouter();
+  const colors = useThemeColors();
+  const styles = getStyles(colors);
   const { folders, createFolder, updateFolder, deleteFolder } = useFolderStore();
   const { snippets } = useSnippetStore();
   const [searchQuery, setSearchQuery] = useState('');
@@ -37,7 +39,7 @@ export function FileManagerScreen() {
   const [folderColor, setFolderColor] = useState(FOLDER_COLORS[0]);
 
   const handleCreateFolder = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.light);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setEditFolderId(null);
     setFolderName('');
     setFolderColor(FOLDER_COLORS[0]);
@@ -45,7 +47,7 @@ export function FileManagerScreen() {
   };
 
   const openEditModal = (folder: DevNestFolder) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.medium);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setEditFolderId(folder.id);
     setFolderName(folder.name);
     setFolderColor(folder.color || FOLDER_COLORS[0]);
@@ -124,7 +126,7 @@ export function FileManagerScreen() {
 
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ['images'],
-        quality: 0.8,
+        quality: 0.2,
         base64: true,
       });
 
@@ -176,11 +178,11 @@ export function FileManagerScreen() {
         {/* Top Search Bar */}
         <View style={styles.topSearchBarWrap}>
           <View style={styles.searchBar}>
-            <Search size={20} color={Colors.text.tertiary} />
+            <Search size={20} color={colors.text.tertiary} />
             <TextInput
               style={styles.searchInput}
               placeholder="Search folders & snippets..."
-              placeholderTextColor={Colors.text.tertiary}
+              placeholderTextColor={colors.text.tertiary}
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
@@ -190,7 +192,7 @@ export function FileManagerScreen() {
         {/* Tip Banner */}
         <View style={styles.tipBanner}>
           <View style={styles.tipIconWrap}>
-            <Sparkles size={16} color={Colors.bg.primary} fill={Colors.bg.primary} />
+            <Sparkles size={16} color={colors.bg.primary} fill={colors.bg.primary} />
           </View>
           <Text style={styles.tipText}>Tip: Long press any folder to edit or delete it.</Text>
         </View>
@@ -203,7 +205,7 @@ export function FileManagerScreen() {
           {/* Add New Folder Card */}
           <TouchableOpacity style={styles.addFolderCard} onPress={handleCreateFolder}>
             <View style={styles.addFolderIconWrap}>
-              <Plus size={24} color={Colors.text.primary} />
+              <Plus size={24} color={colors.text.primary} />
             </View>
             <Text style={styles.addFolderText}>Add Folder</Text>
           </TouchableOpacity>
@@ -218,11 +220,11 @@ export function FileManagerScreen() {
         </View>
         <View style={styles.quickActionsContainer}>
           <TouchableOpacity style={styles.quickActionBtn} onPress={handleScanCode}>
-            <ScanLine size={24} color={Colors.accent.primary} />
+            <ScanLine size={24} color={colors.accent.primary} />
             <Text style={styles.quickActionText}>Scan Code</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.quickActionBtn} onPress={handleImportFile}>
-            <FileDown size={24} color={Colors.accent.primary} />
+            <FileDown size={24} color={colors.accent.primary} />
             <Text style={styles.quickActionText}>Import File</Text>
           </TouchableOpacity>
         </View>
@@ -269,7 +271,7 @@ export function FileManagerScreen() {
               value={folderName}
               onChangeText={setFolderName}
               placeholder="e.g. React Hooks"
-              placeholderTextColor={Colors.text.tertiary}
+              placeholderTextColor={colors.text.tertiary}
               autoFocus
             />
 
@@ -302,23 +304,23 @@ export function FileManagerScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.bg.primary },
+const getStyles = (colors: any) => ({
+  container: { flex: 1, backgroundColor: colors.bg.primary },
   header: { paddingHorizontal: 24, paddingTop: 16, marginBottom: 24 },
-  headerTitle: { fontSize: 32, fontWeight: '800', color: Colors.text.primary, letterSpacing: -1 },
-  green: { color: Colors.accent.primary },
-  headerSubtitle: { color: Colors.text.secondary, fontSize: 15, marginTop: 8 },
+  headerTitle: { fontSize: 32, fontWeight: '800', color: colors.text.primary, letterSpacing: -1 },
+  green: { color: colors.accent.primary },
+  headerSubtitle: { color: colors.text.secondary, fontSize: 15, marginTop: 8 },
 
   tipBanner: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.bg.secondary,
+    flexDirection: 'row', alignItems: 'center', backgroundColor: colors.bg.secondary,
     marginHorizontal: 24, padding: 12, borderRadius: 12, marginBottom: 32,
-    borderWidth: 1, borderColor: Colors.border.primary
+    borderWidth: 1, borderColor: colors.border.primary
   },
-  tipIconWrap: { width: 24, height: 24, borderRadius: 12, backgroundColor: Colors.accent.primary, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
-  tipText: { color: Colors.text.secondary, fontSize: 13, fontWeight: '500' },
+  tipIconWrap: { width: 24, height: 24, borderRadius: 12, backgroundColor: colors.accent.primary, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  tipText: { color: colors.text.secondary, fontSize: 13, fontWeight: '500' },
 
   sectionHeader: { paddingHorizontal: 24, marginBottom: 16 },
-  sectionTitle: { color: Colors.text.primary, fontSize: 18, fontWeight: '700' },
+  sectionTitle: { color: colors.text.primary, fontSize: 18, fontWeight: '700' },
 
   gridContainer: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 24, gap: FOLDER_MARGIN, marginBottom: 32 },
   
@@ -327,51 +329,52 @@ const styles = StyleSheet.create({
     padding: 12, justifyContent: 'center', alignItems: 'center',
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)',
   },
-  folderName: { color: Colors.text.primary, fontSize: 14, fontWeight: '600', marginTop: 12, marginBottom: 4, textAlign: 'center' },
-  folderCount: { color: Colors.text.tertiary, fontSize: 11, fontWeight: '500' },
+  folderName: { color: colors.text.primary, fontSize: 14, fontWeight: '600', marginTop: 12, marginBottom: 4, textAlign: 'center' },
+  folderCount: { color: colors.text.tertiary, fontSize: 11, fontWeight: '500' },
 
   addFolderCard: {
     width: FOLDER_SIZE, height: FOLDER_SIZE * 1.1, borderRadius: 20,
     padding: 12, justifyContent: 'center', alignItems: 'center',
-    backgroundColor: Colors.bg.secondary, borderWidth: 1, borderColor: Colors.border.primary, borderStyle: 'dashed'
+    backgroundColor: colors.bg.secondary, borderWidth: 1, borderColor: colors.border.primary, borderStyle: 'dashed'
   },
-  addFolderIconWrap: { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.bg.tertiary, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
-  addFolderText: { color: Colors.text.secondary, fontSize: 13, fontWeight: '600' },
+  addFolderIconWrap: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.bg.tertiary, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+  addFolderText: { color: colors.text.secondary, fontSize: 13, fontWeight: '600' },
 
   quickActionsContainer: { flexDirection: 'row', paddingHorizontal: 24, gap: 12 },
   quickActionBtn: {
-    flex: 1, backgroundColor: Colors.bg.secondary, borderRadius: 20, padding: 20,
-    alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: Colors.border.primary
+    flex: 1, backgroundColor: colors.bg.secondary, borderRadius: 20, padding: 20,
+    alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border.primary
   },
-  quickActionText: { color: Colors.text.primary, fontSize: 14, fontWeight: '600', marginTop: 12 },
+  quickActionBtnActive: {},
+  quickActionText: { color: colors.text.primary, fontSize: 14, fontWeight: '600', marginTop: 12 },
 
   snippetsContainer: { paddingHorizontal: 24, gap: 12 },
-  emptyText: { color: Colors.text.tertiary, fontSize: 14, textAlign: 'center', marginTop: 16 },
+  emptyText: { color: colors.text.tertiary, fontSize: 14, textAlign: 'center', marginTop: 16 },
 
   topSearchBarWrap: {
     paddingHorizontal: 24,
     marginBottom: 24,
   },
   searchBar: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.bg.secondary,
-    borderWidth: 1, borderColor: Colors.border.primary, borderRadius: 16,
+    flexDirection: 'row', alignItems: 'center', backgroundColor: colors.bg.secondary,
+    borderWidth: 1, borderColor: colors.border.primary, borderRadius: 16,
     height: 52, paddingHorizontal: 16,
   },
-  searchInput: { flex: 1, color: Colors.text.primary, fontSize: 15, marginLeft: 12 },
+  searchInput: { flex: 1, color: colors.text.primary, fontSize: 15, marginLeft: 12 },
 
   modalOverlay: { flex: 1, justifyContent: 'flex-end' },
   modalBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)' },
-  modalContainer: { backgroundColor: Colors.bg.secondary, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
-  modalHandle: { width: 40, height: 4, backgroundColor: Colors.border.primary, borderRadius: 2, alignSelf: 'center', marginBottom: 24 },
-  modalTitle: { fontSize: 20, fontWeight: '700', color: Colors.text.primary, marginBottom: 24 },
-  inputLabel: { fontSize: 13, color: Colors.text.secondary, fontWeight: '600', textTransform: 'uppercase', marginBottom: 8 },
-  modalInput: { backgroundColor: Colors.bg.tertiary, borderRadius: 12, padding: 16, color: Colors.text.primary, fontSize: 16, marginBottom: 24, borderWidth: 1, borderColor: Colors.border.primary },
+  modalContainer: { backgroundColor: colors.bg.secondary, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
+  modalHandle: { width: 40, height: 4, backgroundColor: colors.border.primary, borderRadius: 2, alignSelf: 'center', marginBottom: 24 },
+  modalTitle: { fontSize: 20, fontWeight: '700', color: colors.text.primary, marginBottom: 24 },
+  inputLabel: { fontSize: 13, color: colors.text.secondary, fontWeight: '600', textTransform: 'uppercase', marginBottom: 8 },
+  modalInput: { backgroundColor: colors.bg.tertiary, borderRadius: 12, padding: 16, color: colors.text.primary, fontSize: 16, marginBottom: 24, borderWidth: 1, borderColor: colors.border.primary },
   colorsGrid: { flexDirection: 'row', gap: 16, marginBottom: 32 },
   colorCircle: { width: 36, height: 36, borderRadius: 18, opacity: 0.5 },
   colorCircleActive: { opacity: 1, borderWidth: 3, borderColor: '#fff' },
   modalActions: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   modalDeleteBtn: { padding: 12 },
-  modalDeleteText: { color: Colors.status.error, fontSize: 15, fontWeight: '600' },
-  modalSaveBtn: { backgroundColor: Colors.accent.primary, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 20 },
-  modalSaveText: { color: '#000', fontSize: 15, fontWeight: '700' },
-});
+  modalDeleteText: { color: colors.status.error, fontSize: 15, fontWeight: '600' },
+  modalSaveBtn: { backgroundColor: colors.accent.primary, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 20 },
+  modalSaveText: { color: colors.bg.primary === '#000000' ? '#000' : '#FFF', fontSize: 15, fontWeight: '700' },
+} as any);

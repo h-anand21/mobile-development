@@ -14,7 +14,7 @@ import { seedDatabase } from '@/database/seedData';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useSnippetStore } from '@/store/snippetStore';
 import { useFolderStore } from '@/store/folderStore';
-import { Colors } from '@/theme/colors';
+import { Colors, useThemeColors } from '@/theme/colors';
 import Toast from 'react-native-toast-message';
 
 function RootLayoutNav() {
@@ -50,6 +50,7 @@ function RootLayoutNav() {
       <Stack.Screen name="ai-history" options={{ headerShown: false, animation: 'slide_from_right' }} />
       <Stack.Screen name="templates" options={{ headerShown: false, animation: 'slide_from_right' }} />
       <Stack.Screen name="favorites" options={{ headerShown: false, animation: 'slide_from_right' }} />
+      <Stack.Screen name="trash" options={{ headerShown: false, animation: 'slide_from_right' }} />
     </Stack>
   );
 }
@@ -60,6 +61,8 @@ export default function RootLayout() {
   const loadSettings = useSettingsStore(s => s.loadSettings);
   const loadSnippets = useSnippetStore(s => s.loadSnippets);
   const loadFolders = useFolderStore(s => s.loadFolders);
+  const colors = useThemeColors();
+  const theme = useSettingsStore(s => s.theme);
 
   useEffect(() => {
     async function init() {
@@ -79,8 +82,8 @@ export default function RootLayout() {
 
   if (!isReady) {
     return (
-      <View style={{ flex: 1, backgroundColor: Colors.bg.primary, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color={Colors.accent.primary} />
+      <View style={{ flex: 1, backgroundColor: colors.bg.primary, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color={colors.accent.primary} />
       </View>
     );
   }
@@ -88,7 +91,7 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <BottomSheetModalProvider>
-        <StatusBar style="light" backgroundColor={Colors.bg.primary} />
+        <StatusBar style={theme === 'light' ? 'dark' : 'light'} backgroundColor={colors.bg.primary} />
         <RootLayoutNav />
         <Toast />
       </BottomSheetModalProvider>

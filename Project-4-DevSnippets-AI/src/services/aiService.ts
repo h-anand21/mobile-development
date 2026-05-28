@@ -2,13 +2,24 @@
 // DevNest — AI Service (Gemini REST API, RN Compatible)
 // ============================================================
 
-const API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY || '';
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${API_KEY}`;
+import * as SecureStore from 'expo-secure-store';
+
+const getApiKey = async () => {
+  const envKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+  if (envKey && envKey !== 'your_gemini_api_key_here') return envKey;
+  try {
+    const secureKey = await SecureStore.getItemAsync('devnest_gemini_key');
+    if (secureKey) return secureKey;
+  } catch (e) {}
+  return null;
+};
 
 export const askGemini = async (prompt: string, context?: string): Promise<string> => {
-  if (!API_KEY || API_KEY === 'your_gemini_api_key_here') {
-    throw new Error('Gemini API key is not configured. Please add EXPO_PUBLIC_GEMINI_API_KEY to your .env file.');
+  const API_KEY = await getApiKey();
+  if (!API_KEY) {
+    throw new Error('Gemini API key is not configured. Please set it in Settings.');
   }
+  const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${API_KEY}`;
 
   const fullPrompt = context
     ? `You are an expert developer AI assistant named DevNest AI.
@@ -59,9 +70,11 @@ ${prompt}`;
 };
 
 export const askGeminiVision = async (prompt: string, base64Image: string, mimeType: string): Promise<string> => {
-  if (!API_KEY || API_KEY === 'your_gemini_api_key_here') {
-    throw new Error('Gemini API key is not configured.');
+  const API_KEY = await getApiKey();
+  if (!API_KEY) {
+    throw new Error('Gemini API key is not configured. Please set it in Settings.');
   }
+  const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${API_KEY}`;
 
   const body = {
     contents: [

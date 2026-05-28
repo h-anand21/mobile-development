@@ -8,7 +8,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { ArrowLeft, MoreVertical, Search, SlidersHorizontal, Folder as FolderIcon } from 'lucide-react-native';
 import Toast from 'react-native-toast-message';
 
-import { Colors } from '@/theme/colors';
+import { useThemeColors } from '@/theme/colors';
 import { useFolderStore } from '@/store/folderStore';
 import { useSnippetStore } from '@/store/snippetStore';
 import { SnippetCard } from '@/components/cards/SnippetCard';
@@ -18,6 +18,9 @@ const FOLDER_COLORS = ['#58A6FF', '#39D353', '#D29922', '#F78166', '#A371F7', '#
 
 export function FolderDetailScreen() {
   const router = useRouter();
+  const colors = useThemeColors();
+  const styles = getStyles(colors);
+  
   const { id } = useLocalSearchParams<{ id: string }>();
   
   const { getFolderById, updateFolder, deleteFolder } = useFolderStore();
@@ -42,7 +45,7 @@ export function FolderDetailScreen() {
   }, [folder]);
 
   const handleSaveFolder = async () => {
-    if (!folderName.trim()) return;
+    if (!folder || !folderName.trim()) return;
     try {
       await updateFolder(folder.id, { name: folderName.trim(), color: folderColor });
       Toast.show({ type: 'success', text1: 'Folder updated' });
@@ -53,6 +56,7 @@ export function FolderDetailScreen() {
   };
 
   const handleDeleteFolder = async () => {
+    if (!folder) return;
     try {
       await deleteFolder(folder.id);
       Toast.show({ type: 'success', text1: 'Folder deleted' });
@@ -64,7 +68,7 @@ export function FolderDetailScreen() {
   };
 
   const folderSnippets = useMemo(() => {
-    return snippets.filter(s => s.folderId === id);
+    return snippets.filter(s => s.folderId === id && !s.isDeleted);
   }, [snippets, id]);
 
   const filteredSnippets = useMemo(() => {
@@ -73,16 +77,16 @@ export function FolderDetailScreen() {
     if (activeFilter === 'Favorites') {
       result = result.filter(s => s.isFavorite);
     }
-    
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
+
+    if (searchQuery.trim().length > 0) {
+      const q = searchQuery.toLowerCase().trim();
       result = result.filter(s => 
         s.title.toLowerCase().includes(q) || 
-        s.description?.toLowerCase().includes(q) ||
-        s.tags?.some(t => t.toLowerCase().includes(q))
+        s.content.toLowerCase().includes(q) ||
+        s.language.toLowerCase().includes(q)
       );
     }
-    
+
     return result;
   }, [folderSnippets, activeFilter, searchQuery]);
 
@@ -91,11 +95,11 @@ export function FolderDetailScreen() {
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.iconBtn}>
-            <ArrowLeft size={24} color={Colors.text.primary} />
+            <ArrowLeft size={24} color={colors.text.primary} />
           </TouchableOpacity>
         </View>
         <View style={styles.emptyWrap}>
-          <Text style={styles.emptyEmoji}>🚫</Text>
+          <Text style={styles.emptyEmoji}>📁</Text>
           <Text style={styles.emptyText}>Folder not found</Text>
         </View>
       </SafeAreaView>
@@ -108,42 +112,45 @@ export function FolderDetailScreen() {
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <TouchableOpacity onPress={() => router.back()} style={styles.iconBtn}>
-            <ArrowLeft size={24} color={Colors.text.primary} />
+            <ArrowLeft size={24} color={colors.text.primary} />
           </TouchableOpacity>
           <View style={styles.headerTitleWrap}>
-            <FolderIcon size={20} color={folder.color} fill={folder.color} />
-            <View style={{ marginLeft: 12 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <FolderIcon size={20} color={folder.color || colors.accent.primary} fill={folder.color ? folder.color + '20' : 'transparent'} />
               <Text style={styles.headerTitle}>{folder.name}</Text>
-              <Text style={styles.headerSubtitle}>{folderSnippets.length} snippets</Text>
             </View>
+            <Text style={styles.headerSubtitle}>{folderSnippets.length} snippets</Text>
           </View>
         </View>
+        
         <TouchableOpacity style={styles.iconBtn} onPress={() => setIsEditModalVisible(true)}>
-          <MoreVertical size={20} color={Colors.text.primary} />
+          <MoreVertical size={24} color={colors.text.primary} />
         </TouchableOpacity>
       </View>
 
       {/* Search Input */}
       <View style={styles.searchWrap}>
         <View style={styles.searchBar}>
-          <Search size={20} color={Colors.text.tertiary} />
+          <Search size={20} color={colors.text.tertiary} />
           <TextInput
             style={styles.searchInput}
             placeholder="Search in folder..."
-            placeholderTextColor={Colors.text.tertiary}
+            placeholderTextColor={colors.text.tertiary}
             value={searchQuery}
             onChangeText={setSearchQuery}
+            autoCapitalize="none"
+            autoCorrect={false}
           />
           {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearBtn}>
+            <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearBtn} hitSlop={{top:10,bottom:10,left:10,right:10}}>
               <Text style={styles.clearBtnText}>×</Text>
             </TouchableOpacity>
           )}
           <TouchableOpacity 
-            style={[styles.filterIconWrap, showFilters && { backgroundColor: Colors.accent.primary + '30' }]}
+            style={[styles.filterIconWrap, showFilters && { backgroundColor: colors.accent.primary + '30' }]}
             onPress={() => setShowFilters(!showFilters)}
           >
-            <SlidersHorizontal size={20} color={Colors.accent.primary} />
+            <SlidersHorizontal size={20} color={colors.accent.primary} />
           </TouchableOpacity>
         </View>
       </View>
@@ -162,138 +169,129 @@ export function FolderDetailScreen() {
               </Text>
             </TouchableOpacity>
           ))}
-          <TouchableOpacity style={styles.sortChip}>
-            <Text style={styles.sortText}>Newest ⌄</Text>
-          </TouchableOpacity>
         </ScrollView>
       )}
 
-      {/* Snippets List */}
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.listContent}>
+      {/* Snippet Cards */}
+      <ScrollView contentContainerStyle={styles.listContent} showsVerticalScrollIndicator={false}>
         {filteredSnippets.length === 0 ? (
           <View style={styles.emptyWrap}>
             <Text style={styles.emptyEmoji}>📝</Text>
             <Text style={styles.emptyText}>No snippets found</Text>
-            <Text style={styles.emptySubText}>Add some snippets to this folder.</Text>
+            <Text style={styles.emptySubText}>There are no snippets matching your query in this folder.</Text>
           </View>
         ) : (
           filteredSnippets.map(snippet => (
             <SnippetCard 
-              key={snippet.id}
-              snippet={snippet}
-              onPress={() => router.push(`/snippet/${snippet.id}`)}
+              key={snippet.id} 
+              snippet={snippet} 
+              onPress={() => router.push(`/snippet/${snippet.id}`)} 
             />
           ))
         )}
       </ScrollView>
 
       {/* Edit Folder Modal */}
-      <Modal
-        visible={isEditModalVisible}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setIsEditModalVisible(false)}
-      >
-        <KeyboardAvoidingView 
-          style={styles.modalOverlay}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        >
+      <Modal visible={isEditModalVisible} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
           <TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={() => setIsEditModalVisible(false)} />
-          <View style={styles.modalContainer}>
-            <View style={styles.modalHandle} />
-            <Text style={styles.modalTitle}>Edit Folder</Text>
-            
-            <Text style={styles.inputLabel}>Folder Name</Text>
-            <TextInput
-              style={styles.modalInput}
-              value={folderName}
-              onChangeText={setFolderName}
-              placeholder="e.g. React Hooks"
-              placeholderTextColor={Colors.text.tertiary}
-            />
-
-            <Text style={styles.inputLabel}>Folder Color</Text>
-            <View style={styles.colorsGrid}>
-              {FOLDER_COLORS.map(c => (
-                <TouchableOpacity 
-                  key={c} 
-                  style={[styles.colorCircle, { backgroundColor: c }, folderColor === c && styles.colorCircleActive]} 
-                  onPress={() => setFolderColor(c)}
-                />
-              ))}
-            </View>
-
-            <View style={styles.modalActions}>
-              <TouchableOpacity style={styles.modalDeleteBtn} onPress={handleDeleteFolder}>
-                <Text style={styles.modalDeleteText}>Delete</Text>
-              </TouchableOpacity>
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+            <View style={styles.modalContainer}>
+              <View style={styles.modalHandle} />
+              <Text style={styles.modalTitle}>Folder Settings</Text>
               
-              <TouchableOpacity style={styles.modalSaveBtn} onPress={handleSaveFolder}>
-                <Text style={styles.modalSaveText}>Save</Text>
-              </TouchableOpacity>
+              <Text style={styles.inputLabel}>Folder Name</Text>
+              <TextInput 
+                style={styles.modalInput}
+                placeholder="Name your folder..."
+                placeholderTextColor={colors.text.tertiary}
+                value={folderName}
+                onChangeText={setFolderName}
+              />
+
+              <Text style={styles.inputLabel}>Choose Color</Text>
+              <View style={styles.colorsGrid}>
+                {FOLDER_COLORS.map(c => (
+                  <TouchableOpacity 
+                    key={c}
+                    style={[styles.colorCircle, { backgroundColor: c }, folderColor === c && styles.colorCircleActive]}
+                    onPress={() => setFolderColor(c)}
+                  />
+                ))}
+              </View>
+
+              <View style={styles.modalActions}>
+                <TouchableOpacity style={styles.modalDeleteBtn} onPress={handleDeleteFolder}>
+                  <Text style={styles.modalDeleteText}>Delete</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.modalSaveBtn} onPress={handleSaveFolder}>
+                  <Text style={styles.modalSaveText}>Save</Text>
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
-        </KeyboardAvoidingView>
+          </KeyboardAvoidingView>
+        </View>
       </Modal>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.bg.primary },
+const getStyles = (colors: any) => ({
+  container: { flex: 1, backgroundColor: colors.bg.primary },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 24, paddingVertical: 12, marginBottom: 8,
   },
   headerLeft: { flexDirection: 'row', alignItems: 'center' },
   iconBtn: {
-    width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.bg.secondary,
+    width: 44, height: 44, borderRadius: 22, backgroundColor: colors.bg.secondary,
     alignItems: 'center', justifyContent: 'center',
   },
-  headerTitleWrap: { flexDirection: 'row', alignItems: 'center', marginLeft: 16 },
-  headerTitle: { fontSize: 20, fontWeight: '800', color: Colors.text.primary },
-  headerSubtitle: { color: Colors.text.tertiary, fontSize: 13, marginTop: 2, fontWeight: '500' },
+  headerTitleWrap: { flexDirection: 'column', marginLeft: 16 },
+  headerTitle: { fontSize: 20, fontWeight: '800', color: colors.text.primary },
+  headerSubtitle: { color: colors.text.tertiary, fontSize: 13, marginTop: 2, fontWeight: '500' },
   
   searchWrap: { paddingHorizontal: 24, marginBottom: 20 },
   searchBar: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.bg.secondary,
-    borderWidth: 1, borderColor: Colors.border.primary, borderRadius: 16,
+    flexDirection: 'row', alignItems: 'center', backgroundColor: colors.bg.secondary,
+    borderWidth: 1, borderColor: colors.border.primary, borderRadius: 16,
     height: 56, paddingLeft: 16, paddingRight: 8,
   },
-  searchInput: { flex: 1, color: Colors.text.primary, fontSize: 16, marginLeft: 12 },
-  clearBtn: { width: 24, height: 24, borderRadius: 12, backgroundColor: Colors.bg.tertiary, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
-  clearBtnText: { color: Colors.text.secondary, fontSize: 14, fontWeight: 'bold', marginTop: -2 },
+  searchInput: { flex: 1, color: colors.text.primary, fontSize: 16, marginLeft: 12 },
+  clearBtn: { width: 24, height: 24, borderRadius: 12, backgroundColor: colors.bg.tertiary, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  clearBtnText: { color: colors.text.secondary, fontSize: 14, fontWeight: 'bold', marginTop: -2 },
   filterIconWrap: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
 
   filterScroll: { paddingHorizontal: 24, gap: 12, paddingBottom: 16, maxHeight: 60 },
-  filterChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: Colors.bg.secondary, borderWidth: 1, borderColor: Colors.border.primary },
-  filterChipActive: { backgroundColor: Colors.accent.primary, borderColor: Colors.accent.primary },
-  filterText: { color: Colors.text.secondary, fontSize: 14, fontWeight: '600' },
+  filterChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: colors.bg.secondary, borderWidth: 1, borderColor: colors.border.primary, marginRight: 8 },
+  filterChipActive: { backgroundColor: colors.accent.primary, borderColor: colors.accent.primary },
+  filterText: { color: colors.text.secondary, fontSize: 14, fontWeight: '600' },
   filterTextActive: { color: '#000' },
   
   sortChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: 'transparent', marginLeft: 'auto' },
-  sortText: { color: Colors.text.tertiary, fontSize: 14, fontWeight: '600' },
+  sortText: { color: colors.text.tertiary, fontSize: 14, fontWeight: '600' },
 
   listContent: { paddingHorizontal: 24, paddingBottom: 120 },
 
-  emptyWrap: { alignItems: 'center', justifyContent: 'center', marginTop: 40, padding: 40, backgroundColor: Colors.bg.secondary, borderRadius: 20 },
+  emptyWrap: { alignItems: 'center', justifyContent: 'center', marginTop: 40, padding: 40, backgroundColor: colors.bg.secondary, borderRadius: 20, borderWidth: 1, borderColor: colors.border.primary },
   emptyEmoji: { fontSize: 48, marginBottom: 16 },
-  emptyText: { color: Colors.text.primary, fontSize: 18, fontWeight: '700', marginBottom: 8 },
-  emptySubText: { color: Colors.text.secondary, fontSize: 14, textAlign: 'center' },
+  emptyText: { color: colors.text.primary, fontSize: 18, fontWeight: '700', marginBottom: 8 },
+  emptySubText: { color: colors.text.secondary, fontSize: 14, textAlign: 'center' },
 
   modalOverlay: { flex: 1, justifyContent: 'flex-end' },
   modalBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)' },
-  modalContainer: { backgroundColor: Colors.bg.secondary, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
-  modalHandle: { width: 40, height: 4, backgroundColor: Colors.border.primary, borderRadius: 2, alignSelf: 'center', marginBottom: 24 },
-  modalTitle: { fontSize: 20, fontWeight: '700', color: Colors.text.primary, marginBottom: 24 },
-  inputLabel: { fontSize: 13, color: Colors.text.secondary, fontWeight: '600', textTransform: 'uppercase', marginBottom: 8 },
-  modalInput: { backgroundColor: Colors.bg.tertiary, borderRadius: 12, padding: 16, color: Colors.text.primary, fontSize: 16, marginBottom: 24, borderWidth: 1, borderColor: Colors.border.primary },
+  modalContainer: { backgroundColor: colors.bg.secondary, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
+  modalHandle: { width: 40, height: 4, backgroundColor: colors.border.primary, borderRadius: 2, alignSelf: 'center', marginBottom: 24 },
+  modalTitle: { fontSize: 20, fontWeight: '700', color: colors.text.primary, marginBottom: 24 },
+  inputLabel: { fontSize: 13, color: colors.text.secondary, fontWeight: '600', textTransform: 'uppercase', marginBottom: 8 },
+  modalInput: { backgroundColor: colors.bg.primary, borderRadius: 12, padding: 16, color: colors.text.primary, fontSize: 16, marginBottom: 24, borderWidth: 1, borderColor: colors.border.primary },
   colorsGrid: { flexDirection: 'row', gap: 16, marginBottom: 32 },
   colorCircle: { width: 36, height: 36, borderRadius: 18, opacity: 0.5 },
   colorCircleActive: { opacity: 1, borderWidth: 3, borderColor: '#fff' },
   modalActions: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   modalDeleteBtn: { padding: 12 },
-  modalDeleteText: { color: Colors.status.error, fontSize: 15, fontWeight: '600' },
-  modalSaveBtn: { backgroundColor: Colors.accent.primary, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 20 },
-  modalSaveText: { color: '#000', fontSize: 15, fontWeight: '700' },
-});
+  modalDeleteText: { color: colors.status.error, fontSize: 15, fontWeight: '600' },
+  modalSaveBtn: { backgroundColor: colors.accent.primary, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 20 },
+  modalSaveText: { color: colors.bg.primary === '#000000' ? '#000' : '#FFF', fontSize: 15, fontWeight: '700' },
+} as any);

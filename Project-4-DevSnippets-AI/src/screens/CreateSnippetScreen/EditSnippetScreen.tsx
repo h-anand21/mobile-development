@@ -1,5 +1,5 @@
 // ============================================================
-// DevNest — Edit Snippet Screen
+// DevNest — Edit Snippet Screen (Theme Aware)
 // ============================================================
 import React, { useState, useEffect } from 'react';
 import { 
@@ -12,17 +12,22 @@ import { ArrowLeft, Check, Code, Hash, X, Trash2 } from 'lucide-react-native';
 import Toast from 'react-native-toast-message';
 import * as Haptics from 'expo-haptics';
 
-import { Colors } from '@/theme/colors';
+import { useThemeColors } from '@/theme/colors';
 import { useSnippetStore } from '@/store/snippetStore';
 import { useFolderStore } from '@/store/folderStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import { LANGUAGES } from '@/constants/languages';
 import { Language } from '@/types/snippet.types';
 
 export function EditSnippetScreen() {
   const router = useRouter();
+  const colors = useThemeColors();
+  const styles = getStyles(colors);
+  
   const { id } = useLocalSearchParams<{ id: string }>();
   const { getSnippetById, updateSnippet, deleteSnippet } = useSnippetStore();
   const { folders } = useFolderStore();
+  const { enabledLanguages } = useSettingsStore();
   
   const snippet = getSnippetById(id as string);
 
@@ -51,17 +56,17 @@ export function EditSnippetScreen() {
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <ArrowLeft size={24} color={Colors.text.primary} />
+            <ArrowLeft size={24} color={colors.text.primary} />
           </TouchableOpacity>
         </View>
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ color: Colors.text.primary, fontSize: 18 }}>Snippet not found</Text>
+        <View style={styles.emptyWrap}>
+          <Text style={styles.emptyEmoji}>🚫</Text>
+          <Text style={styles.emptyText}>Snippet not found</Text>
         </View>
       </SafeAreaView>
     );
   }
 
-  // Validation
   const isValid = title.trim().length > 0 && code.trim().length > 0;
 
   const handleAddTag = () => {
@@ -78,31 +83,20 @@ export function EditSnippetScreen() {
 
   const handleSave = async () => {
     if (!isValid) return;
-    
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    
     try {
       await updateSnippet(snippet.id, {
         title: title.trim(),
         content: code.trim(),
         language,
-        description: description.trim() || undefined,
         tags,
-        folderId,
+        description: description.trim(),
+        folderId: folderId || undefined,
       });
-
-      Toast.show({
-        type: 'success',
-        text1: 'Changes saved ✨',
-      });
-
+      Toast.show({ type: 'success', text1: 'Snippet updated successfully!' });
       router.back();
     } catch (e: any) {
-      Toast.show({
-        type: 'error',
-        text1: 'Failed to update',
-        text2: e.message,
-      });
+      Toast.show({ type: 'error', text1: 'Update failed', text2: e.message });
     }
   };
 
@@ -112,7 +106,7 @@ export function EditSnippetScreen() {
       { text: 'Delete', style: 'destructive', onPress: async () => {
         await deleteSnippet(snippet.id);
         Toast.show({ type: 'success', text1: 'Snippet deleted' });
-        router.dismissAll();
+        router.back();
       }}
     ]);
   };
@@ -120,36 +114,37 @@ export function EditSnippetScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <KeyboardAvoidingView 
-        style={{ flex: 1 }} 
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+        style={{ flex: 1 }}
       >
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={{top:10, bottom:10, left:10, right:10}}>
-            <ArrowLeft size={24} color={Colors.text.primary} />
-          </TouchableOpacity>
-          <View style={{ flex: 1, alignItems: 'center' }}>
-            <Text style={styles.headerTitle}>Edit <Text style={styles.green}>Snippet ✨</Text></Text>
-            <Text style={styles.headerSubtitle}>Update your code snippet</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+              <ArrowLeft size={24} color={colors.text.primary} />
+            </TouchableOpacity>
+            <View style={{ marginLeft: 16 }}>
+              <Text style={styles.headerTitle}>Edit Snippet</Text>
+              <Text style={styles.headerSubtitle}>{snippet.title}</Text>
+            </View>
           </View>
           <TouchableOpacity 
-            onPress={handleSave} 
+            style={[styles.saveTopBtn, !isValid && styles.saveBtnDisabled]} 
+            onPress={handleSave}
             disabled={!isValid}
-            style={[styles.saveTopBtn, !isValid && { opacity: 0.5 }]}
           >
             <Text style={styles.saveTopText}>Save</Text>
           </TouchableOpacity>
         </View>
 
-        <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-          
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
           {/* Title */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Title <Text style={styles.required}>*</Text></Text>
+            <Text style={styles.label}>Snippet Title <Text style={styles.required}>*</Text></Text>
             <TextInput
               style={styles.input}
-              placeholder="e.g. JWT Authentication Middleware"
-              placeholderTextColor={Colors.text.tertiary}
+              placeholder="Snippet title..."
+              placeholderTextColor={colors.text.tertiary}
               value={title}
               onChangeText={setTitle}
             />
@@ -157,75 +152,102 @@ export function EditSnippetScreen() {
 
           {/* Language Selection */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Language <Text style={styles.required}>*</Text></Text>
+            <Text style={styles.label}>Language</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.langScroll}>
-              {LANGUAGES.slice(0, 10).map(lang => {
+              {LANGUAGES.filter(lang => enabledLanguages.includes(lang.label)).map((lang) => {
                 const isActive = language === lang.label;
                 return (
-                  <TouchableOpacity 
-                    key={lang.label} 
+                  <TouchableOpacity
+                    key={lang.label}
                     style={[styles.langChip, isActive && styles.langChipActive]}
-                    onPress={() => setLanguage(lang.label as Language)}
+                    onPress={() => setLanguage(lang.label)}
                   >
                     <View style={[styles.langDot, { backgroundColor: lang.color }]} />
-                    <Text style={[styles.langChipText, isActive && styles.langChipTextActive]}>{lang.label}</Text>
+                    <Text style={[styles.langChipText, isActive && styles.langChipTextActive]}>
+                      {lang.label}
+                    </Text>
                   </TouchableOpacity>
                 );
               })}
             </ScrollView>
           </View>
 
-          {/* Code Editor Area */}
+          {/* Folder Selection */}
+          {folders.length > 0 && (
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Folder</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.folderScroll}>
+                <TouchableOpacity
+                  style={[styles.folderChip, folderId === undefined && styles.folderChipActive]}
+                  onPress={() => setFolderId(undefined)}
+                >
+                  <Text style={[styles.folderChipText, folderId === undefined && styles.folderChipTextActive]}>
+                    None
+                  </Text>
+                </TouchableOpacity>
+                {folders.map((folder) => {
+                  const isActive = folderId === folder.id;
+                  return (
+                    <TouchableOpacity
+                      key={folder.id}
+                      style={[styles.folderChip, isActive && styles.folderChipActive]}
+                      onPress={() => setFolderId(folder.id)}
+                    >
+                      <Text style={[styles.folderChipText, isActive && styles.folderChipTextActive]}>
+                        {folder.name}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          )}
+
+          {/* Code Area */}
           <View style={styles.inputGroup}>
             <View style={styles.labelRow}>
               <Text style={styles.label}>Code <Text style={styles.required}>*</Text></Text>
-              <Code size={16} color={Colors.text.secondary} />
+              <Code size={16} color={colors.accent.primary} />
             </View>
             <View style={styles.codeContainer}>
               <TextInput
                 style={styles.codeInput}
-                placeholder="// Write or paste your code here..."
-                placeholderTextColor={Colors.text.tertiary}
+                multiline
+                placeholder="// Write code here..."
+                placeholderTextColor={colors.text.tertiary}
                 value={code}
                 onChangeText={setCode}
-                multiline
-                textAlignVertical="top"
                 autoCapitalize="none"
                 autoCorrect={false}
-                spellCheck={false}
               />
             </View>
           </View>
 
           {/* Description */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Description (Optional)</Text>
+            <Text style={styles.label}>Description</Text>
             <TextInput
               style={[styles.input, styles.textArea]}
-              placeholder="What does this snippet do?"
-              placeholderTextColor={Colors.text.tertiary}
+              multiline
+              numberOfLines={3}
+              placeholder="Describe what this snippet does..."
+              placeholderTextColor={colors.text.tertiary}
               value={description}
               onChangeText={setDescription}
-              multiline
-              textAlignVertical="top"
             />
           </View>
 
           {/* Tags */}
           <View style={styles.inputGroup}>
-            <View style={styles.labelRow}>
-              <Text style={styles.label}>Tags</Text>
-              <Hash size={16} color={Colors.text.secondary} />
-            </View>
+            <Text style={styles.label}>Tags</Text>
             <View style={styles.tagInputRow}>
               <TextInput
-                style={[styles.input, { flex: 1, marginBottom: 0 }]}
-                placeholder="Add a tag..."
-                placeholderTextColor={Colors.text.tertiary}
+                style={[styles.input, { flex: 1 }]}
+                placeholder="Add tags..."
+                placeholderTextColor={colors.text.tertiary}
                 value={tagsInput}
                 onChangeText={setTagsInput}
                 onSubmitEditing={handleAddTag}
-                returnKeyType="done"
               />
               <TouchableOpacity style={styles.addTagBtn} onPress={handleAddTag}>
                 <Text style={styles.addTagText}>Add</Text>
@@ -233,11 +255,12 @@ export function EditSnippetScreen() {
             </View>
             {tags.length > 0 && (
               <View style={styles.tagsContainer}>
-                {tags.map(tag => (
+                {tags.map((tag) => (
                   <View key={tag} style={styles.tagBadge}>
-                    <Text style={styles.tagBadgeText}>#{tag}</Text>
-                    <TouchableOpacity onPress={() => handleRemoveTag(tag)} hitSlop={{top:5, bottom:5, left:5, right:5}}>
-                      <X size={14} color={Colors.text.secondary} />
+                    <Hash size={12} color={colors.accent.primary} />
+                    <Text style={styles.tagBadgeText}>{tag}</Text>
+                    <TouchableOpacity onPress={() => handleRemoveTag(tag)}>
+                      <X size={14} color={colors.text.secondary} />
                     </TouchableOpacity>
                   </View>
                 ))}
@@ -245,35 +268,9 @@ export function EditSnippetScreen() {
             )}
           </View>
 
-          {/* Folder Picker */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Folder (Optional)</Text>
-            {folders.length === 0 ? (
-              <Text style={{ color: Colors.text.tertiary, fontSize: 13 }}>No folders created yet. Create one in "My Files".</Text>
-            ) : (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.folderScroll}>
-                <TouchableOpacity
-                  style={[styles.folderChip, folderId === undefined && styles.folderChipActive]}
-                  onPress={() => setFolderId(undefined)}
-                >
-                  <Text style={[styles.folderChipText, folderId === undefined && styles.folderChipTextActive]}>None</Text>
-                </TouchableOpacity>
-                {folders.map(f => (
-                  <TouchableOpacity
-                    key={f.id}
-                    style={[styles.folderChip, { borderColor: f.color }, folderId === f.id && { backgroundColor: f.color }]}
-                    onPress={() => setFolderId(f.id)}
-                  >
-                    <Text style={[styles.folderChipText, folderId === f.id && { color: '#000' }]}>{f.name}</Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            )}
-          </View>
-
           {/* Delete Action */}
           <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete}>
-            <Trash2 size={20} color={Colors.status.error} />
+            <Trash2 size={20} color={colors.status.error} />
             <Text style={styles.deleteBtnText}>Delete Snippet</Text>
           </TouchableOpacity>
 
@@ -283,33 +280,34 @@ export function EditSnippetScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.bg.primary },
+const getStyles = (colors: any) => ({
+  container: { flex: 1, backgroundColor: colors.bg.primary },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 20, paddingVertical: 12,
-    borderBottomWidth: 1, borderBottomColor: Colors.border.primary,
+    borderBottomWidth: 1, borderBottomColor: colors.border.primary,
   },
   backBtn: { padding: 4 },
-  headerTitle: { fontSize: 18, fontWeight: '800', color: Colors.text.primary },
-  headerSubtitle: { fontSize: 12, color: Colors.text.tertiary, marginTop: 2 },
-  green: { color: Colors.accent.primary },
+  headerTitle: { fontSize: 18, fontWeight: '800', color: colors.text.primary },
+  headerSubtitle: { fontSize: 12, color: colors.text.tertiary, marginTop: 2 },
+  green: { color: colors.accent.primary },
   
-  saveTopBtn: { backgroundColor: Colors.accent.primary, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12 },
-  saveTopText: { color: '#000', fontWeight: '700', fontSize: 14 },
+  saveTopBtn: { backgroundColor: colors.accent.primary, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12 },
+  saveBtnDisabled: { opacity: 0.5 },
+  saveTopText: { color: colors.bg.primary === '#000000' ? '#000' : '#FFF', fontWeight: '700', fontSize: 14 },
 
-  scrollContent: { padding: 20, paddingBottom: 400 },
+  scrollContent: { padding: 20, paddingBottom: 200 },
   
   inputGroup: { marginBottom: 24 },
   labelRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  label: { fontSize: 14, fontWeight: '600', color: Colors.text.secondary, marginBottom: 8 },
-  required: { color: Colors.status.error },
+  label: { fontSize: 14, fontWeight: '600', color: colors.text.secondary, marginBottom: 8 },
+  required: { color: colors.status.error },
   
   input: {
-    backgroundColor: Colors.bg.secondary,
-    borderWidth: 1, borderColor: Colors.border.primary,
+    backgroundColor: colors.bg.secondary,
+    borderWidth: 1, borderColor: colors.border.primary,
     borderRadius: 12, paddingHorizontal: 16, height: 50,
-    color: Colors.text.primary, fontSize: 15,
+    color: colors.text.primary, fontSize: 15,
   },
   textArea: { height: 100, paddingTop: 16 },
   
@@ -317,53 +315,59 @@ const styles = StyleSheet.create({
   langChip: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
     paddingHorizontal: 16, paddingVertical: 10,
-    backgroundColor: Colors.bg.secondary,
-    borderRadius: 12, borderWidth: 1, borderColor: Colors.border.primary,
+    backgroundColor: colors.bg.secondary,
+    borderRadius: 12, borderWidth: 1, borderColor: colors.border.primary,
+    marginRight: 8,
   },
-  langChipActive: { backgroundColor: Colors.accent.primary, borderColor: Colors.accent.primary },
+  langChipActive: { backgroundColor: colors.accent.primary, borderColor: colors.accent.primary },
   langDot: { width: 10, height: 10, borderRadius: 5 },
-  langChipText: { color: Colors.text.secondary, fontSize: 14, fontWeight: '600' },
+  langChipText: { color: colors.text.secondary, fontSize: 14, fontWeight: '600' },
   langChipTextActive: { color: '#000' },
 
   folderScroll: { gap: 8, paddingRight: 20 },
   folderChip: {
     paddingHorizontal: 16, paddingVertical: 10,
-    backgroundColor: Colors.bg.secondary,
-    borderRadius: 12, borderWidth: 1, borderColor: Colors.border.primary,
+    backgroundColor: colors.bg.secondary,
+    borderRadius: 12, borderWidth: 1, borderColor: colors.border.primary,
+    marginRight: 8,
   },
-  folderChipActive: { backgroundColor: Colors.accent.primary, borderColor: Colors.accent.primary },
-  folderChipText: { color: Colors.text.secondary, fontSize: 14, fontWeight: '600' },
+  folderChipActive: { backgroundColor: colors.accent.primary, borderColor: colors.accent.primary },
+  folderChipText: { color: colors.text.secondary, fontSize: 14, fontWeight: '600' },
   folderChipTextActive: { color: '#000' },
 
   codeContainer: {
-    backgroundColor: Colors.bg.secondary,
-    borderWidth: 1, borderColor: Colors.border.primary,
+    backgroundColor: colors.bg.secondary,
+    borderWidth: 1, borderColor: colors.border.primary,
     borderRadius: 12, overflow: 'hidden',
   },
   codeInput: {
     padding: 16, height: 250,
-    color: Colors.text.primary, fontSize: 14,
+    color: colors.text.primary, fontSize: 14,
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
   },
 
   tagInputRow: { flexDirection: 'row', gap: 12, alignItems: 'center' },
   addTagBtn: {
-    backgroundColor: Colors.bg.tertiary, height: 50, paddingHorizontal: 20,
+    backgroundColor: colors.bg.tertiary, height: 50, paddingHorizontal: 20,
     borderRadius: 12, alignItems: 'center', justifyContent: 'center',
   },
-  addTagText: { color: Colors.text.primary, fontWeight: '600' },
+  addTagText: { color: colors.text.primary, fontWeight: '600' },
   tagsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
   tagBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: Colors.bg.tertiary, paddingHorizontal: 12, paddingVertical: 6,
+    backgroundColor: colors.bg.tertiary, paddingHorizontal: 12, paddingVertical: 6,
     borderRadius: 8,
   },
-  tagBadgeText: { color: Colors.text.primary, fontSize: 13, fontWeight: '500' },
+  tagBadgeText: { color: colors.text.primary, fontSize: 13, fontWeight: '500' },
 
   deleteBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    borderWidth: 1, borderColor: Colors.status.error, borderRadius: 14,
-    height: 54, marginTop: 12, backgroundColor: Colors.status.error + '10',
+    borderWidth: 1, borderColor: colors.status.error, borderRadius: 14,
+    height: 54, marginTop: 12, backgroundColor: colors.status.error + '10',
   },
-  deleteBtnText: { color: Colors.status.error, fontSize: 16, fontWeight: '600' },
-});
+  deleteBtnText: { color: colors.status.error, fontSize: 16, fontWeight: '600' },
+
+  emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', marginTop: 40 },
+  emptyEmoji: { fontSize: 48, marginBottom: 16 },
+  emptyText: { color: colors.text.primary, fontSize: 18, fontWeight: '700' },
+} as any);

@@ -2,15 +2,19 @@ import { Tabs } from 'expo-router';
 import { Home, Search, Folder, Settings, Plus } from 'lucide-react-native';
 import { View, Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { Colors } from '@/theme/colors';
+import { useThemeColors } from '@/theme/colors';
+import { useSettingsStore } from '@/store/settingsStore';
 
 export default function TabLayout() {
+  const colors = useThemeColors();
+  const theme = useSettingsStore(s => s.theme);
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: Colors.bg.secondary,
+          backgroundColor: colors.bg.secondary,
           borderTopWidth: 0,
           position: 'absolute',
           bottom: Platform.OS === 'ios' ? 24 : 16,
@@ -23,10 +27,12 @@ export default function TabLayout() {
           shadowOffset: { width: 0, height: 10 },
           shadowOpacity: 0.5,
           shadowRadius: 20,
+          borderWidth: 1,
+          borderColor: colors.border.primary,
         },
         tabBarShowLabel: true,
-        tabBarActiveTintColor: Colors.accent.primary,
-        tabBarInactiveTintColor: Colors.text.tertiary,
+        tabBarActiveTintColor: colors.accent.primary,
+        tabBarInactiveTintColor: colors.text.tertiary,
         tabBarLabelStyle: {
           fontSize: 10,
           fontWeight: '600',
@@ -38,7 +44,7 @@ export default function TabLayout() {
       }}
       screenListeners={{
         tabPress: () => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.light);
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         },
       }}
     >
@@ -66,21 +72,21 @@ export default function TabLayout() {
                 width: 60,
                 height: 60,
                 borderRadius: 30,
-                backgroundColor: Colors.accent.primary,
+                backgroundColor: colors.accent.primary,
                 justifyContent: 'center',
                 alignItems: 'center',
                 marginTop: -30,
                 borderWidth: 4,
-                borderColor: Colors.bg.primary,
+                borderColor: colors.bg.primary,
               }}>
-              <Plus size={30} color="#000" strokeWidth={3} />
+              <Plus size={30} color={theme === 'dark' ? '#000' : '#fff'} strokeWidth={3} />
             </View>
           ),
         }}
         listeners={({ navigation }) => ({
           tabPress: (e) => {
             e.preventDefault();
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.heavy);
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
             navigation.navigate('snippet/create');
           },
         })}

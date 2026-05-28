@@ -17,4 +17,5 @@ export interface AppSettings {
   onboardingDone: boolean;
   profileSetupDone: boolean;
   geminiApiKey?: string;
+  enabledLanguages?: string[];
 }

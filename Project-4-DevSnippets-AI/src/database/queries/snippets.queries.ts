@@ -163,3 +163,10 @@ export async function getDeletedSnippets(): Promise<SnippetRow[]> {
     `SELECT * FROM snippets WHERE isDeleted = 1 ORDER BY updatedAt DESC`
   );
 }
+
+export async function autoCleanDeletedSnippets(): Promise<void> {
+  const db = getDB();
+  await db.runAsync(
+    `DELETE FROM snippets WHERE isDeleted = 1 AND datetime(updatedAt) < datetime('now', '-30 days')`
+  );
+}
