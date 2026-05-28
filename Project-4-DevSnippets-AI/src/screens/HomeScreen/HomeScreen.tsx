@@ -134,28 +134,23 @@ export function HomeScreen() {
       >
         {/* Header (Top Bar) */}
         <View style={styles.topBar}>
-          <TouchableOpacity style={styles.iconBtn}>
-            <View style={styles.hamburgerLine} />
-            <View style={[styles.hamburgerLine, { width: 14 }]} />
-            <View style={styles.hamburgerLine} />
+          <TouchableOpacity style={styles.avatarWrap} onPress={() => router.push('/(tabs)/profile')}>
+            <Text style={styles.avatarEmoji}>
+               {userProfile?.avatarIndex !== undefined 
+                ? ['👨‍💻', '👩‍💻', '🧑‍💻', '🧑‍🚀', '👨‍🔬', '👩‍🔬', '🤖', '🐱', '🐻', '🦊', '🚀', '⚡'][userProfile.avatarIndex] 
+                : '👨‍💻'}
+            </Text>
           </TouchableOpacity>
-          <View style={styles.topBarRight}>
-            <TouchableOpacity style={styles.iconBtnCircle} onPress={() => router.push('/(tabs)/search')}>
-              <Search size={20} color={colors.text.primary} />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.iconBtnCircle} onPress={() => router.push('/ai-history')}>
-              <View style={styles.notificationDot} />
-              <View style={{ position: 'absolute', top: 12, right: 12, width: 8, height: 8, borderRadius: 4, backgroundColor: colors.accent.primary, borderWidth: 2, borderColor: colors.bg.primary, zIndex: 10 }} />
-              <Sparkles size={20} color={colors.text.primary} />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.avatarWrap} onPress={() => router.push('/(tabs)/profile')}>
-              <Text style={styles.avatarEmoji}>
-                 {userProfile?.avatarIndex !== undefined 
-                  ? ['👨‍💻', '👩‍💻', '🧑‍💻', '🧑‍🚀', '👨‍🔬', '👩‍🔬', '🤖', '🐱', '🐻', '🦊', '🚀', '⚡'][userProfile.avatarIndex] 
-                  : '👨‍💻'}
-              </Text>
-            </TouchableOpacity>
-          </View>
+
+          <TouchableOpacity style={styles.navSearchBar} onPress={() => router.push('/(tabs)/search')} activeOpacity={0.8}>
+            <Search size={18} color={colors.text.tertiary} />
+            <Text style={styles.navSearchText}>Search...</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.navAiBtn} onPress={() => router.push('/ai-history')} activeOpacity={0.8}>
+            <Sparkles size={16} color={colors.bg.primary === '#000000' ? '#000' : '#FFF'} fill={colors.bg.primary === '#000000' ? '#000' : '#FFF'} />
+            <Text style={styles.navAiText}>AI</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Hero Section */}
@@ -250,8 +245,19 @@ const getStyles = (colors: any) => ({
   
   topBar: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 24, paddingTop: 12, paddingBottom: 24,
+    paddingHorizontal: 24, paddingTop: 12, paddingBottom: 24, gap: 12,
   },
+  navSearchBar: {
+    flex: 1, height: 44, backgroundColor: colors.bg.secondary, borderRadius: 22,
+    flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16,
+    borderWidth: 1, borderColor: colors.border.primary,
+  },
+  navSearchText: { color: colors.text.tertiary, fontSize: 14, marginLeft: 8 },
+  navAiBtn: {
+    height: 44, paddingHorizontal: 16, borderRadius: 22, backgroundColor: colors.accent.primary,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+  },
+  navAiText: { color: colors.bg.primary === '#000000' ? '#000' : '#FFF', fontSize: 15, fontWeight: '800' },
   iconBtn: {
     width: 44, height: 44, borderRadius: 12, backgroundColor: colors.bg.secondary,
     justifyContent: 'center', paddingHorizontal: 12, gap: 5,
