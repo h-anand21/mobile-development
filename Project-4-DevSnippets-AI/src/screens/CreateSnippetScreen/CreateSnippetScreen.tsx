@@ -16,14 +16,16 @@ import { Colors } from '@/theme/colors';
 import { useSnippetStore } from '@/store/snippetStore';
 import { LANGUAGES } from '@/constants/languages';
 import { Language } from '@/types/snippet.types';
+import { useLocalSearchParams } from 'expo-router';
 
 export function CreateSnippetScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
   const { createSnippet } = useSnippetStore();
 
-  const [title, setTitle] = useState('');
+  const [title, setTitle] = useState((params.importedTitle as string) || '');
   const [language, setLanguage] = useState<Language>('JavaScript');
-  const [code, setCode] = useState('');
+  const [code, setCode] = useState((params.importedContent as string) || '');
   const [description, setDescription] = useState('');
   const [tagsInput, setTagsInput] = useState('');
   const [tags, setTags] = useState<string[]>([]);

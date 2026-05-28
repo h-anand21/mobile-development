@@ -5,8 +5,10 @@ import React, { forwardRef, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { BottomSheetModal, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
 import { Sparkles, Send, X, Code2 } from 'lucide-react-native';
+import Toast from 'react-native-toast-message';
 
 import { Colors } from '@/theme/colors';
+import { askGemini } from '@/services/aiService';
 
 interface AIChatModalProps {
   initialCode?: string;
@@ -16,23 +18,27 @@ interface AIChatModalProps {
 export const AIChatModal = forwardRef<BottomSheetModal, AIChatModalProps>(
   ({ initialCode, initialLanguage }, ref) => {
     const [prompt, setPrompt] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
     const [messages, setMessages] = useState<{ role: 'user' | 'ai', text: string }[]>([
       { role: 'ai', text: 'Hi there! I am your AI assistant. How can I help you with your code today?' }
     ]);
 
-    const handleSend = () => {
-      if (!prompt.trim()) return;
+    const handleSend = async () => {
+      if (!prompt.trim() || isLoading) return;
       
-      setMessages([...messages, { role: 'user', text: prompt }]);
+      const userPrompt = prompt.trim();
+      setMessages(prev => [...prev, { role: 'user', text: userPrompt }]);
       setPrompt('');
+      setIsLoading(true);
 
-      // Mock AI response
-      setTimeout(() => {
-        setMessages(prev => [...prev, { 
-          role: 'ai', 
-          text: 'I can certainly help with that! However, since this is a UI prototype, I am not connected to a real AI backend yet. Stay tuned for the real thing!' 
-        }]);
-      }, 1000);
+      try {
+        const response = await askGemini(userPrompt, initialCode);
+        setMessages(prev => [...prev, { role: 'ai', text: response }]);
+      } catch (error: any) {
+        Toast.show({ type: 'error', text1: 'AI Error', text2: error.message });
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     return (
@@ -83,11 +89,12 @@ export const AIChatModal = forwardRef<BottomSheetModal, AIChatModalProps>(
               value={prompt}
               onChangeText={setPrompt}
               multiline
+              editable={!isLoading}
             />
             <TouchableOpacity 
-              style={[styles.sendBtn, !prompt.trim() && { opacity: 0.5 }]} 
+              style={[styles.sendBtn, (!prompt.trim() || isLoading) && { opacity: 0.5 }]} 
               onPress={handleSend}
-              disabled={!prompt.trim()}
+              disabled={!prompt.trim() || isLoading}
             >
               <Send size={20} color="#000" />
             </TouchableOpacity>

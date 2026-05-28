@@ -11,6 +11,10 @@ import * as Haptics from 'expo-haptics';
 import { Colors } from '@/theme/colors';
 import { useFolderStore } from '@/store/folderStore';
 import { DevNestFolder } from '@/types/file.types';
+import * as DocumentPicker from 'expo-document-picker';
+import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
+import Toast from 'react-native-toast-message';
 
 const { width } = Dimensions.get('window');
 const FOLDER_MARGIN = 12;
@@ -23,8 +27,57 @@ export function FileManagerScreen() {
 
   const handleCreateFolder = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // In a real app, open a modal to create folder
-    // For now, we will just route or show toast
+    Toast.show({ type: 'info', text1: 'Folder creation coming soon!' });
+  };
+
+  const handleImportFile = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['text/*', 'application/json', 'application/javascript', 'application/typescript'],
+        copyToCacheDirectory: true
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const fileUri = result.assets[0].uri;
+        const fileName = result.assets[0].name;
+        
+        // Read file contents
+        const content = await FileSystem.readAsStringAsync(fileUri);
+        
+        // Go to create screen with content
+        router.push({
+          pathname: '/snippet/create',
+          params: { importedContent: content, importedTitle: fileName }
+        });
+      }
+    } catch (e: any) {
+      Toast.show({ type: 'error', text1: 'Failed to import file', text2: e.message });
+    }
+  };
+
+  const handleScanCode = async () => {
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Toast.show({ type: 'error', text1: 'Camera permission required' });
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ['images'],
+        quality: 0.8,
+      });
+
+      if (!result.canceled) {
+        Toast.show({ 
+          type: 'success', 
+          text1: 'Image captured! 📸', 
+          text2: 'AI OCR parsing will be available in the next phase.' 
+        });
+      }
+    } catch (e: any) {
+      Toast.show({ type: 'error', text1: 'Failed to scan code', text2: e.message });
+    }
   };
 
   const renderFolder = (folder: DevNestFolder) => (
@@ -79,11 +132,11 @@ export function FileManagerScreen() {
           <Text style={styles.sectionTitle}>Quick Actions</Text>
         </View>
         <View style={styles.quickActionsContainer}>
-          <TouchableOpacity style={styles.quickActionBtn}>
+          <TouchableOpacity style={styles.quickActionBtn} onPress={handleScanCode}>
             <ScanLine size={24} color={Colors.accent.primary} />
             <Text style={styles.quickActionText}>Scan Code</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.quickActionBtn}>
+          <TouchableOpacity style={styles.quickActionBtn} onPress={handleImportFile}>
             <FileDown size={24} color={Colors.accent.primary} />
             <Text style={styles.quickActionText}>Import File</Text>
           </TouchableOpacity>

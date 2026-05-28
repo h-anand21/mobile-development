@@ -14,12 +14,17 @@ import {
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 import Toast from 'react-native-toast-message';
 
 import { Colors } from '@/theme/colors';
 import { useSnippetStore } from '@/store/snippetStore';
 import { getLanguageConfig } from '@/constants/languages';
 import { timeAgo } from '@/utils/formatters/dateFormatter';
+import { AIChatModal } from '@/components/modals/AIChatModal';
+import { BottomSheetModal } from '@gorhom/bottom-sheet';
+import { useRef } from 'react';
 
 type Tab = 'Info' | 'History';
 
@@ -27,6 +32,7 @@ export function SnippetDetailsScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { getSnippetById, toggleFavorite, deleteSnippet } = useSnippetStore();
+  const aiModalRef = useRef<BottomSheetModal>(null);
   
   const [activeTab, setActiveTab] = useState<Tab>('Info');
   
@@ -80,6 +86,24 @@ export function SnippetDetailsScreen() {
       });
     } catch (error: any) {
       Toast.show({ type: 'error', text1: 'Failed to share', text2: error.message });
+    }
+  };
+
+  const handleExport = async () => {
+    try {
+      const ext = langConfig.shortLabel.toLowerCase();
+      const filename = `${snippet.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.${ext === 'txt' ? 'txt' : ext}`;
+      const fileUri = `${FileSystem.documentDirectory}${filename}`;
+      
+      await FileSystem.writeAsStringAsync(fileUri, snippet.content);
+      
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(fileUri);
+      } else {
+        Toast.show({ type: 'success', text1: 'Saved locally', text2: fileUri });
+      }
+    } catch (e: any) {
+      Toast.show({ type: 'error', text1: 'Failed to export', text2: e.message });
     }
   };
 
@@ -193,7 +217,7 @@ export function SnippetDetailsScreen() {
                 <Text style={styles.actionGridText}>Share</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.actionGridItem}>
+              <TouchableOpacity style={styles.actionGridItem} onPress={handleExport}>
                 <View style={[styles.actionGridIconWrap, { backgroundColor: Colors.status.info + '15' }]}>
                   <FileCode size={20} color={Colors.status.info} />
                 </View>
@@ -215,14 +239,27 @@ export function SnippetDetailsScreen() {
         {activeTab === 'History' && (
           <View style={styles.tabContent}>
              <View style={styles.emptyWrap}>
-              <Text style={styles.emptyEmoji}>⏳</Text>
-              <Text style={styles.emptyText}>No AI history yet</Text>
-              <Text style={styles.emptySubText}>Use the AI Assistant to optimize this code.</Text>
+              <Text style={styles.emptyEmoji}>✨</Text>
+              <Text style={styles.emptyText}>Ask AI Assistant</Text>
+              <Text style={styles.emptySubText}>Use Gemini to explain or optimize this code.</Text>
+              <TouchableOpacity 
+                style={{ marginTop: 24, backgroundColor: Colors.accent.primary, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 20 }}
+                onPress={() => aiModalRef.current?.present()}
+              >
+                <Text style={{ color: '#000', fontWeight: 'bold' }}>Open AI Chat</Text>
+              </TouchableOpacity>
             </View>
           </View>
         )}
 
       </ScrollView>
+
+      {/* AI Chat Modal */}
+      <AIChatModal 
+        ref={aiModalRef} 
+        initialCode={snippet.content} 
+        initialLanguage={snippet.language} 
+      />
     </SafeAreaView>
   );
 }

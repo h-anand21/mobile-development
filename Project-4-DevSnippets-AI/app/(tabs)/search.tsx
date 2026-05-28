@@ -1,14 +1,54 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { Search, SlidersHorizontal, ArrowLeft, Bookmark, MoreVertical, Folder } from 'lucide-react-native';
 import { Colors } from '@/theme/colors';
+import { useSnippetStore } from '@/store/snippetStore';
+import { useFolderStore } from '@/store/folderStore';
+import { SnippetCard } from '@/components/cards/SnippetCard';
+import { useDebounce } from '@/hooks/useDebounce';
 
-const FILTERS = ['All', 'Snippets', 'Folders', 'Tags', 'Templates', 'Users'];
+const FILTERS = ['All', 'Snippets', 'Folders', 'Tags'];
 
 export default function SearchScreen() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
+  
+  const debouncedQuery = useDebounce(searchQuery, 300);
+  
+  const { snippets } = useSnippetStore();
+  const { folders } = useFolderStore();
+
+  const searchResults = useMemo(() => {
+    const q = debouncedQuery.toLowerCase().trim();
+    
+    let filteredSnippets = snippets.filter(s => !s.isDeleted);
+    let filteredFolders = folders;
+    
+    if (q) {
+      filteredSnippets = filteredSnippets.filter(s => 
+        s.title.toLowerCase().includes(q) || 
+        s.language.toLowerCase().includes(q) || 
+        (s.description && s.description.toLowerCase().includes(q)) ||
+        (s.tags && s.tags.some(t => t.toLowerCase().includes(q)))
+      );
+      
+      filteredFolders = filteredFolders.filter(f => 
+        f.name.toLowerCase().includes(q) ||
+        (f.description && f.description.toLowerCase().includes(q))
+      );
+    }
+    
+    return {
+      snippets: filteredSnippets,
+      folders: filteredFolders,
+    };
+  }, [debouncedQuery, snippets, folders]);
+
+  const showSnippets = activeFilter === 'All' || activeFilter === 'Snippets' || activeFilter === 'Tags';
+  const showFolders = activeFilter === 'All' || activeFilter === 'Folders';
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -16,7 +56,7 @@ export default function SearchScreen() {
         
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backBtn}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
             <ArrowLeft size={24} color={Colors.text.primary} />
           </TouchableOpacity>
           <View style={styles.headerTitleWrap}>
@@ -24,8 +64,6 @@ export default function SearchScreen() {
             <View style={styles.headerDot} />
           </View>
           <Text style={styles.headerSubtitle}>Find snippets, folders, tags and more</Text>
-          {/* Dinosaur Illustration Placeholder */}
-          <View style={styles.illustrationPlaceholder} />
         </View>
 
         {/* Search Input */}
@@ -38,9 +76,11 @@ export default function SearchScreen() {
               placeholderTextColor={Colors.text.tertiary}
               value={searchQuery}
               onChangeText={setSearchQuery}
+              autoCapitalize="none"
+              autoCorrect={false}
             />
             {searchQuery.length > 0 && (
-              <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearBtn}>
+              <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearBtn} hitSlop={{top:10,bottom:10,left:10,right:10}}>
                 <Text style={styles.clearBtnText}>×</Text>
               </TouchableOpacity>
             )}
@@ -65,59 +105,63 @@ export default function SearchScreen() {
           ))}
         </ScrollView>
 
-        {/* Top Results */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Top Results</Text>
-        </View>
-        
-        {/* Detailed Snippet Card */}
-        <View style={styles.detailedCard}>
-          <View style={styles.detailedCardTop}>
-            <View style={[styles.langBadge, { backgroundColor: Colors.lang.default }]}>
-              <Text style={[styles.langBadgeText, { color: '#000' }]}>{'</>'}</Text>
-            </View>
-            <View style={styles.detailedTextWrap}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <Text style={styles.detailedTitle}>React useState Hook</Text>
-                <View style={styles.snippetTag}><Text style={styles.snippetTagText}>Snippet</Text></View>
+        {debouncedQuery.trim().length > 0 && searchResults.snippets.length === 0 && searchResults.folders.length === 0 ? (
+          <View style={styles.emptyWrap}>
+            <Text style={styles.emptyEmoji}>🔍</Text>
+            <Text style={styles.emptyText}>No results found</Text>
+            <Text style={styles.emptySubText}>Try searching for something else.</Text>
+          </View>
+        ) : (
+          <>
+            {/* Snippets */}
+            {showSnippets && searchResults.snippets.length > 0 && (
+              <View style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionTitle}>Snippets ({searchResults.snippets.length})</Text>
+                </View>
+                <View style={styles.listContainer}>
+                  {searchResults.snippets.map(snippet => (
+                    <SnippetCard 
+                      key={snippet.id} 
+                      snippet={snippet} 
+                      onPress={() => router.push(`/snippet/${snippet.id}`)} 
+                    />
+                  ))}
+                </View>
               </View>
-              <Text style={styles.detailedSubtitle}>A React Hook that adds state to functional components.</Text>
-              <Text style={styles.detailedMeta}>JavaScript  •  2 days ago</Text>
-            </View>
-            <View style={{ flexDirection: 'row', gap: 12 }}>
-              <Bookmark size={20} color={Colors.text.secondary} />
-              <MoreVertical size={20} color={Colors.text.secondary} />
-            </View>
-          </View>
-          
-          <View style={styles.codePreview}>
-            <Text style={styles.codeLine}><Text style={{ color: '#58A6FF' }}>import</Text> {'{ useState }'} <Text style={{ color: '#58A6FF' }}>from</Text> <Text style={{ color: '#A5D6FF' }}>'react'</Text>;</Text>
-            <Text style={styles.codeLine}></Text>
-            <Text style={styles.codeLine}><Text style={{ color: '#D2A8FF' }}>function</Text> <Text style={{ color: '#79C0FF' }}>Counter</Text>() {'{'}</Text>
-            <Text style={styles.codeLine}>  <Text style={{ color: '#58A6FF' }}>const</Text> [count, setCount] = <Text style={{ color: '#79C0FF' }}>useState</Text>(0);</Text>
-            <Text style={styles.codeLine}>  <Text style={{ color: '#D2A8FF' }}>return</Text> (</Text>
-            <Text style={styles.codeLine}>    {'<button onClick={() => setCount(count + 1)}>'}</Text>
-            
-            <TouchableOpacity style={styles.previewBtn}>
-              <Text style={styles.previewBtnText}>Preview</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+            )}
 
-        {/* Folders */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Folders</Text>
-          <Text style={styles.seeAllText}>View all →</Text>
-        </View>
-        <View style={styles.folderCard}>
-          <Folder size={24} color={Colors.accent.primary} fill={Colors.accent.primary} />
-          <View style={{ flex: 1, marginLeft: 16 }}>
-            <Text style={styles.folderTitle}>React Hooks</Text>
-            <Text style={styles.folderMeta}>12 snippets  •  Updated 1 day ago</Text>
-          </View>
-          <Text style={{ color: Colors.text.secondary, fontSize: 18 }}>›</Text>
-        </View>
-
+            {/* Folders */}
+            {showFolders && searchResults.folders.length > 0 && (
+              <View style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionTitle}>Folders ({searchResults.folders.length})</Text>
+                </View>
+                <View style={styles.listContainer}>
+                  {searchResults.folders.map(folder => {
+                    const count = snippets.filter(s => s.folderId === folder.id && !s.isDeleted).length;
+                    return (
+                      <TouchableOpacity 
+                        key={folder.id} 
+                        style={styles.folderCard}
+                        onPress={() => router.push(`/folder/${folder.id}`)}
+                      >
+                        <View style={[styles.folderIconBg, { backgroundColor: folder.color || Colors.accent.primary }]}>
+                          <Folder size={24} color="#000" fill="#000" />
+                        </View>
+                        <View style={{ flex: 1, marginLeft: 16 }}>
+                          <Text style={styles.folderTitle}>{folder.name}</Text>
+                          <Text style={styles.folderMeta}>{count} snippets</Text>
+                        </View>
+                        <Text style={{ color: Colors.text.secondary, fontSize: 20 }}>›</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+            )}
+          </>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -131,17 +175,15 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 36, fontWeight: '800', color: Colors.text.primary, letterSpacing: -1 },
   headerDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.accent.primary, marginLeft: 2 },
   headerSubtitle: { color: Colors.text.secondary, fontSize: 15, marginTop: 8, marginBottom: 24 },
-  illustrationPlaceholder: { position: 'absolute', right: 24, top: 20, width: 100, height: 100 },
-
+  
   searchWrap: { paddingHorizontal: 24, marginBottom: 20 },
   searchBar: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.bg.primary,
-    borderWidth: 1, borderColor: Colors.accent.primary, borderRadius: 16,
+    flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.bg.secondary,
+    borderWidth: 1, borderColor: Colors.border.primary, borderRadius: 16,
     height: 56, paddingLeft: 16, paddingRight: 8,
-    shadowColor: Colors.accent.primary, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.2, shadowRadius: 10, elevation: 5,
   },
   searchInput: { flex: 1, color: Colors.text.primary, fontSize: 16, marginLeft: 12 },
-  clearBtn: { width: 24, height: 24, borderRadius: 12, backgroundColor: Colors.bg.secondary, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  clearBtn: { width: 24, height: 24, borderRadius: 12, backgroundColor: Colors.bg.tertiary, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
   clearBtnText: { color: Colors.text.secondary, fontSize: 14, fontWeight: 'bold', marginTop: -2 },
   filterIconWrap: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
 
@@ -151,27 +193,19 @@ const styles = StyleSheet.create({
   filterText: { color: Colors.text.secondary, fontSize: 14, fontWeight: '600' },
   filterTextActive: { color: '#000' },
 
+  section: { marginBottom: 24 },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', paddingHorizontal: 24, marginBottom: 16 },
   sectionTitle: { color: Colors.text.primary, fontSize: 18, fontWeight: '700' },
-  seeAllText: { color: Colors.accent.primary, fontSize: 14, fontWeight: '600' },
-
-  detailedCard: { backgroundColor: Colors.bg.secondary, marginHorizontal: 24, borderRadius: 20, padding: 16, marginBottom: 32 },
-  detailedCardTop: { flexDirection: 'row', marginBottom: 16 },
-  langBadge: { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginRight: 16 },
-  langBadgeText: { fontSize: 18, fontWeight: '800' },
-  detailedTextWrap: { flex: 1 },
-  detailedTitle: { color: Colors.text.primary, fontSize: 16, fontWeight: '700', marginBottom: 4 },
-  snippetTag: { backgroundColor: 'rgba(204, 255, 0, 0.1)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
-  snippetTagText: { color: Colors.accent.primary, fontSize: 10, fontWeight: '700' },
-  detailedSubtitle: { color: Colors.text.secondary, fontSize: 13, marginBottom: 8, lineHeight: 18 },
-  detailedMeta: { color: Colors.text.tertiary, fontSize: 12, fontWeight: '500' },
   
-  codePreview: { backgroundColor: '#111', borderRadius: 12, padding: 16, position: 'relative' },
-  codeLine: { color: Colors.text.secondary, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', fontSize: 13, lineHeight: 22 },
-  previewBtn: { position: 'absolute', bottom: 16, right: 16, backgroundColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
-  previewBtnText: { color: Colors.text.primary, fontSize: 12, fontWeight: '600' },
+  listContainer: { paddingHorizontal: 24, gap: 12 },
 
-  folderCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.bg.secondary, marginHorizontal: 24, padding: 16, borderRadius: 16 },
+  folderCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.bg.secondary, padding: 16, borderRadius: 16 },
+  folderIconBg: { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   folderTitle: { color: Colors.text.primary, fontSize: 16, fontWeight: '600', marginBottom: 4 },
   folderMeta: { color: Colors.text.tertiary, fontSize: 13 },
+
+  emptyWrap: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60 },
+  emptyEmoji: { fontSize: 48, marginBottom: 16 },
+  emptyText: { color: Colors.text.primary, fontSize: 18, fontWeight: '700', marginBottom: 8 },
+  emptySubText: { color: Colors.text.secondary, fontSize: 14 },
 });

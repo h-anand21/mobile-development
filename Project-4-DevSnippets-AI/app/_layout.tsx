@@ -7,6 +7,8 @@ import { View, ActivityIndicator } from 'react-native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+
 import { initDB } from '@/database/db';
 import { seedDatabase } from '@/database/seedData';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -51,7 +53,6 @@ function RootLayoutNav() {
   );
 }
 
-import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 
 export default function RootLayout() {
   const [isReady, setIsReady] = useState(false);
