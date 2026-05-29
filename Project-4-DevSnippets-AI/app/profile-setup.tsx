@@ -12,11 +12,9 @@ import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Colors } from '@/theme/colors';
 import { useSettingsStore } from '@/store/settingsStore';
+import { AVATARS } from '@/constants/avatars';
 
 const { width } = Dimensions.get('window');
-
-// 12 avatar emojis (from design: humans, robot, cat, bear, rocket)
-const AVATARS = ['👨‍💻', '👩‍💻', '🧑‍💻', '🧑‍🚀', '👨‍🔬', '👩‍🔬', '🤖', '🐱', '🐻', '🦊', '🚀', '⚡'];
 
 function ProgressBar({ step }: { step: number }) {
   return (
@@ -138,7 +136,7 @@ export default function ProfileSetupScreen() {
                     setSelectedAvatar(index);
                   }}
                 >
-                  <Text style={styles.avatarEmoji}>{avatar}</Text>
+                  <Image source={avatar} style={styles.avatarImage} />
                   {selectedAvatar === index && (
                     <View style={styles.avatarCheck}>
                       <Text style={styles.avatarCheckText}>✓</Text>
@@ -240,12 +238,13 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
     borderWidth: 2, borderColor: Colors.border.primary,
     position: 'relative',
+    overflow: 'hidden',
   },
   avatarItemSelected: {
     borderColor: Colors.accent.primary,
     backgroundColor: Colors.accent.muted,
   },
-  avatarEmoji: { fontSize: 32 },
+  avatarImage: { width: '100%', height: '100%', resizeMode: 'cover' },
   avatarCheck: {
     position: 'absolute', bottom: 2, right: 2,
     width: 18, height: 18, borderRadius: 9,

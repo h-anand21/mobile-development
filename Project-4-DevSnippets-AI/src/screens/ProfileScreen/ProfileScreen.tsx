@@ -11,11 +11,10 @@ import { useThemeColors } from '@/theme/colors';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useSnippetStore } from '@/store/snippetStore';
 import { useFolderStore } from '@/store/folderStore';
-import { Alert, Modal, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
+import { Alert, Modal, TextInput, KeyboardAvoidingView, Platform, Image } from 'react-native';
+import { AVATARS } from '@/constants/avatars';
 
 const { width } = Dimensions.get('window');
-
-const EMOJIS = ['👨‍💻', '👩‍💻', '🧑‍💻', '🧑‍🚀', '👨‍🔬', '👩‍🔬', '🤖', '🐱', '🐻', '🦊', '🚀', '⚡'];
 
 function MenuItem({ icon: Icon, title, color, colors, styles, onPress }: { icon: any, title: string, color: string, colors: any, styles: any, onPress?: () => void }) {
   return (
@@ -42,7 +41,7 @@ export function ProfileScreen() {
   const [tempName, setTempName] = React.useState(userProfile?.name || '');
   const [tempAvatarIdx, setTempAvatarIdx] = React.useState(userProfile?.avatarIndex || 0);
 
-  const emoji = EMOJIS[userProfile?.avatarIndex || 0];
+  const selectedAvatarSource = AVATARS[userProfile?.avatarIndex !== undefined && userProfile.avatarIndex < AVATARS.length ? userProfile.avatarIndex : 0];
 
   const totalSnippets = snippets.filter(s => !s.isDeleted).length;
   const totalFolders = folders.length;
@@ -86,8 +85,8 @@ export function ProfileScreen() {
 
         {/* Avatar & Info */}
         <View style={styles.profileSection}>
-          <View style={styles.avatarWrap}>
-            <Text style={styles.avatarEmoji}>{emoji}</Text>
+          <View style={[styles.avatarWrap, { overflow: 'hidden' }]}>
+            <Image source={selectedAvatarSource} style={{ width: '100%', height: '100%', resizeMode: 'cover' }} />
           </View>
           <View style={styles.nameWrap}>
             <Text style={styles.name}>{userProfile?.name || 'Developer'}</Text>
@@ -149,13 +148,13 @@ export function ProfileScreen() {
             
             <Text style={styles.modalLabel}>Choose Avatar</Text>
             <View style={styles.emojiGrid}>
-              {EMOJIS.map((em, idx) => (
+              {AVATARS.map((avatar, idx) => (
                 <TouchableOpacity 
                   key={idx} 
-                  style={[styles.emojiBtn, tempAvatarIdx === idx && styles.emojiBtnActive]}
+                  style={[styles.emojiBtn, tempAvatarIdx === idx && styles.emojiBtnActive, { overflow: 'hidden', padding: 0 }]}
                   onPress={() => setTempAvatarIdx(idx)}
                 >
-                  <Text style={styles.emojiText}>{em}</Text>
+                  <Image source={avatar} style={{ width: '100%', height: '100%', resizeMode: 'cover' }} />
                 </TouchableOpacity>
               ))}
             </View>

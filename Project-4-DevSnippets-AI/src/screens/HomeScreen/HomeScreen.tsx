@@ -19,6 +19,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import Toast from 'react-native-toast-message';
 import { askGeminiVision } from '@/services/aiService';
+import { AVATARS } from '@/constants/avatars';
 
 const { width } = Dimensions.get('window');
 
@@ -131,12 +132,11 @@ export function HomeScreen() {
       >
         {/* Header (Top Bar) */}
         <View style={styles.topBar}>
-          <TouchableOpacity style={styles.avatarWrap} onPress={() => router.push('/(tabs)/profile')}>
-            <Text style={styles.avatarEmoji}>
-               {userProfile?.avatarIndex !== undefined 
-                ? ['👨‍💻', '👩‍💻', '🧑‍💻', '🧑‍🚀', '👨‍🔬', '👩‍🔬', '🤖', '🐱', '🐻', '🦊', '🚀', '⚡'][userProfile.avatarIndex] 
-                : '👨‍💻'}
-            </Text>
+          <TouchableOpacity style={[styles.avatarWrap, { overflow: 'hidden' }]} onPress={() => router.push('/(tabs)/profile')}>
+            <Image 
+              source={AVATARS[userProfile?.avatarIndex !== undefined && userProfile.avatarIndex < AVATARS.length ? userProfile.avatarIndex : 0]} 
+              style={{ width: '100%', height: '100%', resizeMode: 'cover' }} 
+            />
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.navSearchBar} onPress={() => router.push('/(tabs)/search')} activeOpacity={0.8}>
