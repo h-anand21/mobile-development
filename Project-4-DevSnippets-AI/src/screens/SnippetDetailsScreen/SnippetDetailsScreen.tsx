@@ -20,8 +20,9 @@ import Toast from 'react-native-toast-message';
 
 import { useThemeColors } from '@/theme/colors';
 import { useSnippetStore } from '@/store/snippetStore';
-import { getLanguageConfig } from '@/constants/languages';
+import { getLanguageConfig, LANGUAGE_LOGOS } from '@/constants/languages';
 import { timeAgo } from '@/utils/formatters/dateFormatter';
+import { SvgUri } from 'react-native-svg';
 import { AIChatModal } from '@/components/modals/AIChatModal';
 import { CodeHighlighter } from '@/components/common/CodeHighlighter';
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
@@ -60,6 +61,8 @@ export function SnippetDetailsScreen() {
   }
 
   const langConfig = getLanguageConfig(snippet.language);
+  const logoPath = LANGUAGE_LOGOS[snippet.language] || LANGUAGE_LOGOS[langConfig.label];
+  const logoUrl = logoPath ? `https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/${logoPath}` : null;
 
   const handleCopy = async () => {
     await Clipboard.setStringAsync(snippet.content);
@@ -146,9 +149,15 @@ export function SnippetDetailsScreen() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         {/* Title & Meta */}
         <View style={styles.titleSection}>
-          <View style={[styles.langBadge, { backgroundColor: langConfig.color }]}>
-            <Text style={[styles.langBadgeText, { color: langConfig.textColor }]}>{langConfig.shortLabel}</Text>
-          </View>
+          {logoUrl ? (
+            <View style={[styles.langBadge, { backgroundColor: colors.bg.secondary, borderWidth: 1, borderColor: colors.border.primary, overflow: 'hidden' }]}>
+              <SvgUri uri={logoUrl} width="100%" height="100%" />
+            </View>
+          ) : (
+            <View style={[styles.langBadge, { backgroundColor: langConfig.color }]}>
+              <Text style={[styles.langBadgeText, { color: langConfig.textColor }]}>{langConfig.shortLabel}</Text>
+            </View>
+          )}
           <View style={styles.titleTextWrap}>
             <Text style={styles.title}>{snippet.title}</Text>
             <View style={styles.metaRow}>

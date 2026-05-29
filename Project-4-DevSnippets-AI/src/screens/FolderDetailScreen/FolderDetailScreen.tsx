@@ -11,10 +11,19 @@ import Toast from 'react-native-toast-message';
 import { useThemeColors } from '@/theme/colors';
 import { useFolderStore } from '@/store/folderStore';
 import { useSnippetStore } from '@/store/snippetStore';
+import { GlassFolder } from '@/components/common/GlassFolder';
 import { SnippetCard } from '@/components/cards/SnippetCard';
 
 const FILTERS = ['All', 'Favorites', 'Recently Used'];
-const FOLDER_COLORS = ['#58A6FF', '#39D353', '#D29922', '#F78166', '#A371F7', '#FF66B2'];
+const FOLDER_COLORS = [
+  '#58A6FF', // Blue
+  '#39D353', // Green
+  '#D29922', // Yellow
+  '#FF5252', // Red
+  '#A371F7', // Purple
+  '#FF66B2', // Pink
+  '#FF9800', // Orange
+];
 
 export function FolderDetailScreen() {
   const router = useRouter();
@@ -116,7 +125,7 @@ export function FolderDetailScreen() {
           </TouchableOpacity>
           <View style={styles.headerTitleWrap}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <FolderIcon size={20} color={folder.color || colors.accent.primary} fill={folder.color ? folder.color + '20' : 'transparent'} />
+              <GlassFolder color={folder.color || colors.accent.primary} size={24} />
               <Text style={styles.headerTitle}>{folder.name}</Text>
             </View>
             <Text style={styles.headerSubtitle}>{folderSnippets.length} snippets</Text>

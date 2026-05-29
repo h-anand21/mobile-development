@@ -24,14 +24,13 @@ export const FILE_PATHS = {
 } as const;
 
 export const FOLDER_COLORS = [
-  '#39D353', // green
-  '#58A6FF', // blue
-  '#F78166', // red
-  '#D29922', // yellow
-  '#BC8CFF', // purple
-  '#FA7343', // orange
-  '#39C5BB', // teal
-  '#F9826C', // salmon
+  '#58A6FF', // Blue
+  '#39D353', // Green
+  '#D29922', // Yellow
+  '#FF5252', // Red
+  '#A371F7', // Purple
+  '#FF66B2', // Pink
+  '#FF9800', // Orange
 ] as const;
 
 export const FOLDER_ICONS = [

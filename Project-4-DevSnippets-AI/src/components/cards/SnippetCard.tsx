@@ -4,11 +4,12 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
 import { SvgUri } from 'react-native-svg';
-import { Star, MoreHorizontal } from 'lucide-react-native';
+import { Star, MoreHorizontal, Eye } from 'lucide-react-native';
+import { CodeHighlighter } from '@/components/common/CodeHighlighter';
 import { Snippet } from '@/types/snippet.types';
 import { useThemeColors } from '@/theme/colors';
 import { timeAgo } from '@/utils/formatters/dateFormatter';
-import { LANGUAGES } from '@/constants/languages';
+import { LANGUAGES, LANGUAGE_LOGOS } from '@/constants/languages';
 import { useRouter } from 'expo-router';
 import { useSnippetStore } from '@/store/snippetStore';
 import { Alert } from 'react-native';
@@ -19,40 +20,13 @@ interface SnippetCardProps {
   snippet: Snippet;
   onPress: () => void;
   style?: ViewStyle;
+  showPreview?: boolean;
 }
 
-export function SnippetCard({ snippet, onPress, style }: SnippetCardProps) {
+export function SnippetCard({ snippet, showPreview = false, onPress, style }: SnippetCardProps) {
   const colors = useThemeColors();
   const styles = getStyles(colors);
   
-  const LANGUAGE_LOGOS: Record<string, string> = {
-    'JavaScript': 'javascript/javascript-original.svg',
-    'TypeScript': 'typescript/typescript-original.svg',
-    'React': 'react/react-original.svg',
-    'Python': 'python/python-original.svg',
-    'Java': 'java/java-original.svg',
-    'C++': 'cplusplus/cplusplus-original.svg',
-    'C': 'c/c-original.svg',
-    'C#': 'csharp/csharp-original.svg',
-    'HTML': 'html5/html5-original.svg',
-    'CSS': 'css3/css3-original.svg',
-    'Go': 'go/go-original.svg',
-    'Rust': 'rust/rust-plain.svg',
-    'PHP': 'php/php-original.svg',
-    'Ruby': 'ruby/ruby-original.svg',
-    'Swift': 'swift/swift-original.svg',
-    'Kotlin': 'kotlin/kotlin-original.svg',
-    'Dart': 'dart/dart-original.svg',
-    'Vue': 'vuejs/vuejs-original.svg',
-    'Svelte': 'svelte/svelte-original.svg',
-    'Markdown': 'markdown/markdown-original.svg',
-    'Bash': 'bash/bash-original.svg',
-    'Shell': 'bash/bash-original.svg',
-    'Dockerfile': 'docker/docker-original.svg',
-    'SQL': 'mysql/mysql-original.svg',
-    'GraphQL': 'graphql/graphql-plain.svg',
-  };
-
   const languageConfig = LANGUAGES.find(l => l.label === snippet.language) || LANGUAGES[0];
   const logoPath = LANGUAGE_LOGOS[snippet.language] || LANGUAGE_LOGOS[languageConfig.label];
   const logoUrl = logoPath ? `https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/${logoPath}` : null;
@@ -132,6 +106,19 @@ export function SnippetCard({ snippet, onPress, style }: SnippetCardProps) {
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* Optional Code Preview */}
+      {showPreview && snippet.content && (
+        <View style={styles.previewContainer}>
+          <View style={styles.previewCodeWrap}>
+            <CodeHighlighter code={snippet.content.split('\n').slice(0, 6).join('\n') + (snippet.content.split('\n').length > 6 ? '\n...' : '')} language={snippet.language} />
+          </View>
+          <TouchableOpacity style={styles.previewBtn} onPress={onPress}>
+            <Eye size={14} color={colors.text.secondary} />
+            <Text style={styles.previewBtnText}>Preview</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </TouchableOpacity>
   );
 }
@@ -193,11 +180,41 @@ const getStyles = (colors: any) => ({
   },
   moreBtn: {
     marginLeft: 16,
-    backgroundColor: colors.bg.tertiary,
+    backgroundColor: 'transparent',
     width: 32,
     height: 32,
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  previewContainer: {
+    marginTop: 16,
+    backgroundColor: colors.bg.primary === '#000000' ? '#111' : colors.bg.tertiary, // adapts to light/dark
+    borderRadius: 12,
+    padding: 12,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  previewCodeWrap: {
+    opacity: 0.9,
+  },
+  previewBtn: {
+    position: 'absolute',
+    bottom: 12,
+    right: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.bg.primary === '#000000' ? colors.bg.elevated : colors.bg.primary,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    gap: 6,
+    borderWidth: 1,
+    borderColor: colors.border.secondary,
+  },
+  previewBtnText: {
+    color: colors.text.secondary,
+    fontSize: 12,
+    fontWeight: '600',
+  }
 } as any);

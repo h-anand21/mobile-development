@@ -4,11 +4,12 @@
 import React, { useState } from 'react';
 import { 
   View, Text, StyleSheet, TextInput, TouchableOpacity, 
-  ScrollView, Switch, KeyboardAvoidingView, Platform 
+  ScrollView, Switch, KeyboardAvoidingView, Platform, Modal
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, Check, Code, Hash, X } from 'lucide-react-native';
+import { ArrowLeft, Check, Code, Hash, X, Maximize2 } from 'lucide-react-native';
+import { SvgUri } from 'react-native-svg';
 import Toast from 'react-native-toast-message';
 import * as Haptics from 'expo-haptics';
 
@@ -16,7 +17,7 @@ import { useThemeColors } from '@/theme/colors';
 import { useSnippetStore } from '@/store/snippetStore';
 import { useFolderStore } from '@/store/folderStore';
 import { useSettingsStore } from '@/store/settingsStore';
-import { LANGUAGES } from '@/constants/languages';
+import { LANGUAGES, LANGUAGE_LOGOS } from '@/constants/languages';
 import { Language } from '@/types/snippet.types';
 import { useLocalSearchParams } from 'expo-router';
 
@@ -37,6 +38,7 @@ export function CreateSnippetScreen() {
   const [tags, setTags] = useState<string[]>([]);
   const [folderId, setFolderId] = useState<string | undefined>(undefined);
   const [isPrivate, setIsPrivate] = useState(false);
+  const [isFullScreenCode, setIsFullScreenCode] = useState(false);
 
   // Validation
   const isValid = title.trim().length > 0 && code.trim().length > 0;
@@ -114,13 +116,22 @@ export function CreateSnippetScreen() {
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.langScroll}>
               {LANGUAGES.filter(lang => enabledLanguages.includes(lang.label)).map((lang) => {
                 const isActive = language === lang.label;
+                const logoPath = LANGUAGE_LOGOS[lang.label];
+                const logoUrl = logoPath ? `https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/${logoPath}` : null;
+                
                 return (
                   <TouchableOpacity
                     key={lang.label}
                     style={[styles.langChip, isActive && styles.langChipActive]}
                     onPress={() => setLanguage(lang.label)}
                   >
-                    <View style={[styles.langDot, { backgroundColor: lang.color }]} />
+                    {logoUrl ? (
+                      <View style={{ width: 16, height: 16, marginRight: 6 }}>
+                        <SvgUri uri={logoUrl} width="100%" height="100%" />
+                      </View>
+                    ) : (
+                      <View style={[styles.langDot, { backgroundColor: lang.color }]} />
+                    )}
                     <Text style={[styles.langChipText, isActive && styles.langChipTextActive]}>
                       {lang.label}
                     </Text>
@@ -165,7 +176,9 @@ export function CreateSnippetScreen() {
           <View style={styles.inputGroup}>
             <View style={styles.labelRow}>
               <Text style={styles.label}>Code <Text style={styles.required}>*</Text></Text>
-              <Code size={16} color={colors.accent.primary} />
+              <TouchableOpacity onPress={() => setIsFullScreenCode(true)} style={styles.maximizeBtn}>
+                <Maximize2 size={18} color={colors.accent.primary} />
+              </TouchableOpacity>
             </View>
             <View style={styles.codeContainer}>
               <TextInput
@@ -227,6 +240,33 @@ export function CreateSnippetScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Full Screen Code Modal */}
+      <Modal visible={isFullScreenCode} animationType="slide" presentationStyle="pageSheet">
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.bg.primary }]}>
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => setIsFullScreenCode(false)} style={styles.backBtn}>
+              <ArrowLeft size={24} color={colors.text.primary} />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Edit Code</Text>
+            <TouchableOpacity onPress={() => setIsFullScreenCode(false)} style={styles.saveTopBtn}>
+              <Check size={20} color={colors.accent.primary} />
+            </TouchableOpacity>
+          </View>
+          <TextInput
+            style={[styles.codeInput, { flex: 1, height: 'auto', borderRadius: 0, borderWidth: 0 }]}
+            multiline
+            placeholder="// Write or paste your code here..."
+            placeholderTextColor={colors.text.tertiary}
+            value={code}
+            onChangeText={setCode}
+            autoCapitalize="none"
+            autoCorrect={false}
+            autoFocus
+          />
+        </SafeAreaView>
+      </Modal>
+
     </SafeAreaView>
   );
 }
@@ -248,8 +288,9 @@ const getStyles = (colors: any) => ({
   
   inputGroup: { marginBottom: 24 },
   labelRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  label: { fontSize: 14, fontWeight: '600', color: colors.text.secondary, marginBottom: 8 },
+  label: { fontSize: 14, fontWeight: '600', color: colors.text.secondary },
   required: { color: colors.status.error },
+  maximizeBtn: { padding: 4 },
   
   input: {
     backgroundColor: colors.bg.secondary,

@@ -2,7 +2,7 @@
 // DevNest — Search Screen (Theme Aware)
 // ============================================================
 import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Platform } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Platform, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Search, SlidersHorizontal, ArrowLeft, Bookmark, MoreVertical, Folder } from 'lucide-react-native';
@@ -12,6 +12,7 @@ import { useSnippetStore } from '@/store/snippetStore';
 import { useFolderStore } from '@/store/folderStore';
 import { SnippetCard } from '@/components/cards/SnippetCard';
 import { useDebounce } from '@/hooks/useDebounce';
+import { timeAgo } from '@/utils/formatters/dateFormatter';
 
 const FILTERS = ['All', 'Snippets', 'Folders', 'Tags'];
 
@@ -54,6 +55,19 @@ export default function SearchScreen() {
     };
   }, [debouncedQuery, snippets, folders]);
 
+  const allTags = useMemo(() => {
+    const tags = new Set<string>();
+    snippets.forEach(s => {
+      if (!s.isDeleted && s.tags) {
+        s.tags.forEach(t => tags.add(t));
+      }
+    });
+    if (tags.size === 0) {
+      ['useState', 'react', 'hooks', 'frontend', 'api', 'styling'].forEach(t => tags.add(t));
+    }
+    return Array.from(tags).slice(0, 15);
+  }, [snippets]);
+
   const showSnippets = activeFilter === 'All' || activeFilter === 'Snippets' || activeFilter === 'Tags';
   const showFolders = activeFilter === 'All' || activeFilter === 'Folders';
 
@@ -71,10 +85,17 @@ export default function SearchScreen() {
             <View style={styles.headerDot} />
           </View>
           <Text style={styles.headerSubtitle}>Find snippets, folders, tags and more</Text>
+
         </View>
 
         {/* Search Input */}
-        <View style={styles.searchWrap}>
+        <View style={[styles.searchWrap, { zIndex: 10 }]}>
+          {/* Dino Mascot */}
+          <Image 
+            source={require('../../assets/iamge-aste/image.png')} 
+            style={styles.dinoMascot}
+            resizeMode="contain"
+          />
           <View style={styles.searchBar}>
             <Search size={20} color={colors.text.tertiary} />
             <TextInput
@@ -125,20 +146,20 @@ export default function SearchScreen() {
           </View>
         ) : (
           <>
-            {/* Snippets */}
+            {/* Top Results */}
             {showSnippets && searchResults.snippets.length > 0 && (
               <View style={styles.section}>
                 <View style={styles.sectionHeader}>
-                  <Text style={styles.sectionTitle}>Snippets ({searchResults.snippets.length})</Text>
+                  <Text style={styles.sectionTitle}>Top Results</Text>
                 </View>
                 <View style={styles.listContainer}>
-                  {searchResults.snippets.map(snippet => (
-                    <SnippetCard 
-                      key={snippet.id} 
-                      snippet={snippet} 
-                      onPress={() => router.push(`/snippet/${snippet.id}`)} 
-                    />
-                  ))}
+                  {/* Show preview only for the first result */}
+                  <SnippetCard 
+                    key={searchResults.snippets[0].id} 
+                    snippet={searchResults.snippets[0]} 
+                    onPress={() => router.push(`/snippet/${searchResults.snippets[0].id}`)} 
+                    showPreview={true}
+                  />
                 </View>
               </View>
             )}
@@ -147,7 +168,10 @@ export default function SearchScreen() {
             {showFolders && searchResults.folders.length > 0 && (
               <View style={styles.section}>
                 <View style={styles.sectionHeader}>
-                  <Text style={styles.sectionTitle}>Folders ({searchResults.folders.length})</Text>
+                  <Text style={styles.sectionTitle}>Folders</Text>
+                  <TouchableOpacity onPress={() => router.push('/(tabs)/files')}>
+                    <Text style={styles.viewAllText}>View all →</Text>
+                  </TouchableOpacity>
                 </View>
                 <View style={styles.listContainer}>
                   {searchResults.folders.map(folder => {
@@ -163,12 +187,56 @@ export default function SearchScreen() {
                         </View>
                         <View style={{ flex: 1, marginLeft: 16 }}>
                           <Text style={styles.folderTitle}>{folder.name}</Text>
-                          <Text style={styles.folderMeta}>{count} snippets</Text>
+                          <Text style={styles.folderMeta}>{count} snippets • Updated {timeAgo(folder.updatedAt)}</Text>
                         </View>
                         <Text style={{ color: colors.text.secondary, fontSize: 20 }}>›</Text>
                       </TouchableOpacity>
                     );
                   })}
+                </View>
+              </View>
+            )}
+
+            {/* Tags Section */}
+            {showSnippets && (
+              <View style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionTitle}>Tags</Text>
+                  <TouchableOpacity onPress={() => setActiveFilter('Tags')}>
+                    <Text style={styles.viewAllText}>View all →</Text>
+                  </TouchableOpacity>
+                </View>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tagsScroll}>
+                  {allTags.map(tag => {
+                    const isActive = searchQuery.toLowerCase() === tag.toLowerCase();
+                    return (
+                      <TouchableOpacity 
+                        key={tag}
+                        style={isActive ? styles.tagPillActive : styles.tagPill}
+                        onPress={() => setSearchQuery(isActive ? '' : tag)}
+                      >
+                        <Text style={isActive ? styles.tagTextActive : styles.tagText}>{tag}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+            )}
+
+            {/* More Snippets */}
+            {showSnippets && searchResults.snippets.length > 1 && (
+              <View style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionTitle}>More Snippets</Text>
+                </View>
+                <View style={styles.listContainer}>
+                  {searchResults.snippets.slice(1).map(snippet => (
+                    <SnippetCard 
+                      key={snippet.id} 
+                      snippet={snippet} 
+                      onPress={() => router.push(`/snippet/${snippet.id}`)} 
+                    />
+                  ))}
                 </View>
               </View>
             )}
@@ -191,13 +259,14 @@ const getStyles = (colors: any) => ({
   searchWrap: { paddingHorizontal: 24, marginBottom: 20 },
   searchBar: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: colors.bg.secondary,
-    borderWidth: 1, borderColor: colors.border.primary, borderRadius: 16,
+    borderWidth: 1, borderColor: '#CCFF00', borderRadius: 16,
     height: 56, paddingLeft: 16, paddingRight: 8,
   },
   searchInput: { flex: 1, color: colors.text.primary, fontSize: 16, marginLeft: 12 },
   clearBtn: { width: 24, height: 24, borderRadius: 12, backgroundColor: colors.bg.tertiary, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
   clearBtnText: { color: colors.text.secondary, fontSize: 14, fontWeight: 'bold', marginTop: -2 },
   filterIconWrap: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  dinoMascot: { position: 'absolute', right: -10, bottom: 42, width: 240, height: 240, zIndex: 11 },
 
   filterScroll: { paddingHorizontal: 24, gap: 12, marginBottom: 32 },
   filterChip: { height: 40, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20, borderRadius: 20, backgroundColor: colors.bg.secondary, borderWidth: 1, borderColor: colors.border.primary, marginRight: 8 },
@@ -206,15 +275,22 @@ const getStyles = (colors: any) => ({
   filterTextActive: { color: '#000' },
 
   section: { marginBottom: 24 },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', paddingHorizontal: 24, marginBottom: 16 },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, marginBottom: 16 },
   sectionTitle: { color: colors.text.primary, fontSize: 18, fontWeight: '700' },
+  viewAllText: { color: colors.accent.primary, fontSize: 13, fontWeight: '600' },
   
   listContainer: { paddingHorizontal: 24, gap: 12 },
 
-  folderCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.bg.secondary, padding: 16, borderRadius: 16, borderWidth: 1, borderColor: colors.border.primary },
-  folderIconBg: { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  folderTitle: { color: colors.text.primary, fontSize: 16, fontWeight: '600', marginBottom: 4 },
-  folderMeta: { color: colors.text.tertiary, fontSize: 13 },
+  folderCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.bg.secondary, padding: 12, borderRadius: 16, borderWidth: 1, borderColor: colors.border.primary },
+  folderIconBg: { width: 40, height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  folderTitle: { color: colors.text.primary, fontSize: 15, fontWeight: '600', marginBottom: 2 },
+  folderMeta: { color: colors.text.tertiary, fontSize: 12 },
+
+  tagsScroll: { paddingHorizontal: 24, gap: 12 },
+  tagPill: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20, backgroundColor: colors.bg.secondary, borderWidth: 1, borderColor: colors.border.primary },
+  tagPillActive: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20, backgroundColor: 'transparent', borderWidth: 1, borderColor: '#CCFF00' },
+  tagText: { color: colors.text.secondary, fontSize: 14, fontWeight: '500' },
+  tagTextActive: { color: '#CCFF00', fontSize: 14, fontWeight: '500' },
 
   emptyWrap: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60 },
   emptyEmoji: { fontSize: 48, marginBottom: 16 },
