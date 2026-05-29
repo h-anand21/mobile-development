@@ -8,6 +8,7 @@ export type FontSize = 'small' | 'medium' | 'large';
 export interface UserProfile {
   name: string;
   avatarIndex: number; // index into AVATARS array
+  bio?: string;
 }
 
 export interface AppSettings {

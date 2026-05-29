@@ -5,7 +5,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Settings, ShieldCheck, User, Shield, CreditCard, Smartphone, Clock, Download, Trash2, LogOut, ChevronRight } from 'lucide-react-native';
+import { Settings, ShieldCheck, User, Shield, CreditCard, Smartphone, Clock, Download, Trash2, LogOut, ChevronRight, Code, Folder, Cloud, Wifi, Lock, Bot, RefreshCw, Monitor, Hexagon, Flame } from 'lucide-react-native';
 
 import { useThemeColors } from '@/theme/colors';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -19,10 +19,12 @@ const { width } = Dimensions.get('window');
 function MenuItem({ icon: Icon, title, color, colors, styles, onPress }: { icon: any, title: string, color: string, colors: any, styles: any, onPress?: () => void }) {
   return (
     <TouchableOpacity style={styles.menuItem} onPress={onPress}>
-      <View style={[styles.menuIconWrap, { backgroundColor: color + '15' }]}>
+      <View style={styles.menuIconWrap}>
         <Icon size={20} color={color} />
       </View>
-      <Text style={styles.menuItemTitle}>{title}</Text>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.menuItemTitle}>{title}</Text>
+      </View>
       <ChevronRight size={20} color={colors.text.tertiary} />
     </TouchableOpacity>
   );
@@ -83,60 +85,190 @@ export function ProfileScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Avatar & Info */}
-        <View style={styles.profileSection}>
-          <View style={[styles.avatarWrap, { overflow: 'hidden' }]}>
-            <Image source={selectedAvatarSource} style={{ width: '100%', height: '100%', resizeMode: 'cover' }} />
-          </View>
-          <View style={styles.nameWrap}>
-            <Text style={styles.name}>{userProfile?.name || 'Developer'}</Text>
-            <ShieldCheck size={20} color={colors.accent.primary} fill={colors.bg.primary} />
-          </View>
-          <Text style={styles.handle}>@developer • Local Mode</Text>
+        {/* Hero Card */}
+        <View style={styles.heroCard}>
+           <View style={styles.localModeBadge}>
+             <Monitor size={12} color={colors.accent.primary} />
+             <Text style={styles.localModeText}>Local Mode</Text>
+           </View>
+           
+           <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginTop: 12 }}>
+             <View style={styles.avatarColumn}>
+               <View style={styles.heroAvatarWrap}>
+                 <Image source={selectedAvatarSource} style={{ width: '100%', height: '100%', resizeMode: 'cover' }} />
+               </View>
+             </View>
+             <View style={styles.infoColumn}>
+               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                 <Text style={styles.heroName} numberOfLines={1}>{userProfile?.name || 'Developer'}</Text>
+                 <ShieldCheck size={18} color={colors.accent.primary} fill={colors.bg.secondary} />
+               </View>
+               <Text style={styles.heroHandle}>@developer</Text>
+               <Text style={styles.heroRole}>Full Stack Developer 🚀</Text>
+               <Text style={styles.heroBio} numberOfLines={1}>{userProfile?.bio || 'Offline-First Builder'}</Text>
+               
+               <View style={styles.skillsRow}>
+                 <View style={[styles.skillBadge, { backgroundColor: '#F7DF1E20', borderColor: '#F7DF1E40' }]}><Text style={[styles.skillText, { color: '#F7DF1E' }]}>JS</Text></View>
+                 <View style={[styles.skillBadge, { backgroundColor: '#3178C620', borderColor: '#3178C640' }]}><Text style={[styles.skillText, { color: '#3178C6' }]}>TS</Text></View>
+                 <View style={[styles.skillBadge, { backgroundColor: '#61DAFB20', borderColor: '#61DAFB40' }]}><Settings size={12} color="#61DAFB" /></View>
+                 <View style={[styles.skillBadge, { backgroundColor: '#33993320', borderColor: '#33993340' }]}><Text style={[styles.skillText, { color: '#339933' }]}>Node</Text></View>
+                 <View style={[styles.skillBadge, { backgroundColor: colors.bg.tertiary, borderColor: colors.border.primary }]}><Text style={[styles.skillText, { color: colors.text.secondary }]}>+3</Text></View>
+               </View>
+             </View>
+           </View>
+
+           <View style={styles.badgesRow}>
+             <View style={styles.badgeBox}>
+               <Hexagon size={28} color={colors.accent.primary} />
+               <View style={{ marginLeft: 8 }}>
+                 <Text style={{ color: colors.text.primary, fontSize: 13, fontWeight: '700' }}>Level 1</Text>
+                 <Text style={{ color: colors.accent.primary, fontSize: 11, fontWeight: '600' }}>Beginner</Text>
+               </View>
+             </View>
+             <View style={styles.badgeDivider} />
+             <View style={styles.badgeBox}>
+               <Flame size={28} color="#FF5722" />
+               <View style={{ marginLeft: 8 }}>
+                 <Text style={{ color: colors.text.primary, fontSize: 13, fontWeight: '700' }}>12</Text>
+                 <Text style={{ color: colors.text.secondary, fontSize: 11, fontWeight: '500' }}>Day Streak</Text>
+               </View>
+             </View>
+           </View>
         </View>
 
-        {/* Storage / Milestone Progress Bar */}
+        {/* Milestone Progress */}
         <View style={styles.storageCard}>
           <View style={styles.storageHeader}>
             <Text style={styles.storageTitle}>Milestone Progress</Text>
-            <Text style={styles.storageAmount}>{totalSnippets} / {milestoneTarget} Snippets ({storagePercentage}%)</Text>
+            <Text style={styles.storageAmount}><Text style={{ color: colors.accent.primary }}>{totalSnippets}</Text> / {milestoneTarget} Snippets ({storagePercentage}%)</Text>
+          </View>
+          <View style={styles.storageBarBg}>
+            <View style={[styles.storageBarFill, { width: `${storagePercentage}%` }]} />
           </View>
           <View style={styles.storageDetails}>
             <Text style={styles.storageSubText}>Total Snippets: <Text style={styles.storageBold}>{totalSnippets}</Text></Text>
             <Text style={styles.storageSubText}>Total Folders: <Text style={styles.storageBold}>{totalFolders}</Text></Text>
           </View>
-          <View style={styles.storageBarBg}>
-            <View style={[styles.storageBarFill, { width: `${storagePercentage}%` }]} />
+          <TouchableOpacity 
+            style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12, justifyContent: 'space-between' }}
+            onPress={() => Alert.alert('Storage Details', 'Your offline storage is functioning optimally and securely.')}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+               <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: colors.accent.primary }} />
+               <Text style={styles.unlimitedText}>Unlimited Offline Storage Active (~{estimatedKB} KB used)</Text>
+            </View>
+            <ChevronRight size={16} color={colors.text.secondary} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Stats Grid */}
+        <View style={styles.statsGrid}>
+          <View style={styles.statBox}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+              <View style={[styles.statIconWrap, { borderColor: colors.accent.primary + '40' }]}><Code size={20} color={colors.accent.primary} /></View>
+              <View>
+                <Text style={styles.statBoxNumber}>{totalSnippets}</Text>
+                <Text style={styles.statBoxTitle}>Snippets</Text>
+              </View>
+            </View>
+            <View style={{ width: '100%', height: 1, backgroundColor: colors.border.primary, marginBottom: 8 }} />
+            <Text style={styles.statBoxSub}>Total Snippets</Text>
           </View>
-          <Text style={styles.unlimitedText}>🟢 Unlimited Offline Storage Active (~{estimatedKB} KB used)</Text>
+          <View style={styles.statBox}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+              <View style={[styles.statIconWrap, { borderColor: '#3B82F640' }]}><Folder size={20} color="#3B82F6" /></View>
+              <View>
+                <Text style={styles.statBoxNumber}>{totalFolders}</Text>
+                <Text style={styles.statBoxTitle}>Folders</Text>
+              </View>
+            </View>
+            <View style={{ width: '100%', height: 1, backgroundColor: colors.border.primary, marginBottom: 8 }} />
+            <Text style={styles.statBoxSub}>Total Folders</Text>
+          </View>
+          <View style={[styles.statBox, { borderColor: '#8B5CF640' }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+              <View style={[styles.statIconWrap, { borderColor: '#8B5CF640' }]}><Cloud size={20} color="#8B5CF6" /></View>
+              <View>
+                <Text style={styles.statBoxNumber}>{estimatedKB} <Text style={{ fontSize: 12 }}>KB</Text></Text>
+                <Text style={styles.statBoxTitle}>Storage</Text>
+              </View>
+            </View>
+            <View style={{ width: '100%', height: 1, backgroundColor: colors.border.primary, marginBottom: 8 }} />
+            <Text style={styles.statBoxSub}>Used Offline</Text>
+          </View>
+        </View>
+
+        {/* Quick Status Row */}
+        <View style={styles.statusRow}>
+           <View style={styles.statusItem}>
+             <Wifi size={18} color={colors.text.secondary} />
+             <View style={{ alignItems: 'center' }}>
+               <Text style={styles.statusTitle}>Offline</Text>
+               <Text style={[styles.statusSub, { color: colors.accent.primary }]}><Text style={{ fontSize: 16 }}>•</Text> Active</Text>
+             </View>
+           </View>
+           <View style={styles.statusDivider} />
+           <View style={styles.statusItem}>
+             <Lock size={18} color={colors.text.secondary} />
+             <View style={{ alignItems: 'center' }}>
+               <Text style={styles.statusTitle}>Secure</Text>
+               <Text style={[styles.statusSub, { color: colors.accent.primary }]}><Text style={{ fontSize: 16 }}>•</Text> Encrypted</Text>
+             </View>
+           </View>
+           <View style={styles.statusDivider} />
+           <View style={styles.statusItem}>
+             <Bot size={18} color={colors.text.secondary} />
+             <View style={{ alignItems: 'center' }}>
+               <Text style={styles.statusTitle}>AI Assistant</Text>
+               <Text style={[styles.statusSub, { color: colors.accent.primary }]}><Text style={{ fontSize: 16 }}>•</Text> Ready</Text>
+             </View>
+           </View>
+           <View style={styles.statusDivider} />
+           <View style={styles.statusItem}>
+             <RefreshCw size={18} color={colors.text.secondary} />
+             <View style={{ alignItems: 'center' }}>
+               <Text style={styles.statusTitle}>Sync</Text>
+               <Text style={[styles.statusSub, { color: colors.status.warning }]}><Text style={{ fontSize: 16 }}>•</Text> Disabled</Text>
+             </View>
+           </View>
         </View>
 
         {/* Account Section */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Account</Text>
+          <Text style={styles.sectionTitle}>ACCOUNT</Text>
         </View>
         <View style={styles.menuCard}>
           <MenuItem icon={User} title="Personal Info" color={colors.status.info} colors={colors} styles={styles} onPress={() => setEditModalVisible(true)} />
           <MenuItem icon={Shield} title="Security & Lock" color={colors.status.warning} colors={colors} styles={styles} onPress={() => router.push('/settings' as any)} />
           <MenuItem icon={CreditCard} title="Subscription" color={colors.accent.primary} colors={colors} styles={styles} onPress={() => Alert.alert('Pro Plan', 'You are on the Pro Plan. Enjoy DevNest!')} />
-          <MenuItem icon={Smartphone} title="Connected Devices" color={colors.text.secondary} colors={colors} styles={styles} />
+          <MenuItem icon={Smartphone} title="Connected Devices" color={colors.text.secondary} colors={colors} styles={styles} onPress={() => Alert.alert('Connected Devices', 'This is currently your only connected device.')} />
         </View>
 
         {/* Activity Section */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Activity</Text>
+          <Text style={styles.sectionTitle}>ACTIVITY</Text>
         </View>
         <View style={styles.menuCard}>
-          <MenuItem icon={Clock} title="Recent Activity" color={colors.status.success} colors={colors} styles={styles} />
+          <MenuItem icon={Clock} title="Recent Activity" color={colors.status.success} colors={colors} styles={styles} onPress={() => Alert.alert('Recent Activity', 'You have no recent activity logs.')} />
           <MenuItem icon={Download} title="Downloads & Export" color={colors.status.info} colors={colors} styles={styles} onPress={() => router.push('/settings' as any)} />
           <MenuItem icon={Trash2} title="Trash" color={colors.status.error} colors={colors} styles={styles} onPress={() => router.push('/trash' as any)} />
         </View>
 
         {/* Log Out */}
         <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-          <LogOut size={20} color={colors.status.error} />
-          <Text style={styles.logoutText}>Log Out</Text>
+          <View style={[styles.menuIconWrap, { borderColor: colors.status.error + '40', borderWidth: 1 }]}>
+            <LogOut size={22} color={colors.status.error} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.logoutText}>Log Out</Text>
+            <Text style={{ color: colors.text.secondary, fontSize: 11, marginTop: 2 }}>End current session and secure your account</Text>
+          </View>
+          <ChevronRight size={20} color={colors.status.error} />
         </TouchableOpacity>
+        
+        <Text style={{ textAlign: 'center', color: colors.text.tertiary, fontSize: 12, marginTop: -20, marginBottom: 40 }}>
+          DevSnippets AI  •  Version 1.0.0
+        </Text>
 
       </ScrollView>
 
@@ -196,33 +328,58 @@ const getStyles = (colors: any) => ({
     alignItems: 'center', justifyContent: 'center',
   },
 
-  profileSection: { alignItems: 'center', marginBottom: 32 },
-  avatarWrap: {
-    width: 100, height: 100, borderRadius: 30, backgroundColor: colors.bg.secondary,
-    alignItems: 'center', justifyContent: 'center', marginBottom: 16,
-    borderWidth: 2, borderColor: colors.accent.primary,
+  heroCard: {
+    marginHorizontal: 24, backgroundColor: colors.bg.secondary, borderRadius: 24,
+    padding: 16, marginBottom: 24, borderWidth: 1, borderColor: colors.border.primary, position: 'relative'
   },
-  avatarEmoji: { fontSize: 50 },
-  nameWrap: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
-  name: { color: colors.text.primary, fontSize: 24, fontWeight: '800' },
-  handle: { color: colors.text.secondary, fontSize: 14, fontWeight: '500' },
+  localModeBadge: {
+    position: 'absolute', top: 12, left: 12, flexDirection: 'row', alignItems: 'center', gap: 4,
+    backgroundColor: colors.bg.tertiary, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, borderWidth: 1, borderColor: colors.border.primary, zIndex: 10
+  },
+  localModeText: { color: colors.text.secondary, fontSize: 10, fontWeight: '700' },
+  avatarColumn: { width: 120, alignItems: 'center', marginRight: 16, marginTop: 20 },
+  heroAvatarWrap: { width: 120, height: 120, borderRadius: 60, overflow: 'hidden', borderWidth: 2, borderColor: colors.accent.primary },
+  infoColumn: { flex: 1, marginTop: 4 },
+  heroName: { color: colors.text.primary, fontSize: 22, fontWeight: '800' },
+  heroHandle: { color: colors.text.secondary, fontSize: 13, fontWeight: '500', marginBottom: 6 },
+  heroRole: { color: colors.accent.primary, fontSize: 14, fontWeight: '700', marginBottom: 2 },
+  heroBio: { color: colors.text.tertiary, fontSize: 12, fontWeight: '500', marginBottom: 12 },
+  skillsRow: { flexDirection: 'row', gap: 6, flexWrap: 'wrap' },
+  skillBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  skillText: { fontSize: 10, fontWeight: '800' },
+  badgesRow: { flexDirection: 'row', backgroundColor: colors.bg.tertiary, borderRadius: 16, padding: 12, marginTop: 24, alignItems: 'center', justifyContent: 'space-around', borderWidth: 1, borderColor: colors.border.primary },
+  badgeBox: { flexDirection: 'row', alignItems: 'center' },
+  badgeDivider: { width: 1, height: 30, backgroundColor: colors.border.primary },
 
   storageCard: {
     marginHorizontal: 24, backgroundColor: colors.bg.secondary, borderRadius: 20,
-    padding: 20, marginBottom: 32, borderWidth: 1, borderColor: colors.border.primary,
+    padding: 20, marginBottom: 24, borderWidth: 1, borderColor: colors.border.primary,
   },
-  storageHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
-  storageTitle: { color: colors.text.primary, fontSize: 15, fontWeight: '700' },
-  storageAmount: { color: colors.accent.primary, fontSize: 15, fontWeight: '800' },
-  storageBarBg: { height: 8, backgroundColor: colors.bg.tertiary, borderRadius: 4, marginBottom: 12, overflow: 'hidden' },
-  storageBarFill: { height: '100%', backgroundColor: colors.accent.primary, borderRadius: 4 },
-  storageDetails: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
-  storageSubText: { color: colors.text.tertiary, fontSize: 13 },
+  storageHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  storageTitle: { color: colors.text.primary, fontSize: 14, fontWeight: '700' },
+  storageAmount: { color: colors.text.secondary, fontSize: 13, fontWeight: '700' },
+  storageBarBg: { height: 10, backgroundColor: colors.bg.tertiary, borderRadius: 5, marginBottom: 16, overflow: 'hidden' },
+  storageBarFill: { height: '100%', backgroundColor: colors.accent.primary, borderRadius: 5 },
+  storageDetails: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  storageSubText: { color: colors.text.tertiary, fontSize: 12 },
   storageBold: { color: colors.text.primary, fontWeight: '700' },
-  unlimitedText: { color: colors.status.success, fontSize: 13, fontWeight: '700', marginTop: 4 },
+  unlimitedText: { color: colors.accent.primary, fontSize: 12, fontWeight: '700' },
 
-  sectionHeader: { paddingHorizontal: 24, marginBottom: 12 },
-  sectionTitle: { color: colors.text.secondary, fontSize: 14, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 },
+  statsGrid: { flexDirection: 'row', paddingHorizontal: 24, gap: 12, marginBottom: 24 },
+  statBox: { flex: 1, backgroundColor: colors.bg.secondary, borderRadius: 16, padding: 12, borderWidth: 1, borderColor: colors.border.primary },
+  statIconWrap: { width: 32, height: 32, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  statBoxNumber: { color: colors.text.primary, fontSize: 18, fontWeight: '800' },
+  statBoxTitle: { color: colors.text.secondary, fontSize: 11, fontWeight: '600' },
+  statBoxSub: { color: colors.text.tertiary, fontSize: 10, fontWeight: '500', textAlign: 'center' },
+
+  statusRow: { flexDirection: 'row', marginHorizontal: 24, backgroundColor: colors.bg.secondary, borderRadius: 16, paddingVertical: 16, marginBottom: 32, borderWidth: 1, borderColor: colors.border.primary, justifyContent: 'space-evenly', alignItems: 'center' },
+  statusItem: { alignItems: 'center', gap: 6 },
+  statusTitle: { color: colors.text.primary, fontSize: 10, fontWeight: '700' },
+  statusSub: { fontSize: 10, fontWeight: '700' },
+  statusDivider: { width: 1, height: 30, backgroundColor: colors.border.primary },
+
+  sectionHeader: { paddingHorizontal: 24, marginBottom: 8 },
+  sectionTitle: { color: colors.text.tertiary, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 },
 
   menuCard: {
     marginHorizontal: 24, backgroundColor: colors.bg.secondary, borderRadius: 20,
@@ -231,14 +388,12 @@ const getStyles = (colors: any) => ({
   menuItem: {
     flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12,
   },
-  menuIconWrap: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 16 },
-  menuItemTitle: { flex: 1, color: colors.text.primary, fontSize: 16, fontWeight: '600' },
+  menuIconWrap: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginRight: 16 },
+  menuItemTitle: { color: colors.text.secondary, fontSize: 15, fontWeight: '600' },
 
   logoutBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12,
-    marginHorizontal: 24, backgroundColor: colors.status.error + '15',
-    paddingVertical: 16, borderRadius: 20, marginBottom: 40,
-    borderWidth: 1, borderColor: colors.status.error + '30',
+    flexDirection: 'row', alignItems: 'center', marginHorizontal: 24, backgroundColor: colors.status.error + '05',
+    padding: 16, borderRadius: 20, marginBottom: 40, borderWidth: 1, borderColor: colors.status.error + '30',
   },
   logoutText: { color: colors.status.error, fontSize: 16, fontWeight: '700' },
 
