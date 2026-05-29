@@ -69,7 +69,7 @@ export const LANGUAGE_LOGOS: Record<string, string> = {
   'HTML': 'html5/html5-original.svg',
   'CSS': 'css3/css3-original.svg',
   'Go': 'go/go-original.svg',
-  'Rust': 'rust/rust-plain.svg',
+  'Rust': 'rust/rust-original.svg',
   'PHP': 'php/php-original.svg',
   'Ruby': 'ruby/ruby-original.svg',
   'Swift': 'swift/swift-original.svg',

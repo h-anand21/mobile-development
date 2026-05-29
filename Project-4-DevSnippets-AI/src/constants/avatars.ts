@@ -1,3 +1,4 @@
+// Updated avatars list
 export const AVATARS = [
   require('../../assets/avatars/avatar_0.png'),
   require('../../assets/avatars/avatar_1.png'),

@@ -1,78 +1,69 @@
-// ============================================================
-// DevNest — Onboarding Screen
-// ============================================================
 import React, { useRef, useState } from 'react';
-import {
-  View, Text, StyleSheet, Dimensions, TouchableOpacity,
-  FlatList, Animated, Platform,
-} from 'react-native';
+import { View, Text, StyleSheet, Image, Dimensions, TouchableOpacity, Platform, FlatList, Animated } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import { ChevronRight } from 'lucide-react-native';
+import { ChevronRight, ArrowRight, ArrowLeft, Layers } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { Colors } from '@/theme/colors';
 import { useSettingsStore } from '@/store/settingsStore';
 
 const { width, height } = Dimensions.get('window');
 
-interface OnboardingPage {
-  id: string;
-  badge?: string;
-  headline: string;
-  headlineGreen: string;
-  headlineRest?: string;
-  description: string;
-  emoji: string;
-  highlights?: string[];
-}
-
-const PAGES: OnboardingPage[] = [
+const PAGES = [
   {
     id: '1',
-    headline: 'Your Offline ',
-    headlineGreen: 'AI-Powered',
-    headlineRest: ' Developer Workspace.',
-    description: 'Save, organize, and understand your code snippets — all offline, all private.',
-    emoji: '💻',
-    highlights: ['</> Built for Developers', '📵 Works Offline', '⚡ Blazing Fast', '🛡️ Your Data. Your Control'],
+    headlinePart1: 'Welcome to\n',
+    headlineGreen: 'DevNest ',
+    headlinePart2: '👋',
+    subtitle: 'Organize your code smarter.\nSave snippets, folders and projects\nin one beautiful workspace.',
+    image: require('../assets/on-bording screen/screen-1.png'),
+    imageScale: 1.0,
   },
   {
     id: '2',
-    badge: '2',
-    headline: '',
-    headlineGreen: 'Organize',
-    headlineRest: ' Your Code Beautifully',
-    description: 'Save, organize, tag and find your code snippets instantly. Works completely offline.',
-    emoji: '📁',
+    headlinePart1: 'Smart ',
+    headlineGreen: 'AI\n',
+    headlinePart2: 'Assistant ✨',
+    subtitle: 'AI that explains, fixes and\ngenerates code.\nWorks instantly inside DevNest.',
+    image: require('../assets/on-bording screen/screen-2.png'),
   },
   {
     id: '3',
-    badge: '3',
-    headline: '',
-    headlineGreen: 'Attach & ',
-    headlineRest: 'Manage Everything',
-    description: 'Add screenshots, files and templates. Keep everything in one secure place on your device.',
-    emoji: '📎',
+    headlinePart1: 'Powerful\n',
+    headlineGreen: 'File Organization',
+    headlinePart2: '',
+    subtitle: 'Create folders for every project.\nKeep your snippets organized\nand easy to find.',
+    image: require('../assets/on-bording screen/screen3.png'),
   },
   {
     id: '4',
-    badge: '4',
-    headline: '',
-    headlineGreen: 'AI',
-    headlineRest: ' That Understands Developers',
-    description: 'Get explanations, summaries, improvements and more using powerful Gemini AI.',
-    emoji: '🤖',
+    headlinePart1: 'Search\n',
+    headlineGreen: 'Everything',
+    headlinePart2: '',
+    subtitle: 'Find any snippet, project or\nfolder in seconds.\nSearch by language, tags\nor folder.',
+    image: require('../assets/on-bording screen/screen4.png'),
+    imageScale: 1.35,
   },
   {
     id: '5',
-    badge: '5',
-    headline: 'Private. Secure. Always ',
-    headlineGreen: 'Offline.',
-    description: 'Your code never leaves your device. No tracking, no cloud sync, 100% private.',
-    emoji: '🛡️',
-    highlights: ['📵 No Tracking', '☁️🚫 No Cloud Sync', '🔒 100% Private'],
+    headlinePart1: 'Offline\n',
+    headlineGreen: 'Developer\n',
+    headlinePart2: 'Workspace',
+    subtitle: 'Your code stays with you.\nFast, private and offline-first.',
+    image: require('../assets/on-bording screen/screen-5.png'),
   },
+  {
+    id: '6',
+    headlinePart1: 'Everything a\n',
+    headlineGreen: 'Developer ',
+    headlinePart2: 'Needs',
+    subtitle: 'Save • Organize • Create\nAll in one beautiful workspace.',
+    image: require('../assets/on-bording screen/screen6.png'),
+    extraTextTop: '🚀 Built for developers. Loved by coders.',
+    extraTextBottom: "Let's build something amazing together! 🚀",
+    imageScale: 1.35,
+  }
 ];
 
 export default function OnboardingScreen() {
@@ -94,45 +85,41 @@ export default function OnboardingScreen() {
     }
   };
 
+  const handleBack = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (currentIndex > 0) {
+      flatListRef.current?.scrollToIndex({ index: currentIndex - 1, animated: true });
+    }
+  };
+
   const handleSkip = async () => {
     await setOnboardingDone();
     router.replace('/profile-setup');
   };
 
-  const renderPage = ({ item }: { item: OnboardingPage }) => (
+  const renderPage = ({ item }: { item: typeof PAGES[0] }) => (
     <View style={styles.page}>
-      {/* Badge */}
-      {item.badge && (
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>{item.badge}</Text>
-        </View>
-      )}
-
-      {/* Emoji Illustration */}
-      <View style={styles.emojiWrap}>
-        <Text style={styles.emoji}>{item.emoji}</Text>
-        <View style={styles.emojiGlow} />
+      {/* Hero Text */}
+      <View style={styles.textContent}>
+        <Text style={styles.headline}>
+          {item.headlinePart1}
+          <Text style={styles.headlineGreen}>{item.headlineGreen}</Text>
+          {item.headlinePart2}
+        </Text>
+        <Text style={styles.subtitle}>{item.subtitle}</Text>
       </View>
 
-      {/* Headline */}
-      <Text style={styles.headline}>
-        {item.headline}
-        <Text style={styles.headlineGreen}>{item.headlineGreen}</Text>
-        {item.headlineRest ?? ''}
-      </Text>
+      {/* Image / Hero Graphic */}
+      <View style={styles.imageContainer}>
+        <Image 
+          source={item.image}
+          style={[styles.heroImage, { transform: [{ scale: item.imageScale || 1.2 }, { translateY: -25 }] }]}
+          resizeMode="contain"
+        />
+      </View>
 
-      {/* Description */}
-      <Text style={styles.description}>{item.description}</Text>
-
-      {/* Highlights grid */}
-      {item.highlights && (
-        <View style={styles.highlightsRow}>
-          {item.highlights.map((h, i) => (
-            <View key={i} style={styles.highlightChip}>
-              <Text style={styles.highlightText}>{h}</Text>
-            </View>
-          ))}
-        </View>
+      {item.extraTextTop && (
+        <Text style={styles.extraTextTop}>{item.extraTextTop}</Text>
       )}
     </View>
   );
@@ -141,13 +128,15 @@ export default function OnboardingScreen() {
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
 
-      {/* Top bar */}
-      <View style={styles.topBar}>
-        <Text style={styles.logo}>
-          Dev<Text style={styles.logoGreen}>Nest</Text>
-        </Text>
-        <TouchableOpacity onPress={handleSkip} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-          <Text style={styles.skip}>Skip &gt;</Text>
+      {/* Top Header */}
+      <View style={styles.header}>
+        <View style={styles.logoWrap}>
+          <Layers size={24} color={Colors.accent.primary} strokeWidth={2.5} />
+          <Text style={styles.logoText}>Dev<Text style={styles.logoGreen}>Nest</Text></Text>
+        </View>
+        <TouchableOpacity onPress={handleSkip} style={styles.skipBtn}>
+          <Text style={styles.skipText}>Skip</Text>
+          <ChevronRight size={16} color={Colors.accent.primary} />
         </TouchableOpacity>
       </View>
 
@@ -168,34 +157,45 @@ export default function OnboardingScreen() {
         scrollEventThrottle={16}
       />
 
-      {/* Bottom */}
+      {/* Pagination Dots */}
+      <View style={styles.dots}>
+        {PAGES.map((_, i) => {
+          const isActive = i === currentIndex;
+          return (
+            <View key={i} style={[styles.dot, isActive && styles.dotActive]} />
+          );
+        })}
+      </View>
+
+      {/* Action Buttons */}
       <View style={styles.bottom}>
-        {/* Page dots */}
-        <View style={styles.dots}>
-          {PAGES.map((_, i) => {
-            const inputRange = [(i - 1) * width, i * width, (i + 1) * width];
-            const dotWidth = scrollX.interpolate({ inputRange, outputRange: [6, 20, 6], extrapolate: 'clamp' });
-            const opacity = scrollX.interpolate({ inputRange, outputRange: [0.4, 1, 0.4], extrapolate: 'clamp' });
-            return (
-              <Animated.View
-                key={i}
-                style={[styles.dot, { width: dotWidth, opacity }]}
-              />
-            );
-          })}
-        </View>
-
-        {/* Next / Get Started button */}
-        <TouchableOpacity style={styles.nextBtn} onPress={handleNext} activeOpacity={0.85}>
-          <Text style={styles.nextText}>{isLast ? 'Get Started' : 'Next'}</Text>
-          <ChevronRight size={20} color="#000" strokeWidth={2.5} />
-        </TouchableOpacity>
-
-        {/* Skip for now */}
-        {!isLast && (
-          <TouchableOpacity onPress={handleSkip} style={styles.skipNow}>
-            <Text style={styles.skipNowText}>Skip for now</Text>
+        {currentIndex === 0 ? (
+          <TouchableOpacity style={styles.startBtn} onPress={handleNext} activeOpacity={0.85}>
+            <Text style={styles.startText}>Next</Text>
+            <ArrowRight size={22} color="#000" strokeWidth={2.5} />
           </TouchableOpacity>
+        ) : isLast ? (
+          <View style={styles.bottomButtonsColumn}>
+            <TouchableOpacity style={styles.startBtn} onPress={handleNext} activeOpacity={0.85}>
+              <Text style={styles.startText}>Get Started</Text>
+              <ArrowRight size={22} color="#000" strokeWidth={2.5} />
+            </TouchableOpacity>
+            {PAGES[currentIndex].extraTextBottom && (
+              <Text style={styles.extraTextBottom}>{PAGES[currentIndex].extraTextBottom}</Text>
+            )}
+          </View>
+        ) : (
+          <View style={styles.bottomButtonsRow}>
+            <TouchableOpacity style={styles.backBtn} onPress={handleBack} activeOpacity={0.85}>
+              <ArrowLeft size={20} color="#CCC" />
+              <Text style={styles.backText}>Back</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.nextBtnHalf} onPress={handleNext} activeOpacity={0.85}>
+              <Text style={styles.startText}>{isLast ? 'Get Started' : 'Next'}</Text>
+              <ArrowRight size={22} color="#000" strokeWidth={2.5} />
+            </TouchableOpacity>
+          </View>
         )}
       </View>
     </SafeAreaView>
@@ -203,60 +203,163 @@ export default function OnboardingScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.bg.primary },
-  topBar: {
-    flexDirection: 'row', justifyContent: 'space-between',
-    alignItems: 'center', paddingHorizontal: 24, paddingTop: 8, paddingBottom: 4,
+  container: {
+    flex: 1,
+    backgroundColor: '#000000',
   },
-  logo: { fontSize: 22, fontWeight: '800', color: Colors.text.primary },
-  logoGreen: { color: Colors.accent.primary },
-  skip: { fontSize: 14, color: Colors.text.secondary, fontWeight: '500' },
-
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingTop: 12,
+  },
+  logoWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  logoText: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#FFF',
+  },
+  logoGreen: {
+    color: Colors.accent.primary,
+  },
+  skipBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#333',
+    gap: 4,
+  },
+  skipText: {
+    color: '#CCC',
+    fontSize: 14,
+    fontWeight: '500',
+  },
   page: {
-    width, paddingHorizontal: 28, paddingTop: 24,
-    alignItems: 'center', justifyContent: 'center',
+    width,
+    flex: 1,
   },
-  badge: {
-    width: 40, height: 40, borderRadius: 8,
-    borderWidth: 2, borderColor: Colors.border.primary,
-    alignItems: 'center', justifyContent: 'center', marginBottom: 20,
+  textContent: {
+    paddingHorizontal: 24,
+    marginTop: height * 0.04, // Responsive margin
   },
-  badgeText: { color: Colors.text.primary, fontWeight: '700', fontSize: 16 },
-
-  emojiWrap: { alignItems: 'center', marginBottom: 28, position: 'relative' },
-  emoji: { fontSize: 90 },
-  emojiGlow: {
-    position: 'absolute', width: 140, height: 140, borderRadius: 70,
-    backgroundColor: Colors.accent.glow, top: -10,
-  },
-
   headline: {
-    fontSize: 26, fontWeight: '800', color: Colors.text.primary,
-    textAlign: 'center', lineHeight: 36, marginBottom: 16,
+    fontSize: 40,
+    fontWeight: '800',
+    color: '#FFF',
+    letterSpacing: -0.5,
+    lineHeight: 48,
   },
-  headlineGreen: { color: Colors.accent.primary },
-  description: {
-    fontSize: 15, color: Colors.text.secondary, textAlign: 'center',
-    lineHeight: 24, marginBottom: 24, paddingHorizontal: 8,
+  headlineGreen: {
+    color: Colors.accent.primary,
   },
-  highlightsRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8 },
-  highlightChip: {
-    backgroundColor: Colors.bg.secondary, borderRadius: 20,
-    paddingHorizontal: 14, paddingVertical: 8,
-    borderWidth: 1, borderColor: Colors.border.primary,
+  subtitle: {
+    color: '#999',
+    fontSize: 15,
+    lineHeight: 24,
+    marginTop: 16,
   },
-  highlightText: { color: Colors.text.primary, fontSize: 12, fontWeight: '500' },
-
-  bottom: { paddingHorizontal: 24, paddingBottom: Platform.OS === 'ios' ? 16 : 24, alignItems: 'center' },
-  dots: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 20 },
-  dot: { height: 6, borderRadius: 3, backgroundColor: Colors.accent.primary },
-
-  nextBtn: {
-    width: '100%', backgroundColor: Colors.accent.primary,
-    borderRadius: 14, height: 54, flexDirection: 'row',
-    alignItems: 'center', justifyContent: 'center', gap: 8,
+  imageContainer: {
+    flex: 1,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 10,
   },
-  nextText: { fontSize: 16, fontWeight: '700', color: '#000000' },
-  skipNow: { marginTop: 14 },
-  skipNowText: { color: Colors.text.secondary, fontSize: 14 },
+  heroImage: {
+    width: '100%',
+    height: '100%',
+    maxHeight: height * 0.55, // Ensure it fits on smaller screens
+  },
+  dots: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 24,
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#333',
+  },
+  dotActive: {
+    backgroundColor: Colors.accent.primary,
+  },
+  bottom: {
+    paddingHorizontal: 24,
+    paddingBottom: Platform.OS === 'ios' ? 16 : 32,
+  },
+  startBtn: {
+    backgroundColor: Colors.accent.primary,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 60,
+    borderRadius: 30,
+    gap: 8,
+    width: '100%',
+  },
+  startText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#000',
+  },
+  bottomButtonsColumn: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    width: '100%',
+  },
+  bottomButtonsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 16,
+  },
+  backBtn: {
+    flex: 0.35,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 60,
+    borderRadius: 30,
+    borderWidth: 1,
+    borderColor: '#333',
+    gap: 8,
+  },
+  backText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#CCC',
+  },
+  nextBtnHalf: {
+    flex: 0.65,
+    backgroundColor: Colors.accent.primary,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 60,
+    borderRadius: 30,
+    gap: 8,
+  },
+  extraTextTop: {
+    color: '#CCC',
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 10,
+    marginBottom: 5,
+  },
+  extraTextBottom: {
+    color: '#999',
+    fontSize: 13,
+    textAlign: 'center',
+    marginTop: 16,
+  },
 });

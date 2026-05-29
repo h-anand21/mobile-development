@@ -20,6 +20,7 @@ import Toast from 'react-native-toast-message';
 
 import { useThemeColors } from '@/theme/colors';
 import { useSnippetStore } from '@/store/snippetStore';
+import { useAIStore } from '@/store/aiStore';
 import { getLanguageConfig, LANGUAGE_LOGOS } from '@/constants/languages';
 import { timeAgo } from '@/utils/formatters/dateFormatter';
 import { SvgUri } from 'react-native-svg';
@@ -37,10 +38,12 @@ export function SnippetDetailsScreen() {
   
   const { id } = useLocalSearchParams<{ id: string }>();
   const { getSnippetById, toggleFavorite, deleteSnippet } = useSnippetStore();
+  const { askAI } = useAIStore();
   const aiModalRef = useRef<BottomSheetModal>(null);
   
   const [activeTab, setActiveTab] = useState<Tab>('Info');
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isAiLoading, setIsAiLoading] = useState(false);
   
   const snippet = getSnippetById(id as string);
   
@@ -60,9 +63,31 @@ export function SnippetDetailsScreen() {
     );
   }
 
+  const handleQuickAction = async (action: 'explain' | 'optimize' | 'refactor' | 'debug') => {
+    if (isAiLoading) return;
+    setIsAiLoading(true);
+    Toast.show({ type: 'info', text1: 'AI is thinking...', text2: 'Please wait.' });
+    
+    const result = await askAI({
+      snippetId: snippet.id,
+      code: snippet.content,
+      language: snippet.language,
+      actionType: action
+    });
+    
+    setIsAiLoading(false);
+    if (result.success) {
+      Toast.show({ type: 'success', text1: 'Success!', text2: 'Result saved to AI History.' });
+      // Automatically switch to the main AI history tab so they can see the result
+      router.push('/ai-history'); 
+    } else {
+      Toast.show({ type: 'error', text1: 'AI Error', text2: result.error });
+    }
+  };
+
   const langConfig = getLanguageConfig(snippet.language);
   const logoPath = LANGUAGE_LOGOS[snippet.language] || LANGUAGE_LOGOS[langConfig.label];
-  const logoUrl = logoPath ? `https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/${logoPath}` : null;
+  const logoUrl = logoPath ? `https://raw.githubusercontent.com/devicons/devicon/master/icons/${logoPath}` : null;
 
   const handleCopy = async () => {
     await Clipboard.setStringAsync(snippet.content);
@@ -263,17 +288,70 @@ export function SnippetDetailsScreen() {
         {/* History Tab Content */}
         {activeTab === 'History' && (
           <View style={styles.tabContent}>
-             <View style={styles.emptyWrap}>
-              <Text style={styles.emptyEmoji}>✨</Text>
-              <Text style={styles.emptyText}>Ask AI Assistant</Text>
-              <Text style={styles.emptySubText}>Use Gemini to explain or optimize this code.</Text>
+            
+            <View style={styles.infoCard}>
+              <Text style={styles.infoCardTitle}>AI Quick Actions</Text>
+              <Text style={styles.infoCardText}>Select an action below to instantly generate insights and save them to your AI History.</Text>
+              
+              <View style={[styles.actionsGrid, { flexWrap: 'wrap', marginTop: 16 }]}>
+                <TouchableOpacity 
+                  style={[styles.actionGridItem, { minWidth: '45%', marginBottom: 12 }, isAiLoading && { opacity: 0.5 }]} 
+                  onPress={() => handleQuickAction('explain')}
+                  disabled={isAiLoading}
+                >
+                  <View style={[styles.actionGridIconWrap, { backgroundColor: '#7F52FF' + '15' }]}>
+                    <Text style={{ fontSize: 20 }}>🧠</Text>
+                  </View>
+                  <Text style={styles.actionGridText}>Explain</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity 
+                  style={[styles.actionGridItem, { minWidth: '45%', marginBottom: 12 }, isAiLoading && { opacity: 0.5 }]} 
+                  onPress={() => handleQuickAction('optimize')}
+                  disabled={isAiLoading}
+                >
+                  <View style={[styles.actionGridIconWrap, { backgroundColor: '#FFB800' + '15' }]}>
+                    <Text style={{ fontSize: 20 }}>⚡</Text>
+                  </View>
+                  <Text style={styles.actionGridText}>Optimize</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity 
+                  style={[styles.actionGridItem, { minWidth: '45%', marginBottom: 12 }, isAiLoading && { opacity: 0.5 }]} 
+                  onPress={() => handleQuickAction('refactor')}
+                  disabled={isAiLoading}
+                >
+                  <View style={[styles.actionGridIconWrap, { backgroundColor: '#00D084' + '15' }]}>
+                    <Text style={{ fontSize: 20 }}>♻️</Text>
+                  </View>
+                  <Text style={styles.actionGridText}>Refactor</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity 
+                  style={[styles.actionGridItem, { minWidth: '45%', marginBottom: 12 }, isAiLoading && { opacity: 0.5 }]} 
+                  onPress={() => handleQuickAction('debug')}
+                  disabled={isAiLoading}
+                >
+                  <View style={[styles.actionGridIconWrap, { backgroundColor: '#FF4D4D' + '15' }]}>
+                    <Text style={{ fontSize: 20 }}>🐛</Text>
+                  </View>
+                  <Text style={styles.actionGridText}>Find Bugs</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={[styles.infoCard, { alignItems: 'center', paddingVertical: 24 }]}>
+              <Text style={[styles.infoCardTitle, { marginBottom: 4 }]}>Custom Chat</Text>
+              <Text style={[styles.infoCardText, { textAlign: 'center', marginBottom: 16 }]}>Need something specific? Have a custom conversation with Gemini about this code.</Text>
               <TouchableOpacity 
-                style={{ marginTop: 24, backgroundColor: colors.accent.primary, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 20 }}
+                style={{ backgroundColor: colors.accent.primary, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 20, width: '100%', alignItems: 'center' }}
                 onPress={() => aiModalRef.current?.present()}
+                disabled={isAiLoading}
               >
                 <Text style={{ color: '#000', fontWeight: 'bold' }}>Open AI Chat</Text>
               </TouchableOpacity>
             </View>
+
           </View>
         )}
 

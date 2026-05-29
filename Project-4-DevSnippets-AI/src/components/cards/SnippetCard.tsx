@@ -29,7 +29,7 @@ export function SnippetCard({ snippet, showPreview = false, onPress, style }: Sn
   
   const languageConfig = LANGUAGES.find(l => l.label === snippet.language) || LANGUAGES[0];
   const logoPath = LANGUAGE_LOGOS[snippet.language] || LANGUAGE_LOGOS[languageConfig.label];
-  const logoUrl = logoPath ? `https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/${logoPath}` : null;
+  const logoUrl = logoPath ? `https://raw.githubusercontent.com/devicons/devicon/master/icons/${logoPath}` : null;
   const router = useRouter();
   const { toggleFavorite, deleteSnippet } = useSnippetStore();
 

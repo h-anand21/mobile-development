@@ -7,7 +7,7 @@ export const APP_CONFIG = {
   version: '1.0.0',
   dbName: 'devnest.db',
   dbVersion: 1,
-  aiModel: 'gemini-2.0-flash',
+  aiModel: 'gemini-flash-latest',
   aiApiBaseUrl: 'https://generativelanguage.googleapis.com/v1beta/models',
   searchDebounceMs: 300,
   maxTagsPerSnippet: 10,

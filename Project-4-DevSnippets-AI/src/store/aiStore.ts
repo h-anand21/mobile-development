@@ -71,7 +71,12 @@ export const useAIStore = create<AIState>((set, get) => ({
       }
 
       // 2. Get API key
-      const apiKey = await SecureStore.getItemAsync(SECURE_KEYS.GEMINI_API_KEY);
+      let apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+      if (!apiKey || apiKey === 'your_gemini_api_key_here') {
+        const secureKey = await SecureStore.getItemAsync(SECURE_KEYS.GEMINI_API_KEY);
+        apiKey = secureKey ? secureKey : undefined;
+      }
+
       if (!apiKey) {
         set({ isLoading: false, error: 'API key not set. Add it in Settings.' });
         return { success: false, error: 'API key not set. Go to Settings to add your Gemini API key.' };

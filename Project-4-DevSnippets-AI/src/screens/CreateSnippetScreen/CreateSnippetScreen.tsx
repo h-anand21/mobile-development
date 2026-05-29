@@ -117,7 +117,7 @@ export function CreateSnippetScreen() {
               {LANGUAGES.filter(lang => enabledLanguages.includes(lang.label)).map((lang) => {
                 const isActive = language === lang.label;
                 const logoPath = LANGUAGE_LOGOS[lang.label];
-                const logoUrl = logoPath ? `https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/${logoPath}` : null;
+                const logoUrl = logoPath ? `https://raw.githubusercontent.com/devicons/devicon/master/icons/${logoPath}` : null;
                 
                 return (
                   <TouchableOpacity
