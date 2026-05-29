@@ -9,6 +9,7 @@ import * as AIQ from '@/database/queries/ai.queries';
 import * as SecureStore from 'expo-secure-store';
 import { SECURE_KEYS } from '@/constants/storageKeys';
 import { APP_CONFIG } from '@/constants/config';
+import { useSettingsStore } from '@/store/settingsStore';
 
 function rowToItem(row: AIHistoryRow): AIHistoryItem {
   return {
@@ -83,8 +84,9 @@ export const useAIStore = create<AIState>((set, get) => ({
       }
 
       // 3. Call Gemini
+      const { aiModel } = useSettingsStore.getState();
       const prompt = buildPrompt(code, language, actionType);
-      const url = `${APP_CONFIG.aiApiBaseUrl}/${APP_CONFIG.aiModel}:generateContent?key=${apiKey}`;
+      const url = `${APP_CONFIG.aiApiBaseUrl}/${aiModel}:generateContent?key=${apiKey}`;
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -94,8 +96,18 @@ export const useAIStore = create<AIState>((set, get) => ({
       });
 
       if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(errData?.error?.message ?? `HTTP ${res.status}`);
+        const errData = await res.json().catch(() => ({}));
+        const apiError = errData?.error?.message ?? `HTTP ${res.status}`;
+        
+        // Handle specific API errors
+        if (res.status === 401 || res.status === 403 || apiError.toLowerCase().includes('api_key_invalid')) {
+           throw new Error('API_KEY_INVALID');
+        }
+        if (res.status === 429 || apiError.toLowerCase().includes('quota') || apiError.toLowerCase().includes('limit') || apiError.toLowerCase().includes('exhausted')) {
+           throw new Error('QUOTA_EXCEEDED');
+        }
+
+        throw new Error(apiError);
       }
 
       const data = await res.json();

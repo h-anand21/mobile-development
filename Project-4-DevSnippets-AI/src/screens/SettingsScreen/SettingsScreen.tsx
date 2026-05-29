@@ -65,11 +65,14 @@ export function SettingsScreen() {
     notificationsEnabled, setNotificationsEnabled,
     appLockEnabled, setAppLockEnabled,
     geminiApiKey, setGeminiApiKey,
+    aiModel, setAiModel,
     enabledLanguages, setEnabledLanguages
   } = useSettingsStore();
 
   const [isApiKeyModalVisible, setApiKeyModalVisible] = useState(false);
   const [tempApiKey, setTempApiKey] = useState(geminiApiKey || '');
+  const [isModelModalVisible, setModelModalVisible] = useState(false);
+  const [tempModel, setTempModel] = useState(aiModel || 'gemini-flash-latest');
   const [isLanguagesModalVisible, setLanguagesModalVisible] = useState(false);
 
   const { snippets } = useSnippetStore();
@@ -127,9 +130,21 @@ export function SettingsScreen() {
   };
 
   const handleSaveApiKey = () => {
-    setGeminiApiKey(tempApiKey);
+    const key = tempApiKey.trim();
+    if (key && !key.startsWith('AIza')) {
+      Alert.alert('Invalid Key ❌', 'Google Gemini API keys typically start with "AIza". Please ensure you copied the correct key from Google AI Studio.');
+      return;
+    }
+    setGeminiApiKey(key);
     setApiKeyModalVisible(false);
     Toast.show({ type: 'success', text1: 'API Key saved securely!' });
+  };
+
+  const handleSaveModel = () => {
+    const m = tempModel.trim() || 'gemini-flash-latest';
+    setAiModel(m);
+    setModelModalVisible(false);
+    Toast.show({ type: 'success', text1: 'AI Model updated!' });
   };
 
   const handleToggleLanguage = (langLabel: string) => {
@@ -210,6 +225,12 @@ export function SettingsScreen() {
           />
           <View style={styles.divider} />
           <SettingRow 
+            icon={Database} title="AI Model Setup" subtitle={aiModel}
+            onPress={() => setModelModalVisible(true)}
+            colors={colors} styles={styles}
+          />
+          <View style={styles.divider} />
+          <SettingRow 
             icon={Database} title="Backup Data" subtitle="Export a full JSON backup"
             onPress={handleBackup}
             colors={colors} styles={styles}
@@ -241,6 +262,9 @@ export function SettingsScreen() {
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Set Gemini API Key</Text>
             <Text style={styles.modalSub}>Get your key from Google AI Studio. It will be stored securely on your device.</Text>
+            <TouchableOpacity onPress={() => Linking.openURL('https://aistudio.google.com/app/apikey')} style={{ marginBottom: 20 }}>
+              <Text style={{ color: colors.accent.primary, fontWeight: '700', fontSize: 14 }}>Get FREE API Key here ↗</Text>
+            </TouchableOpacity>
             <TextInput
               style={styles.modalInput}
               value={tempApiKey}
@@ -256,6 +280,43 @@ export function SettingsScreen() {
               </TouchableOpacity>
               <TouchableOpacity style={styles.modalSave} onPress={handleSaveApiKey}>
                 <Text style={styles.modalSaveText}>Save Securely</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* AI Model Modal */}
+      <Modal visible={isModelModalVisible} transparent animationType="fade">
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>AI Model Setup</Text>
+            <Text style={styles.modalSub}>Select or type the Gemini model you want to use for AI actions. 'gemini-flash-latest' is recommended for free tiers.</Text>
+            
+            <View style={{ marginBottom: 16 }}>
+              <TouchableOpacity onPress={() => setTempModel('gemini-flash-latest')} style={{ paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border.primary }}>
+                <Text style={{ color: tempModel === 'gemini-flash-latest' ? colors.accent.primary : colors.text.primary, fontWeight: '600' }}>• gemini-flash-latest (Fast & Free)</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setTempModel('gemini-1.5-pro')} style={{ paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border.primary }}>
+                <Text style={{ color: tempModel === 'gemini-1.5-pro' ? colors.accent.primary : colors.text.primary, fontWeight: '600' }}>• gemini-1.5-pro (Advanced)</Text>
+              </TouchableOpacity>
+            </View>
+
+            <Text style={[styles.modalSub, { marginBottom: 8 }]}>Or enter a custom model alias:</Text>
+            <TextInput
+              style={styles.modalInput}
+              value={tempModel}
+              onChangeText={setTempModel}
+              placeholder="e.g. gemini-2.0-flash"
+              placeholderTextColor={colors.text.tertiary}
+              autoCapitalize="none"
+            />
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.modalCancel} onPress={() => setModelModalVisible(false)}>
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.modalSave} onPress={handleSaveModel}>
+                <Text style={styles.modalSaveText}>Save Model</Text>
               </TouchableOpacity>
             </View>
           </View>

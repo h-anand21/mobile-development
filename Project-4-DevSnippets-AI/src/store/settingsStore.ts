@@ -22,6 +22,7 @@ interface SettingsState extends AppSettings {
   notificationsEnabled: boolean;
   appLockEnabled: boolean;
   geminiApiKey: string | undefined;
+  aiModel: string;
 
   loadSettings: () => Promise<void>;
   setTheme: (theme: AppTheme) => Promise<void>;
@@ -33,6 +34,7 @@ interface SettingsState extends AppSettings {
   setNotificationsEnabled: (enabled: boolean) => Promise<void>;
   setAppLockEnabled: (enabled: boolean) => Promise<void>;
   setGeminiApiKey: (key: string) => Promise<void>;
+  setAiModel: (model: string) => Promise<void>;
   setEnabledLanguages: (langs: string[]) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -46,13 +48,14 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   notificationsEnabled: true,
   appLockEnabled: false,
   geminiApiKey: undefined,
+  aiModel: 'gemini-flash-latest',
   userProfile: null,
   enabledLanguages: DEFAULT_LANGUAGES,
   isLoaded: false,
 
   loadSettings: async () => {
     try {
-      const [theme, fontSize, haptic, onboarding, profileDone, profile, notifs, appLock, enabledLangs] = await Promise.all([
+      const [theme, fontSize, haptic, onboarding, profileDone, profile, notifs, appLock, enabledLangs, storedModel] = await Promise.all([
         AsyncStorage.getItem(STORAGE_KEYS.THEME),
         AsyncStorage.getItem(STORAGE_KEYS.FONT_SIZE),
         AsyncStorage.getItem(STORAGE_KEYS.HAPTIC_ENABLED),
@@ -62,6 +65,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         AsyncStorage.getItem('devnest_notifications'),
         AsyncStorage.getItem('devnest_applock'),
         AsyncStorage.getItem('devnest_enabled_languages'),
+        AsyncStorage.getItem('devnest_ai_model'),
       ]);
 
       let geminiKey = undefined;
@@ -81,6 +85,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         notificationsEnabled: notifs !== 'false',
         appLockEnabled: appLock === 'true',
         geminiApiKey: geminiKey,
+        aiModel: storedModel || 'gemini-flash-latest',
         enabledLanguages: enabledLangs ? JSON.parse(enabledLangs) : DEFAULT_LANGUAGES,
         isLoaded: true,
       });
@@ -143,6 +148,11 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     }
   },
 
+  setAiModel: async (model) => {
+    set({ aiModel: model });
+    await AsyncStorage.setItem('devnest_ai_model', model);
+  },
+
   setEnabledLanguages: async (langs) => {
     set({ enabledLanguages: langs });
     await AsyncStorage.setItem('devnest_enabled_languages', JSON.stringify(langs));
@@ -152,14 +162,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     set({ 
       userProfile: null, 
       profileSetupDone: false,
-      geminiApiKey: undefined,
     });
     await AsyncStorage.removeItem(STORAGE_KEYS.USER_PROFILE);
     await AsyncStorage.removeItem(STORAGE_KEYS.PROFILE_SETUP_DONE);
-    
-    try {
-      const SecureStore = require('expo-secure-store');
-      await SecureStore.deleteItemAsync('devnest_gemini_key');
-    } catch (e) {}
   },
 }));

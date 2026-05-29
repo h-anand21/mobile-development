@@ -81,7 +81,27 @@ export function SnippetDetailsScreen() {
       // Automatically switch to the main AI history tab so they can see the result
       router.push('/ai-history'); 
     } else {
-      Toast.show({ type: 'error', text1: 'AI Error', text2: result.error });
+      if (result.error === 'QUOTA_EXCEEDED') {
+        Alert.alert(
+          'Limit Reached 🚦',
+          'The shared community AI limit has been reached. Please add your personal Free API Key in Settings to continue using AI instantly.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Go to Settings', onPress: () => router.push('/settings' as any) }
+          ]
+        );
+      } else if (result.error === 'API_KEY_INVALID') {
+        Alert.alert(
+          'Invalid API Key ❌',
+          'The API Key you entered is invalid. Please ensure it is a valid Google Gemini Key (usually starts with AIza).',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Fix in Settings', onPress: () => router.push('/settings' as any) }
+          ]
+        );
+      } else {
+        Toast.show({ type: 'error', text1: 'AI Error', text2: result.error });
+      }
     }
   };
 

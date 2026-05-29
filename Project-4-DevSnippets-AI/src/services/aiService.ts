@@ -3,6 +3,7 @@
 // ============================================================
 
 import * as SecureStore from 'expo-secure-store';
+import { useSettingsStore } from '@/store/settingsStore';
 
 const getApiKey = async () => {
   const envKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
@@ -19,7 +20,8 @@ export const askGemini = async (prompt: string, context?: string): Promise<strin
   if (!API_KEY) {
     throw new Error('Gemini API key is not configured. Please set it in Settings.');
   }
-  const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${API_KEY}`;
+  const { aiModel } = useSettingsStore.getState();
+  const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${aiModel}:generateContent?key=${API_KEY}`;
 
   const fullPrompt = context
     ? `You are an expert developer AI assistant named DevNest AI.
@@ -74,7 +76,8 @@ export const askGeminiVision = async (prompt: string, base64Image: string, mimeT
   if (!API_KEY) {
     throw new Error('Gemini API key is not configured. Please set it in Settings.');
   }
-  const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${API_KEY}`;
+  const { aiModel } = useSettingsStore.getState();
+  const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${aiModel}:generateContent?key=${API_KEY}`;
 
   const body = {
     contents: [
