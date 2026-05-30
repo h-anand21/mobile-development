@@ -19,8 +19,6 @@ interface SettingsState extends AppSettings {
   isLoaded: boolean;
   enabledLanguages: string[];
 
-  notificationsEnabled: boolean;
-  appLockEnabled: boolean;
   geminiApiKey: string | undefined;
   aiModel: string;
 
@@ -31,8 +29,6 @@ interface SettingsState extends AppSettings {
   setOnboardingDone: () => Promise<void>;
   setProfileSetupDone: () => Promise<void>;
   setUserProfile: (profile: UserProfile) => Promise<void>;
-  setNotificationsEnabled: (enabled: boolean) => Promise<void>;
-  setAppLockEnabled: (enabled: boolean) => Promise<void>;
   setGeminiApiKey: (key: string) => Promise<void>;
   setAiModel: (model: string) => Promise<void>;
   setEnabledLanguages: (langs: string[]) => Promise<void>;
@@ -45,25 +41,21 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   hapticEnabled: true,
   onboardingDone: false,
   profileSetupDone: false,
-  notificationsEnabled: true,
-  appLockEnabled: false,
   geminiApiKey: undefined,
-  aiModel: 'gemini-1.5-flash',
+  aiModel: 'gemini-2.5-flash',
   userProfile: null,
   enabledLanguages: DEFAULT_LANGUAGES,
   isLoaded: false,
 
   loadSettings: async () => {
     try {
-      const [theme, fontSize, haptic, onboarding, profileDone, profile, notifs, appLock, enabledLangs, storedModel] = await Promise.all([
+      const [theme, fontSize, haptic, onboarding, profileDone, profile, enabledLangs, storedModel] = await Promise.all([
         AsyncStorage.getItem(STORAGE_KEYS.THEME),
         AsyncStorage.getItem(STORAGE_KEYS.FONT_SIZE),
         AsyncStorage.getItem(STORAGE_KEYS.HAPTIC_ENABLED),
         AsyncStorage.getItem(STORAGE_KEYS.ONBOARDING_DONE),
         AsyncStorage.getItem(STORAGE_KEYS.PROFILE_SETUP_DONE),
         AsyncStorage.getItem(STORAGE_KEYS.USER_PROFILE),
-        AsyncStorage.getItem('devnest_notifications'),
-        AsyncStorage.getItem('devnest_applock'),
         AsyncStorage.getItem('devnest_enabled_languages'),
         AsyncStorage.getItem('devnest_ai_model'),
       ]);
@@ -82,10 +74,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         onboardingDone: onboarding === 'true',
         profileSetupDone: profileDone === 'true',
         userProfile: profile ? JSON.parse(profile) : null,
-        notificationsEnabled: notifs !== 'false',
-        appLockEnabled: appLock === 'true',
         geminiApiKey: geminiKey,
-        aiModel: storedModel || 'gemini-1.5-flash',
+        aiModel: storedModel || 'gemini-2.5-flash',
         enabledLanguages: enabledLangs ? JSON.parse(enabledLangs) : DEFAULT_LANGUAGES,
         isLoaded: true,
       });
@@ -122,16 +112,6 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   setUserProfile: async (profile) => {
     set({ userProfile: profile });
     await AsyncStorage.setItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(profile));
-  },
-
-  setNotificationsEnabled: async (enabled) => {
-    set({ notificationsEnabled: enabled });
-    await AsyncStorage.setItem('devnest_notifications', String(enabled));
-  },
-
-  setAppLockEnabled: async (enabled) => {
-    set({ appLockEnabled: enabled });
-    await AsyncStorage.setItem('devnest_applock', String(enabled));
   },
 
   setGeminiApiKey: async (key) => {

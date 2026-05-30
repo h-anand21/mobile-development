@@ -227,7 +227,7 @@ export default function ProfileSetupScreen() {
                   }}
                   activeOpacity={0.8}
                 >
-                  <Image source={avatar} style={styles.avatarImage} />
+                  <Image source={avatar} style={[styles.avatarImage, { borderRadius: 32 }]} />
                   {selectedAvatar === index && (
                     <View style={styles.avatarCheck}>
                       <Check size={12} color="#000" strokeWidth={4} />
@@ -241,7 +241,7 @@ export default function ProfileSetupScreen() {
             <View style={styles.selectedCard}>
                <Sparkles size={16} color={Colors.accent.primary} style={{ position: 'absolute', top: 12, left: 12, opacity: 0.8 }} />
                <View style={styles.selectedCardAvatarBox}>
-                 <Image source={AVATARS[selectedAvatar]} style={{ width: '100%', height: '100%' }} />
+                 <Image source={AVATARS[selectedAvatar]} style={{ width: '100%', height: '100%', borderRadius: 25 }} />
                </View>
                <View style={{ flex: 1 }}>
                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>

@@ -93,7 +93,7 @@ export function SnippetDetailsScreen() {
         } else {
           Alert.alert(
             'Limit Reached 🚦',
-            'The shared community AI limit has been reached. Please add your personal Free API Key in Settings to continue using AI instantly.',
+            'The shared community AI limit has been reached. Please add your personal API Key and choose a High-Limit Model (like Gemini 1.5 Flash) in Settings to continue without interruptions.',
             [
               { text: 'Cancel', style: 'cancel' },
               { text: 'Go to Settings', onPress: () => router.push('/settings' as any) }

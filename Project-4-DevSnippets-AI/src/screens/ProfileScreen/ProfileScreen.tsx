@@ -95,7 +95,7 @@ export function ProfileScreen() {
            <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginTop: 12 }}>
              <View style={styles.avatarColumn}>
                <View style={styles.heroAvatarWrap}>
-                 <Image source={selectedAvatarSource} style={{ width: '100%', height: '100%', resizeMode: 'cover' }} />
+                 <Image source={selectedAvatarSource} style={{ width: '100%', height: '100%', resizeMode: 'cover', borderRadius: 60 }} />
                </View>
              </View>
              <View style={styles.infoColumn}>
@@ -286,7 +286,7 @@ export function ProfileScreen() {
                   style={[styles.emojiBtn, tempAvatarIdx === idx && styles.emojiBtnActive, { overflow: 'hidden', padding: 0 }]}
                   onPress={() => setTempAvatarIdx(idx)}
                 >
-                  <Image source={avatar} style={{ width: '100%', height: '100%', resizeMode: 'cover' }} />
+                  <Image source={avatar} style={{ width: '100%', height: '100%', resizeMode: 'cover', borderRadius: 25 }} />
                 </TouchableOpacity>
               ))}
             </View>

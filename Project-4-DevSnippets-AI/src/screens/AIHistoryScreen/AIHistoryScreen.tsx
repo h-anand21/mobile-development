@@ -152,7 +152,7 @@ export function AIHistoryScreen() {
 
       {/* Filter Chips */}
       {!selectedFolderId && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ minHeight: 50, flexGrow: 0, marginBottom: 12 }} contentContainerStyle={styles.filterScroll}>
           {FILTERS.map(filter => (
             <TouchableOpacity 
               key={filter}
@@ -192,6 +192,13 @@ export function AIHistoryScreen() {
                 <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: colors.bg.tertiary, alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: colors.text.secondary, fontWeight: 'bold' }}>3</Text></View>
                 <Text style={{ color: colors.text.primary, fontSize: 14, flex: 1 }}>Choose an <Text style={{ color: colors.accent.primary, fontWeight: 'bold' }}>AI Quick Action</Text> to see the magic!</Text>
               </View>
+            </View>
+            
+            <View style={{ marginTop: 24, backgroundColor: colors.bg.tertiary, padding: 16, borderRadius: 12, borderWidth: 1, borderColor: colors.border.primary }}>
+              <Text style={{ color: colors.accent.primary, fontWeight: 'bold', marginBottom: 4 }}>💡 Pro Tip</Text>
+              <Text style={{ color: colors.text.secondary, fontSize: 13, lineHeight: 20 }}>
+                Did you know? You can tap on <Text style={{ color: colors.text.primary, fontWeight: 'bold' }}>'AI Model Setup'</Text> in Settings to change the AI engine. Switch to <Text style={{ color: colors.text.primary, fontWeight: 'bold' }}>Gemini 1.5 Flash</Text> for up to 1500 free requests daily!
+              </Text>
             </View>
             
             {!geminiApiKey && (
@@ -288,7 +295,7 @@ const getStyles = (colors: any) => ({
   
   headerSubtitle: { paddingHorizontal: 24, color: colors.text.secondary, fontSize: 14, marginBottom: 20 },
 
-  filterScroll: { paddingHorizontal: 24, gap: 12, paddingBottom: 16, maxHeight: 60, marginBottom: 8 },
+  filterScroll: { paddingHorizontal: 24, gap: 12, alignItems: 'center' },
   filterChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: colors.bg.secondary, borderWidth: 1, borderColor: colors.border.primary },
   filterChipActive: { backgroundColor: colors.accent.primary, borderColor: colors.accent.primary },
   filterText: { color: colors.text.secondary, fontSize: 14, fontWeight: '600' },

@@ -289,7 +289,7 @@ export function SettingsScreen() {
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>AI Model Setup</Text>
-            <Text style={styles.modalSub}>Select or type the AI model you want to use. Different models have different daily free limits.</Text>
+            <Text style={styles.modalSub}>Choose between Advanced (Pro), Fast (Flash), or High-Limit models according to your needs.</Text>
             
             <ScrollView style={{ maxHeight: 250, marginBottom: 16 }} showsVerticalScrollIndicator={false}>
               <TouchableOpacity onPress={() => setTempModel('gemini-3.1-flash-lite')} style={{ paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border.primary }}>
@@ -297,13 +297,18 @@ export function SettingsScreen() {
                 <Text style={{ color: colors.text.secondary, fontSize: 12, marginTop: 4 }}>(Daily 500 Limits - Good Balance)</Text>
               </TouchableOpacity>
               
-              <TouchableOpacity onPress={() => setTempModel('gemini-1.5-flash')} style={{ paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border.primary }}>
-                <Text style={{ color: tempModel === 'gemini-1.5-flash' ? colors.accent.primary : colors.text.primary, fontWeight: '600' }}>• gemini-1.5-flash</Text>
+              <TouchableOpacity onPress={() => setTempModel('gemini-2.5-flash')} style={{ paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border.primary }}>
+                <Text style={{ color: tempModel === 'gemini-2.5-flash' ? colors.accent.primary : colors.text.primary, fontWeight: '600' }}>• gemini-2.5-flash</Text>
                 <Text style={{ color: colors.text.secondary, fontSize: 12, marginTop: 4 }}>(Daily 1500 Limits - Recommended)</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity onPress={() => setTempModel('gemma-4-26b')} style={{ paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border.primary }}>
-                <Text style={{ color: tempModel === 'gemma-4-26b' ? colors.accent.primary : colors.text.primary, fontWeight: '600' }}>• gemma-4-26b</Text>
+              <TouchableOpacity onPress={() => setTempModel('gemini-2.0-flash')} style={{ paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border.primary }}>
+                <Text style={{ color: tempModel === 'gemini-2.0-flash' ? colors.accent.primary : colors.text.primary, fontWeight: '600' }}>• gemini-2.0-flash</Text>
+                <Text style={{ color: colors.text.secondary, fontSize: 12, marginTop: 4 }}>(Daily 1500 Limits - Very Fast)</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={() => setTempModel('gemma-4-26b-a4b-it')} style={{ paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border.primary }}>
+                <Text style={{ color: tempModel === 'gemma-4-26b-a4b-it' ? colors.accent.primary : colors.text.primary, fontWeight: '600' }}>• gemma-4-26b</Text>
                 <Text style={{ color: colors.text.secondary, fontSize: 12, marginTop: 4 }}>(Daily 1500 Limits - Best for Heavy Usage)</Text>
               </TouchableOpacity>
 
@@ -312,8 +317,8 @@ export function SettingsScreen() {
                 <Text style={{ color: colors.text.secondary, fontSize: 12, marginTop: 4 }}>(Daily 20 Limits - Very Strict)</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity onPress={() => setTempModel('gemini-1.5-pro')} style={{ paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border.primary }}>
-                <Text style={{ color: tempModel === 'gemini-1.5-pro' ? colors.accent.primary : colors.text.primary, fontWeight: '600' }}>• gemini-1.5-pro</Text>
+              <TouchableOpacity onPress={() => setTempModel('gemini-2.5-pro')} style={{ paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border.primary }}>
+                <Text style={{ color: tempModel === 'gemini-2.5-pro' ? colors.accent.primary : colors.text.primary, fontWeight: '600' }}>• gemini-2.5-pro</Text>
                 <Text style={{ color: colors.text.secondary, fontSize: 12, marginTop: 4 }}>(Advanced - Daily 50 Limits)</Text>
               </TouchableOpacity>
             </ScrollView>

@@ -135,7 +135,7 @@ export function HomeScreen() {
           <TouchableOpacity style={[styles.avatarWrap, { overflow: 'hidden' }]} onPress={() => router.push('/(tabs)/profile')}>
             <Image 
               source={AVATARS[userProfile?.avatarIndex !== undefined && userProfile.avatarIndex < AVATARS.length ? userProfile.avatarIndex : 0]} 
-              style={{ width: '100%', height: '100%', resizeMode: 'cover' }} 
+              style={{ width: '100%', height: '100%', resizeMode: 'cover', borderRadius: 22 }} 
             />
           </TouchableOpacity>
 
@@ -153,7 +153,15 @@ export function HomeScreen() {
         {/* Hero Section */}
         <View style={styles.heroSection}>
           <View style={styles.heroTextContent}>
-            <Text style={styles.greeting}>Good Morning, <Text style={styles.greetingName}>{userProfile?.name || 'Developer'} 👋</Text></Text>
+            <Text style={styles.greeting}>
+              {(() => {
+                const hour = new Date().getHours();
+                if (hour >= 5 && hour < 12) return 'Good Morning';
+                if (hour >= 12 && hour < 17) return 'Good Afternoon';
+                if (hour >= 17 && hour < 21) return 'Good Evening';
+                return 'Hello Night Owl';
+              })()}, <Text style={styles.greetingName}>{userProfile?.name || 'Developer'} 👋</Text>
+            </Text>
             <Text style={styles.headline}>Ready to code{'\n'}something <Text style={styles.neonText}>amazing?</Text></Text>
           </View>
           {/* Full image for Developer */}

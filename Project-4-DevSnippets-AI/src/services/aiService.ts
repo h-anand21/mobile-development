@@ -86,7 +86,7 @@ export const askGeminiVision = async (prompt: string, base64Image: string, mimeT
     throw new Error('Gemini API key is not configured. Please set it in Settings.');
   }
   // Hardcode multimodal model to prevent crashes if user selected a text-only model
-  const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+  const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
 
   const body = {
     contents: [

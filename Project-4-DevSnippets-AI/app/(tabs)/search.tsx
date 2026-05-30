@@ -187,7 +187,7 @@ export default function SearchScreen() {
                         </View>
                         <View style={{ flex: 1, marginLeft: 16 }}>
                           <Text style={styles.folderTitle}>{folder.name}</Text>
-                          <Text style={styles.folderMeta}>{count} snippets • Updated {timeAgo(folder.updatedAt)}</Text>
+                          <Text style={styles.folderMeta}>{count} snippets • Created {timeAgo(folder.createdAt)}</Text>
                         </View>
                         <Text style={{ color: colors.text.secondary, fontSize: 20 }}>›</Text>
                       </TouchableOpacity>
