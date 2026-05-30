@@ -33,7 +33,21 @@ Welcome to **DevNest AI**, a premium, high-performance mobile application design
 When you open DevNest AI for the first time, you will be greeted by a smooth onboarding experience.
 - **Swipe through the intro screens** to understand what DevNest AI offers.
 - **Profile Setup:** Enter your Display Name and pick a cool 3D Avatar from the grid. This makes the app feel personalized.
-> *(Screenshots coming soon)*
+<p align="center">
+  <img src="screen%20of%20devNext/on-bording/onboarding-1.png" width="200" /> &nbsp;
+  <img src="screen%20of%20devNext/on-bording/onboarding-2.png" width="200" /> &nbsp;
+  <img src="screen%20of%20devNext/on-bording/onboarding-3.png" width="200" />
+</p>
+<p align="center">
+  <img src="screen%20of%20devNext/on-bording/onboarding-4.png" width="200" /> &nbsp;
+  <img src="screen%20of%20devNext/on-bording/onboarding-5.png" width="200" /> &nbsp;
+  <img src="screen%20of%20devNext/on-bording/onboarding-6.png" width="200" />
+</p>
+<p align="center">
+  <img src="screen%20of%20devNext/profile-creation/profile-1.png" width="200" /> &nbsp;
+  <img src="screen%20of%20devNext/profile-creation/profile-2.png" width="200" /> &nbsp;
+  <img src="screen%20of%20devNext/profile-creation/profile-3.png" width="200" />
+</p>
 
 ### 2. 🏠 The Home Screen
 Your central dashboard, greeting you dynamically based on the time of day (e.g., "Hello Night Owl" or "Good Morning").
@@ -54,7 +68,10 @@ When you tap on any snippet, you enter the Snippet Details Screen.
 - **Rich Syntax Highlighting:** Code is rendered beautifully based on its programming language.
 - **Copy to Clipboard:** One-tap button to copy the entire code.
 - **Export/Share:** Export the code as a physical file to your device or share it via social apps.
-> *(Screenshots coming soon)*
+<p align="center">
+  <img src="screen%20of%20devNext/Viewing%20Snippets/viewing-1.png" width="200" /> &nbsp;
+  <img src="screen%20of%20devNext/Viewing%20Snippets/viewing-2.png" width="200" />
+</p>
 
 ### 5. 🧠 Chat with AI (Smart Code Insights)
 DevNest isn't just a notepad; it's an AI Pair Programmer.
@@ -63,7 +80,15 @@ DevNest isn't just a notepad; it's an AI Pair Programmer.
 - Click **Refactor**, **Optimize**, or **Debug** to have Gemini analyze your code and suggest improvements.
 - A beautiful modal will pop up displaying the AI's response with syntax-highlighted markdown.
 - **Save Insights:** You can save these AI conversations to your "AI History" tab so you never lose a good explanation.
-> *(Screenshots coming soon)*
+<p align="center">
+  <img src="screen%20of%20devNext/Chat%20with%20AI/chat-1.png" width="200" /> &nbsp;
+  <img src="screen%20of%20devNext/Chat%20with%20AI/chat-2.png" width="200" /> &nbsp;
+  <img src="screen%20of%20devNext/Chat%20with%20AI/chat-3.png" width="200" />
+</p>
+<p align="center">
+  <img src="screen%20of%20devNext/Chat%20with%20AI/chat-4.png" width="200" /> &nbsp;
+  <img src="screen%20of%20devNext/Chat%20with%20AI/chat-5.png" width="200" />
+</p>
 
 ### 5. 📂 File Manager & Folders
 Keep your workspace organized.
