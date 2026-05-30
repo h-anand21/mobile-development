@@ -21,6 +21,7 @@ import Toast from 'react-native-toast-message';
 import { useThemeColors } from '@/theme/colors';
 import { useSnippetStore } from '@/store/snippetStore';
 import { useAIStore } from '@/store/aiStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import { getLanguageConfig, LANGUAGE_LOGOS } from '@/constants/languages';
 import { timeAgo } from '@/utils/formatters/dateFormatter';
 import { SvgUri } from 'react-native-svg';
@@ -39,6 +40,7 @@ export function SnippetDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { getSnippetById, toggleFavorite, deleteSnippet } = useSnippetStore();
   const { askAI } = useAIStore();
+  const { geminiApiKey } = useSettingsStore();
   const aiModalRef = useRef<BottomSheetModal>(null);
   
   const [activeTab, setActiveTab] = useState<Tab>('Info');
@@ -82,21 +84,38 @@ export function SnippetDetailsScreen() {
       router.push('/ai-history'); 
     } else {
       if (result.error === 'QUOTA_EXCEEDED') {
-        Alert.alert(
-          'Limit Reached 🚦',
-          'The shared community AI limit has been reached. Please add your personal Free API Key in Settings to continue using AI instantly.',
-          [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Go to Settings', onPress: () => router.push('/settings' as any) }
-          ]
-        );
+        if (geminiApiKey) {
+          Alert.alert(
+            'Limit Reached 🚦',
+            'Your personal API Key rate limit has been reached. Please wait a minute and try again.',
+            [{ text: 'OK', style: 'default' }]
+          );
+        } else {
+          Alert.alert(
+            'Limit Reached 🚦',
+            'The shared community AI limit has been reached. Please add your personal Free API Key in Settings to continue using AI instantly.',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Go to Settings', onPress: () => router.push('/settings' as any) }
+            ]
+          );
+        }
       } else if (result.error === 'API_KEY_INVALID') {
         Alert.alert(
           'Invalid API Key ❌',
-          'The API Key you entered is invalid. Please ensure it is a valid Google Gemini Key (usually starts with AIza).',
+          'The API Key you entered is invalid or has expired. Please ensure it is a valid Google Gemini Key.',
           [
             { text: 'Cancel', style: 'cancel' },
             { text: 'Fix in Settings', onPress: () => router.push('/settings' as any) }
+          ]
+        );
+      } else if (result.error === 'MODEL_NOT_FOUND') {
+        Alert.alert(
+          'Model Not Supported 🤖',
+          'The AI model you selected in Settings is either invalid or not supported for this action. Please select a different model.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Change Model', onPress: () => router.push('/settings' as any) }
           ]
         );
       } else {

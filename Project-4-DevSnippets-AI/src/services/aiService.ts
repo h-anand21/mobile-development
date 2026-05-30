@@ -6,12 +6,16 @@ import * as SecureStore from 'expo-secure-store';
 import { useSettingsStore } from '@/store/settingsStore';
 
 const getApiKey = async () => {
-  const envKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
-  if (envKey && envKey !== 'your_gemini_api_key_here') return envKey;
   try {
+    // 1. Personal Key (Highest Priority)
     const secureKey = await SecureStore.getItemAsync('devnest_gemini_key');
     if (secureKey) return secureKey;
   } catch (e) {}
+  
+  // 2. Community Fallback Key (Lowest Priority)
+  const envKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+  if (envKey && envKey !== 'your_gemini_api_key_here') return envKey;
+  
   return null;
 };
 
@@ -58,6 +62,11 @@ ${prompt}`;
 
   if (!response.ok) {
     const errText = await response.text();
+    if (response.status === 404 || response.status === 400) {
+      if (errText.toLowerCase().includes('model') || errText.toLowerCase().includes('not found')) {
+        throw new Error('MODEL_NOT_FOUND');
+      }
+    }
     throw new Error(`Gemini API error ${response.status}: ${errText}`);
   }
 
@@ -76,8 +85,8 @@ export const askGeminiVision = async (prompt: string, base64Image: string, mimeT
   if (!API_KEY) {
     throw new Error('Gemini API key is not configured. Please set it in Settings.');
   }
-  const { aiModel } = useSettingsStore.getState();
-  const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${aiModel}:generateContent?key=${API_KEY}`;
+  // Hardcode multimodal model to prevent crashes if user selected a text-only model
+  const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
 
   const body = {
     contents: [
@@ -107,6 +116,11 @@ export const askGeminiVision = async (prompt: string, base64Image: string, mimeT
 
   if (!response.ok) {
     const errText = await response.text();
+    if (response.status === 404 || response.status === 400) {
+      if (errText.toLowerCase().includes('model') || errText.toLowerCase().includes('not found')) {
+        throw new Error('MODEL_NOT_FOUND');
+      }
+    }
     throw new Error(`Gemini API error ${response.status}: ${errText}`);
   }
 

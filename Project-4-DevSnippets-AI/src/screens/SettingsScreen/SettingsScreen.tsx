@@ -62,8 +62,6 @@ export function SettingsScreen() {
   
   const { 
     theme, setTheme,
-    notificationsEnabled, setNotificationsEnabled,
-    appLockEnabled, setAppLockEnabled,
     geminiApiKey, setGeminiApiKey,
     aiModel, setAiModel,
     enabledLanguages, setEnabledLanguages
@@ -71,19 +69,13 @@ export function SettingsScreen() {
 
   const [isApiKeyModalVisible, setApiKeyModalVisible] = useState(false);
   const [tempApiKey, setTempApiKey] = useState(geminiApiKey || '');
+  const [isCheckingKey, setIsCheckingKey] = useState(false);
   const [isModelModalVisible, setModelModalVisible] = useState(false);
   const [tempModel, setTempModel] = useState(aiModel || 'gemini-flash-latest');
   const [isLanguagesModalVisible, setLanguagesModalVisible] = useState(false);
 
   const { snippets } = useSnippetStore();
   const { folders } = useFolderStore();
-
-  const handleAppLock = (val: boolean) => {
-    setAppLockEnabled(val);
-    if (val) {
-      Toast.show({ type: 'info', text1: 'App Lock enabled' });
-    }
-  };
 
   const handleBackup = async () => {
     try {
@@ -129,15 +121,33 @@ export function SettingsScreen() {
     Alert.alert('Terms & Privacy', 'All your data is stored locally on your device. We do not collect or share any of your snippets or personal information.');
   };
 
-  const handleSaveApiKey = () => {
+  const handleSaveApiKey = async () => {
     const key = tempApiKey.trim();
-    if (key && !key.startsWith('AIza')) {
-      Alert.alert('Invalid Key ❌', 'Google Gemini API keys typically start with "AIza". Please ensure you copied the correct key from Google AI Studio.');
+    if (key && key.length < 10) {
+      Alert.alert('Invalid Key ❌', 'Please ensure you copied the complete API key from Google AI Studio.');
       return;
     }
+    
+    if (key) {
+      setIsCheckingKey(true);
+      try {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
+        if (!res.ok) {
+          setIsCheckingKey(false);
+          Alert.alert('Invalid Key ❌', 'The API key provided is not valid or has expired. Please check and try again.');
+          return;
+        }
+      } catch (error) {
+        setIsCheckingKey(false);
+        Alert.alert('Network Error', 'Could not verify API key. Please check your internet connection.');
+        return;
+      }
+      setIsCheckingKey(false);
+    }
+
     setGeminiApiKey(key);
     setApiKeyModalVisible(false);
-    Toast.show({ type: 'success', text1: 'API Key saved securely!' });
+    Toast.show({ type: 'success', text1: 'API Key verified and saved securely!' });
   };
 
   const handleSaveModel = () => {
@@ -199,12 +209,6 @@ export function SettingsScreen() {
             onPress={() => setLanguagesModalVisible(true)}
             colors={colors} styles={styles}
           />
-          <View style={styles.divider} />
-          <SettingRow 
-            icon={Bell} title="Notifications" subtitle="App updates and tips"
-            value={notificationsEnabled} onToggle={setNotificationsEnabled}
-            colors={colors} styles={styles}
-          />
         </View>
 
         {/* Security */}
@@ -212,12 +216,6 @@ export function SettingsScreen() {
           <Text style={styles.sectionTitle}>Security & Data</Text>
         </View>
         <View style={styles.card}>
-          <SettingRow 
-            icon={Fingerprint} title="App Lock" subtitle="Require biometrics to open"
-            value={appLockEnabled} onToggle={handleAppLock}
-            colors={colors} styles={styles}
-          />
-          <View style={styles.divider} />
           <SettingRow 
             icon={Key} title="Gemini API Key" subtitle={geminiApiKey ? "Key is set (Tap to change)" : "Set key for AI features"}
             onPress={() => setApiKeyModalVisible(true)}
@@ -278,8 +276,8 @@ export function SettingsScreen() {
               <TouchableOpacity style={styles.modalCancel} onPress={() => setApiKeyModalVisible(false)}>
                 <Text style={styles.modalCancelText}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.modalSave} onPress={handleSaveApiKey}>
-                <Text style={styles.modalSaveText}>Save Securely</Text>
+              <TouchableOpacity style={[styles.modalSave, isCheckingKey && { opacity: 0.7 }]} onPress={handleSaveApiKey} disabled={isCheckingKey}>
+                <Text style={styles.modalSaveText}>{isCheckingKey ? 'Verifying...' : 'Save Securely'}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -291,16 +289,34 @@ export function SettingsScreen() {
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>AI Model Setup</Text>
-            <Text style={styles.modalSub}>Select or type the Gemini model you want to use for AI actions. 'gemini-flash-latest' is recommended for free tiers.</Text>
+            <Text style={styles.modalSub}>Select or type the AI model you want to use. Different models have different daily free limits.</Text>
             
-            <View style={{ marginBottom: 16 }}>
+            <ScrollView style={{ maxHeight: 250, marginBottom: 16 }} showsVerticalScrollIndicator={false}>
+              <TouchableOpacity onPress={() => setTempModel('gemini-3.1-flash-lite')} style={{ paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border.primary }}>
+                <Text style={{ color: tempModel === 'gemini-3.1-flash-lite' ? colors.accent.primary : colors.text.primary, fontWeight: '600' }}>• gemini-3.1-flash-lite</Text>
+                <Text style={{ color: colors.text.secondary, fontSize: 12, marginTop: 4 }}>(Daily 500 Limits - Good Balance)</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity onPress={() => setTempModel('gemini-1.5-flash')} style={{ paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border.primary }}>
+                <Text style={{ color: tempModel === 'gemini-1.5-flash' ? colors.accent.primary : colors.text.primary, fontWeight: '600' }}>• gemini-1.5-flash</Text>
+                <Text style={{ color: colors.text.secondary, fontSize: 12, marginTop: 4 }}>(Daily 1500 Limits - Recommended)</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={() => setTempModel('gemma-4-26b')} style={{ paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border.primary }}>
+                <Text style={{ color: tempModel === 'gemma-4-26b' ? colors.accent.primary : colors.text.primary, fontWeight: '600' }}>• gemma-4-26b</Text>
+                <Text style={{ color: colors.text.secondary, fontSize: 12, marginTop: 4 }}>(Daily 1500 Limits - Best for Heavy Usage)</Text>
+              </TouchableOpacity>
+
               <TouchableOpacity onPress={() => setTempModel('gemini-flash-latest')} style={{ paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border.primary }}>
-                <Text style={{ color: tempModel === 'gemini-flash-latest' ? colors.accent.primary : colors.text.primary, fontWeight: '600' }}>• gemini-flash-latest (Fast & Free)</Text>
+                <Text style={{ color: tempModel === 'gemini-flash-latest' ? colors.accent.primary : colors.text.primary, fontWeight: '600' }}>• gemini-flash-latest</Text>
+                <Text style={{ color: colors.text.secondary, fontSize: 12, marginTop: 4 }}>(Daily 20 Limits - Very Strict)</Text>
               </TouchableOpacity>
+
               <TouchableOpacity onPress={() => setTempModel('gemini-1.5-pro')} style={{ paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border.primary }}>
-                <Text style={{ color: tempModel === 'gemini-1.5-pro' ? colors.accent.primary : colors.text.primary, fontWeight: '600' }}>• gemini-1.5-pro (Advanced)</Text>
+                <Text style={{ color: tempModel === 'gemini-1.5-pro' ? colors.accent.primary : colors.text.primary, fontWeight: '600' }}>• gemini-1.5-pro</Text>
+                <Text style={{ color: colors.text.secondary, fontSize: 12, marginTop: 4 }}>(Advanced - Daily 50 Limits)</Text>
               </TouchableOpacity>
-            </View>
+            </ScrollView>
 
             <Text style={[styles.modalSub, { marginBottom: 8 }]}>Or enter a custom model alias:</Text>
             <TextInput

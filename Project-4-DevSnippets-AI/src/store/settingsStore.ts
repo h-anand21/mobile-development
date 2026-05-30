@@ -48,7 +48,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   notificationsEnabled: true,
   appLockEnabled: false,
   geminiApiKey: undefined,
-  aiModel: 'gemini-flash-latest',
+  aiModel: 'gemini-1.5-flash',
   userProfile: null,
   enabledLanguages: DEFAULT_LANGUAGES,
   isLoaded: false,
@@ -85,7 +85,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         notificationsEnabled: notifs !== 'false',
         appLockEnabled: appLock === 'true',
         geminiApiKey: geminiKey,
-        aiModel: storedModel || 'gemini-flash-latest',
+        aiModel: storedModel || 'gemini-1.5-flash',
         enabledLanguages: enabledLangs ? JSON.parse(enabledLangs) : DEFAULT_LANGUAGES,
         isLoaded: true,
       });

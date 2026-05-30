@@ -72,10 +72,18 @@ export const useAIStore = create<AIState>((set, get) => ({
       }
 
       // 2. Get API key
-      let apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
-      if (!apiKey || apiKey === 'your_gemini_api_key_here') {
-        const secureKey = await SecureStore.getItemAsync(SECURE_KEYS.GEMINI_API_KEY);
-        apiKey = secureKey ? secureKey : undefined;
+      let apiKey: string | undefined = undefined;
+      
+      // Highest Priority: Personal Key
+      const secureKey = await SecureStore.getItemAsync(SECURE_KEYS.GEMINI_API_KEY);
+      if (secureKey) {
+        apiKey = secureKey;
+      } else {
+        // Fallback Priority: Community Key
+        const envKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+        if (envKey && envKey !== 'your_gemini_api_key_here') {
+          apiKey = envKey;
+        }
       }
 
       if (!apiKey) {
@@ -105,6 +113,11 @@ export const useAIStore = create<AIState>((set, get) => ({
         }
         if (res.status === 429 || apiError.toLowerCase().includes('quota') || apiError.toLowerCase().includes('limit') || apiError.toLowerCase().includes('exhausted')) {
            throw new Error('QUOTA_EXCEEDED');
+        }
+        if (res.status === 404 || res.status === 400) {
+           if (apiError.toLowerCase().includes('model') || apiError.toLowerCase().includes('not found')) {
+             throw new Error('MODEL_NOT_FOUND');
+           }
         }
 
         throw new Error(apiError);

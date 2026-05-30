@@ -1,0 +1,24 @@
+# Ignore node_modules, as EAS Build resolves dependencies on the build servers
+node_modules/
+
+# Ignore platform-specific build folders
+android/
+ios/
+
+# Ignore Expo temp files
+.expo/
+dist/
+web-build/
+
+# Ignore environment files
+.env
+.env.*
+
+# Ignore project documentation and plans
+*.md
+*.jsonl
+recovered_task_log*.json
+demo-screen/
+
+# Ignore typescript output
+*.tsbuildinfo

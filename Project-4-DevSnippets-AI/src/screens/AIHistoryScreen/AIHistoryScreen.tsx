@@ -6,6 +6,7 @@ import { ArrowLeft, Sparkles, Filter, Code2, Zap, Shuffle, Database, Bug, Star, 
 
 import { useThemeColors } from '@/theme/colors';
 import { useAIStore } from '@/store/aiStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import { useSnippetStore } from '@/store/snippetStore';
 import { useFolderStore } from '@/store/folderStore';
 import { timeAgo } from '@/utils/formatters/dateFormatter';
@@ -24,6 +25,7 @@ export function AIHistoryScreen() {
   const { history, loadHistory, toggleSaved, deleteHistory } = useAIStore();
   const { snippets } = useSnippetStore();
   const { folders } = useFolderStore();
+  const { geminiApiKey } = useSettingsStore();
   
   const [activeFilter, setActiveFilter] = useState('All');
   const [selectedItem, setSelectedItem] = useState<any>(null);
@@ -192,12 +194,14 @@ export function AIHistoryScreen() {
               </View>
             </View>
             
-            <TouchableOpacity 
-              style={{ marginTop: 40, backgroundColor: colors.bg.tertiary, paddingHorizontal: 24, paddingVertical: 14, borderRadius: 20, width: '100%', alignItems: 'center', borderWidth: 1, borderColor: colors.border.primary }}
-              onPress={() => router.push('/settings')}
-            >
-              <Text style={{ color: colors.text.primary, fontWeight: 'bold' }}>⚙️ Check API Key Settings</Text>
-            </TouchableOpacity>
+            {!geminiApiKey && (
+              <TouchableOpacity 
+                style={{ marginTop: 40, backgroundColor: colors.bg.tertiary, paddingHorizontal: 24, paddingVertical: 14, borderRadius: 20, width: '100%', alignItems: 'center', borderWidth: 1, borderColor: colors.border.primary }}
+                onPress={() => router.push('/settings')}
+              >
+                <Text style={{ color: colors.text.primary, fontWeight: 'bold' }}>⚙️ Check API Key Settings</Text>
+              </TouchableOpacity>
+            )}
           </View>
         )}
 
