@@ -8,6 +8,8 @@
   [![Zustand](https://img.shields.io/badge/Zustand-Bear-brown?style=for-the-badge)](#)
   [![SQLite](https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white)](#)
   [![Google Gemini](https://img.shields.io/badge/Google_Gemini-8E75B2?style=for-the-badge&logo=google&logoColor=white)](#)
+  <br/><br/>
+  [![Download APK](https://img.shields.io/badge/Download_APK-Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://expo.dev/accounts/himu21/projects/devnest/builds/ed19172e-efb2-4f50-9469-7aa61fc0b2e1)
 </div>
 
 <br />
@@ -23,6 +25,21 @@ Welcome to **DevNest AI**, a premium, high-performance mobile application design
 - 📂 **Folder Management:** Organize your snippets neatly into color-coded folders.
 - 🗑️ **Trash & Recovery System:** Safely delete snippets and restore them if needed.
 - 🎨 **Premium UI/UX:** Stunning Dark Mode, Glassmorphism effects, Haptic Feedback, and smooth animations (Reanimated 4).
+
+---
+
+## 📦 Download & Install
+Want to try out DevNest AI on your Android device? 
+
+<p align="center">
+  <img src="screen%20of%20devNext/APK%20qr/apk-qr.png" width="150" />
+  <br/>
+  <i>Scan to Download or Click Below</i>
+</p>
+
+👉 **[Download the Latest APK Here](https://expo.dev/accounts/himu21/projects/devnest/builds/ed19172e-efb2-4f50-9469-7aa61fc0b2e1)**
+
+*Note: You may need to allow "Install from Unknown Sources" in your Android settings to install the APK.*
 
 ---
 
@@ -109,7 +126,16 @@ Accidentally deleted a snippet? Don't panic.
 - Go to your Profile and click **Trash**.
 - You will see all recently deleted snippets.
 - You can either **Restore** them back to their folders or **Delete Permanently**.
-> *(Screenshots coming soon)*
+<p align="center">
+  <img src="screen%20of%20devNext/trash%20&%20recovery/trash-1.jpeg" width="200" /> &nbsp;
+  <img src="screen%20of%20devNext/trash%20&%20recovery/trash-2.jpeg" width="200" /> &nbsp;
+  <img src="screen%20of%20devNext/trash%20&%20recovery/trash-3.jpeg" width="200" />
+</p>
+<p align="center">
+  <img src="screen%20of%20devNext/trash%20&%20recovery/trash-4.jpeg" width="200" /> &nbsp;
+  <img src="screen%20of%20devNext/trash%20&%20recovery/trash-5.jpeg" width="200" /> &nbsp;
+  <img src="screen%20of%20devNext/trash%20&%20recovery/trash-6.jpeg" width="200" />
+</p>
 
 ### 8. ⚙️ Profile & Settings
 Customize your experience to the max.
