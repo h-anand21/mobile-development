@@ -1,0 +1,106 @@
+import { useEffect, useRef, useState } from 'react';
+import * as Location from 'expo-location';
+import { useDriveStore } from '../store/driveStore';
+import { calculateDistance } from '../utils/calculations';
+import { THRESHOLDS } from '../constants/thresholds';
+import { PENALTIES } from '../constants/penalties';
+import { v4 as uuidv4 } from 'uuid';
+
+export const useLocation = () => {
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [currentSpeed, setCurrentSpeed] = useState<number>(0);
+  const [subscription, setSubscription] = useState<Location.LocationSubscription | null>(null);
+  
+  const isTracking = useDriveStore((state) => state.currentSession !== null);
+  const updateDistance = useDriveStore((state) => state.updateDistance);
+  const addEvent = useDriveStore((state) => state.addEvent);
+  const updateScore = useDriveStore((state) => state.updateScore);
+
+  const previousLocation = useRef<Location.LocationObjectCoords | null>(null);
+  const lastOverspeedTime = useRef<number>(0);
+  const OVERSPEED_COOLDOWN_MS = 10000; // 10 seconds cooldown
+
+  useEffect(() => {
+    let sub: Location.LocationSubscription;
+
+    const startTrackingLocation = async () => {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setErrorMsg('Permission to access location was denied');
+        return;
+      }
+
+      sub = await Location.watchPositionAsync(
+        {
+          accuracy: Location.Accuracy.High,
+          timeInterval: 1000,
+          distanceInterval: 1, // update every 1 meter
+        },
+        (location) => {
+          const coords = location.coords;
+          
+          // Calculate speed (using provided speed or manually if not available)
+          const speedMs = coords.speed !== null && coords.speed >= 0 ? coords.speed : 0;
+          setCurrentSpeed(speedMs);
+
+          // Overspeeding Detection
+          const now = Date.now();
+          if (speedMs > THRESHOLDS.OVERSPEEDING_MS) {
+            if (now - lastOverspeedTime.current > OVERSPEED_COOLDOWN_MS) {
+              addEvent({
+                id: uuidv4(),
+                type: 'OVERSPEEDING',
+                timestamp: now,
+                severity: speedMs > THRESHOLDS.OVERSPEEDING_MS * 1.2 ? 'HIGH' : 'MEDIUM',
+                confidence: 95,
+                location: {
+                  latitude: coords.latitude,
+                  longitude: coords.longitude,
+                }
+              });
+              updateScore(PENALTIES.OVERSPEEDING);
+              lastOverspeedTime.current = now;
+            }
+          }
+
+          // Distance Tracking
+          if (previousLocation.current) {
+            const distanceDelta = calculateDistance(
+              previousLocation.current.latitude,
+              previousLocation.current.longitude,
+              coords.latitude,
+              coords.longitude
+            );
+            
+            // Avoid erratic GPS jumps adding to distance unnecessarily
+            if (distanceDelta > 0 && distanceDelta < 100) { 
+              updateDistance(distanceDelta);
+            }
+          }
+
+          previousLocation.current = coords;
+        }
+      );
+      setSubscription(sub);
+    };
+
+    if (isTracking) {
+      startTrackingLocation();
+    } else {
+      if (subscription) {
+        subscription.remove();
+        setSubscription(null);
+      }
+      previousLocation.current = null;
+      setCurrentSpeed(0);
+    }
+
+    return () => {
+      if (sub) {
+        sub.remove();
+      }
+    };
+  }, [isTracking]);
+
+  return { currentSpeed, errorMsg };
+};
