@@ -3,11 +3,28 @@ import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, Dimensions
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather, MaterialCommunityIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import Svg, { Circle, Defs, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
+import { useRouter } from 'expo-router';
+import { useDriveStore } from '../../src/store/driveStore';
+import { useSensorStore } from '../../src/store/sensorStore';
 
 const { width } = Dimensions.get('window');
 
 // Main Component
 export default function HomeScreen() {
+  const router = useRouter();
+  const startDrive = useDriveStore((state) => state.startDrive);
+  const setTracking = useSensorStore((state) => state.setTracking);
+  const currentSession = useDriveStore((state) => state.currentSession);
+
+  const handleStartDrive = () => {
+    if (currentSession) {
+      router.push('/drive');
+    } else {
+      startDrive();
+      setTracking(true);
+      router.push('/drive');
+    }
+  };
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
       
@@ -158,19 +175,23 @@ export default function HomeScreen() {
       </View>
 
       {/* Start Drive Button */}
-      <TouchableOpacity style={styles.startButtonContainer}>
+      <TouchableOpacity style={styles.startButtonContainer} onPress={handleStartDrive}>
         <LinearGradient
-          colors={['#0ea5e9', '#22c55e', '#eab308']}
+          colors={currentSession ? ['#06b6d4', '#0891b2', '#0ea5e9'] : ['#0ea5e9', '#22c55e', '#eab308']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={styles.startButtonGradient}
         >
           <View style={styles.powerIconWrap}>
-            <Feather name="power" size={24} color="#0ea5e9" />
+            <Feather name={currentSession ? "eye" : "power"} size={24} color="#0ea5e9" />
           </View>
           <View style={styles.startButtonTextWrap}>
-            <Text style={styles.startButtonTitle}>START DRIVE</Text>
-            <Text style={styles.startButtonSub}>Track your drive & improve your score</Text>
+            <Text style={styles.startButtonTitle}>
+              {currentSession ? 'VIEW ACTIVE DRIVE' : 'START DRIVE'}
+            </Text>
+            <Text style={styles.startButtonSub}>
+              {currentSession ? 'A drive is in progress. Tap to monitor.' : 'Track your drive & improve your score'}
+            </Text>
           </View>
           <View style={styles.arrowIconWrap}>
             <Feather name="chevron-right" size={24} color="#eab308" />

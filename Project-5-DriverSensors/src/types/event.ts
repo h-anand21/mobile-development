@@ -4,7 +4,9 @@ export type EventType =
   | 'SHARP_TURN' 
   | 'PHONE_USAGE' 
   | 'EXCESSIVE_MOVEMENT' 
-  | 'OVERSPEEDING';
+  | 'OVERSPEEDING'
+  | 'AGGRESSIVE_STEERING';
+
 
 export type EventSeverity = 'LOW' | 'MEDIUM' | 'HIGH';
 
@@ -18,4 +20,7 @@ export interface DriveEvent {
     latitude: number;
     longitude: number;
   };
+  speed?: number; // in km/h
+  duration?: number; // in seconds (e.g., for phone usage)
 }
+

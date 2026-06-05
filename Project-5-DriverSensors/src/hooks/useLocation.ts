@@ -4,7 +4,9 @@ import { useDriveStore } from '../store/driveStore';
 import { calculateDistance } from '../utils/calculations';
 import { THRESHOLDS } from '../constants/thresholds';
 import { PENALTIES } from '../constants/penalties';
-import { v4 as uuidv4 } from 'uuid';
+
+const generateId = () => Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
+
 
 export const useLocation = () => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -49,7 +51,7 @@ export const useLocation = () => {
           if (speedMs > THRESHOLDS.OVERSPEEDING_MS) {
             if (now - lastOverspeedTime.current > OVERSPEED_COOLDOWN_MS) {
               addEvent({
-                id: uuidv4(),
+                id: generateId(),
                 type: 'OVERSPEEDING',
                 timestamp: now,
                 severity: speedMs > THRESHOLDS.OVERSPEEDING_MS * 1.2 ? 'HIGH' : 'MEDIUM',
@@ -57,8 +59,10 @@ export const useLocation = () => {
                 location: {
                   latitude: coords.latitude,
                   longitude: coords.longitude,
-                }
+                },
+                speed: Math.round(speedMs * 3.6),
               });
+
               updateScore(PENALTIES.OVERSPEEDING);
               lastOverspeedTime.current = now;
             }

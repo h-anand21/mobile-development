@@ -1,10 +1,25 @@
 import { Tabs } from 'expo-router';
 import { MaterialCommunityIcons, Feather, AntDesign, Octicons } from '@expo/vector-icons';
 import { COLORS } from '../../src/ui/colors';
+import { useAccelerometer } from '../../src/hooks/useAccelerometer';
+import { useGyroscope } from '../../src/hooks/useGyroscope';
+import { useMagnetometer } from '../../src/hooks/useMagnetometer';
+import { useDeviceMotion } from '../../src/hooks/useDeviceMotion';
+import { useLocation } from '../../src/hooks/useLocation';
+import { useDetectionEngine } from '../../src/services/detection/useDetectionEngine';
 
 export default function TabLayout() {
+  // Global hooks execution to track drive sensors in background across tabs
+  useAccelerometer();
+  useGyroscope();
+  useMagnetometer();
+  useDeviceMotion();
+  useLocation();
+  useDetectionEngine();
+
   return (
     <Tabs
+
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
