@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { DriveEvent } from '../types/event';
+import { driveRepository } from '../database/repositories/driveRepository';
 
 export interface DriveSession {
   id: string;
@@ -43,12 +44,18 @@ export const useDriveStore = create<DriveState>((set) => ({
       if (!state.currentSession) return state;
       const endTime = Date.now();
       const duration = Math.floor((endTime - state.currentSession.startTime) / 1000);
+      
+      const completedSession = {
+        ...state.currentSession,
+        endTime,
+        duration,
+      };
+
+      // Save to MMKV Storage History
+      driveRepository.saveDrive(completedSession);
+
       return {
-        currentSession: {
-          ...state.currentSession,
-          endTime,
-          duration,
-        },
+        currentSession: completedSession,
       };
     });
   },
