@@ -266,7 +266,7 @@ export default function ProfileScreen() {
         {/* 6. Recent Achievements section */}
         <View style={styles.sectionHeaderRow}>
           <Text style={styles.sectionHeaderTitle}>Recent Achievements</Text>
-          <TouchableOpacity style={styles.viewAllRow}>
+          <TouchableOpacity onPress={() => router.push('/achievements')} style={styles.viewAllRow}>
             <Text style={styles.viewAllText}>View All</Text>
             <Feather name="chevron-right" size={12} color="#00f5ff" style={{ marginLeft: 3 }} />
           </TouchableOpacity>

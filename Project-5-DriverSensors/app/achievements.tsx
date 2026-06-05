@@ -1,0 +1,998 @@
+import React, { useState, useMemo } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import { Feather, MaterialCommunityIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
+import Svg, { Circle, Path, Polygon, Ellipse } from 'react-native-svg';
+import { useRouter } from 'expo-router';
+import { driveRepository } from '../src/database/repositories/driveRepository';
+
+const { width } = Dimensions.get('window');
+
+// 3-Column Card Width Math
+const cardWidth = (width - 40 - 16) / 3;
+
+// Hexagon Badge Wrapper
+const HexagonBadge = ({ size = 42, color = '#22c55e', isLocked = false, children }: { size?: number, color?: string, isLocked?: boolean, children?: React.ReactNode }) => {
+  const borderColor = isLocked ? '#475569' : color;
+  return (
+    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+      <Svg width={size} height={size} viewBox="0 0 100 100" style={StyleSheet.absoluteFill}>
+        <Polygon
+          points="50,5 93,25 93,75 50,95 7,75 7,25"
+          fill="rgba(8, 15, 26, 0.4)"
+          stroke={borderColor}
+          strokeWidth="6"
+          strokeLinejoin="round"
+        />
+      </Svg>
+      <View style={{ zIndex: 2 }}>
+        {children}
+      </View>
+      {isLocked && (
+        <View style={styles.lockOverlay}>
+          <Feather name="lock" size={9} color="#94a3b8" />
+        </View>
+      )}
+    </View>
+  );
+};
+
+// Mock Achievement List Data
+const INITIAL_ACHIEVEMENTS = [
+  {
+    id: '1',
+    category: 'driving',
+    title: 'Safe Driver',
+    desc: 'Drive 10 safe drives without any harsh events',
+    points: 100,
+    status: 'COMPLETED',
+    icon: <Feather name="check" size={18} color="#22c55e" />,
+    color: '#22c55e'
+  },
+  {
+    id: '2',
+    category: 'milestone',
+    title: '100 KM Explorer',
+    desc: 'Drive 100 kilometers in total',
+    points: 150,
+    status: 'COMPLETED',
+    icon: (
+      <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+        <Text style={{ color: '#00f5ff', fontSize: 9, fontWeight: '900', lineHeight: 9, textAlign: 'center' }}>100</Text>
+        <Text style={{ color: '#00f5ff', fontSize: 7, fontWeight: '700', lineHeight: 7, textAlign: 'center' }}>KM</Text>
+      </View>
+    ),
+    color: '#00f5ff'
+  },
+  {
+    id: '3',
+    category: 'driving',
+    title: '30 Safe Drives',
+    desc: 'Complete 30 safe drives with good score',
+    points: 200,
+    status: 'COMPLETED',
+    icon: <MaterialCommunityIcons name="steering" size={16} color="#a855f7" />,
+    color: '#a855f7'
+  },
+  {
+    id: '4',
+    category: 'driving',
+    title: 'Speed Master',
+    desc: 'Maintain average speed below 60 km/h for 5 drives',
+    points: 120,
+    status: 'PROGRESS',
+    current: 3,
+    total: 5,
+    icon: <MaterialCommunityIcons name="speedometer" size={18} color="#eab308" />,
+    color: '#eab308'
+  },
+  {
+    id: '5',
+    category: 'driving',
+    title: 'Eco Driver',
+    desc: 'Drive 50 km with smooth acceleration',
+    points: 150,
+    status: 'PROGRESS',
+    current: 32,
+    total: 50,
+    icon: <MaterialCommunityIcons name="leaf" size={16} color="#84cc16" />,
+    color: '#84cc16'
+  },
+  {
+    id: '6',
+    category: 'driving',
+    title: 'Night Rider',
+    desc: 'Complete 10 night drives safely',
+    points: 100,
+    status: 'PROGRESS',
+    current: 6,
+    total: 10,
+    icon: <Feather name="moon" size={16} color="#3b82f6" />,
+    color: '#3b82f6'
+  },
+  {
+    id: '7',
+    category: 'milestone',
+    title: '500 KM Journey',
+    desc: 'Drive 500 kilometers in total',
+    points: 250,
+    status: 'LOCKED',
+    icon: (
+      <View style={{ alignItems: 'center', justifyContent: 'center', opacity: 0.4 }}>
+        <Text style={{ color: '#94a3b8', fontSize: 9, fontWeight: '900', lineHeight: 9, textAlign: 'center' }}>500</Text>
+        <Text style={{ color: '#94a3b8', fontSize: 7, fontWeight: '700', lineHeight: 7, textAlign: 'center' }}>KM</Text>
+      </View>
+    ),
+    color: '#64748b'
+  },
+  {
+    id: '8',
+    category: 'streak',
+    title: 'Streak Pro',
+    desc: 'Maintain a 7-day safe driving streak',
+    points: 200,
+    status: 'LOCKED',
+    icon: <Feather name="users" size={16} color="#94a3b8" style={{ opacity: 0.4 }} />,
+    color: '#64748b'
+  },
+  {
+    id: '9',
+    category: 'special',
+    title: 'Perfect Week',
+    desc: 'Get 7 safe drives in a single week',
+    points: 300,
+    status: 'LOCKED',
+    icon: <Feather name="trophy" size={16} color="#94a3b8" style={{ opacity: 0.4 }} />,
+    color: '#64748b'
+  }
+];
+
+export default function AchievementsScreen() {
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState<'all' | 'driving' | 'milestone' | 'streak' | 'special'>('all');
+  const [sortBy, setSortBy] = useState<'rarity' | 'points' | 'unlocked'>('rarity');
+  const [showSort, setShowSort] = useState(false);
+
+  // Load drives from DB to dynamically calculate if some completed achievements can unlock
+  const dbDrives = driveRepository.getAllDrives();
+
+  // Combine DB logic to unlock achievements
+  const achievementsList = useMemo(() => {
+    const list = [...INITIAL_ACHIEVEMENTS];
+    
+    if (dbDrives.length > 0) {
+      const dbDistance = dbDrives.reduce((acc, d) => acc + d.distance, 0);
+      
+      // Update 100 KM Explorer Explorer
+      const explorer = list.find(a => a.id === '2');
+      if (explorer) {
+        const km = dbDistance / 1000;
+        if (km >= 100) {
+          explorer.status = 'COMPLETED';
+        } else {
+          explorer.status = 'PROGRESS';
+          explorer.current = Math.round(km);
+          explorer.total = 100;
+        }
+      }
+
+      // Update 500 KM Journey
+      const journey = list.find(a => a.id === '7');
+      if (journey) {
+        const km = dbDistance / 1000;
+        if (km >= 500) {
+          journey.status = 'COMPLETED';
+        } else {
+          journey.status = 'LOCKED';
+          journey.current = Math.round(km);
+          journey.total = 500;
+        }
+      }
+    }
+
+    // Filter by Tab
+    let filtered = list;
+    if (activeTab !== 'all') {
+      filtered = list.filter(a => a.category === activeTab);
+    }
+
+    // Sort by selection
+    if (sortBy === 'points') {
+      filtered.sort((a, b) => b.points - a.points);
+    } else if (sortBy === 'unlocked') {
+      filtered.sort((a, b) => {
+        if (a.status === 'COMPLETED' && b.status !== 'COMPLETED') return -1;
+        if (a.status !== 'COMPLETED' && b.status === 'COMPLETED') return 1;
+        return 0;
+      });
+    }
+
+    return filtered;
+  }, [activeTab, sortBy, dbDrives]);
+
+  const unlockedCount = useMemo(() => {
+    return INITIAL_ACHIEVEMENTS.filter(a => a.status === 'COMPLETED').length;
+  }, []);
+
+  return (
+    <View style={styles.container}>
+      {/* 1. Header Row */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.iconBtn}>
+          <Feather name="chevron-left" size={24} color="#F8FAFC" />
+        </TouchableOpacity>
+
+        <View style={styles.headerTitleContainer}>
+          <Text style={styles.headerTitle}>Achievements</Text>
+          <Text style={styles.headerSubtitle}>Your journey to becoming a better driver</Text>
+        </View>
+
+        <TouchableOpacity style={styles.iconBtn}>
+          <Feather name="trophy" size={20} color="#F8FAFC" />
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        
+        {/* 2. Top Glowing Trophy Banner Box */}
+        <View style={styles.trophyBannerCard}>
+          <View style={styles.trophyVisual}>
+            <Svg width={76} height={85} viewBox="0 0 100 110">
+              {/* Pedestal base */}
+              <Ellipse cx="50" cy="95" rx="35" ry="8" fill="#122540" stroke="#00f5ff" strokeWidth="1" />
+              <Ellipse cx="50" cy="90" rx="30" ry="7" fill="#0c1626" stroke="#00f5ff" strokeWidth="1.5" />
+              {/* Laurel Leaves */}
+              <Path d="M22,75 Q10,60 20,40 T35,25" fill="none" stroke="rgba(34, 197, 94, 0.4)" strokeWidth="2.5" />
+              <Path d="M78,75 Q90,60 80,40 T65,25" fill="none" stroke="rgba(34, 197, 94, 0.4)" strokeWidth="2.5" />
+              {/* Shield Trophy */}
+              <Path
+                d="M 30,20 L 70,20 C 70,20 75,45 70,65 C 65,80 50,90 50,90 C 50,90 35,80 30,65 C 25,45 30,20 30,20 Z"
+                fill="rgba(34, 197, 94, 0.2)"
+                stroke="#22c55e"
+                strokeWidth="3"
+                strokeLinejoin="round"
+              />
+              <Polygon
+                points="50,33 53,42 62,42 55,47 57,56 50,51 43,56 45,47 38,42 47,42"
+                fill="#22c55e"
+              />
+              <Circle cx="50" cy="45" r="22" fill="none" stroke="rgba(34, 197, 94, 0.15)" strokeWidth="1" strokeDasharray="4,4" />
+            </Svg>
+          </View>
+
+          <View style={styles.trophyInfo}>
+            <Text style={styles.bannerTitle}>Great going, Arjun!</Text>
+            <Text style={styles.bannerSubtitle}>You're building great driving habits.</Text>
+
+            {/* Quick stats columns */}
+            <View style={styles.bannerStatsRow}>
+              <View style={styles.bannerStatItem}>
+                <Feather name="shield" size={13} color="#22c55e" style={{ marginBottom: 3 }} />
+                <Text style={styles.bannerStatValue}>18</Text>
+                <Text style={styles.bannerStatLabel} numberOfLines={1}>Unlocked</Text>
+              </View>
+              <View style={styles.bannerStatItem}>
+                <Feather name="star" size={13} color="#eab308" style={{ marginBottom: 3 }} />
+                <Text style={styles.bannerStatValue}>2,450</Text>
+                <Text style={styles.bannerStatLabel} numberOfLines={1}>Total Points</Text>
+              </View>
+              <View style={styles.bannerStatItem}>
+                <MaterialCommunityIcons name="trending-up" size={13} color="#a855f7" style={{ marginBottom: 3 }} />
+                <Text style={styles.bannerStatValue}>Level 4</Text>
+                <Text style={styles.bannerStatLabel} numberOfLines={1}>Confident</Text>
+              </View>
+              <View style={styles.bannerStatItem}>
+                <Feather name="award" size={13} color="#00f5ff" style={{ marginBottom: 3 }} />
+                <Text style={styles.bannerStatValue}>Top 23%</Text>
+                <Text style={styles.bannerStatLabel} numberOfLines={1}>Drivers Rank</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {/* 3. Level Progression Bar */}
+        <View style={styles.levelBarCard}>
+          <HexagonBadge size={38} color="#84cc16">
+            <Text style={{ color: '#84cc16', fontSize: 13, fontWeight: 'bold' }}>4</Text>
+          </HexagonBadge>
+          <View style={styles.levelMiddle}>
+            <View style={styles.levelTitleRow}>
+              <Text style={styles.levelMainText}>Level 4</Text>
+              <Text style={styles.levelXpText}>2,450 <Text style={{ color: '#64748b', fontWeight: 'normal' }}>/ 3,000 XP</Text></Text>
+            </View>
+            <Text style={styles.levelSubText}>Confident Driver</Text>
+            <View style={styles.progressBarBg}>
+              <View style={[styles.progressBarFill, { width: '81.6%' }]} />
+            </View>
+            <Text style={styles.progressBarSub}>550 XP to reach Level 5</Text>
+          </View>
+        </View>
+
+        {/* 4. Tab Selector Navigation */}
+        <View style={styles.tabsContainer}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabsScrollContent}>
+            {['All', 'Driving', 'Milestone', 'Streak', 'Special'].map((t) => {
+              const tabId = t.toLowerCase() as any;
+              const isActive = activeTab === tabId;
+              return (
+                <TouchableOpacity
+                  key={t}
+                  style={[styles.tabItem, isActive && styles.activeTabItem]}
+                  onPress={() => setActiveTab(tabId)}
+                >
+                  <Text style={[styles.tabText, isActive && styles.activeTabText]}>{t}</Text>
+                  {isActive && <View style={styles.tabIndicator} />}
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
+
+        {/* 5. Achievements Count & Sort Dropdown */}
+        <View style={styles.countSortRow}>
+          <Text style={styles.unlockedHeading}>
+            <Text style={{ color: '#22c55e', fontWeight: '900' }}>{unlockedCount}</Text>
+            <Text style={{ color: '#64748b' }}> / 32 Achievements Unlocked</Text>
+          </Text>
+
+          <TouchableOpacity style={styles.sortDropdownBtn} onPress={() => setShowSort(!showSort)}>
+            <Feather name="sliders" size={10} color="#94a3b8" style={{ marginRight: 4 }} />
+            <Text style={styles.sortBtnLabel}>
+              {sortBy === 'rarity' ? 'Rarity' : sortBy === 'points' ? 'Points' : 'Unlocked'}
+            </Text>
+            <Feather name="chevron-down" size={10} color="#94a3b8" style={{ marginLeft: 3 }} />
+          </TouchableOpacity>
+        </View>
+
+        {showSort && (
+          <View style={styles.sortOverlayBox}>
+            <TouchableOpacity style={styles.sortOption} onPress={() => { setSortBy('rarity'); setShowSort(false); }}>
+              <Text style={[styles.sortOptionText, sortBy === 'rarity' && styles.activeSortOptionText]}>Sort by Rarity</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.sortOption} onPress={() => { setSortBy('points'); setShowSort(false); }}>
+              <Text style={[styles.sortOptionText, sortBy === 'points' && styles.activeSortOptionText]}>Sort by Points</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.sortOption} onPress={() => { setSortBy('unlocked'); setShowSort(false); }}>
+              <Text style={[styles.sortOptionText, sortBy === 'unlocked' && styles.activeSortOptionText]}>Sort by Unlocked</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* 6. Achievements 3-Column Grid */}
+        <View style={styles.achievementsGrid}>
+          {achievementsList.map((ach) => {
+            const isCompleted = ach.status === 'COMPLETED';
+            const isProgress = ach.status === 'PROGRESS';
+            const isLocked = ach.status === 'LOCKED';
+
+            return (
+              <View key={ach.id} style={[styles.achievementCard, isLocked && styles.lockedCard]}>
+                {/* Hexagon icon */}
+                <HexagonBadge size={40} color={ach.color} isLocked={isLocked}>
+                  {ach.icon}
+                </HexagonBadge>
+
+                {/* Content */}
+                <Text style={[styles.cardTitle, isLocked && { color: '#64748b' }]} numberOfLines={1}>{ach.title}</Text>
+                <Text style={styles.cardDesc} numberOfLines={3}>{ach.desc}</Text>
+
+                {/* Footer status / progress */}
+                <View style={styles.cardFooter}>
+                  {isCompleted && (
+                    <View style={styles.completedBadge}>
+                      <Feather name="check" size={8} color="#22c55e" style={{ marginRight: 2 }} />
+                      <Text style={styles.completedBadgeText}>Completed</Text>
+                    </View>
+                  )}
+                  {isProgress && (
+                    <Text style={[styles.progressRatioText, { color: ach.color }]}>
+                      {ach.current}<Text style={{ color: '#475569' }}>/{ach.total}</Text>
+                    </Text>
+                  )}
+                  {isLocked && (
+                    <View style={styles.lockedBadge}>
+                      <Text style={styles.lockedBadgeText}>Locked</Text>
+                    </View>
+                  )}
+
+                  <Text style={styles.cardXpLabel}>+{ach.points} XP</Text>
+                </View>
+
+                {/* Thin progress bar for in-progress items */}
+                {isProgress && ach.current !== undefined && ach.total !== undefined && (
+                  <View style={styles.cardProgressBarBg}>
+                    <View style={[styles.cardProgressBarFill, { width: `${(ach.current / ach.total) * 100}%`, backgroundColor: ach.color }]} />
+                  </View>
+                )}
+              </View>
+            );
+          })}
+        </View>
+
+        {/* 7. Current Streak Section */}
+        <View style={styles.streakPanelCard}>
+          <View style={styles.streakCardHeader}>
+            <View style={styles.streakLeftCol}>
+              <Text style={styles.streakLabel}>Current Streak</Text>
+              <View style={styles.streakDaysValRow}>
+                <MaterialCommunityIcons name="fire" size={24} color="#f97316" style={{ marginRight: 4 }} />
+                <Text style={styles.streakDaysText}>5 <Text style={{ fontSize: 11, fontWeight: 'normal', color: '#64748b' }}>Days</Text></Text>
+              </View>
+            </View>
+
+            <View style={styles.streakDivider} />
+
+            <View style={styles.streakMiddleCol}>
+              <Text style={styles.streakTitle}>Keep it up!</Text>
+              <Text style={styles.streakDesc}>2 more days to unlock Streak Pro badge.</Text>
+            </View>
+
+            <View style={styles.streakDivider} />
+
+            <View style={styles.streakRightCol}>
+              <Text style={styles.streakLabel}>Best Streak</Text>
+              <View style={styles.bestStreakRow}>
+                <Feather name="trophy" size={13} color="#eab308" style={{ marginRight: 4 }} />
+                <Text style={styles.bestStreakVal}>12 Days</Text>
+              </View>
+              <Text style={styles.bestStreakDate}>Apr 22 – May 3</Text>
+            </View>
+          </View>
+
+          {/* Dots row */}
+          <View style={styles.streakDotsRow}>
+            {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, idx) => {
+              const isChecked = idx < 5;
+              return (
+                <View key={day} style={styles.streakDotItem}>
+                  <View style={[styles.streakDotRing, isChecked ? styles.checkedDotRing : styles.uncheckedDotRing]}>
+                    {isChecked ? (
+                      <Feather name="check" size={10} color="#22c55e" />
+                    ) : (
+                      <View style={styles.dotPlaceholder} />
+                    )}
+                  </View>
+                  <Text style={styles.streakDotLabel}>{day}</Text>
+                </View>
+              );
+            })}
+          </View>
+        </View>
+
+        {/* 8. Unlock More Rewards Banner */}
+        <TouchableOpacity style={styles.rewardsBanner}>
+          <View style={styles.rewardsLeft}>
+            <HexagonBadge size={36} color="#00f5ff">
+              <Feather name="star" size={16} color="#00f5ff" />
+            </HexagonBadge>
+            <View style={styles.rewardsTextCol}>
+              <Text style={styles.rewardsTitle}>Unlock more achievements</Text>
+              <Text style={styles.rewardsSub}>Keep driving safe and unlock exciting rewards!</Text>
+            </View>
+          </View>
+          <View style={styles.rewardsBtn}>
+            <Text style={styles.rewardsBtnText}>View Rewards</Text>
+            <Feather name="chevron-right" size={12} color="#00f5ff" style={{ marginLeft: 3 }} />
+          </View>
+        </TouchableOpacity>
+
+        <View style={styles.bottomSpacer} />
+      </ScrollView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#050B14',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 50,
+    paddingBottom: 15,
+    backgroundColor: '#050B14',
+  },
+  iconBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: '#0c1626',
+    borderWidth: 1,
+    borderColor: '#122540',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitleContainer: {
+    flex: 1,
+    marginLeft: 14,
+  },
+  headerTitle: {
+    color: '#ffffff',
+    fontSize: 22,
+    fontWeight: 'bold',
+  },
+  headerSubtitle: {
+    color: '#94a3b8',
+    fontSize: 10,
+    marginTop: 2,
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 5,
+  },
+
+  // Trophy Banner Card
+  trophyBannerCard: {
+    flexDirection: 'row',
+    backgroundColor: '#0c1626',
+    borderWidth: 1,
+    borderColor: '#122540',
+    borderRadius: 24,
+    padding: 16,
+    marginBottom: 16,
+    alignItems: 'center',
+  },
+  trophyVisual: {
+    marginRight: 14,
+  },
+  trophyInfo: {
+    flex: 1,
+  },
+  bannerTitle: {
+    color: '#ffffff',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 2,
+  },
+  bannerSubtitle: {
+    color: '#64748b',
+    fontSize: 11.5,
+    marginBottom: 12,
+  },
+  bannerStatsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  bannerStatItem: {
+    flex: 1,
+    alignItems: 'center',
+    marginRight: 4,
+  },
+  bannerStatValue: {
+    color: '#ffffff',
+    fontSize: 12.5,
+    fontWeight: 'bold',
+  },
+  bannerStatLabel: {
+    color: '#64748b',
+    fontSize: 8,
+    textAlign: 'center',
+    marginTop: 2,
+  },
+
+  // Level Progression Bar
+  levelBarCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0c1626',
+    borderWidth: 1,
+    borderColor: '#122540',
+    borderRadius: 20,
+    padding: 14,
+    marginBottom: 16,
+  },
+  levelMiddle: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  levelTitleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
+  levelMainText: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: 'bold',
+  },
+  levelXpText: {
+    color: '#84cc16',
+    fontSize: 11,
+    fontWeight: 'bold',
+  },
+  levelSubText: {
+    color: '#64748b',
+    fontSize: 10,
+    marginBottom: 6,
+  },
+  progressBarBg: {
+    height: 6,
+    backgroundColor: '#122540',
+    borderRadius: 3,
+    overflow: 'hidden',
+    marginBottom: 4,
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: '#84cc16',
+    borderRadius: 3,
+  },
+  progressBarSub: {
+    color: '#475569',
+    fontSize: 8.5,
+    fontWeight: '500',
+  },
+
+  // Lock Overlay on Hexagon
+  lockOverlay: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    backgroundColor: '#0c1626',
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#475569',
+    width: 14,
+    height: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // Tabs Selector
+  tabsContainer: {
+    marginBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#122540',
+  },
+  tabsScrollContent: {
+    paddingBottom: 2,
+  },
+  tabItem: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    marginRight: 10,
+    position: 'relative',
+  },
+  activeTabItem: {},
+  tabText: {
+    color: '#64748b',
+    fontSize: 12.5,
+    fontWeight: 'bold',
+  },
+  activeTabText: {
+    color: '#00f5ff',
+  },
+  tabIndicator: {
+    position: 'absolute',
+    bottom: -1,
+    left: 12,
+    right: 12,
+    height: 2.5,
+    backgroundColor: '#00f5ff',
+    borderRadius: 1.5,
+  },
+
+  // Counts & Filter Row
+  countSortRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  unlockedHeading: {
+    fontSize: 11,
+    fontWeight: 'bold',
+  },
+  sortDropdownBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0c1626',
+    borderWidth: 1,
+    borderColor: '#122540',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    height: 32,
+  },
+  sortBtnLabel: {
+    color: '#ffffff',
+    fontSize: 10.5,
+    fontWeight: 'bold',
+  },
+
+  // Sort Overlay Box
+  sortOverlayBox: {
+    backgroundColor: '#0c1626',
+    borderWidth: 1,
+    borderColor: '#122540',
+    borderRadius: 10,
+    paddingVertical: 4,
+    marginBottom: 14,
+    position: 'absolute',
+    top: 250, // estimated top offset
+    right: 20,
+    zIndex: 20,
+    width: 130,
+  },
+  sortOption: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  sortOptionText: {
+    color: '#94a3b8',
+    fontSize: 11,
+    fontWeight: '500',
+  },
+  activeSortOptionText: {
+    color: '#00f5ff',
+    fontWeight: 'bold',
+  },
+
+  // Achievements 3x3 Grid
+  achievementsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  achievementCard: {
+    width: cardWidth,
+    backgroundColor: '#0c1626',
+    borderWidth: 1,
+    borderColor: '#122540',
+    borderRadius: 18,
+    padding: 10,
+    marginBottom: 10,
+    alignItems: 'center',
+    position: 'relative',
+    height: 145,
+  },
+  lockedCard: {
+    opacity: 0.6,
+  },
+  cardTitle: {
+    color: '#ffffff',
+    fontSize: 9.5,
+    fontWeight: 'bold',
+    marginTop: 8,
+    textAlign: 'center',
+    width: '100%',
+  },
+  cardDesc: {
+    color: '#64748b',
+    fontSize: 7.5,
+    lineHeight: 10,
+    textAlign: 'center',
+    marginTop: 4,
+    height: 30,
+    width: '100%',
+  },
+  cardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+    position: 'absolute',
+    bottom: 8,
+    paddingHorizontal: 8,
+  },
+  completedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(34, 197, 94, 0.12)',
+    borderWidth: 0.5,
+    borderColor: 'rgba(34, 197, 94, 0.3)',
+    borderRadius: 6,
+    paddingHorizontal: 4,
+    paddingVertical: 1.5,
+  },
+  completedBadgeText: {
+    color: '#22c55e',
+    fontSize: 6.5,
+    fontWeight: 'bold',
+  },
+  progressRatioText: {
+    fontSize: 9,
+    fontWeight: 'bold',
+  },
+  lockedBadge: {
+    backgroundColor: 'rgba(100, 116, 139, 0.15)',
+    borderRadius: 6,
+    paddingHorizontal: 4,
+    paddingVertical: 1.5,
+  },
+  lockedBadgeText: {
+    color: '#94a3b8',
+    fontSize: 6.5,
+    fontWeight: 'bold',
+  },
+  cardXpLabel: {
+    color: '#94a3b8',
+    fontSize: 8,
+    fontWeight: 'bold',
+  },
+  cardProgressBarBg: {
+    width: '80%',
+    height: 3,
+    backgroundColor: '#122540',
+    borderRadius: 1.5,
+    position: 'absolute',
+    bottom: 24,
+    overflow: 'hidden',
+  },
+  cardProgressBarFill: {
+    height: '100%',
+    borderRadius: 1.5,
+  },
+
+  // Streak Panel Card
+  streakPanelCard: {
+    backgroundColor: '#0c1626',
+    borderWidth: 1,
+    borderColor: '#122540',
+    borderRadius: 24,
+    padding: 16,
+    marginBottom: 16,
+  },
+  streakCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  streakLeftCol: {
+    alignItems: 'flex-start',
+  },
+  streakLabel: {
+    color: '#64748b',
+    fontSize: 9,
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
+  streakDaysValRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  streakDaysText: {
+    color: '#ffffff',
+    fontSize: 18,
+    fontWeight: '900',
+  },
+  streakDivider: {
+    width: 1,
+    backgroundColor: '#122540',
+    height: '75%',
+    alignSelf: 'center',
+  },
+  streakMiddleCol: {
+    flex: 1,
+    paddingHorizontal: 12,
+  },
+  streakTitle: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: 'bold',
+    marginBottom: 2,
+  },
+  streakDesc: {
+    color: '#64748b',
+    fontSize: 9,
+    lineHeight: 12,
+  },
+  streakRightCol: {
+    alignItems: 'flex-end',
+  },
+  bestStreakRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+    marginBottom: 2,
+  },
+  bestStreakVal: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  bestStreakDate: {
+    color: '#64748b',
+    fontSize: 8.5,
+    fontWeight: '500',
+  },
+  streakDotsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    borderTopWidth: 1,
+    borderTopColor: '#122540',
+    paddingTop: 14,
+  },
+  streakDotItem: {
+    alignItems: 'center',
+  },
+  streakDotRing: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  checkedDotRing: {
+    borderColor: '#22c55e',
+    backgroundColor: 'rgba(34, 197, 94, 0.08)',
+  },
+  uncheckedDotRing: {
+    borderColor: '#475569',
+    backgroundColor: 'transparent',
+  },
+  dotPlaceholder: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#475569',
+  },
+  streakDotLabel: {
+    color: '#64748b',
+    fontSize: 8.5,
+    fontWeight: 'bold',
+  },
+
+  // Rewards Banner
+  rewardsBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#0c1626',
+    borderWidth: 1,
+    borderColor: '#00f5ff',
+    borderRadius: 20,
+    padding: 14,
+    marginBottom: 16,
+    shadowColor: '#00f5ff',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+  },
+  rewardsLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 10,
+  },
+  rewardsTextCol: {
+    marginLeft: 12,
+    flex: 1,
+  },
+  rewardsTitle: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: 'bold',
+    marginBottom: 2,
+  },
+  rewardsSub: {
+    color: '#64748b',
+    fontSize: 9.5,
+  },
+  rewardsBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#00f5ff',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  rewardsBtnText: {
+    color: '#00f5ff',
+    fontSize: 10.5,
+    fontWeight: 'bold',
+  },
+  bottomSpacer: {
+    height: 60,
+  }
+});
