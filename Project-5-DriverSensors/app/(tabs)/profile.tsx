@@ -293,7 +293,11 @@ export default function ProfileScreen() {
               key={item.id}
               style={[styles.menuItemRow, idx === menuSettings.length - 1 && { borderBottomWidth: 0 }]}
               onPress={() => {
-                Alert.alert(item.title, `${item.title} page is coming soon!`);
+                if (item.id === 'preferences' || item.id === 'notifications') {
+                  router.push('/settings');
+                } else {
+                  Alert.alert(item.title, `${item.title} page is coming soon!`);
+                }
               }}
             >
               <View style={[styles.menuIconContainer, { borderColor: item.color + '40', backgroundColor: item.color + '0a' }]}>

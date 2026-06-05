@@ -1,14 +1,13 @@
 import { useEffect, useRef } from 'react';
 import { useSensorStore } from '../../store/sensorStore';
 import { useDriveStore } from '../../store/driveStore';
-import { THRESHOLDS } from '../../constants/thresholds';
+import { useSettingsStore } from '../../store/settingsStore';
 import { PENALTIES } from '../../constants/penalties';
 import { lowPassFilter } from '../../utils/filters';
 
 const generateId = () => Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
 
 export const useDetectionEngine = () => {
-
   const isTracking = useDriveStore((state) => state.currentSession !== null);
   
   const accelerometerData = useSensorStore((state) => state.accelerometerData);
@@ -17,6 +16,13 @@ export const useDetectionEngine = () => {
   
   const addEvent = useDriveStore((state) => state.addEvent);
   const updateScore = useDriveStore((state) => state.updateScore);
+
+  // Settings for threshold logic
+  const settings = useSettingsStore();
+  const harshBrakeG = settings.harshBraking / 9.8; // Convert m/s^2 to G-force
+  const harshAccelG = Math.abs(settings.harshBraking) / 9.8; // Proportional acceleration G-force
+  const sharpTurnRad = (settings.sharpTurn * 2.0) / 35; // Proportional degrees to rad/s
+  const phoneUsageRotation = 1.5 * (settings.phoneUsage / 5); // Proportional phone usage rotation
 
   // Speed calculation from route
   const currentSession = useDriveStore((state) => state.currentSession);
@@ -50,13 +56,13 @@ export const useDetectionEngine = () => {
     const now = Date.now();
 
     // Harsh Brake Detection (negative Y acceleration usually implies braking depending on device orientation)
-    if (filteredY < THRESHOLDS.HARSH_BRAKE_G) {
+    if (filteredY < harshBrakeG) {
       if (now - lastBrakeTime.current > COOLDOWN_MS) {
         addEvent({
           id: generateId(),
           type: 'HARSH_BRAKE',
           timestamp: now,
-          severity: filteredY < THRESHOLDS.HARSH_BRAKE_G * 1.5 ? 'HIGH' : 'MEDIUM',
+          severity: filteredY < harshBrakeG * 1.5 ? 'HIGH' : 'MEDIUM',
           confidence: 90,
           speed: currentSpeedKmH || Math.round(55 + Math.random() * 15), // fallback to mock speed if stationary
         });
@@ -66,13 +72,13 @@ export const useDetectionEngine = () => {
     }
 
     // Harsh Acceleration Detection
-    if (filteredY > THRESHOLDS.HARSH_ACCELERATION_G) {
+    if (filteredY > harshAccelG) {
       if (now - lastAccelTime.current > COOLDOWN_MS) {
         addEvent({
           id: generateId(),
           type: 'HARSH_ACCELERATION',
           timestamp: now,
-          severity: filteredY > THRESHOLDS.HARSH_ACCELERATION_G * 1.5 ? 'HIGH' : 'MEDIUM',
+          severity: filteredY > harshAccelG * 1.5 ? 'HIGH' : 'MEDIUM',
           confidence: 90,
           speed: currentSpeedKmH || Math.round(45 + Math.random() * 15),
         });
@@ -80,7 +86,7 @@ export const useDetectionEngine = () => {
         lastAccelTime.current = now;
       }
     }
-  }, [accelerometerData, isTracking]);
+  }, [accelerometerData, isTracking, harshBrakeG, harshAccelG]);
 
   // 2. Detect Sharp Turns (Z-axis gyroscope changes)
   useEffect(() => {
@@ -91,13 +97,13 @@ export const useDetectionEngine = () => {
 
     const now = Date.now();
 
-    if (Math.abs(filteredZ) > THRESHOLDS.SHARP_TURN_RAD) {
+    if (Math.abs(filteredZ) > sharpTurnRad) {
       if (now - lastTurnTime.current > COOLDOWN_MS) {
         addEvent({
           id: generateId(),
           type: 'SHARP_TURN',
           timestamp: now,
-          severity: Math.abs(filteredZ) > THRESHOLDS.SHARP_TURN_RAD * 1.5 ? 'HIGH' : 'MEDIUM',
+          severity: Math.abs(filteredZ) > sharpTurnRad * 1.5 ? 'HIGH' : 'MEDIUM',
           confidence: 85,
           speed: currentSpeedKmH || Math.round(35 + Math.random() * 10),
         });
@@ -105,7 +111,7 @@ export const useDetectionEngine = () => {
         lastTurnTime.current = now;
       }
     }
-  }, [gyroscopeData, isTracking]);
+  }, [gyroscopeData, isTracking, sharpTurnRad]);
 
   // 3. Detect Phone Usage and Aggressive Steering
   useEffect(() => {
@@ -121,8 +127,8 @@ export const useDetectionEngine = () => {
 
       const rotMagnitude = Math.sqrt(filteredX * filteredX + filteredY * filteredY);
       
-      // If rotation rate on X/Y axes exceeds PHONE_USAGE_ROTATION, register phone pickup
-      if (rotMagnitude > THRESHOLDS.PHONE_USAGE_ROTATION) {
+      // If rotation rate on X/Y axes exceeds phoneUsageRotation, register phone pickup
+      if (rotMagnitude > phoneUsageRotation) {
         if (now - lastPhoneUsageTime.current > COOLDOWN_MS * 1.5) {
           addEvent({
             id: generateId(),

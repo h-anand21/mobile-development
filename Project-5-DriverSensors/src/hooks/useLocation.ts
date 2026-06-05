@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import * as Location from 'expo-location';
 import { useDriveStore } from '../store/driveStore';
+import { useSettingsStore } from '../store/settingsStore';
 import { calculateDistance } from '../utils/calculations';
 import { THRESHOLDS } from '../constants/thresholds';
 import { PENALTIES } from '../constants/penalties';
 
 const generateId = () => Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
-
 
 export const useLocation = () => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -22,6 +22,10 @@ export const useLocation = () => {
   const previousLocation = useRef<Location.LocationObjectCoords | null>(null);
   const lastOverspeedTime = useRef<number>(0);
   const OVERSPEED_COOLDOWN_MS = 10000; // 10 seconds cooldown
+
+  // Load speeding tolerance dynamically from settings
+  const speedingToleranceKmH = useSettingsStore((state) => state.speeding);
+  const overspeedingThresholdMs = THRESHOLDS.OVERSPEEDING_MS + (speedingToleranceKmH / 3.6);
 
   useEffect(() => {
     let sub: Location.LocationSubscription;
@@ -48,13 +52,13 @@ export const useLocation = () => {
 
           // Overspeeding Detection
           const now = Date.now();
-          if (speedMs > THRESHOLDS.OVERSPEEDING_MS) {
+          if (speedMs > overspeedingThresholdMs) {
             if (now - lastOverspeedTime.current > OVERSPEED_COOLDOWN_MS) {
               addEvent({
                 id: generateId(),
                 type: 'OVERSPEEDING',
                 timestamp: now,
-                severity: speedMs > THRESHOLDS.OVERSPEEDING_MS * 1.2 ? 'HIGH' : 'MEDIUM',
+                severity: speedMs > overspeedingThresholdMs * 1.2 ? 'HIGH' : 'MEDIUM',
                 confidence: 95,
                 location: {
                   latitude: coords.latitude,
