@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { DriveEvent } from '../types/event';
+import { LocationPoint } from '../types/route';
 import { driveRepository } from '../database/repositories/driveRepository';
 
 export interface DriveSession {
@@ -11,6 +12,7 @@ export interface DriveSession {
   rating: string;
   events: DriveEvent[];
   distance: number; // in meters
+  route: LocationPoint[];
 }
 
 interface DriveState {
@@ -18,6 +20,7 @@ interface DriveState {
   startDrive: () => void;
   endDrive: () => void;
   addEvent: (event: DriveEvent) => void;
+  addLocationPoint: (point: LocationPoint) => void;
   updateScore: (penalty: number) => void;
   updateDistance: (distance: number) => void;
 }
@@ -35,6 +38,7 @@ export const useDriveStore = create<DriveState>((set) => ({
       rating: 'EXCELLENT',
       events: [],
       distance: 0,
+      route: [],
     };
     set({ currentSession: newSession });
   },
@@ -67,6 +71,18 @@ export const useDriveStore = create<DriveState>((set) => ({
         currentSession: {
           ...state.currentSession,
           events: [...state.currentSession.events, event],
+        },
+      };
+    });
+  },
+
+  addLocationPoint: (point) => {
+    set((state) => {
+      if (!state.currentSession) return state;
+      return {
+        currentSession: {
+          ...state.currentSession,
+          route: [...state.currentSession.route, point],
         },
       };
     });

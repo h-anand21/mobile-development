@@ -14,6 +14,7 @@ export const useLocation = () => {
   const isTracking = useDriveStore((state) => state.currentSession !== null);
   const updateDistance = useDriveStore((state) => state.updateDistance);
   const addEvent = useDriveStore((state) => state.addEvent);
+  const addLocationPoint = useDriveStore((state) => state.addLocationPoint);
   const updateScore = useDriveStore((state) => state.updateScore);
 
   const previousLocation = useRef<Location.LocationObjectCoords | null>(null);
@@ -77,6 +78,14 @@ export const useLocation = () => {
               updateDistance(distanceDelta);
             }
           }
+
+          // Save point for route replay
+          addLocationPoint({
+            latitude: coords.latitude,
+            longitude: coords.longitude,
+            timestamp: now,
+            speed: speedMs,
+          });
 
           previousLocation.current = coords;
         }
