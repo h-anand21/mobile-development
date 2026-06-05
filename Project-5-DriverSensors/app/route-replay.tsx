@@ -540,7 +540,7 @@ export default function RouteReplayScreen() {
             {/* Sharp Turns */}
             <View style={[styles.eventCounterCard, { borderColor: 'rgba(234, 179, 8, 0.3)' }]}>
               <View style={styles.cardHeader}>
-                <MaterialCommunityIcons name="u-turn-left" size={16} color="#eab308" style={{ marginRight: 6 }} />
+                <MaterialCommunityIcons name="arrow-u-left-top" size={16} color="#eab308" style={{ marginRight: 6 }} />
                 <Text style={styles.eventCardTitle}>Sharp Turns</Text>
               </View>
               <Text style={[styles.eventCardCount, { color: '#eab308' }]}>{sharpTurnCount}</Text>

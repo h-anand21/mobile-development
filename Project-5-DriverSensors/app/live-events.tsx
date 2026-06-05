@@ -217,7 +217,7 @@ export default function LiveEventsScreen() {
         <View style={styles.matrixBox}>
           <Text style={styles.matrixLabel}>Sharp Turns</Text>
           <View style={[styles.matrixIconCircle, { borderColor: 'rgba(234, 179, 8, 0.2)' }]}>
-            <MaterialCommunityIcons name="u-turn-left" size={20} color="#eab308" />
+            <MaterialCommunityIcons name="arrow-u-left-top" size={20} color="#eab308" />
           </View>
           <Text style={[styles.matrixCount, { color: '#eab308' }]}>{sharpTurnsCount}</Text>
         </View>

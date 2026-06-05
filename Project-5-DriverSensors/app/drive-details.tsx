@@ -330,7 +330,7 @@ export default function DriveDetailsScreen() {
                   {/* Sharp Turns */}
                   <TouchableOpacity style={styles.countRow} onPress={() => router.push('/live-events')}>
                     <View style={styles.countLeft}>
-                      <MaterialCommunityIcons name="u-turn-left" size={16} color="#eab308" style={{ marginRight: 6 }} />
+                      <MaterialCommunityIcons name="arrow-u-left-top" size={16} color="#eab308" style={{ marginRight: 6 }} />
                       <Text style={styles.countLabel}>Sharp Turns</Text>
                     </View>
                     <View style={styles.countRight}>

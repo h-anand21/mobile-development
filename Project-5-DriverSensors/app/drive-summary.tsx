@@ -400,7 +400,7 @@ export default function DriveSummaryScreen() {
             {/* Turns */}
             <View style={styles.eventRowItem}>
               <View style={styles.eventLabelOuter}>
-                <MaterialCommunityIcons name="u-turn-left" size={16} color="#eab308" style={{ marginRight: 6 }} />
+                <MaterialCommunityIcons name="arrow-u-left-top" size={16} color="#eab308" style={{ marginRight: 6 }} />
                 <Text style={styles.eventLabelText}>Sharp Turns</Text>
               </View>
               <Text style={styles.eventCountVal}>{sharpTurnCount}</Text>
