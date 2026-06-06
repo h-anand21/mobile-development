@@ -398,15 +398,31 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
   },
-  metricsRow: {
+  metricsRowUnified: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    backgroundColor: 'rgba(30, 41, 59, 0.4)',
-    borderRadius: 16,
-    padding: 15,
+    alignItems: 'center',
+    backgroundColor: 'rgba(12, 22, 38, 0.5)',
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(51, 65, 85, 0.6)',
-    marginBottom: 30,
+    borderColor: '#122540',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    marginBottom: 25,
+  },
+  metricDivider: {
+    width: 1,
+    height: '60%',
+    backgroundColor: '#122540',
+  },
+  tickLabel: {
+    position: 'absolute',
+    color: '#94a3b8',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  menuBtn: {
+    marginRight: 10,
   },
   metricItem: {
     flexDirection: 'row',

@@ -3,6 +3,7 @@ import { useSensorStore } from '../../store/sensorStore';
 import { useDriveStore } from '../../store/driveStore';
 import { useSettingsStore } from '../../store/settingsStore';
 import { PENALTIES } from '../../constants/penalties';
+import { THRESHOLDS } from '../../constants/thresholds';
 import { lowPassFilter } from '../../utils/filters';
 
 const generateId = () => Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
