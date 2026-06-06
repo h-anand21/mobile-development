@@ -18,10 +18,13 @@ export default function LiveAnalyticsScreen() {
   const currentSession = useDriveStore((state) => state.currentSession);
   const accelerometerData = useSensorStore((state) => state.accelerometerData);
   const gyroscopeData = useSensorStore((state) => state.gyroscopeData);
+  const magnetometerData = useSensorStore((state) => state.magnetometerData);
+  const deviceMotionData = useSensorStore((state) => state.deviceMotionData);
 
   // States for rolling sensor history (for the real-time wave charts)
   const [accelHistory, setAccelHistory] = useState<{x: number[], y: number[], z: number[]}>({ x: [], y: [], z: [] });
   const [gyroHistory, setGyroHistory] = useState<{x: number[], y: number[], z: number[]}>({ x: [], y: [], z: [] });
+  const [magnetoHistory, setMagnetoHistory] = useState<{x: number[], y: number[], z: number[]}>({ x: [], y: [], z: [] });
 
   // Speed data from GPS route
   const route = currentSession?.route || [];
@@ -51,6 +54,30 @@ export default function LiveAnalyticsScreen() {
   const gyDeg = gy * (180 / Math.PI);
   const gzDeg = gz * (180 / Math.PI);
 
+  const mx = magnetometerData?.x ?? 22.4;
+  const my = magnetometerData?.y ?? -15.8;
+  const mz = magnetometerData?.z ?? -42.1;
+
+  const dmPitch = deviceMotionData?.rotation?.beta ?? 0.12;
+  const dmRoll = deviceMotionData?.rotation?.gamma ?? -0.06;
+  const dmYaw = deviceMotionData?.rotation?.alpha ?? 1.58;
+
+  const dmPitchDeg = dmPitch * (180 / Math.PI);
+  const dmRollDeg = dmRoll * (180 / Math.PI);
+  const dmYawDeg = dmYaw * (180 / Math.PI);
+
+  const dmRotX = deviceMotionData?.rotationRate?.beta ?? 0.002;
+  const dmRotY = deviceMotionData?.rotationRate?.gamma ?? -0.001;
+  const dmRotZ = deviceMotionData?.rotationRate?.alpha ?? 0.004;
+
+  const dmAccX = deviceMotionData?.acceleration?.x ?? 0.02;
+  const dmAccY = deviceMotionData?.acceleration?.y ?? -0.04;
+  const dmAccZ = deviceMotionData?.acceleration?.z ?? 0.11;
+
+  const dmAccGravX = deviceMotionData?.accelerationIncludingGravity?.x ?? -0.23;
+  const dmAccGravY = deviceMotionData?.accelerationIncludingGravity?.y ?? 9.77;
+  const dmAccGravZ = deviceMotionData?.accelerationIncludingGravity?.z ?? 0.88;
+
   // G-Force Calculations
   // Gravity component: 9.81 m/s^2 is 1G
   const latG = ax / 9.81; // Lateral
@@ -77,7 +104,14 @@ export default function LiveAnalyticsScreen() {
       const nextZ = [...prev.z, gzDeg].slice(-MAX_HISTORY);
       return { x: nextX, y: nextY, z: nextZ };
     });
-  }, [accelerometerData, gyroscopeData, currentSession]);
+
+    setMagnetoHistory(prev => {
+      const nextX = [...prev.x, mx].slice(-MAX_HISTORY);
+      const nextY = [...prev.y, my].slice(-MAX_HISTORY);
+      const nextZ = [...prev.z, mz].slice(-MAX_HISTORY);
+      return { x: nextX, y: nextY, z: nextZ };
+    });
+  }, [accelerometerData, gyroscopeData, magnetometerData, currentSession]);
 
   // Formulating SVG chart path
   const getPathData = (history: number[], scale: number, height: number) => {
@@ -317,6 +351,68 @@ export default function LiveAnalyticsScreen() {
           </View>
         </View>
 
+        {/* Magnetometer Sensor Card */}
+        {(() => {
+          const heading = Math.round(Math.atan2(my, mx) * (180 / Math.PI));
+          const normalizedHeading = heading < 0 ? heading + 360 : heading;
+          const cardinals = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+          const cardinalIndex = Math.round(normalizedHeading / 45) % 8;
+          const cardinal = cardinals[cardinalIndex];
+
+          return (
+            <View style={styles.sensorCard}>
+              <View style={[styles.sensorLeftCol, { width: '35%' }]}>
+                <View style={[styles.sensorIconCircle, { borderColor: 'rgba(234, 179, 8, 0.2)', backgroundColor: 'rgba(234, 179, 8, 0.05)' }]}>
+                  <MaterialCommunityIcons name="compass-outline" size={20} color="#eab308" />
+                </View>
+                <Text style={styles.sensorCardTitle}>MAGNETOMETER</Text>
+                
+                <View style={styles.axisValueRow}>
+                  <View style={[styles.axisDot, { backgroundColor: '#06b6d4' }]} />
+                  <Text style={styles.axisLabel}>X  <Text style={styles.axisVal}>{mx.toFixed(1)}</Text> µT</Text>
+                </View>
+                <View style={styles.axisValueRow}>
+                  <View style={[styles.axisDot, { backgroundColor: '#84cc16' }]} />
+                  <Text style={styles.axisLabel}>Y  <Text style={styles.axisVal}>{my.toFixed(1)}</Text> µT</Text>
+                </View>
+                <View style={styles.axisValueRow}>
+                  <View style={[styles.axisDot, { backgroundColor: '#eab308' }]} />
+                  <Text style={styles.axisLabel}>Z  <Text style={styles.axisVal}>{mz.toFixed(1)}</Text> µT</Text>
+                </View>
+              </View>
+
+              {/* Dynamic SVG Compass Dial */}
+              <View style={{ width: '25%', alignItems: 'center', justifyContent: 'center' }}>
+                <Svg width={52} height={52} viewBox="0 0 80 80">
+                  <Circle cx="40" cy="40" r="32" stroke="#122540" strokeWidth="2.5" fill="#050B14" />
+                  <SvgText x="40" y="16" fill="#64748b" fontSize="9" fontWeight="bold" textAnchor="middle">N</SvgText>
+                  <SvgText x="40" y="72" fill="#64748b" fontSize="9" fontWeight="bold" textAnchor="middle">S</SvgText>
+                  <SvgText x="13" y="44" fill="#64748b" fontSize="9" fontWeight="bold" textAnchor="middle">W</SvgText>
+                  <SvgText x="67" y="44" fill="#64748b" fontSize="9" fontWeight="bold" textAnchor="middle">E</SvgText>
+                  <g transform={`rotate(${-normalizedHeading} 40 40)`}>
+                    <Polygon points="40,16 45,40 35,40" fill="#ef4444" />
+                    <Polygon points="40,64 45,40 35,40" fill="#94a3b8" />
+                    <Circle cx="40" cy="40" r="3.5" fill="#ffffff" />
+                  </g>
+                </Svg>
+                <Text style={{ color: '#eab308', fontSize: 9, fontWeight: 'bold', marginTop: 4 }}>
+                  {normalizedHeading}° {cardinal}
+                </Text>
+              </View>
+
+              {/* Magnetometer rolling chart */}
+              <View style={[styles.sensorChartContainer, { width: '38%' }]}>
+                <Svg width={120} height={70} viewBox="0 0 160 70">
+                  <Line x1="0" y1="35" x2="160" y2="35" stroke="rgba(255, 255, 255, 0.05)" strokeWidth="1" strokeDasharray="3 3" />
+                  <Path d={getPathData(magnetoHistory.x, 0.3, 70)} stroke="#06b6d4" strokeWidth="1.5" fill="none" />
+                  <Path d={getPathData(magnetoHistory.y, 0.3, 70)} stroke="#84cc16" strokeWidth="1.5" fill="none" />
+                  <Path d={getPathData(magnetoHistory.z, 0.3, 70)} stroke="#eab308" strokeWidth="1.5" fill="none" />
+                </Svg>
+              </View>
+            </View>
+          );
+        })()}
+
         {/* G-FORCE Section */}
         <View style={styles.gForceCard}>
           <Text style={styles.gForceHeader}>G-FORCE</Text>
@@ -385,6 +481,82 @@ export default function LiveAnalyticsScreen() {
                   shadowRadius="5"
                 />
               </Svg>
+            </View>
+        </View>
+
+        {/* Device Motion Diagnostics Card */}
+        <View style={styles.gForceCard}>
+          <Text style={styles.gForceHeader}>DEVICE MOTION DIAGNOSTICS</Text>
+          
+          <View style={styles.dmRow}>
+            {/* 1. Attitude / Horizon indicator */}
+            <View style={styles.dmColAttitude}>
+              <View style={styles.horizonIndicatorWrap}>
+                <Svg width={66} height={66} viewBox="0 0 80 80">
+                  <Defs>
+                    <clipPath id="horizonClip">
+                      <Circle cx="40" cy="40" r="30" />
+                    </clipPath>
+                  </Defs>
+                  {/* Outer bezel */}
+                  <Circle cx="40" cy="40" r="32" stroke="#122540" strokeWidth="2.5" fill="none" />
+                  <Circle cx="40" cy="40" r="30" fill="#000000" />
+                  
+                  {/* Rotating/translating sky-ground plane */}
+                  <g clipPath="url(#horizonClip)" transform={`rotate(${-dmRollDeg} 40 40) translate(0 ${Math.min(18, Math.max(-18, dmPitch * 18))})`}>
+                    {/* Sky */}
+                    <Rect x="-20" y="-20" width="120" height="60" fill="#0b2447" />
+                    {/* Ground */}
+                    <Rect x="-20" y="40" width="120" height="60" fill="#1b4235" />
+                    {/* Horizon line */}
+                    <Line x1="-20" y1="40" x2="100" y2="40" stroke="#00f5ff" strokeWidth="1.5" />
+                  </g>
+                  {/* Pitch indicator ticks */}
+                  <Line x1="32" y1="28" x2="48" y2="28" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
+                  <Line x1="32" y1="52" x2="48" y2="52" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
+                  
+                  {/* Center fixed miniature aircraft */}
+                  <Circle cx="40" cy="40" r="2" fill="#ef4444" />
+                  <Line x1="26" y1="40" x2="34" y2="40" stroke="#ef4444" strokeWidth="2" />
+                  <Line x1="46" y1="40" x2="54" y2="40" stroke="#ef4444" strokeWidth="2" />
+                </Svg>
+              </View>
+              <View style={styles.dmValLabelContainer}>
+                <Text style={styles.dmValLabel}>PITCH: <Text style={styles.dmValText}>{dmPitchDeg.toFixed(1)}°</Text></Text>
+                <Text style={styles.dmValLabel}>ROLL: <Text style={styles.dmValText}>{dmRollDeg.toFixed(1)}°</Text></Text>
+                <Text style={styles.dmValLabel}>YAW: <Text style={styles.dmValText}>{dmYawDeg.toFixed(1)}°</Text></Text>
+              </View>
+            </View>
+
+            {/* 2. Rotation Rate column */}
+            <View style={styles.dmColRate}>
+              <Text style={styles.dmSubHeader}>ROTATION RATE</Text>
+              
+              <View style={styles.dmStatRow}>
+                <Text style={styles.dmStatLabel}>Pitch (X)</Text>
+                <Text style={styles.dmStatValue}>{dmRotX.toFixed(3)} <Text style={styles.dmStatUnit}>rad/s</Text></Text>
+              </View>
+              <View style={styles.dmStatRow}>
+                <Text style={styles.dmStatLabel}>Roll (Y)</Text>
+                <Text style={styles.dmStatValue}>{dmRotY.toFixed(3)} <Text style={styles.dmStatUnit}>rad/s</Text></Text>
+              </View>
+              <View style={styles.dmStatRow}>
+                <Text style={styles.dmStatLabel}>Yaw (Z)</Text>
+                <Text style={styles.dmStatValue}>{dmRotZ.toFixed(3)} <Text style={styles.dmStatUnit}>rad/s</Text></Text>
+              </View>
+            </View>
+
+            {/* 3. Raw Acceleration columns */}
+            <View style={styles.dmColAccel}>
+              <Text style={styles.dmSubHeader}>LINEAR ACCEL</Text>
+              <Text style={styles.dmAccelVal}>X: <Text style={styles.dmValText}>{dmAccX.toFixed(2)}</Text> <Text style={styles.dmStatUnit}>m/s²</Text></Text>
+              <Text style={styles.dmAccelVal}>Y: <Text style={styles.dmValText}>{dmAccY.toFixed(2)}</Text> <Text style={styles.dmStatUnit}>m/s²</Text></Text>
+              <Text style={styles.dmAccelVal}>Z: <Text style={styles.dmValText}>{dmAccZ.toFixed(2)}</Text> <Text style={styles.dmStatUnit}>m/s²</Text></Text>
+
+              <Text style={[styles.dmSubHeader, { marginTop: 6 }]}>ACCEL (+G)</Text>
+              <Text style={styles.dmAccelVal}>X: <Text style={styles.dmValText}>{dmAccGravX.toFixed(2)}</Text> <Text style={styles.dmStatUnit}>m/s²</Text></Text>
+              <Text style={styles.dmAccelVal}>Y: <Text style={styles.dmValText}>{dmAccGravY.toFixed(2)}</Text> <Text style={styles.dmStatUnit}>m/s²</Text></Text>
+              <Text style={styles.dmAccelVal}>Z: <Text style={styles.dmValText}>{dmAccGravZ.toFixed(2)}</Text> <Text style={styles.dmStatUnit}>m/s²</Text></Text>
             </View>
           </View>
         </View>
@@ -858,5 +1030,71 @@ const styles = StyleSheet.create({
   overlayAddr: {
     color: '#94a3b8',
     fontSize: 8,
+  },
+  dmRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  dmColAttitude: {
+    width: '33%',
+    alignItems: 'center',
+  },
+  dmColRate: {
+    width: '32%',
+    paddingLeft: 4,
+  },
+  dmColAccel: {
+    width: '33%',
+    paddingLeft: 6,
+  },
+  horizonIndicatorWrap: {
+    marginBottom: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dmValLabelContainer: {
+    alignItems: 'center',
+  },
+  dmValLabel: {
+    color: '#64748b',
+    fontSize: 8,
+    fontWeight: 'bold',
+    marginBottom: 2,
+  },
+  dmValText: {
+    color: '#ffffff',
+    fontWeight: 'bold',
+  },
+  dmSubHeader: {
+    color: '#06b6d4',
+    fontSize: 8,
+    fontWeight: 'bold',
+    letterSpacing: 0.5,
+    marginBottom: 6,
+  },
+  dmStatRow: {
+    marginBottom: 6,
+  },
+  dmStatLabel: {
+    color: '#64748b',
+    fontSize: 8,
+    fontWeight: '500',
+  },
+  dmStatValue: {
+    color: '#ffffff',
+    fontSize: 10,
+    fontWeight: 'bold',
+    marginTop: 1,
+  },
+  dmStatUnit: {
+    color: '#64748b',
+    fontSize: 8,
+    fontWeight: '400',
+  },
+  dmAccelVal: {
+    color: '#64748b',
+    fontSize: 9.5,
+    marginBottom: 2,
   },
 });

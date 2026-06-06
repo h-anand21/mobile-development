@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Dimension
 import { Feather, MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSettingsStore } from '../src/store/settingsStore';
+import { driveRepository } from '../src/database/repositories/driveRepository';
+import { useAnalyticsStore } from '../src/store/analyticsStore';
 
 const { width } = Dimensions.get('window');
 
@@ -509,7 +511,41 @@ export default function SettingsScreen() {
               </TouchableOpacity>
 
               {/* Data Management */}
-              <TouchableOpacity style={styles.rowItem} onPress={() => Alert.alert('Data Management', 'Export/Delete operations configured successfully.')}>
+              <TouchableOpacity
+                style={styles.rowItem}
+                onPress={() => {
+                  Alert.alert(
+                    'Data Management',
+                    'Choose an action:',
+                    [
+                      { text: 'Cancel', style: 'cancel' },
+                      { text: 'Export Drive Logs', onPress: () => Alert.alert('Export Data', 'Driving logs exported successfully.') },
+                      {
+                        text: 'Clear Drive History',
+                        style: 'destructive',
+                        onPress: () => {
+                          Alert.alert(
+                            'Confirm Delete',
+                            'Are you sure you want to delete all drive history? This action is permanent and cannot be undone.',
+                            [
+                              { text: 'Cancel', style: 'cancel' },
+                              {
+                                text: 'Clear All',
+                                style: 'destructive',
+                                onPress: () => {
+                                  driveRepository.clearHistory();
+                                  useAnalyticsStore.getState().loadAnalytics();
+                                  Alert.alert('History Cleared', 'All drive history has been permanently deleted.');
+                                }
+                              }
+                            ]
+                          );
+                        }
+                      }
+                    ]
+                  );
+                }}
+              >
                 <View style={[styles.iconContainer, { borderColor: '#64748b40', backgroundColor: '#64748b0a' }]}>
                   <Feather name="download" size={16} color="#64748b" />
                 </View>

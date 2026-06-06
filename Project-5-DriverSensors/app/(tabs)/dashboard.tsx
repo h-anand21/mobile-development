@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { Feather, MaterialCommunityIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import Svg, { Circle, Line, Path, Defs, LinearGradient as SvgLinearGradient, Stop, Polygon, Text as SvgText, Rect } from 'react-native-svg';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
+import { useAnalyticsStore } from '../../src/store/analyticsStore';
 
 const { width } = Dimensions.get('window');
 
@@ -84,6 +85,21 @@ const YEARLY_DATA = {
 export default function DashboardScreen() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'week' | 'month' | 'year'>('week');
+
+  const {
+    totalDrives,
+    averageScore,
+    bestScore,
+    totalDistance,
+    totalEvents,
+    loadAnalytics,
+  } = useAnalyticsStore();
+
+  useFocusEffect(
+    useCallback(() => {
+      loadAnalytics();
+    }, [])
+  );
 
   // Math for Line Chart coordinates
   const getLineChartPath = (points: number[], chartWidth: number, chartHeight: number, padding: number) => {
@@ -207,20 +223,98 @@ export default function DashboardScreen() {
             </View>
 
             {/* Metric Grid Cards */}
-            <View style={styles.metricsGridContainer}>
-              {WEEKLY_DATA.metrics.map((metric, idx) => (
-                <View key={idx} style={styles.metricCard}>
-                  <View style={styles.metricCardHeader}>
-                    <MaterialCommunityIcons name={metric.icon as any} size={18} color={metric.color} />
-                    <Text style={styles.metricCardLabel} numberOfLines={1}>{metric.label}</Text>
-                  </View>
-                  <Text style={styles.metricCardValue}>{metric.val}</Text>
-                  <Text style={[styles.metricCardSub, metric.label === 'Avg Safe Score' && { color: '#22c55e', fontWeight: 'bold' }]}>
-                    {metric.sub}
-                  </Text>
-                  <Text style={styles.metricCardDiff}>{metric.diff}</Text>
+            {(() => {
+              const estMin = Math.round((totalDistance * 0.072) / 60);
+              const estHours = Math.floor(estMin / 60);
+              const estMins = estMin % 60;
+              const durationString = estHours > 0 ? `${estHours}h ${estMins}m` : `${estMins}m`;
+
+              const displayMetrics = [
+                {
+                  label: 'Avg Safe Score',
+                  val: totalDrives > 0 ? averageScore.toString() : WEEKLY_DATA.metrics[0].val,
+                  sub: totalDrives > 0
+                    ? (averageScore >= 90 ? 'Excellent' : averageScore >= 80 ? 'Good' : averageScore >= 65 ? 'Fair' : 'Poor')
+                    : WEEKLY_DATA.metrics[0].sub,
+                  diff: totalDrives > 0 ? `${totalDrives} active drives analyzed` : WEEKLY_DATA.metrics[0].diff,
+                  icon: 'shield-check-outline',
+                  color: '#22c55e'
+                },
+                {
+                  label: 'Total Drives',
+                  val: totalDrives > 0 ? totalDrives.toString() : WEEKLY_DATA.metrics[1].val,
+                  sub: 'Drives',
+                  diff: totalDrives > 0 ? 'All-time drives recorded' : WEEKLY_DATA.metrics[1].diff,
+                  icon: 'steering',
+                  color: '#00f5ff'
+                },
+                {
+                  label: 'Total Distance',
+                  val: totalDrives > 0 ? (totalDistance / 1000).toFixed(1) : WEEKLY_DATA.metrics[2].val,
+                  sub: 'km',
+                  diff: totalDrives > 0 ? 'Accumulated distance' : WEEKLY_DATA.metrics[2].diff,
+                  icon: 'map-marker-outline',
+                  color: '#00f5ff'
+                },
+                {
+                  label: 'Total Duration',
+                  val: totalDrives > 0 ? durationString : WEEKLY_DATA.metrics[3].val,
+                  sub: 'hr',
+                  diff: totalDrives > 0 ? 'Estimated drive time' : WEEKLY_DATA.metrics[3].diff,
+                  icon: 'clock-outline',
+                  color: '#00f5ff'
+                }
+              ];
+
+              return (
+                <View style={styles.metricsGridContainer}>
+                  {displayMetrics.map((metric, idx) => (
+                    <View key={idx} style={styles.metricCard}>
+                      <View style={styles.metricCardHeader}>
+                        <MaterialCommunityIcons name={metric.icon as any} size={18} color={metric.color} />
+                        <Text style={styles.metricCardLabel} numberOfLines={1}>{metric.label}</Text>
+                      </View>
+                      <Text style={styles.metricCardValue}>{metric.val}</Text>
+                      <Text style={[styles.metricCardSub, metric.label === 'Avg Safe Score' && { color: '#22c55e', fontWeight: 'bold' }]}>
+                        {metric.sub}
+                      </Text>
+                      <Text style={styles.metricCardDiff}>{metric.diff}</Text>
+                    </View>
+                  ))}
                 </View>
-              ))}
+              );
+            })()}
+
+            {/* ALL-TIME SAFETY RECORD SECTION */}
+            <View style={styles.sectionHeaderRow}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Feather name="shield" size={16} color="#eab308" style={{ marginRight: 8 }} />
+                <Text style={styles.sectionTitle}>ALL-TIME SAFETY RECORD</Text>
+              </View>
+            </View>
+
+            <View style={[styles.metricsGridContainer, { marginBottom: 15 }]}>
+              {/* Card 1: Best Score */}
+              <View style={[styles.metricCard, { borderColor: 'rgba(234, 179, 8, 0.3)', backgroundColor: 'rgba(234, 179, 8, 0.05)' }]}>
+                <View style={styles.metricCardHeader}>
+                  <FontAwesome5 name="trophy" size={14} color="#eab308" />
+                  <Text style={[styles.metricCardLabel, { color: '#eab308', fontWeight: 'bold' }]} numberOfLines={1}>Best Safe Score</Text>
+                </View>
+                <Text style={[styles.metricCardValue, { color: '#ffffff' }]}>{totalDrives > 0 ? bestScore : 98}</Text>
+                <Text style={[styles.metricCardSub, { color: '#eab308' }]}>Highest safety rating</Text>
+                <Text style={[styles.metricCardDiff, { color: '#a3e635' }]}>All-time record 🏆</Text>
+              </View>
+
+              {/* Card 2: Total Violations */}
+              <View style={[styles.metricCard, { borderColor: 'rgba(239, 68, 68, 0.3)', backgroundColor: 'rgba(239, 68, 68, 0.05)' }]}>
+                <View style={styles.metricCardHeader}>
+                  <Feather name="alert-triangle" size={16} color="#ef4444" />
+                  <Text style={[styles.metricCardLabel, { color: '#ef4444', fontWeight: 'bold' }]} numberOfLines={1}>Total Violations</Text>
+                </View>
+                <Text style={[styles.metricCardValue, { color: '#ffffff' }]}>{totalDrives > 0 ? totalEvents : 12}</Text>
+                <Text style={[styles.metricCardSub, { color: '#ef4444' }]}>Safety events logged</Text>
+                <Text style={[styles.metricCardDiff, { color: '#ef4444' }]}>Safe driving alerts</Text>
+              </View>
             </View>
 
             {/* SCORE TREND SECTION */}
