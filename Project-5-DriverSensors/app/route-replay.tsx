@@ -73,6 +73,11 @@ export default function RouteReplayScreen() {
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(1);
   const [zoomLevel, setZoomLevel] = useState<number>(1); // Zoom scale for the SVG map
 
+  // Interactive Map Panning States
+  const [mapOffset, setMapOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [isPanningMap, setIsPanningMap] = useState<boolean>(false);
+  const lastTouchRef = useRef<{ x: number; y: number } | null>(null);
+
   // Load completed drive session
   const allDrives = driveRepository.getAllDrives();
   const historicalSession = allDrives.find(d => d.id === id);
@@ -150,8 +155,29 @@ export default function RouteReplayScreen() {
   const zoomOut = () => setZoomLevel((prev) => Math.max(1, prev - 0.25));
   const resetMap = () => {
     setZoomLevel(1);
+    setMapOffset({ x: 0, y: 0 });
     setCurrentTimeSec(0);
     setIsPlaying(false);
+  };
+
+  // Helper to project SVG coordinates to the screen container with zoom and offset
+  const getCalloutPosition = (x: number, y: number, offsetLeft = -25, offsetTop = -30) => {
+    const containerWidth = width - 40;
+    const containerHeight = 380;
+    
+    // Compute SVG viewBox based on zoom and mapOffset
+    const viewBoxWidth = 400 / zoomLevel;
+    const viewBoxHeight = 400 / zoomLevel;
+    const viewBoxX = 200 - viewBoxWidth / 2 + mapOffset.x;
+    const viewBoxY = 200 - viewBoxHeight / 2 + mapOffset.y;
+    
+    const screenX = ((x - viewBoxX) / viewBoxWidth) * containerWidth;
+    const screenY = ((y - viewBoxY) / viewBoxHeight) * containerHeight;
+    
+    return {
+      left: screenX + offsetLeft,
+      top: screenY + offsetTop,
+    };
   };
 
   // Format Seconds to MM:SS
@@ -180,12 +206,12 @@ export default function RouteReplayScreen() {
     }
   };
 
-  // Compute SVG viewBox based on zoom
+  // Compute SVG viewBox based on zoom and mapOffset
   const viewBoxWidth = 400 / zoomLevel;
   const viewBoxHeight = 400 / zoomLevel;
-  // Center zoom on route center (200, 200)
-  const viewBoxX = 200 - viewBoxWidth / 2;
-  const viewBoxY = 200 - viewBoxHeight / 2;
+  // Center zoom on route center (200, 200) plus mapOffset
+  const viewBoxX = 200 - viewBoxWidth / 2 + mapOffset.x;
+  const viewBoxY = 200 - viewBoxHeight / 2 + mapOffset.y;
   const mapStyleViewBox = `${viewBoxX} ${viewBoxY} ${viewBoxWidth} ${viewBoxHeight}`;
 
   return (
@@ -209,7 +235,11 @@ export default function RouteReplayScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent} 
+        showsVerticalScrollIndicator={false}
+        scrollEnabled={!isPanningMap}
+      >
         
         {/* 2. Overview Info Card */}
         <TouchableOpacity 
@@ -253,142 +283,175 @@ export default function RouteReplayScreen() {
 
         {/* 3. Interactive Vector Map Box */}
         <View style={styles.mapContainer}>
-          <Svg width="100%" height={380} viewBox={mapStyleViewBox}>
-            <Defs>
-              <SvgLinearGradient id="routeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <Stop offset="0%" stopColor="#00f5ff" />
-                <Stop offset="15%" stopColor="#eab308" />
-                <Stop offset="30%" stopColor="#ef4444" />
-                <Stop offset="55%" stopColor="#00f5ff" />
-                <Stop offset="75%" stopColor="#22c55e" />
-                <Stop offset="88%" stopColor="#ef4444" />
-                <Stop offset="100%" stopColor="#a3e635" />
-              </SvgLinearGradient>
-            </Defs>
+          <View
+            onStartShouldSetResponder={() => true}
+            onResponderGrant={(evt) => {
+              const { pageX, pageY } = evt.nativeEvent;
+              lastTouchRef.current = { x: pageX, y: pageY };
+              setIsPanningMap(true);
+            }}
+            onResponderMove={(evt) => {
+              if (!lastTouchRef.current) return;
+              const { pageX, pageY } = evt.nativeEvent;
+              const dx = pageX - lastTouchRef.current.x;
+              const dy = pageY - lastTouchRef.current.y;
+              
+              const scaleFactor = 1.0 / zoomLevel;
+              
+              setMapOffset((prev) => ({
+                x: prev.x - dx * scaleFactor,
+                y: prev.y - dy * scaleFactor
+              }));
+              
+              lastTouchRef.current = { x: pageX, y: pageY };
+            }}
+            onResponderRelease={() => {
+              lastTouchRef.current = null;
+              setIsPanningMap(false);
+            }}
+            onResponderTerminate={() => {
+              lastTouchRef.current = null;
+              setIsPanningMap(false);
+            }}
+            style={StyleSheet.absoluteFill}
+          >
+            <Svg width="100%" height={380} viewBox={mapStyleViewBox}>
+              <Defs>
+                <SvgLinearGradient id="routeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <Stop offset="0%" stopColor="#00f5ff" />
+                  <Stop offset="15%" stopColor="#eab308" />
+                  <Stop offset="30%" stopColor="#ef4444" />
+                  <Stop offset="55%" stopColor="#00f5ff" />
+                  <Stop offset="75%" stopColor="#22c55e" />
+                  <Stop offset="88%" stopColor="#ef4444" />
+                  <Stop offset="100%" stopColor="#a3e635" />
+                </SvgLinearGradient>
+              </Defs>
 
-            {/* Background street grids simulating GPS map */}
-            {/* Horizontal streets */}
-            <Line x1="10" y1="70" x2="390" y2="70" stroke="rgba(255,255,255,0.03)" strokeWidth="2" />
-            <Line x1="10" y1="180" x2="390" y2="180" stroke="rgba(255,255,255,0.03)" strokeWidth="2" />
-            <Line x1="10" y1="280" x2="390" y2="280" stroke="rgba(255,255,255,0.03)" strokeWidth="2" />
-            
-            {/* Vertical streets */}
-            <Line x1="90" y1="10" x2="90" y2="390" stroke="rgba(255,255,255,0.03)" strokeWidth="2" />
-            <Line x1="210" y1="10" x2="210" y2="390" stroke="rgba(255,255,255,0.03)" strokeWidth="2" />
-            <Line x1="330" y1="10" x2="330" y2="390" stroke="rgba(255,255,255,0.03)" strokeWidth="2" />
+              {/* Background street grids simulating GPS map */}
+              {/* Horizontal streets */}
+              <Line x1="10" y1="70" x2="390" y2="70" stroke="rgba(255,255,255,0.03)" strokeWidth="2" />
+              <Line x1="10" y1="180" x2="390" y2="180" stroke="rgba(255,255,255,0.03)" strokeWidth="2" />
+              <Line x1="10" y1="280" x2="390" y2="280" stroke="rgba(255,255,255,0.03)" strokeWidth="2" />
+              
+              {/* Vertical streets */}
+              <Line x1="90" y1="10" x2="90" y2="390" stroke="rgba(255,255,255,0.03)" strokeWidth="2" />
+              <Line x1="210" y1="10" x2="210" y2="390" stroke="rgba(255,255,255,0.03)" strokeWidth="2" />
+              <Line x1="330" y1="10" x2="330" y2="390" stroke="rgba(255,255,255,0.03)" strokeWidth="2" />
 
-            {/* Circular Landmark junctions */}
-            <Circle cx="210" cy="180" r="30" stroke="rgba(255,255,255,0.02)" strokeWidth="1.5" fill="none" />
-            
-            {/* Diagonal secondary avenues */}
-            <Line x1="10" y1="10" x2="390" y2="390" stroke="rgba(255,255,255,0.02)" strokeWidth="1" />
-            <Line x1="390" y1="10" x2="10" y2="390" stroke="rgba(255,255,255,0.02)" strokeWidth="1" />
+              {/* Circular Landmark junctions */}
+              <Circle cx="210" cy="180" r="30" stroke="rgba(255,255,255,0.02)" strokeWidth="1.5" fill="none" />
+              
+              {/* Diagonal secondary avenues */}
+              <Line x1="10" y1="10" x2="390" y2="390" stroke="rgba(255,255,255,0.02)" strokeWidth="1" />
+              <Line x1="390" y1="10" x2="10" y2="390" stroke="rgba(255,255,255,0.02)" strokeWidth="1" />
 
-            {/* Landmark text labels */}
-            <SvgText x="110" y="85" fill="rgba(255,255,255,0.12)" fontSize="9" fontWeight="bold">MG ROAD</SvgText>
-            <SvgText x="270" y="145" fill="rgba(255,255,255,0.12)" fontSize="9" fontWeight="bold">INDIA GATE</SvgText>
-            <SvgText x="50" y="240" fill="rgba(255,255,255,0.12)" fontSize="9" fontWeight="bold">SUPREME COURT</SvgText>
-            <SvgText x="135" y="270" fill="rgba(255,255,255,0.12)" fontSize="9" fontWeight="bold">JLN MARG</SvgText>
-            <SvgText x="235" y="360" fill="rgba(255,255,255,0.12)" fontSize="9" fontWeight="bold">CONNAUGHT PLACE</SvgText>
+              {/* Landmark text labels */}
+              <SvgText x="110" y="85" fill="rgba(255,255,255,0.12)" fontSize="9" fontWeight="bold">MG ROAD</SvgText>
+              <SvgText x="270" y="145" fill="rgba(255,255,255,0.12)" fontSize="9" fontWeight="bold">INDIA GATE</SvgText>
+              <SvgText x="50" y="240" fill="rgba(255,255,255,0.12)" fontSize="9" fontWeight="bold">SUPREME COURT</SvgText>
+              <SvgText x="135" y="270" fill="rgba(255,255,255,0.12)" fontSize="9" fontWeight="bold">JLN MARG</SvgText>
+              <SvgText x="235" y="360" fill="rgba(255,255,255,0.12)" fontSize="9" fontWeight="bold">CONNAUGHT PLACE</SvgText>
 
-            {/* The primary Route Path */}
-            <Path 
-              d="M 80,60 L 130,100 L 180,160 L 220,220 L 260,280 L 300,320 L 340,350"
-              stroke="url(#routeGrad)"
-              strokeWidth="5"
-              fill="none"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
+              {/* The primary Route Path */}
+              <Path 
+                d="M 80,60 L 130,100 L 180,160 L 220,220 L 260,280 L 300,320 L 340,350"
+                stroke="url(#routeGrad)"
+                strokeWidth="5"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
 
-            {/* Event Markers & Callouts */}
-            {/* 1. Start Marker */}
-            <Circle cx="80" cy="60" r="12" fill="none" stroke="#00f5ff" strokeWidth="2.5" />
-            <Circle cx="80" cy="60" r="5" fill="#00f5ff" />
+              {/* Event Markers & Callouts */}
+              {/* 1. Start Marker */}
+              <Circle cx="80" cy="60" r="12" fill="none" stroke="#00f5ff" strokeWidth="2.5" />
+              <Circle cx="80" cy="60" r="5" fill="#00f5ff" />
 
-            {/* 2. Sharp Turn (08:18 AM) */}
-            <Circle cx="130" cy="100" r="10" fill="#0c1626" stroke="#eab308" strokeWidth="2" />
-            
-            {/* 3. Harsh Brake 1 (08:22 AM) */}
-            <Circle cx="180" cy="160" r="10" fill="#0c1626" stroke="#ef4444" strokeWidth="2" />
-            
-            {/* 4. Phone Usage (08:27 AM) */}
-            <Circle cx="220" cy="220" r="10" fill="#0c1626" stroke="#00f5ff" strokeWidth="2" />
-            
-            {/* 5. Aggressive Steering (08:31 AM) */}
-            <Circle cx="260" cy="280" r="10" fill="#0c1626" stroke="#a3e635" strokeWidth="2" />
-            
-            {/* 6. Harsh Brake 2 (08:35 AM) */}
-            <Circle cx="300" cy="320" r="10" fill="#0c1626" stroke="#ef4444" strokeWidth="2" />
+              {/* 2. Sharp Turn (08:18 AM) */}
+              <Circle cx="130" cy="100" r="10" fill="#0c1626" stroke="#eab308" strokeWidth="2" />
+              
+              {/* 3. Harsh Brake 1 (08:22 AM) */}
+              <Circle cx="180" cy="160" r="10" fill="#0c1626" stroke="#ef4444" strokeWidth="2" />
+              
+              {/* 4. Phone Usage (08:27 AM) */}
+              <Circle cx="220" cy="220" r="10" fill="#0c1626" stroke="#00f5ff" strokeWidth="2" />
+              
+              {/* 5. Aggressive Steering (08:31 AM) */}
+              <Circle cx="260" cy="280" r="10" fill="#0c1626" stroke="#a3e635" strokeWidth="2" />
+              
+              {/* 6. Harsh Brake 2 (08:35 AM) */}
+              <Circle cx="300" cy="320" r="10" fill="#0c1626" stroke="#ef4444" strokeWidth="2" />
 
-            {/* 7. End Marker */}
-            <Path d="M340,335 C334,335 330,339 330,345 C330,353 340,362 340,362 C340,362 350,353 350,345 C350,339 346,335 340,335 Z" fill="#22c55e" />
-            <Circle cx="340" cy="345" r="3" fill="#ffffff" />
+              {/* 7. End Marker */}
+              <Path d="M340,335 C334,335 330,339 330,345 C330,353 340,362 340,362 C340,362 350,353 350,345 C350,339 346,335 340,335 Z" fill="#22c55e" />
+              <Circle cx="340" cy="345" r="3" fill="#ffffff" />
 
-            {/* Inner Icons for markers */}
-            {/* Sharp Turn */}
-            <Path d="M 127,103 L 133,103 L 133,98" stroke="#eab308" strokeWidth="1.2" fill="none" />
-            <Path d="M 127,103 C 127,99 130,97 133,98" stroke="#eab308" strokeWidth="1.2" fill="none" />
-            {/* Harsh Brake 1 */}
-            <Line x1="180" y1="156" x2="180" y2="161" stroke="#ef4444" strokeWidth="1.5" />
-            <Circle cx="180" cy="164" r="1" fill="#ef4444" />
-            {/* Phone Usage */}
-            <Path d="M 218,217 L 222,217 L 222,223 L 218,223 Z" fill="#00f5ff" />
-            {/* Aggressive Steering */}
-            <Circle cx="260" cy="280" r="4" stroke="#a3e635" strokeWidth="1" fill="none" />
-            {/* Harsh Brake 2 */}
-            <Line x1="300" y1="316" x2="300" y2="321" stroke="#ef4444" strokeWidth="1.5" />
-            <Circle cx="300" cy="324" r="1" fill="#ef4444" />
+              {/* Inner Icons for markers */}
+              {/* Sharp Turn */}
+              <Path d="M 127,103 L 133,103 L 133,98" stroke="#eab308" strokeWidth="1.2" fill="none" />
+              <Path d="M 127,103 C 127,99 130,97 133,98" stroke="#eab308" strokeWidth="1.2" fill="none" />
+              {/* Harsh Brake 1 */}
+              <Line x1="180" y1="156" x2="180" y2="161" stroke="#ef4444" strokeWidth="1.5" />
+              <Circle cx="180" cy="164" r="1" fill="#ef4444" />
+              {/* Phone Usage */}
+              <Path d="M 218,217 L 222,217 L 222,223 L 218,223 Z" fill="#00f5ff" />
+              {/* Aggressive Steering */}
+              <Circle cx="260" cy="280" r="4" stroke="#a3e635" strokeWidth="1" fill="none" />
+              {/* Harsh Brake 2 */}
+              <Line x1="300" y1="316" x2="300" y2="321" stroke="#ef4444" strokeWidth="1.5" />
+              <Circle cx="300" cy="324" r="1" fill="#ef4444" />
 
-            {/* Replay Cursor (Car Position) */}
-            {cursorPoint && (
-              <>
-                <Circle cx={cursorPoint.x} cy={cursorPoint.y} r="16" fill="rgba(0, 245, 255, 0.15)" stroke="#00f5ff" strokeWidth="1.5" />
-                <Circle cx={cursorPoint.x} cy={cursorPoint.y} r="6" fill="#00f5ff" />
-              </>
-            )}
-          </Svg>
+              {/* Replay Cursor (Car Position) */}
+              {cursorPoint && (
+                <>
+                  <Circle cx={cursorPoint.x} cy={cursorPoint.y} r="16" fill="rgba(0, 245, 255, 0.15)" stroke="#00f5ff" strokeWidth="1.5" />
+                  <Circle cx={cursorPoint.x} cy={cursorPoint.y} r="6" fill="#00f5ff" />
+                </>
+              )}
+            </Svg>
+          </View>
 
-          {/* Absolute Map Callout Popovers matching mockup */}
+          {/* Absolute Map Callout Popovers matching mockup and panning position */}
           {/* Start Popover */}
-          <View style={[styles.mapCallout, { top: 38, left: 45 }]}>
+          <View style={[styles.mapCallout, getCalloutPosition(80, 60, -25, -20)]}>
             <Text style={styles.calloutTitle}>START</Text>
             <Text style={styles.calloutTime}>08:15 AM</Text>
           </View>
 
           {/* Sharp Turn Popover */}
-          <View style={[styles.mapCallout, { top: 76, left: 165 }]}>
+          <View style={[styles.mapCallout, getCalloutPosition(130, 100, -35, -35)]}>
             <Text style={styles.calloutTime}>08:18 AM</Text>
             <Text style={styles.calloutTitle}>Sharp Turn</Text>
           </View>
 
           {/* Harsh Brake 1 Popover */}
-          <View style={[styles.mapCallout, { top: 135, left: 215 }]}>
+          <View style={[styles.mapCallout, getCalloutPosition(180, 160, -35, -35)]}>
             <Text style={styles.calloutTime}>08:22 AM</Text>
             <Text style={styles.calloutTitle}>Harsh Brake</Text>
           </View>
 
           {/* Phone Usage Popover */}
-          <View style={[styles.mapCallout, { top: 195, left: 255 }]}>
+          <View style={[styles.mapCallout, getCalloutPosition(220, 220, -35, -45)]}>
             <Text style={styles.calloutTime}>08:27 AM</Text>
             <Text style={styles.calloutTitle}>Phone Usage</Text>
             <Text style={styles.calloutSub}>8 sec</Text>
           </View>
 
           {/* Aggressive Steering Popover */}
-          <View style={[styles.mapCallout, { top: 255, left: 295 }]}>
+          <View style={[styles.mapCallout, getCalloutPosition(260, 280, -45, -35)]}>
             <Text style={styles.calloutTime}>08:31 AM</Text>
             <Text style={styles.calloutTitle}>Aggressive Steering</Text>
           </View>
 
           {/* Harsh Brake 2 Popover */}
-          <View style={[styles.mapCallout, { top: 315, left: 180 }]}>
+          <View style={[styles.mapCallout, getCalloutPosition(300, 320, -35, -35)]}>
             <Text style={styles.calloutTime}>08:35 AM</Text>
             <Text style={styles.calloutTitle}>Harsh Brake</Text>
           </View>
 
           {/* End Popover */}
-          <View style={[styles.mapCallout, { top: 350, left: 290 }]}>
+          <View style={[styles.mapCallout, getCalloutPosition(340, 350, -25, -35)]}>
             <Text style={[styles.calloutTitle, { color: '#22c55e' }]}>END</Text>
             <Text style={styles.calloutTime}>08:57 AM</Text>
           </View>

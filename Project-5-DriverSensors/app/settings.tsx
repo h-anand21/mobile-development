@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Dimensions, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Dimensions, Alert, Linking, Modal } from 'react-native';
 import { Feather, MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSettingsStore } from '../src/store/settingsStore';
@@ -101,6 +101,19 @@ export default function SettingsScreen() {
     setExpanded((prev) => ({ ...prev, [section]: !prev[section] }));
   };
 
+  const [showAboutModal, setShowAboutModal] = useState(false);
+
+  const handlePermissionPress = (name: string, description: string) => {
+    Alert.alert(
+      name,
+      `${description}\n\nDo you want to open device Settings to configure permissions for SafeDrive?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Open Settings', onPress: () => Linking.openSettings() }
+      ]
+    );
+  };
+
   const handleReset = () => {
     resetToDefaults();
     Alert.alert('Reset Thresholds', 'Threshold parameters set to industry defaults.', [{ text: 'OK' }]);
@@ -137,7 +150,7 @@ export default function SettingsScreen() {
           {expanded.permissions && (
             <View style={styles.sectionBody}>
               {/* Location Access */}
-              <TouchableOpacity style={styles.rowItem} onPress={() => Alert.alert('Location Access', 'Permission managed by device settings.')}>
+              <TouchableOpacity style={styles.rowItem} onPress={() => handlePermissionPress('Location Access', 'Required for tracking your drives and routes.')}>
                 <View style={[styles.iconContainer, { borderColor: '#84cc1640', backgroundColor: '#84cc160a' }]}>
                   <Ionicons name="location-sharp" size={16} color="#84cc16" />
                 </View>
@@ -148,9 +161,9 @@ export default function SettingsScreen() {
                 <Text style={[styles.rowValueText, { color: '#84cc16' }]}>{permissions.location}</Text>
                 <Feather name="chevron-right" size={14} color="#475569" style={{ marginLeft: 6 }} />
               </TouchableOpacity>
-
+ 
               {/* Notifications */}
-              <TouchableOpacity style={styles.rowItem} onPress={() => Alert.alert('Notifications', 'Permission managed by device settings.')}>
+              <TouchableOpacity style={styles.rowItem} onPress={() => handlePermissionPress('Notifications Access', 'Used to send safe driving alerts, weekly summary updates, and achievements reminders.')}>
                 <View style={[styles.iconContainer, { borderColor: '#3b82f640', backgroundColor: '#3b82f60a' }]}>
                   <Feather name="bell" size={16} color="#3b82f6" />
                 </View>
@@ -161,9 +174,9 @@ export default function SettingsScreen() {
                 <Text style={[styles.rowValueText, { color: '#3b82f6' }]}>{permissions.notifications}</Text>
                 <Feather name="chevron-right" size={14} color="#475569" style={{ marginLeft: 6 }} />
               </TouchableOpacity>
-
+ 
               {/* Motion & Activity */}
-              <TouchableOpacity style={styles.rowItem} onPress={() => Alert.alert('Motion & Activity', 'Permission managed by device settings.')}>
+              <TouchableOpacity style={styles.rowItem} onPress={() => handlePermissionPress('Motion & Activity Access', 'Essential for detecting vehicle movement and driving behavior dynamically.')}>
                 <View style={[styles.iconContainer, { borderColor: '#a855f740', backgroundColor: '#a855f70a' }]}>
                   <MaterialCommunityIcons name="run" size={16} color="#a855f7" />
                 </View>
@@ -174,9 +187,9 @@ export default function SettingsScreen() {
                 <Text style={[styles.rowValueText, { color: '#a855f7' }]}>{permissions.motion}</Text>
                 <Feather name="chevron-right" size={14} color="#475569" style={{ marginLeft: 6 }} />
               </TouchableOpacity>
-
+ 
               {/* Phone Usage Access */}
-              <TouchableOpacity style={styles.rowItem} onPress={() => Alert.alert('Phone Usage Access', 'Permission managed by device settings.')}>
+              <TouchableOpacity style={styles.rowItem} onPress={() => handlePermissionPress('Phone Usage Access', 'Analyzes phone handling anomalies while driving to compute focus rating.')}>
                 <View style={[styles.iconContainer, { borderColor: '#eab30840', backgroundColor: '#eab3080a' }]}>
                   <Feather name="phone" size={16} color="#eab308" />
                 </View>
@@ -187,9 +200,9 @@ export default function SettingsScreen() {
                 <Text style={[styles.rowValueText, { color: '#eab308' }]}>{permissions.phoneUsage}</Text>
                 <Feather name="chevron-right" size={14} color="#475569" style={{ marginLeft: 6 }} />
               </TouchableOpacity>
-
+ 
               {/* Background App Refresh */}
-              <TouchableOpacity style={[styles.rowItem, { borderBottomWidth: 0 }]} onPress={() => Alert.alert('Background App Refresh', 'Permission managed by device settings.')}>
+              <TouchableOpacity style={[styles.rowItem, { borderBottomWidth: 0 }]} onPress={() => handlePermissionPress('Background App Refresh', 'Allows telemetry sensing engines to operate in the background during driving.')}>
                 <View style={[styles.iconContainer, { borderColor: '#14b8a640', backgroundColor: '#14b8a60a' }]}>
                   <Ionicons name="refresh-outline" size={16} color="#14b8a6" />
                 </View>
@@ -557,7 +570,7 @@ export default function SettingsScreen() {
               </TouchableOpacity>
 
               {/* About */}
-              <TouchableOpacity style={[styles.rowItem, { borderBottomWidth: 0 }]} onPress={() => Alert.alert('About SafeDrive', 'SafeDrive Telemetry System v1.0.0\nBuilt on React Native.')}>
+              <TouchableOpacity style={[styles.rowItem, { borderBottomWidth: 0 }]} onPress={() => setShowAboutModal(true)}>
                 <View style={[styles.iconContainer, { borderColor: '#64748b40', backgroundColor: '#64748b0a' }]}>
                   <Feather name="info" size={16} color="#64748b" />
                 </View>
@@ -574,6 +587,58 @@ export default function SettingsScreen() {
 
         <View style={styles.bottomSpacer} />
       </ScrollView>
+
+      {/* About SafeDrive Modal Overlay */}
+      <Modal
+        visible={showAboutModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowAboutModal(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <MaterialCommunityIcons name="information-outline" size={24} color="#00f5ff" />
+              <Text style={styles.modalTitle}>About SafeDrive</Text>
+              <TouchableOpacity onPress={() => setShowAboutModal(false)} style={styles.modalCloseBtn}>
+                <Feather name="x" size={20} color="#94a3b8" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
+              <View style={styles.modalBody}>
+                <View style={styles.aboutBranding}>
+                  <MaterialCommunityIcons name="shield-car" size={60} color="#00f5ff" />
+                  <Text style={styles.aboutVersionTitle}>SafeDrive Telemetry System</Text>
+                  <Text style={styles.aboutVersionSub}>Version 1.0.0 (Build 104)</Text>
+                </View>
+
+                <Text style={styles.aboutSectionHeader}>Telemetry Processor</Text>
+                <Text style={styles.aboutText}>
+                  SafeDrive continuously monitors vehicle movement and driver actions using on-device high-frequency sensors. It runs background analysis for harsh acceleration, aggressive braking, cornering forces, and phone handling.
+                </Text>
+
+                <Text style={styles.aboutSectionHeader}>Privacy Policy</Text>
+                <Text style={styles.aboutText}>
+                  SafeDrive respects your data privacy. All sensor sampling, telemetry calculation, scoring engine deductions, and AI safety coach insights are processed locally on your physical device. No location coordinate traces or distraction telemetry logs are sent to remote servers without explicit user command action.
+                </Text>
+
+                <Text style={styles.aboutSectionHeader}>Terms of Service</Text>
+                <Text style={styles.aboutText}>
+                  By using SafeDrive, you agree to drive responsibly. SafeDrive provides estimated safety scores and is not a replacement for proper driver focus and road precautions. Safe scoring is a metric calculated for telemetry tracking and self-coaching purposes.
+                </Text>
+
+                <View style={styles.divider} />
+                <Text style={styles.aboutCopyright}>© 2026 SafeDrive Systems. All rights reserved.</Text>
+              </View>
+            </ScrollView>
+
+            <TouchableOpacity style={styles.modalCloseMainBtn} onPress={() => setShowAboutModal(false)}>
+              <Text style={styles.modalCloseMainBtnText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -814,5 +879,96 @@ const styles = StyleSheet.create({
 
   bottomSpacer: {
     height: 40,
-  }
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(5, 11, 20, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: '90%',
+    maxHeight: '80%',
+    backgroundColor: '#0c1626',
+    borderWidth: 1,
+    borderColor: '#122540',
+    borderRadius: 24,
+    padding: 20,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#122540',
+    paddingBottom: 15,
+    marginBottom: 10,
+  },
+  modalTitle: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft: 10,
+    flex: 1,
+  },
+  modalCloseBtn: {
+    padding: 4,
+  },
+  modalScroll: {
+    flexGrow: 0,
+  },
+  modalBody: {
+    paddingVertical: 10,
+  },
+  aboutBranding: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  aboutVersionTitle: {
+    color: '#ffffff',
+    fontSize: 15,
+    fontWeight: 'bold',
+    marginTop: 10,
+  },
+  aboutVersionSub: {
+    color: '#64748b',
+    fontSize: 11,
+    marginTop: 2,
+  },
+  aboutSectionHeader: {
+    color: '#00f5ff',
+    fontSize: 12,
+    fontWeight: 'bold',
+    marginTop: 15,
+    marginBottom: 6,
+    letterSpacing: 0.5,
+  },
+  aboutText: {
+    color: '#94a3b8',
+    fontSize: 11.5,
+    lineHeight: 16,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#122540',
+    marginVertical: 15,
+  },
+  aboutCopyright: {
+    color: '#475569',
+    fontSize: 9,
+    textAlign: 'center',
+  },
+  modalCloseMainBtn: {
+    backgroundColor: '#0c1626',
+    borderWidth: 1,
+    borderColor: '#122540',
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginTop: 15,
+  },
+  modalCloseMainBtnText: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: 'bold',
+  },
 });

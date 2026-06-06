@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Alert, Modal, Clipboard } from 'react-native';
 import { Feather, MaterialCommunityIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import Svg, { Circle, Path, Polygon, Ellipse } from 'react-native-svg';
 import { useRouter } from 'expo-router';
@@ -151,6 +151,7 @@ export default function AchievementsScreen() {
   const [activeTab, setActiveTab] = useState<'all' | 'driving' | 'milestone' | 'streak' | 'special'>('all');
   const [sortBy, setSortBy] = useState<'rarity' | 'points' | 'unlocked'>('rarity');
   const [showSort, setShowSort] = useState(false);
+  const [showRewardsModal, setShowRewardsModal] = useState(false);
 
   // Load drives from DB to dynamically calculate if some completed achievements can unlock
   const dbDrives = driveRepository.getAllDrives();
@@ -459,7 +460,7 @@ export default function AchievementsScreen() {
         </View>
 
         {/* 8. Unlock More Rewards Banner */}
-        <TouchableOpacity style={styles.rewardsBanner}>
+        <TouchableOpacity style={styles.rewardsBanner} onPress={() => setShowRewardsModal(true)}>
           <View style={styles.rewardsLeft}>
             <HexagonBadge size={36} color="#00f5ff">
               <Feather name="star" size={16} color="#00f5ff" />
@@ -477,6 +478,152 @@ export default function AchievementsScreen() {
 
         <View style={styles.bottomSpacer} />
       </ScrollView>
+
+      {/* Rewards Modal Overlay */}
+      <Modal
+        visible={showRewardsModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowRewardsModal(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Feather name="gift" size={22} color="#00f5ff" />
+              <Text style={styles.modalTitle}>Unlocked Driver Rewards</Text>
+              <TouchableOpacity onPress={() => setShowRewardsModal(false)} style={styles.modalCloseBtn}>
+                <Feather name="x" size={20} color="#94a3b8" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
+              <View style={styles.modalBody}>
+                <Text style={styles.rewardsIntro}>
+                  Safe driving pays off! Here are discount vouchers from our safety partners:
+                </Text>
+
+                {/* Reward 1 */}
+                <View style={styles.rewardCard}>
+                  <View style={styles.rewardHeader}>
+                    <MaterialCommunityIcons name="gas-station" size={24} color="#eab308" />
+                    <View style={styles.rewardTitleCol}>
+                      <Text style={styles.rewardTitleText}>10% Fuel Discount Voucher</Text>
+                      <Text style={styles.rewardSource}>HP Energy Petrol Stations</Text>
+                    </View>
+                    <View style={styles.unlockedBadge}>
+                      <Text style={styles.unlockedText}>UNLOCKED</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.rewardDesc}>
+                    Claim 10% discount on fuel. Unlocked for maintaining average safety score &gt; 80.
+                  </Text>
+                  <View style={styles.couponCodeRow}>
+                    <Text style={styles.couponCodeLabel}>Coupon Code:</Text>
+                    <Text style={styles.couponCodeText}>DRIVESAFE10</Text>
+                    <TouchableOpacity 
+                      style={styles.copyBtn} 
+                      onPress={() => {
+                        Clipboard.setString('DRIVESAFE10');
+                        Alert.alert('Code Copied', 'Coupon code "DRIVESAFE10" copied to clipboard!');
+                      }}
+                    >
+                      <Text style={styles.copyBtnText}>Copy</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                {/* Reward 2 */}
+                <View style={styles.rewardCard}>
+                  <View style={styles.rewardHeader}>
+                    <MaterialCommunityIcons name="car-shield" size={24} color="#22c55e" />
+                    <View style={styles.rewardTitleCol}>
+                      <Text style={styles.rewardTitleText}>5% Auto Insurance Rebate</Text>
+                      <Text style={styles.rewardSource}>SafeGuard Insurance Corp</Text>
+                    </View>
+                    <View style={styles.unlockedBadge}>
+                      <Text style={styles.unlockedText}>UNLOCKED</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.rewardDesc}>
+                    Reduce your auto insurance premium. Unlocked for completing 5+ clean drives.
+                  </Text>
+                  <View style={styles.couponCodeRow}>
+                    <Text style={styles.couponCodeLabel}>Coupon Code:</Text>
+                    <Text style={styles.couponCodeText}>PREMIUM5SAFE</Text>
+                    <TouchableOpacity 
+                      style={styles.copyBtn} 
+                      onPress={() => {
+                        Clipboard.setString('PREMIUM5SAFE');
+                        Alert.alert('Code Copied', 'Coupon code "PREMIUM5SAFE" copied to clipboard!');
+                      }}
+                    >
+                      <Text style={styles.copyBtnText}>Copy</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                {/* Reward 3 */}
+                <View style={[styles.rewardCard, { opacity: 0.65 }]}>
+                  <View style={styles.rewardHeader}>
+                    <MaterialCommunityIcons name="ev-station" size={24} color="#00f5ff" />
+                    <View style={styles.rewardTitleCol}>
+                      <Text style={styles.rewardTitleText}>Free 15 kWh EV Charging</Text>
+                      <Text style={styles.rewardSource}>ChargeUp Fast EV Network</Text>
+                    </View>
+                    <View style={styles.lockedBadge}>
+                      <Text style={styles.lockedText}>LOCKED</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.rewardDesc}>
+                    Claim free EV charging session. Unlocks after accumulating 100+ km of safety-monitored driving.
+                  </Text>
+                  <View style={styles.rewardProgressRow}>
+                    <Text style={styles.progressLabel}>Progress: 28.6 / 100 km</Text>
+                    <View style={styles.progressBarBg}>
+                      <View style={[styles.progressBarFill, { width: '28.6%' }]} />
+                    </View>
+                  </View>
+                </View>
+
+                {/* Reward 4 */}
+                <View style={styles.rewardCard}>
+                  <View style={styles.rewardHeader}>
+                    <MaterialCommunityIcons name="coffee" size={24} color="#a855f7" />
+                    <View style={styles.rewardTitleCol}>
+                      <Text style={styles.rewardTitleText}>Free Highway Coffee Coupon</Text>
+                      <Text style={styles.rewardSource}>HighwayCafe Partner Shops</Text>
+                    </View>
+                    <View style={styles.unlockedBadge}>
+                      <Text style={styles.unlockedText}>UNLOCKED</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.rewardDesc}>
+                    Free hot beverage coupon. Unlocked for completing 1 drive session without a single speeding event.
+                  </Text>
+                  <View style={styles.couponCodeRow}>
+                    <Text style={styles.couponCodeLabel}>Coupon Code:</Text>
+                    <Text style={styles.couponCodeText}>FREEBREWCAFE</Text>
+                    <TouchableOpacity 
+                      style={styles.copyBtn} 
+                      onPress={() => {
+                        Clipboard.setString('FREEBREWCAFE');
+                        Alert.alert('Code Copied', 'Coupon code "FREEBREWCAFE" copied to clipboard!');
+                      }}
+                    >
+                      <Text style={styles.copyBtnText}>Copy</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+              </View>
+            </ScrollView>
+
+            <TouchableOpacity style={styles.modalCloseMainBtn} onPress={() => setShowRewardsModal(false)}>
+              <Text style={styles.modalCloseMainBtnText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -994,5 +1141,179 @@ const styles = StyleSheet.create({
   },
   bottomSpacer: {
     height: 60,
-  }
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(5, 11, 20, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: '90%',
+    maxHeight: '85%',
+    backgroundColor: '#0c1626',
+    borderWidth: 1,
+    borderColor: '#122540',
+    borderRadius: 24,
+    padding: 20,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#122540',
+    paddingBottom: 15,
+    marginBottom: 10,
+  },
+  modalTitle: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft: 10,
+    flex: 1,
+  },
+  modalCloseBtn: {
+    padding: 4,
+  },
+  modalScroll: {
+    flexGrow: 0,
+  },
+  modalBody: {
+    paddingVertical: 10,
+  },
+  rewardsIntro: {
+    color: '#94a3b8',
+    fontSize: 11.5,
+    lineHeight: 16,
+    marginBottom: 15,
+  },
+  rewardCard: {
+    backgroundColor: '#070f1e',
+    borderWidth: 1,
+    borderColor: '#122540',
+    borderRadius: 16,
+    padding: 12,
+    marginBottom: 14,
+  },
+  rewardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  rewardTitleCol: {
+    flex: 1,
+    marginLeft: 10,
+    marginRight: 6,
+  },
+  rewardTitleText: {
+    color: '#ffffff',
+    fontSize: 11.5,
+    fontWeight: 'bold',
+  },
+  rewardSource: {
+    color: '#64748b',
+    fontSize: 9,
+    marginTop: 1,
+  },
+  unlockedBadge: {
+    backgroundColor: 'rgba(34, 197, 94, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(34, 197, 94, 0.3)',
+    borderRadius: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+  },
+  unlockedText: {
+    color: '#22c55e',
+    fontSize: 8,
+    fontWeight: 'bold',
+  },
+  lockedBadge: {
+    backgroundColor: 'rgba(71, 85, 105, 0.12)',
+    borderWidth: 1,
+    borderColor: '#47556940',
+    borderRadius: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+  },
+  lockedText: {
+    color: '#94a3b8',
+    fontSize: 8,
+    fontWeight: 'bold',
+  },
+  rewardDesc: {
+    color: '#94a3b8',
+    fontSize: 10,
+    lineHeight: 14,
+    marginBottom: 8,
+  },
+  couponCodeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0c1626',
+    borderWidth: 1,
+    borderColor: '#122540',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    marginTop: 4,
+  },
+  couponCodeLabel: {
+    color: '#64748b',
+    fontSize: 9,
+    fontWeight: '500',
+  },
+  couponCodeText: {
+    color: '#00f5ff',
+    fontSize: 10.5,
+    fontWeight: 'bold',
+    marginLeft: 6,
+    flex: 1,
+  },
+  copyBtn: {
+    backgroundColor: 'rgba(0, 245, 255, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 245, 255, 0.25)',
+    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+  },
+  copyBtnText: {
+    color: '#00f5ff',
+    fontSize: 9.5,
+    fontWeight: 'bold',
+  },
+  rewardProgressRow: {
+    marginTop: 6,
+  },
+  progressLabel: {
+    color: '#64748b',
+    fontSize: 9,
+    marginBottom: 4,
+  },
+  progressBarBg: {
+    height: 4,
+    backgroundColor: '#122540',
+    borderRadius: 2,
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: '#00f5ff',
+    borderRadius: 2,
+  },
+  modalCloseMainBtn: {
+    backgroundColor: '#0c1626',
+    borderWidth: 1,
+    borderColor: '#122540',
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginTop: 15,
+  },
+  modalCloseMainBtnText: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: 'bold',
+  },
 });

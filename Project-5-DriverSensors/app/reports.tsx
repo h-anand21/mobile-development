@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Alert, Share } from 'react-native';
 import { Feather, MaterialCommunityIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import Svg, { Circle, Path, Line, Rect, Text as SvgText, Defs, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
 import { useRouter } from 'expo-router';
@@ -270,17 +270,47 @@ export default function ReportsScreen() {
     }
   };
 
-  // Mock Export PDF Action
+  // Export PDF / Share Action
   const handleExportPDF = () => {
     setIsExporting(true);
     setTimeout(() => {
       setIsExporting(false);
-      Alert.alert(
-        'Export Successful',
-        `The ${reportType} report for ${reportData.dateRange} has been exported as PDF and saved to your Device Storage.`,
-        [{ text: 'OK' }]
-      );
-    }, 1500);
+
+      const reportText = `
+=============================================
+SAFEDRIVE DRIVE REPORT (${reportType.toUpperCase()})
+=============================================
+Report Range: ${reportData.dateRange}
+Overall Driving Score: ${reportData.avgScore} / 100
+Safety Classification: ${reportData.avgScore >= 90 ? 'Excellent' : reportData.avgScore >= 75 ? 'Good' : reportData.avgScore >= 60 ? 'Fair' : 'Poor'}
+Total Distance Driven: ${reportData.totalDistance} km
+Total Drives Logged: ${reportData.totalDrives}
+
+DRIVING EVENTS LOGGED:
+- Harsh Braking Events: ${reportData.events.harshBrakes}
+- Speeding Violations: ${reportData.events.speeding}
+- Phone Distractions: ${reportData.events.phoneUsage}
+- Aggressive Steering: ${reportData.events.aggressive}
+
+AI COACH SAFETY TIPS:
+1. ${reportData.tips[0]}
+2. ${reportData.tips[1]}
+
+Telemetry data processed locally. SafeDrive v1.0.0.
+=============================================
+      `;
+
+      Share.share({
+        message: reportText,
+        title: `${reportType.toUpperCase()} Driving Report`,
+      })
+      .then(() => {
+        Alert.alert('Export Complete', 'Driving report exported and shared successfully.');
+      })
+      .catch(err => {
+        console.error('Sharing failed', err);
+      });
+    }, 1200);
   };
 
   // Donut SVG constants

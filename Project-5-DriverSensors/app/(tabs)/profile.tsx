@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Dimensions, Alert } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Dimensions, Alert, Modal, TextInput, Switch } from 'react-native';
 import { Feather, MaterialCommunityIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import Svg, { Circle, Path, Polygon } from 'react-native-svg';
 import { useRouter } from 'expo-router';
@@ -32,6 +32,36 @@ export default function ProfileScreen() {
 
   // Load drives from DB
   const dbDrives = driveRepository.getAllDrives();
+
+  // Profile Editable States
+  const [name, setName] = useState('Arjun Sharma');
+  const [email, setEmail] = useState('arjun.sharma@email.com');
+  const [experience, setExperience] = useState('5 Years');
+
+  // Vehicle States
+  const [vehicleType, setVehicleType] = useState('EV'); // Sedan, SUV, EV, Truck
+  const [vehicleModel, setVehicleModel] = useState('Tesla Model 3');
+  const [vehiclePlate, setVehiclePlate] = useState('DL 3C AB 1234');
+
+  // Privacy States
+  const [shareTelemetry, setShareTelemetry] = useState(true);
+  const [encryption, setEncryption] = useState(true);
+  const [anonymousAnalytics, setAnonymousAnalytics] = useState(false);
+  const [saveHistory, setSaveHistory] = useState(true);
+
+  // Modal Control States
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showVehicleModal, setShowVehicleModal] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+
+  // Temp editing states (to allow Cancel without saving)
+  const [tempName, setTempName] = useState('Arjun Sharma');
+  const [tempEmail, setTempEmail] = useState('arjun.sharma@email.com');
+  const [tempExperience, setTempExperience] = useState('5 Years');
+
+  const [tempVehicleType, setTempVehicleType] = useState('EV');
+  const [tempVehicleModel, setTempVehicleModel] = useState('Tesla Model 3');
+  const [tempVehiclePlate, setTempVehiclePlate] = useState('DL 3C AB 1234');
 
   // Stats calculation (adapt dynamically to real drives, fallback to mockup)
   const totalDrivesCount = dbDrives.length > 5 ? dbDrives.length : 128;
@@ -101,7 +131,10 @@ export default function ProfileScreen() {
   ];
 
   const handleEditProfile = () => {
-    Alert.alert('Edit Profile', 'Profile editing is coming soon!', [{ text: 'OK' }]);
+    setTempName(name);
+    setTempEmail(email);
+    setTempExperience(experience);
+    setShowProfileModal(true);
   };
 
   return (
@@ -133,8 +166,8 @@ export default function ProfileScreen() {
           </View>
 
           <View style={styles.profileInfoCol}>
-            <Text style={styles.profileName}>Arjun Sharma</Text>
-            <Text style={styles.profileEmail}>arjun.sharma@email.com</Text>
+            <Text style={styles.profileName}>{name}</Text>
+            <Text style={styles.profileEmail}>{email}</Text>
             <View style={styles.verifiedRow}>
               <MaterialCommunityIcons name="check-decagram" size={14} color="#00f5ff" style={{ marginRight: 4 }} />
               <Text style={styles.verifiedText}>Verified Driver</Text>
@@ -288,33 +321,319 @@ export default function ProfileScreen() {
 
         {/* 7. Settings List Card */}
         <View style={styles.menuListCard}>
-          {menuSettings.map((item, idx) => (
-            <TouchableOpacity
-              key={item.id}
-              style={[styles.menuItemRow, idx === menuSettings.length - 1 && { borderBottomWidth: 0 }]}
-              onPress={() => {
-                if (item.id === 'preferences' || item.id === 'notifications') {
-                  router.push('/settings');
-                } else {
-                  Alert.alert(item.title, `${item.title} page is coming soon!`);
-                }
-              }}
-            >
-              <View style={[styles.menuIconContainer, { borderColor: item.color + '40', backgroundColor: item.color + '0a' }]}>
-                {item.iconType === 'feather' && <Feather name={item.icon as any} size={16} color={item.color} />}
-                {item.iconType === 'material' && <MaterialCommunityIcons name={item.icon as any} size={17} color={item.color} />}
-                {item.iconType === 'ion' && <Ionicons name={item.icon as any} size={16} color={item.color} />}
-              </View>
+          {menuSettings.map((item, idx) => {
+            let subtitle = '';
+            if (item.id === 'personal') {
+              subtitle = `${experience} Experience`;
+            } else if (item.id === 'vehicles') {
+              subtitle = `${vehicleType} (${vehicleModel})`;
+            } else if (item.id === 'privacy') {
+              subtitle = shareTelemetry ? 'Telemetry Sharing: ON' : 'Telemetry Sharing: OFF';
+            }
 
-              <Text style={styles.menuItemText}>{item.title}</Text>
+            return (
+              <TouchableOpacity
+                key={item.id}
+                style={[styles.menuItemRow, idx === menuSettings.length - 1 && { borderBottomWidth: 0 }]}
+                onPress={() => {
+                  if (item.id === 'personal') {
+                    setTempName(name);
+                    setTempEmail(email);
+                    setTempExperience(experience);
+                    setShowProfileModal(true);
+                  } else if (item.id === 'vehicles') {
+                    setTempVehicleType(vehicleType);
+                    setTempVehicleModel(vehicleModel);
+                    setTempVehiclePlate(vehiclePlate);
+                    setShowVehicleModal(true);
+                  } else if (item.id === 'privacy') {
+                    setShowPrivacyModal(true);
+                  } else if (item.id === 'preferences' || item.id === 'notifications') {
+                    router.push('/settings');
+                  }
+                }}
+              >
+                <View style={[styles.menuIconContainer, { borderColor: item.color + '40', backgroundColor: item.color + '0a' }]}>
+                  {item.iconType === 'feather' && <Feather name={item.icon as any} size={16} color={item.color} />}
+                  {item.iconType === 'material' && <MaterialCommunityIcons name={item.icon as any} size={17} color={item.color} />}
+                  {item.iconType === 'ion' && <Ionicons name={item.icon as any} size={16} color={item.color} />}
+                </View>
 
-              <Feather name="chevron-right" size={16} color="#475569" />
-            </TouchableOpacity>
-          ))}
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.menuItemText}>{item.title}</Text>
+                  {!!subtitle && <Text style={styles.menuItemSubtext}>{subtitle}</Text>}
+                </View>
+
+                <Feather name="chevron-right" size={16} color="#475569" />
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
         <View style={styles.bottomSpacer} />
       </ScrollView>
+
+      {/* 1. Edit Profile Modal */}
+      <Modal
+        visible={showProfileModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowProfileModal(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Feather name="user" size={20} color="#00f5ff" />
+              <Text style={styles.modalTitle}>Edit Personal Info</Text>
+              <TouchableOpacity onPress={() => setShowProfileModal(false)} style={styles.modalCloseBtn}>
+                <Feather name="x" size={20} color="#94a3b8" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.modalBody}>
+              <Text style={styles.inputLabel}>Full Name</Text>
+              <TextInput
+                style={styles.modalInput}
+                value={tempName}
+                onChangeText={setTempName}
+                placeholder="Enter full name"
+                placeholderTextColor="#475569"
+              />
+
+              <Text style={styles.inputLabel}>Email Address</Text>
+              <TextInput
+                style={styles.modalInput}
+                value={tempEmail}
+                onChangeText={setTempEmail}
+                placeholder="Enter email address"
+                placeholderTextColor="#475569"
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+
+              <Text style={styles.inputLabel}>Driving Experience</Text>
+              <TextInput
+                style={styles.modalInput}
+                value={tempExperience}
+                onChangeText={setTempExperience}
+                placeholder="E.g. 5 Years"
+                placeholderTextColor="#475569"
+              />
+            </View>
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={styles.btnCancel}
+                onPress={() => setShowProfileModal(false)}
+              >
+                <Text style={styles.btnCancelText}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.btnSave}
+                onPress={() => {
+                  if (!tempName.trim()) {
+                    Alert.alert('Error', 'Name cannot be empty');
+                    return;
+                  }
+                  setName(tempName);
+                  setEmail(tempEmail);
+                  setExperience(tempExperience);
+                  setShowProfileModal(false);
+                  Alert.alert('Success', 'Profile details updated successfully!');
+                }}
+              >
+                <Text style={styles.btnSaveText}>Save</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* 2. Edit Vehicle Modal */}
+      <Modal
+        visible={showVehicleModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowVehicleModal(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <MaterialCommunityIcons name="car-cog" size={22} color="#22c55e" />
+              <Text style={styles.modalTitle}>Manage Vehicles</Text>
+              <TouchableOpacity onPress={() => setShowVehicleModal(false)} style={styles.modalCloseBtn}>
+                <Feather name="x" size={20} color="#94a3b8" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.modalBody}>
+              <Text style={styles.inputLabel}>Vehicle Type</Text>
+              <View style={styles.vehicleTypeRow}>
+                {['Sedan', 'SUV', 'EV', 'Truck'].map((type) => {
+                  const isSelected = tempVehicleType === type;
+                  return (
+                    <TouchableOpacity
+                      key={type}
+                      style={[
+                        styles.vehicleTypeBtn,
+                        isSelected && styles.vehicleTypeBtnSelected,
+                      ]}
+                      onPress={() => setTempVehicleType(type)}
+                    >
+                      <Text
+                        style={[
+                          styles.vehicleTypeBtnText,
+                          isSelected && styles.vehicleTypeBtnTextSelected,
+                        ]}
+                      >
+                        {type}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              <Text style={styles.inputLabel}>Vehicle Model</Text>
+              <TextInput
+                style={styles.modalInput}
+                value={tempVehicleModel}
+                onChangeText={setTempVehicleModel}
+                placeholder="E.g. Tesla Model 3"
+                placeholderTextColor="#475569"
+              />
+
+              <Text style={styles.inputLabel}>License Plate</Text>
+              <TextInput
+                style={styles.modalInput}
+                value={tempVehiclePlate}
+                onChangeText={setTempVehiclePlate}
+                placeholder="E.g. DL 3C AB 1234"
+                placeholderTextColor="#475569"
+                autoCapitalize="characters"
+              />
+            </View>
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={styles.btnCancel}
+                onPress={() => setShowVehicleModal(false)}
+              >
+                <Text style={styles.btnCancelText}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.btnSave}
+                onPress={() => {
+                  if (!tempVehicleModel.trim()) {
+                    Alert.alert('Error', 'Vehicle model cannot be empty');
+                    return;
+                  }
+                  setVehicleType(tempVehicleType);
+                  setVehicleModel(tempVehicleModel);
+                  setVehiclePlate(tempVehiclePlate);
+                  setShowVehicleModal(false);
+                  Alert.alert('Success', 'Vehicle info updated successfully!');
+                }}
+              >
+                <Text style={styles.btnSaveText}>Save</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* 3. Privacy & Security Modal */}
+      <Modal
+        visible={showPrivacyModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowPrivacyModal(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Ionicons name="shield-checkmark-outline" size={20} color="#ef4444" />
+              <Text style={styles.modalTitle}>Privacy & Security</Text>
+              <TouchableOpacity onPress={() => setShowPrivacyModal(false)} style={styles.modalCloseBtn}>
+                <Feather name="x" size={20} color="#94a3b8" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.modalBody}>
+              <View style={styles.privacyOptionRow}>
+                <View style={styles.privacyOptionInfo}>
+                  <Text style={styles.privacyOptionTitle}>Share Telemetry</Text>
+                  <Text style={styles.privacyOptionDesc}>
+                    Upload live sensor data to analyze and calculate score
+                  </Text>
+                </View>
+                <Switch
+                  value={shareTelemetry}
+                  onValueChange={setShareTelemetry}
+                  trackColor={{ false: '#122540', true: '#00f5ff30' }}
+                  thumbColor={shareTelemetry ? '#00f5ff' : '#64748b'}
+                />
+              </View>
+
+              <View style={styles.privacyOptionRow}>
+                <View style={styles.privacyOptionInfo}>
+                  <Text style={styles.privacyOptionTitle}>End-to-End Encryption</Text>
+                  <Text style={styles.privacyOptionDesc}>
+                    Encrypt database entries stored locally on the device
+                  </Text>
+                </View>
+                <Switch
+                  value={encryption}
+                  onValueChange={setEncryption}
+                  trackColor={{ false: '#122540', true: '#22c55e30' }}
+                  thumbColor={encryption ? '#22c55e' : '#64748b'}
+                />
+              </View>
+
+              <View style={styles.privacyOptionRow}>
+                <View style={styles.privacyOptionInfo}>
+                  <Text style={styles.privacyOptionTitle}>Anonymous Analytics</Text>
+                  <Text style={styles.privacyOptionDesc}>
+                    Remove identity tags from reports sent to insurance
+                  </Text>
+                </View>
+                <Switch
+                  value={anonymousAnalytics}
+                  onValueChange={setAnonymousAnalytics}
+                  trackColor={{ false: '#122540', true: '#eab30830' }}
+                  thumbColor={anonymousAnalytics ? '#eab308' : '#64748b'}
+                />
+              </View>
+
+              <View style={styles.privacyOptionRow}>
+                <View style={styles.privacyOptionInfo}>
+                  <Text style={styles.privacyOptionTitle}>Save Drive History</Text>
+                  <Text style={styles.privacyOptionDesc}>
+                    Keep records of all previous drives in localized DB
+                  </Text>
+                </View>
+                <Switch
+                  value={saveHistory}
+                  onValueChange={setSaveHistory}
+                  trackColor={{ false: '#122540', true: '#a855f730' }}
+                  thumbColor={saveHistory ? '#a855f7' : '#64748b'}
+                />
+              </View>
+            </View>
+
+            <TouchableOpacity
+              style={styles.modalCloseMainBtn}
+              onPress={() => {
+                setShowPrivacyModal(false);
+                Alert.alert('Success', 'Privacy preferences saved successfully!');
+              }}
+            >
+              <Text style={styles.modalCloseMainBtnText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -677,5 +996,152 @@ const styles = StyleSheet.create({
   },
   bottomSpacer: {
     height: 40,
-  }
+  },
+  menuItemSubtext: {
+    color: '#64748b',
+    fontSize: 11,
+    marginTop: 2,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(5, 11, 20, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: '90%',
+    backgroundColor: '#0c1626',
+    borderWidth: 1,
+    borderColor: '#122540',
+    borderRadius: 24,
+    padding: 20,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#122540',
+    paddingBottom: 15,
+    marginBottom: 10,
+  },
+  modalTitle: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft: 10,
+    flex: 1,
+  },
+  modalCloseBtn: {
+    padding: 4,
+  },
+  modalBody: {
+    paddingVertical: 10,
+  },
+  inputLabel: {
+    color: '#94a3b8',
+    fontSize: 11,
+    fontWeight: 'bold',
+    marginBottom: 6,
+    marginTop: 12,
+  },
+  modalInput: {
+    backgroundColor: '#070f1e',
+    borderWidth: 1,
+    borderColor: '#122540',
+    borderRadius: 12,
+    padding: 12,
+    color: '#ffffff',
+    fontSize: 13.5,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 24,
+  },
+  btnCancel: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    marginRight: 10,
+  },
+  btnCancelText: {
+    color: '#64748b',
+    fontSize: 13,
+    fontWeight: 'bold',
+  },
+  btnSave: {
+    backgroundColor: '#22c55e',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+  },
+  btnSaveText: {
+    color: '#050B14',
+    fontSize: 13,
+    fontWeight: 'bold',
+  },
+  vehicleTypeRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  vehicleTypeBtn: {
+    flex: 1,
+    backgroundColor: '#070f1e',
+    borderWidth: 1,
+    borderColor: '#122540',
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: 'center',
+    marginRight: 6,
+  },
+  vehicleTypeBtnSelected: {
+    borderColor: '#22c55e',
+    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+  },
+  vehicleTypeBtnText: {
+    color: '#64748b',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  vehicleTypeBtnTextSelected: {
+    color: '#22c55e',
+  },
+  privacyOptionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#122540',
+  },
+  privacyOptionInfo: {
+    flex: 1,
+    marginRight: 15,
+  },
+  privacyOptionTitle: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: 'bold',
+  },
+  privacyOptionDesc: {
+    color: '#64748b',
+    fontSize: 10,
+    lineHeight: 14,
+    marginTop: 2,
+  },
+  modalCloseMainBtn: {
+    backgroundColor: '#0c1626',
+    borderWidth: 1,
+    borderColor: '#122540',
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginTop: 15,
+  },
+  modalCloseMainBtnText: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: 'bold',
+  },
 });

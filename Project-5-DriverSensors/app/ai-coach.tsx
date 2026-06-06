@@ -507,7 +507,7 @@ export default function AICoachScreen() {
         {/* View Progress Button with Lime/Green LinearGradient */}
         <TouchableOpacity 
           style={styles.progressBtnContainer}
-          onPress={() => router.push('/(tabs)/dashboard')}
+          onPress={() => router.push('/reports')}
         >
           <LinearGradient
             colors={['#22c55e', '#a3e635']}
