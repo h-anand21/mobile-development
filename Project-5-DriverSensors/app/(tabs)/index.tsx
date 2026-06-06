@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather, MaterialCommunityIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
-import Svg, { Circle, Defs, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
+import Svg, { Circle, Defs, LinearGradient as SvgLinearGradient, Stop, Line, Path } from 'react-native-svg';
 import { useRouter } from 'expo-router';
 import { useDriveStore } from '../../src/store/driveStore';
 import { useSensorStore } from '../../src/store/sensorStore';
@@ -16,6 +16,41 @@ export default function HomeScreen() {
   const setTracking = useSensorStore((state) => state.setTracking);
   const currentSession = useDriveStore((state) => state.currentSession);
 
+  // Dynamic calculations (fallback to mockup values if no session is active)
+  const score = currentSession ? currentSession.score : 92;
+  const rating = currentSession ? currentSession.rating : 'Excellent';
+  
+  const currentSpeedMs = currentSession && currentSession.route.length > 0 
+    ? currentSession.route[currentSession.route.length - 1].speed 
+    : 0;
+  const displaySpeed = currentSession ? Math.round(currentSpeedMs * 3.6) : 68;
+  
+  const displayDistance = currentSession ? (currentSession.distance / 1000).toFixed(1) : '28.6';
+  
+  const elapsedSeconds = currentSession 
+    ? Math.floor((Date.now() - currentSession.startTime) / 1000) 
+    : 2536; // 42 minutes 16 seconds
+  const formatHHMM = (totalSeconds: number) => {
+    const hrs = Math.floor(totalSeconds / 3600);
+    const mins = Math.floor((totalSeconds % 3600) / 60);
+    return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+  };
+  const displayDuration = formatHHMM(elapsedSeconds);
+  
+  const phoneUsageCount = currentSession 
+    ? currentSession.events.filter(e => e.type === 'PHONE_USAGE').length 
+    : 0;
+  const displayPhoneUsage = currentSession ? phoneUsageCount : 0;
+
+  // Arc stroke offset for 270 degree gauge dial
+  const strokeDashoffset = 377 - (377 * score) / 100;
+
+  const ratingColors = {
+    color: score >= 90 ? '#00f5ff' : score >= 70 ? '#22c55e' : score >= 50 ? '#f59e0b' : '#ef4444',
+    bg: score >= 90 ? 'rgba(0, 245, 255, 0.12)' : score >= 70 ? 'rgba(34, 197, 94, 0.12)' : score >= 50 ? 'rgba(245, 158, 11, 0.12)' : 'rgba(239, 68, 68, 0.12)',
+    border: score >= 90 ? 'rgba(0, 245, 255, 0.25)' : score >= 70 ? 'rgba(34, 197, 94, 0.25)' : score >= 50 ? 'rgba(245, 158, 11, 0.25)' : 'rgba(239, 68, 68, 0.25)',
+  };
+
   const handleStartDrive = () => {
     if (currentSession) {
       router.push('/drive');
@@ -25,13 +60,16 @@ export default function HomeScreen() {
       router.push('/drive');
     }
   };
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
       
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Feather name="menu" size={28} color="#06b6d4" />
+          <TouchableOpacity style={styles.menuBtn}>
+            <Feather name="menu" size={28} color="#00f5ff" />
+          </TouchableOpacity>
           <View style={styles.greetingContainer}>
             <Text style={styles.greetingSub}>Good Evening,</Text>
             <View style={styles.nameRow}>
@@ -48,7 +86,7 @@ export default function HomeScreen() {
           </TouchableOpacity>
           <View style={styles.profilePicContainer}>
             <Image 
-              source={{ uri: 'https://i.pravatar.cc/150?img=11' }} 
+              source={{ uri: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?q=80&w=250&auto=format&fit=crop' }} 
               style={styles.profilePic} 
             />
           </View>
@@ -60,7 +98,7 @@ export default function HomeScreen() {
         <Svg width={300} height={300} viewBox="0 0 200 200" style={styles.svgGauge}>
           <Defs>
             <SvgLinearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
-              <Stop offset="0%" stopColor="#0ea5e9" stopOpacity="1" />
+              <Stop offset="0%" stopColor="#00f5ff" stopOpacity="1" />
               <Stop offset="50%" stopColor="#22c55e" stopOpacity="1" />
               <Stop offset="100%" stopColor="#eab308" stopOpacity="1" />
             </SvgLinearGradient>
@@ -74,7 +112,7 @@ export default function HomeScreen() {
             strokeWidth="10" 
             fill="none" 
             strokeDasharray="377" 
-            strokeDashoffset="75" // ~80% completion
+            strokeDashoffset={strokeDashoffset}
             strokeLinecap="round" 
             transform="rotate(135 100 100)"
           />
@@ -82,46 +120,58 @@ export default function HomeScreen() {
         
         <View style={styles.scoreInner}>
           <View style={styles.shieldIconContainer}>
-            <Feather name="shield" size={28} color="#38bdf8" />
-            <Feather name="check" size={12} color="#38bdf8" style={{position: 'absolute', top: 9}} />
+            <Feather name="shield" size={28} color="#00f5ff" />
+            <Feather name="check" size={12} color="#00f5ff" style={{position: 'absolute', top: 9}} />
           </View>
-          <Text style={styles.scoreNumber}>92</Text>
+          <Text style={styles.scoreNumber}>{score}</Text>
           <Text style={styles.scoreLabel}>SAFE SCORE</Text>
-          <View style={styles.excellentBadge}>
-            <View style={styles.dot} />
-            <Text style={styles.excellentText}>Excellent</Text>
+          <View style={[styles.excellentBadge, { backgroundColor: ratingColors.bg, borderColor: ratingColors.border }]}>
+            <View style={[styles.dot, { backgroundColor: ratingColors.color }]} />
+            <Text style={[styles.excellentText, { color: ratingColors.color }]}>{rating}</Text>
           </View>
         </View>
+
+        {/* Symmetrical Gauge Ticks */}
+        <Text style={[styles.tickLabel, { left: 55, bottom: 45 }]}>0</Text>
+        <Text style={[styles.tickLabel, { left: 40, top: 120 }]}>20</Text>
+        <Text style={[styles.tickLabel, { left: 80, top: 45 }]}>40</Text>
+        <Text style={[styles.tickLabel, { right: 80, top: 45 }]}>60</Text>
+        <Text style={[styles.tickLabel, { right: 40, top: 120 }]}>80</Text>
+        <Text style={[styles.tickLabel, { right: 45, bottom: 45 }]}>100</Text>
       </View>
 
       {/* Safety Metrics Row */}
-      <View style={styles.metricsRow}>
+      <View style={styles.metricsRowUnified}>
         <View style={styles.metricItem}>
-          <View style={[styles.metricIconWrap, { borderColor: '#0ea5e9' }]}>
-            <Feather name="shield" size={20} color="#0ea5e9" />
+          <View style={[styles.metricIconWrap, { borderColor: '#00f5ff' }]}>
+            <Feather name="shield" size={18} color="#00f5ff" />
           </View>
           <View>
-            <Text style={[styles.metricTitle, { color: '#0ea5e9' }]}>Safe</Text>
+            <Text style={[styles.metricTitle, { color: '#00f5ff' }]}>Safe</Text>
             <Text style={styles.metricSub}>Driving</Text>
           </View>
         </View>
         
+        <View style={styles.metricDivider} />
+        
         <View style={styles.metricItem}>
-          <View style={[styles.metricIconWrap, { borderColor: '#84cc16' }]}>
-            <Feather name="target" size={20} color="#84cc16" />
+          <View style={[styles.metricIconWrap, { borderColor: '#22c55e' }]}>
+            <Feather name="target" size={18} color="#22c55e" />
           </View>
           <View>
-            <Text style={[styles.metricTitle, { color: '#84cc16' }]}>Focused</Text>
+            <Text style={[styles.metricTitle, { color: '#22c55e' }]}>Focused</Text>
             <Text style={styles.metricSub}>Mind</Text>
           </View>
         </View>
 
+        <View style={styles.metricDivider} />
+
         <View style={styles.metricItem}>
-          <View style={[styles.metricIconWrap, { borderColor: '#38bdf8' }]}>
-            <MaterialCommunityIcons name="steering" size={20} color="#38bdf8" />
+          <View style={[styles.metricIconWrap, { borderColor: '#00f5ff' }]}>
+            <MaterialCommunityIcons name="steering" size={18} color="#00f5ff" />
           </View>
           <View>
-            <Text style={[styles.metricTitle, { color: '#38bdf8' }]}>Smooth</Text>
+            <Text style={[styles.metricTitle, { color: '#00f5ff' }]}>Smooth</Text>
             <Text style={styles.metricSub}>Control</Text>
           </View>
         </View>
@@ -129,46 +179,65 @@ export default function HomeScreen() {
 
       {/* Car & Floating Stats */}
       <View style={styles.carSection}>
-        {/* Car Image Placeholder */}
+        {/* HUD Overlay Lines */}
+        <Svg width="100%" height="100%" style={StyleSheet.absoluteFill}>
+          {/* Speed -> Left Headlight */}
+          <Line x1={105} y1={30} x2={(width - 40) * 0.38} y2={120} stroke="#00f5ff" strokeWidth="1" strokeDasharray="3 3" />
+          <Circle cx={(width - 40) * 0.38} cy={120} r="3.5" fill="#00f5ff" />
+
+          {/* Duration -> Right Headlight */}
+          <Line x1={width - 40 - 105} y1={30} x2={(width - 40) * 0.62} y2={120} stroke="#00f5ff" strokeWidth="1" strokeDasharray="3 3" />
+          <Circle cx={(width - 40) * 0.62} cy={120} r="3.5" fill="#00f5ff" />
+
+          {/* Distance -> Left Wheel */}
+          <Line x1={105} y1={205} x2={(width - 40) * 0.32} y2={175} stroke="#84cc16" strokeWidth="1" strokeDasharray="3 3" />
+          <Circle cx={(width - 40) * 0.32} cy={175} r="3.5" fill="#84cc16" />
+
+          {/* Phone Usage -> Right Wheel */}
+          <Line x1={width - 40 - 105} y1={205} x2={(width - 40) * 0.68} y2={175} stroke="#84cc16" strokeWidth="1" strokeDasharray="3 3" />
+          <Circle cx={(width - 40) * 0.68} cy={175} r="3.5" fill="#84cc16" />
+        </Svg>
+
+        {/* High resolution front car image */}
         <Image 
-          source={{ uri: 'https://images.unsplash.com/photo-1614200179396-2bdb77ebf81b?q=80&w=600&auto=format&fit=crop' }} 
+          source={require('../../assets/images/car_dashboard.png')} 
           style={styles.carImage} 
           resizeMode="contain"
         />
         
         {/* Floating Widgets */}
         <View style={[styles.floatingWidget, styles.widgetTopLeft]}>
-          <MaterialCommunityIcons name="speedometer" size={24} color="#0ea5e9" />
+          <MaterialCommunityIcons name="speedometer" size={20} color="#00f5ff" />
           <View style={styles.widgetTextContainer}>
             <Text style={styles.widgetLabel}>SPEED</Text>
-            <Text style={styles.widgetValue}>68</Text>
+            <Text style={styles.widgetValue}>{displaySpeed}</Text>
             <Text style={styles.widgetUnit}>km/h</Text>
           </View>
         </View>
 
         <View style={[styles.floatingWidget, styles.widgetTopRight]}>
-          <Feather name="clock" size={24} color="#0ea5e9" />
+          <Feather name="clock" size={20} color="#00f5ff" />
           <View style={styles.widgetTextContainer}>
             <Text style={styles.widgetLabel}>DURATION</Text>
-            <Text style={styles.widgetValue}>00:42</Text>
+            <Text style={styles.widgetValue}>{displayDuration}</Text>
             <Text style={styles.widgetUnit}>hr</Text>
           </View>
         </View>
 
         <View style={[styles.floatingWidget, styles.widgetBottomLeft]}>
-          <MaterialCommunityIcons name="road-variant" size={24} color="#84cc16" />
+          <MaterialCommunityIcons name="road-variant" size={20} color="#84cc16" />
           <View style={styles.widgetTextContainer}>
             <Text style={styles.widgetLabel}>DISTANCE</Text>
-            <Text style={styles.widgetValue}>28.6</Text>
+            <Text style={styles.widgetValue}>{displayDistance}</Text>
             <Text style={styles.widgetUnit}>km</Text>
           </View>
         </View>
 
         <View style={[styles.floatingWidget, styles.widgetBottomRight]}>
-          <Feather name="phone-call" size={24} color="#84cc16" />
+          <Feather name="phone-call" size={20} color="#84cc16" />
           <View style={styles.widgetTextContainer}>
             <Text style={styles.widgetLabel}>PHONE USAGE</Text>
-            <Text style={styles.widgetValue}>0</Text>
+            <Text style={styles.widgetValue}>{displayPhoneUsage}</Text>
             <Text style={styles.widgetUnit}>min</Text>
           </View>
         </View>
@@ -177,13 +246,13 @@ export default function HomeScreen() {
       {/* Start Drive Button */}
       <TouchableOpacity style={styles.startButtonContainer} onPress={handleStartDrive}>
         <LinearGradient
-          colors={currentSession ? ['#06b6d4', '#0891b2', '#0ea5e9'] : ['#0ea5e9', '#22c55e', '#eab308']}
+          colors={['#00f5ff', '#84cc16']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={styles.startButtonGradient}
         >
           <View style={styles.powerIconWrap}>
-            <Feather name={currentSession ? "eye" : "power"} size={24} color="#0ea5e9" />
+            <Feather name={currentSession ? "eye" : "power"} size={22} color="#00f5ff" />
           </View>
           <View style={styles.startButtonTextWrap}>
             <Text style={styles.startButtonTitle}>
@@ -194,7 +263,7 @@ export default function HomeScreen() {
             </Text>
           </View>
           <View style={styles.arrowIconWrap}>
-            <Feather name="chevron-right" size={24} color="#eab308" />
+            <Feather name="chevron-right" size={22} color="#84cc16" />
           </View>
         </LinearGradient>
       </TouchableOpacity>

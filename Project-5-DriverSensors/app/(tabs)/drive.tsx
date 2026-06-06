@@ -254,7 +254,8 @@ export default function DriveScreen() {
           <Text style={[styles.tickLabel, { left: 55, bottom: 45 }]}>0</Text>
           <Text style={[styles.tickLabel, { left: 40, top: 120 }]}>20</Text>
           <Text style={[styles.tickLabel, { left: 80, top: 45 }]}>40</Text>
-          <Text style={[styles.tickLabel, { right: 80, top: 45 }]}>80</Text>
+          <Text style={[styles.tickLabel, { right: 80, top: 45 }]}>60</Text>
+          <Text style={[styles.tickLabel, { right: 40, top: 120 }]}>80</Text>
           <Text style={[styles.tickLabel, { right: 45, bottom: 45 }]}>100</Text>
         </View>
 
@@ -676,7 +677,7 @@ const styles = StyleSheet.create({
   },
   tickLabel: {
     position: 'absolute',
-    color: '#475569',
+    color: '#94a3b8',
     fontSize: 10,
     fontWeight: 'bold',
   },

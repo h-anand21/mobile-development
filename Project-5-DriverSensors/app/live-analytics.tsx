@@ -482,6 +482,7 @@ export default function LiveAnalyticsScreen() {
                 />
               </Svg>
             </View>
+          </View>
         </View>
 
         {/* Device Motion Diagnostics Card */}
@@ -747,7 +748,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   dialTickLabel: {
-    fill: '#475569',
+    fill: '#94a3b8',
     fontSize: 10,
     fontWeight: 'bold',
     textAnchor: 'middle',
