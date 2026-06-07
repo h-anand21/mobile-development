@@ -215,7 +215,7 @@ export default function HomeScreen() {
       <View style={styles.carSection}>
         {/* High resolution front car image */}
         <Image 
-          source={require('../../assets/images/car_dasboard_backless.png')} 
+          source={require('../../assets/images/final_home.png')} 
           style={styles.carImage} 
           resizeMode="contain"
         />

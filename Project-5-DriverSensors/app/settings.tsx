@@ -19,12 +19,14 @@ const CustomSlider = ({
   max,
   color,
   onChange,
+  styles,
 }: {
   value: number;
   min: number;
   max: number;
   color: string;
   onChange: (val: number) => void;
+  styles: any;
 }) => {
   const trackWidthRef = useRef(width - 72);
 
@@ -251,6 +253,7 @@ export default function SettingsScreen() {
                   max={-1.0}
                   color="#ef4444"
                   onChange={(val) => setThreshold('harshBraking', Number(val.toFixed(1)))}
+                  styles={styles}
                 />
               </View>
 
@@ -273,6 +276,7 @@ export default function SettingsScreen() {
                   max={60}
                   color="#eab308"
                   onChange={(val) => setThreshold('sharpTurn', Math.round(val))}
+                  styles={styles}
                 />
               </View>
 
@@ -295,6 +299,7 @@ export default function SettingsScreen() {
                   max={30}
                   color="#22c55e"
                   onChange={(val) => setThreshold('speeding', Math.round(val))}
+                  styles={styles}
                 />
               </View>
 
@@ -317,6 +322,7 @@ export default function SettingsScreen() {
                   max={15}
                   color="#a855f7"
                   onChange={(val) => setThreshold('phoneUsage', Math.round(val))}
+                  styles={styles}
                 />
               </View>
 
