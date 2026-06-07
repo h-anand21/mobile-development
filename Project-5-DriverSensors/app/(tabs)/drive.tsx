@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, Dimensions, Modal } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather, MaterialCommunityIcons, Ionicons, FontAwesome5, AntDesign } from '@expo/vector-icons';
-import Svg, { Circle, Defs, LinearGradient as SvgLinearGradient, Stop, Line, Path } from 'react-native-svg';
+import Svg, { Circle, Defs, LinearGradient as SvgLinearGradient, Stop, Line, Path, Text as SvgText } from 'react-native-svg';
 import { useRouter } from 'expo-router';
 import { useDriveStore, DriveSession } from '../../src/store/driveStore';
 import { useSensorStore } from '../../src/store/sensorStore';
@@ -175,6 +175,43 @@ export default function DriveScreen() {
     border: score >= 90 ? 'rgba(34, 197, 94, 0.3)' : score >= 70 ? 'rgba(56, 189, 248, 0.3)' : score >= 50 ? 'rgba(245, 158, 11, 0.3)' : 'rgba(239, 68, 68, 0.3)',
   };
 
+  // Generate radial dial ticks matching mockup dashboard
+  const dialTicks = [];
+  const startAngle = 135;
+  const totalAngle = 270;
+  const tickCount = 45;
+  
+  for (let i = 0; i <= tickCount; i++) {
+    const angle = startAngle + (i * totalAngle) / tickCount;
+    const rad = (angle * Math.PI) / 180;
+    
+    // Check if tick is active based on score percentage
+    const tickPct = i / tickCount;
+    const isActive = tickPct <= score / 100;
+    
+    // Outer and inner radius for the ticks (just inside the outer progress ring)
+    const rOuter = 73;
+    const rInner = 67;
+    
+    const x1 = 100 + rOuter * Math.cos(rad);
+    const y1 = 100 + rOuter * Math.sin(rad);
+    const x2 = 100 + rInner * Math.cos(rad);
+    const y2 = 100 + rInner * Math.sin(rad);
+    
+    dialTicks.push(
+      <Line
+        key={`tick-${i}`}
+        x1={x1}
+        y1={y1}
+        x2={x2}
+        y2={y2}
+        stroke={isActive ? '#06b6d4' : '#1e293b'}
+        strokeWidth={isActive ? 1.5 : 1}
+        opacity={isActive ? 0.7 : 0.4}
+      />
+    );
+  }
+
   return (
     <View style={styles.container}>
       {/* Top Header */}
@@ -200,7 +237,7 @@ export default function DriveScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
         {/* Score Gauge */}
         <View style={styles.gaugeContainer}>
           <Svg width={300} height={300} viewBox="0 0 200 200" style={styles.svgGauge}>
@@ -234,6 +271,8 @@ export default function DriveScreen() {
               strokeLinecap="round" 
               transform="rotate(135 100 100)"
             />
+            {/* Radial Ticks inside SVG */}
+            {dialTicks}
           </Svg>
           
           <View style={styles.scoreInner}>
@@ -249,14 +288,6 @@ export default function DriveScreen() {
             </View>
             <Text style={styles.gaugeSubtext}>Keep driving safe!</Text>
           </View>
-
-          {/* Gauge Tick Markers */}
-          <Text style={[styles.tickLabel, { left: 55, bottom: 45 }]}>0</Text>
-          <Text style={[styles.tickLabel, { left: 40, top: 120 }]}>20</Text>
-          <Text style={[styles.tickLabel, { left: 80, top: 45 }]}>40</Text>
-          <Text style={[styles.tickLabel, { right: 80, top: 45 }]}>60</Text>
-          <Text style={[styles.tickLabel, { right: 40, top: 120 }]}>80</Text>
-          <Text style={[styles.tickLabel, { right: 45, bottom: 45 }]}>100</Text>
         </View>
 
         {/* Perspective Car Grid Area */}
@@ -447,12 +478,16 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#050B14',
   },
+  scrollView: {
+    flex: 1,
+    marginBottom: 90, // Ends exactly above the floating tab bar
+  },
   contentContainer: {
     paddingHorizontal: 20,
     paddingTop: 10,
   },
   bottomSpacer: {
-    height: 60,
+    height: 40,
   },
   header: {
     flexDirection: 'row',

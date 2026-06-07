@@ -247,7 +247,7 @@ export default function HistoryScreen() {
           <Text style={styles.filterBtnText}>Filter</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.sortBtn} onPress={() => setShowSortOptions(!showSortOptions)}>
-          <Feather name="arrow-up-down" size={14} color="#ffffff" style={{ marginRight: 6 }} />
+          <MaterialCommunityIcons name="arrow-up-down" size={14} color="#ffffff" style={{ marginRight: 6 }} />
           <Text style={styles.sortBtnText}>Sort</Text>
         </TouchableOpacity>
       </View>
@@ -282,7 +282,7 @@ export default function HistoryScreen() {
         </View>
       )}
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
 
         {/* 3. Horizontal Scroll Summary Cards */}
         <View style={{ marginBottom: 20 }}>
@@ -382,7 +382,7 @@ export default function HistoryScreen() {
             const rColor = getRatingColor(drive.rating);
             return (
               <TouchableOpacity
-                key={drive.id}
+                key={`drive-${drive.id}-${idx}`}
                 style={styles.driveCard}
                 onPress={() => router.push({ pathname: '/drive-details', params: { id: drive.id } })}
               >
@@ -469,6 +469,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#050B14',
   },
+  scrollView: {
+    flex: 1,
+    marginBottom: 90, // Ends exactly above the floating tab bar
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -518,7 +522,7 @@ const styles = StyleSheet.create({
     paddingTop: 5,
   },
   bottomSpacer: {
-    height: 60,
+    height: 40,
   },
 
   // Search Bar Row

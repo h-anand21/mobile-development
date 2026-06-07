@@ -205,7 +205,7 @@ export default function DashboardScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         
         {/* ==================== WEEK TAB ==================== */}
         {activeTab === 'week' && (
@@ -864,6 +864,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#050B14',
   },
+  scrollView: {
+    flex: 1,
+    marginBottom: 90, // Ends exactly above the floating tab bar
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -978,7 +982,7 @@ const styles = StyleSheet.create({
     paddingTop: 5,
   },
   bottomSpacer: {
-    height: 60,
+    height: 40,
   },
 
   // Section Headers

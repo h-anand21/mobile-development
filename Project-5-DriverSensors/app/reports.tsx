@@ -305,7 +305,7 @@ Telemetry data processed locally. SafeDrive v1.0.0.
         title: `${reportType.toUpperCase()} Driving Report`,
       })
       .then(() => {
-        Alert.alert('Export Complete', 'Driving report exported and shared successfully.');
+        Alert.alert('Export Complete', 'Aapka driving report successfully export aur share ho gaya hai.');
       })
       .catch(err => {
         console.error('Sharing failed', err);

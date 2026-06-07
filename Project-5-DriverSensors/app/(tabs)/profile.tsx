@@ -152,7 +152,7 @@ export default function ProfileScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* 2. Profile Details Panel */}
         <View style={styles.profileCard}>
           <View style={styles.avatarWrap}>
@@ -642,6 +642,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#050B14',
+  },
+  scrollView: {
+    flex: 1,
+    marginBottom: 90, // Ends exactly above the floating tab bar
   },
   header: {
     flexDirection: 'row',

@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { useSettingsStore } from '../src/store/settingsStore';
 import { driveRepository } from '../src/database/repositories/driveRepository';
 import { useAnalyticsStore } from '../src/store/analyticsStore';
+import { useAppTheme } from '../src/ui/theme';
 
 const { width } = Dimensions.get('window');
 
@@ -63,6 +64,7 @@ const CustomSlider = ({
 
 export default function SettingsScreen() {
   const router = useRouter();
+  const { colors, isDark } = useAppTheme();
 
   // Load from Settings store
   const {
@@ -87,6 +89,7 @@ export default function SettingsScreen() {
   } = useSettingsStore();
 
   const currentAccent = ACCENT_COLORS[selectedAccent];
+  const styles = getStyles(colors);
 
   // Collapsible sections state
   const [expanded, setExpanded] = useState({
@@ -124,7 +127,7 @@ export default function SettingsScreen() {
       {/* 1. Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Feather name="chevron-left" size={24} color="#F8FAFC" />
+          <Feather name="chevron-left" size={24} color={colors.text} />
         </TouchableOpacity>
 
         <View style={styles.headerTitleContainer}>
@@ -643,10 +646,10 @@ export default function SettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#050B14',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -655,15 +658,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 50,
     paddingBottom: 15,
-    backgroundColor: '#050B14',
+    backgroundColor: colors.background,
   },
   backBtn: {
     width: 44,
     height: 44,
     borderRadius: 12,
-    backgroundColor: '#0c1626',
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: '#122540',
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -673,12 +676,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerTitle: {
-    color: '#ffffff',
+    color: colors.text,
     fontSize: 20,
     fontWeight: 'bold',
   },
   headerSubtitle: {
-    color: '#94a3b8',
+    color: colors.textMuted,
     fontSize: 10,
     marginTop: 2,
   },
@@ -689,9 +692,9 @@ const styles = StyleSheet.create({
 
   // Collapsible setting section card
   settingsSection: {
-    backgroundColor: '#0c1626',
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: '#122540',
+    borderColor: colors.border,
     borderRadius: 24,
     paddingHorizontal: 16,
     marginBottom: 16,
@@ -707,13 +710,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   sectionTitle: {
-    color: '#ffffff',
+    color: colors.text,
     fontSize: 14.5,
     fontWeight: 'bold',
   },
   sectionBody: {
     borderTopWidth: 1,
-    borderTopColor: '#122540',
+    borderTopColor: colors.border,
     paddingBottom: 8,
   },
 
@@ -723,7 +726,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#122540',
+    borderBottomColor: colors.border,
   },
   iconContainer: {
     width: 32,
@@ -739,12 +742,12 @@ const styles = StyleSheet.create({
     marginRight: 6,
   },
   rowTitle: {
-    color: '#ffffff',
+    color: colors.text,
     fontSize: 13,
     fontWeight: 'bold',
   },
   rowSubtitle: {
-    color: '#64748b',
+    color: colors.textSlate,
     fontSize: 10,
     lineHeight: 12,
     marginTop: 2,
@@ -752,7 +755,7 @@ const styles = StyleSheet.create({
   rowValueText: {
     fontSize: 11.5,
     fontWeight: '600',
-    color: '#94a3b8',
+    color: colors.textMuted,
   },
 
   // Switch list item
@@ -761,14 +764,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#122540',
+    borderBottomColor: colors.border,
   },
 
   // Slider row list item
   sliderRowItem: {
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#122540',
+    borderBottomColor: colors.border,
   },
   sliderHeader: {
     flexDirection: 'row',
@@ -784,7 +787,7 @@ const styles = StyleSheet.create({
   },
   sliderTrackBg: {
     height: 6,
-    backgroundColor: '#122540',
+    backgroundColor: colors.border,
     borderRadius: 3,
     position: 'relative',
     justifyContent: 'center',
@@ -830,35 +833,35 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#122540',
+    borderBottomColor: colors.border,
   },
   themeBox: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#050B14',
+    backgroundColor: colors.background,
     borderWidth: 1,
-    borderColor: '#122540',
+    borderColor: colors.border,
     borderRadius: 12,
     paddingHorizontal: 8,
     height: 38,
     marginRight: 6,
   },
   themeBoxLabel: {
-    color: '#64748b',
+    color: colors.textSlate,
     fontSize: 11,
     fontWeight: 'bold',
     flex: 1,
   },
   activeThemeBoxLabel: {
-    color: '#ffffff',
+    color: colors.text,
   },
   themeRadioCircle: {
     width: 14,
     height: 14,
     borderRadius: 7,
     borderWidth: 1.5,
-    borderColor: '#475569',
+    borderColor: colors.textSlate,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -882,16 +885,16 @@ const styles = StyleSheet.create({
   },
   modalBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(5, 11, 20, 0.9)',
+    backgroundColor: 'rgba(5, 11, 20, 0.85)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   modalContent: {
     width: '90%',
     maxHeight: '80%',
-    backgroundColor: '#0c1626',
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: '#122540',
+    borderColor: colors.border,
     borderRadius: 24,
     padding: 20,
   },
@@ -899,12 +902,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderBottomWidth: 1,
-    borderBottomColor: '#122540',
+    borderBottomColor: colors.border,
     paddingBottom: 15,
     marginBottom: 10,
   },
   modalTitle: {
-    color: '#ffffff',
+    color: colors.text,
     fontSize: 16,
     fontWeight: 'bold',
     marginLeft: 10,
@@ -924,18 +927,18 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   aboutVersionTitle: {
-    color: '#ffffff',
+    color: colors.text,
     fontSize: 15,
     fontWeight: 'bold',
     marginTop: 10,
   },
   aboutVersionSub: {
-    color: '#64748b',
+    color: colors.textSlate,
     fontSize: 11,
     marginTop: 2,
   },
   aboutSectionHeader: {
-    color: '#00f5ff',
+    color: colors.accent,
     fontSize: 12,
     fontWeight: 'bold',
     marginTop: 15,
@@ -943,31 +946,31 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   aboutText: {
-    color: '#94a3b8',
+    color: colors.textMuted,
     fontSize: 11.5,
     lineHeight: 16,
   },
   divider: {
     height: 1,
-    backgroundColor: '#122540',
+    backgroundColor: colors.border,
     marginVertical: 15,
   },
   aboutCopyright: {
-    color: '#475569',
+    color: colors.textSlate,
     fontSize: 9,
     textAlign: 'center',
   },
   modalCloseMainBtn: {
-    backgroundColor: '#0c1626',
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: '#122540',
+    borderColor: colors.border,
     borderRadius: 12,
     paddingVertical: 12,
     alignItems: 'center',
     marginTop: 15,
   },
   modalCloseMainBtnText: {
-    color: '#ffffff',
+    color: colors.text,
     fontSize: 13,
     fontWeight: 'bold',
   },
