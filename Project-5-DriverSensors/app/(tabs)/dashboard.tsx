@@ -9,7 +9,7 @@ const { width } = Dimensions.get('window');
 
 // Data structures for Weekly, Monthly, and Yearly views
 const WEEKLY_DATA = {
-  dateRange: 'May 14 – May 20, 2025',
+  dateRange: 'Jun 1 – Jun 7, 2026',
   avgScore: 87,
   totalDrives: 7,
   totalDistance: 186.4,
@@ -22,7 +22,7 @@ const WEEKLY_DATA = {
   ],
   trend: {
     points: [72, 76, 81, 85, 89, 91, 92],
-    labels: ['May 14', 'May 15', 'May 16', 'May 17', 'May 18', 'May 19', 'May 20'],
+    labels: ['Jun 1', 'Jun 2', 'Jun 3', 'Jun 4', 'Jun 5', 'Jun 6', 'Jun 7'],
   },
   donut: {
     total: 7,
@@ -43,38 +43,38 @@ const WEEKLY_DATA = {
   insight: {
     title: 'Great work, Himanshu! 🎉',
     desc: 'You improved your score by 8 points compared to last week.',
-    topPerformance: 'May 20, 2025',
+    topPerformance: 'Jun 7, 2026',
     topScore: 92,
   }
 };
 
 const MONTHLY_DATA = {
-  dateRange: 'May 2025',
+  dateRange: 'June 2026',
   avgScore: 84,
   totalDistance: 742.8,
   totalDrives: 28,
   metrics: [
-    { label: 'Avg Safe Score', val: '84', sub: 'Good', diff: '↑ 6 pts vs Apr 2025', icon: 'shield-check-outline', color: '#22c55e', miniChart: [65, 70, 78, 82, 84] },
-    { label: 'Total Distance', val: '742.8', sub: 'km', diff: '↑ 128.4 km vs Apr 2025', icon: 'map-marker-outline', color: '#00f5ff', miniChart: [110, 140, 130, 160, 202] },
-    { label: 'Total Drives', val: '28', sub: 'Drives', diff: '↑ 5 vs Apr 2025', icon: 'steering', color: '#00f5ff', miniChart: [4, 5, 5, 7, 7] },
+    { label: 'Avg Safe Score', val: '84', sub: 'Good', diff: '↑ 6 pts vs May 2026', icon: 'shield-check-outline', color: '#22c55e', miniChart: [65, 70, 78, 82, 84] },
+    { label: 'Total Distance', val: '742.8', sub: 'km', diff: '↑ 128.4 km vs May 2026', icon: 'map-marker-outline', color: '#00f5ff', miniChart: [110, 140, 130, 160, 202] },
+    { label: 'Total Drives', val: '28', sub: 'Drives', diff: '↑ 5 vs May 2026', icon: 'steering', color: '#00f5ff', miniChart: [4, 5, 5, 7, 7] },
   ],
   trend: {
     points: [78, 82, 85, 88, 90],
-    labels: ['Wk 1\nApr 28-May 4', 'Wk 2\nMay 5-May 11', 'Wk 3\nMay 12-May 18', 'Wk 4\nMay 19-May 25', 'Wk 5\nMay 26-Jun 1'],
+    labels: ['Wk 1\nJun 1-7', 'Wk 2\nJun 8-14', 'Wk 3\nJun 15-21', 'Wk 4\nJun 22-28', 'Wk 5\nJun 29-Jul 5'],
   }
 };
 
 const YEARLY_DATA = {
-  dateRange: 'Jan 1 – Dec 31, 2025',
+  dateRange: 'Jan 1 – Dec 31, 2026',
   avgScore: 86,
   totalDrives: 312,
   totalDistance: 8940.5,
   totalDuration: '68:15:32',
   metrics: [
-    { label: 'Avg Safe Score', val: '86', sub: 'Excellent', diff: '↑ 5 pts vs 2024', icon: 'shield-check-outline', color: '#22c55e' },
-    { label: 'Total Drives', val: '312', sub: 'Drives', diff: '↑ 42 vs 2024', icon: 'steering', color: '#00f5ff' },
-    { label: 'Total Distance', val: '8,940.5', sub: 'km', diff: '↑ 1,240 km vs 2024', icon: 'map-marker-outline', color: '#00f5ff' },
-    { label: 'Total Duration', val: '68:15', sub: 'hr', diff: '↑ 12 hr vs 2024', icon: 'clock-outline', color: '#00f5ff' },
+    { label: 'Avg Safe Score', val: '86', sub: 'Excellent', diff: '↑ 5 pts vs 2025', icon: 'shield-check-outline', color: '#22c55e' },
+    { label: 'Total Drives', val: '312', sub: 'Drives', diff: '↑ 42 vs 2025', icon: 'steering', color: '#00f5ff' },
+    { label: 'Total Distance', val: '8,940.5', sub: 'km', diff: '↑ 1,240 km vs 2025', icon: 'map-marker-outline', color: '#00f5ff' },
+    { label: 'Total Duration', val: '68:15', sub: 'hr', diff: '↑ 12 hr vs 2025', icon: 'clock-outline', color: '#00f5ff' },
   ],
   trend: {
     points: [74, 76, 79, 81, 84, 86, 85, 87, 89, 90, 91, 92],

@@ -7,11 +7,14 @@ import { useRouter } from 'expo-router';
 import { useDriveStore, DriveSession } from '../../src/store/driveStore';
 import { useSensorStore } from '../../src/store/sensorStore';
 import { generateAIFeedback } from '../../src/services/ai/aiCoach';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width, height } = Dimensions.get('window');
+const isSmallDevice = height < 750;
 
 export default function DriveScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   
   // Store actions & state
   const currentSession = useDriveStore((state) => state.currentSession);
@@ -77,7 +80,7 @@ export default function DriveScreen() {
     return (
       <View style={styles.inactiveContainer}>
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingTop: Math.max(insets.top, 20) }]}>
           <TouchableOpacity onPress={() => router.push('/(tabs)')} style={styles.iconCircle}>
             <Feather name="chevron-down" size={24} color="#F8FAFC" />
           </TouchableOpacity>
@@ -87,14 +90,14 @@ export default function DriveScreen() {
           </TouchableOpacity>
         </View>
 
-        <ScrollView contentContainerStyle={styles.inactiveContent}>
+        <ScrollView style={styles.scrollView} contentContainerStyle={styles.inactiveContent}>
           {/* Neon Steering Wheel Emblem */}
           <View style={styles.inactiveEmblemContainer}>
             <LinearGradient
               colors={['rgba(6, 182, 212, 0.1)', 'rgba(6, 182, 212, 0)']}
               style={styles.emblemGlowCircle}
             >
-              <MaterialCommunityIcons name="steering" size={120} color="#06b6d4" style={styles.glowingEmblem} />
+              <MaterialCommunityIcons name="steering" size={isSmallDevice ? 80 : 120} color="#06b6d4" style={styles.glowingEmblem} />
             </LinearGradient>
           </View>
 
@@ -215,7 +218,7 @@ export default function DriveScreen() {
   return (
     <View style={styles.container}>
       {/* Top Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: Math.max(insets.top, 20) }]}>
         <TouchableOpacity onPress={() => router.push('/(tabs)')} style={styles.iconCircle}>
           <Feather name="chevron-down" size={24} color="#F8FAFC" />
         </TouchableOpacity>
@@ -240,7 +243,7 @@ export default function DriveScreen() {
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
         {/* Score Gauge */}
         <View style={styles.gaugeContainer}>
-          <Svg width={300} height={300} viewBox="0 0 200 200" style={styles.svgGauge}>
+          <Svg width={isSmallDevice ? 240 : 300} height={isSmallDevice ? 240 : 300} viewBox="0 0 200 200" style={styles.svgGauge}>
             <Defs>
               <SvgLinearGradient id="activeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
                 <Stop offset="0%" stopColor="#ef4444" stopOpacity="1" />
@@ -289,12 +292,12 @@ export default function DriveScreen() {
             <Text style={styles.gaugeSubtext}>Keep driving safe!</Text>
           </View>
         </View>
-
-        {/* Perspective Car Grid Area */}
-        <View style={styles.carGridSection}>
-          <Svg width={width} height={120} viewBox={`0 0 ${width} 120`} style={styles.perspectiveRoadGrid}>
-            <Defs>
-              <SvgLinearGradient id="roadGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+ 
+         {/* Perspective Car Grid Area */}
+         <View style={styles.carGridSection}>
+           <Svg width={width} height={isSmallDevice ? 90 : 120} viewBox={`0 0 ${width} 120`} style={styles.perspectiveRoadGrid}>
+             <Defs>
+               <SvgLinearGradient id="roadGrad" x1="0%" y1="0%" x2="0%" y2="100%">
                 <Stop offset="0%" stopColor="#06b6d4" stopOpacity="0.1" />
                 <Stop offset="100%" stopColor="#06b6d4" stopOpacity="0.7" />
               </SvgLinearGradient>
@@ -315,7 +318,7 @@ export default function DriveScreen() {
           </Svg>
           
           <Image 
-            source={{ uri: 'https://images.unsplash.com/photo-1614200179396-2bdb77ebf81b?q=80&w=600&auto=format&fit=crop' }} 
+            source={require('../../assets/images/drive_car.png')} 
             style={styles.carImage} 
             resizeMode="contain"
           />
@@ -522,21 +525,21 @@ const styles = StyleSheet.create({
   inactiveContent: {
     alignItems: 'center',
     paddingHorizontal: 30,
-    paddingTop: 40,
-    paddingBottom: 40,
+    paddingTop: isSmallDevice ? 20 : 40,
+    paddingBottom: isSmallDevice ? 20 : 40,
   },
   inactiveEmblemContainer: {
-    width: 220,
-    height: 220,
-    borderRadius: 110,
+    width: isSmallDevice ? 170 : 220,
+    height: isSmallDevice ? 170 : 220,
+    borderRadius: isSmallDevice ? 85 : 110,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 40,
+    marginBottom: isSmallDevice ? 20 : 40,
   },
   emblemGlowCircle: {
-    width: 200,
-    height: 200,
-    borderRadius: 100,
+    width: isSmallDevice ? 150 : 200,
+    height: isSmallDevice ? 150 : 200,
+    borderRadius: isSmallDevice ? 75 : 100,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
@@ -554,29 +557,29 @@ const styles = StyleSheet.create({
   },
   inactiveTitle: {
     color: '#ffffff',
-    fontSize: 26,
+    fontSize: isSmallDevice ? 22 : 26,
     fontWeight: 'bold',
-    marginBottom: 15,
+    marginBottom: isSmallDevice ? 10 : 15,
     textAlign: 'center',
   },
   inactiveDescription: {
     color: '#94a3b8',
-    fontSize: 14,
-    lineHeight: 22,
+    fontSize: isSmallDevice ? 12 : 14,
+    lineHeight: isSmallDevice ? 18 : 22,
     textAlign: 'center',
-    marginBottom: 30,
+    marginBottom: isSmallDevice ? 20 : 30,
   },
   featureGrid: {
     width: '100%',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 40,
+    marginBottom: isSmallDevice ? 25 : 40,
   },
   featureItemCard: {
     width: '48%',
     backgroundColor: '#0c1626',
     borderRadius: 16,
-    padding: 15,
+    padding: isSmallDevice ? 12 : 15,
     borderWidth: 1,
     borderColor: '#1e293b',
   },
@@ -600,12 +603,13 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.4,
     shadowRadius: 15,
+    marginBottom: isSmallDevice ? 20 : 0,
   },
   hugeStartGradient: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 18,
+    paddingVertical: isSmallDevice ? 14 : 18,
   },
   hugeStartText: {
     color: '#050B14',
@@ -657,8 +661,8 @@ const styles = StyleSheet.create({
   gaugeContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    height: 250,
-    marginVertical: 15,
+    height: isSmallDevice ? 210 : 250,
+    marginVertical: isSmallDevice ? 8 : 15,
     position: 'relative',
   },
   svgGauge: {
@@ -667,7 +671,7 @@ const styles = StyleSheet.create({
   scoreInner: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 10,
+    marginTop: isSmallDevice ? 5 : 10,
   },
   shieldIconContainer: {
     alignItems: 'center',
@@ -676,9 +680,9 @@ const styles = StyleSheet.create({
   },
   scoreNumber: {
     color: '#ffffff',
-    fontSize: 66,
+    fontSize: isSmallDevice ? 52 : 66,
     fontWeight: 'bold',
-    lineHeight: 74,
+    lineHeight: isSmallDevice ? 58 : 74,
   },
   scoreLabel: {
     color: '#94a3b8',
@@ -719,7 +723,7 @@ const styles = StyleSheet.create({
 
   // Perspective Car Grid
   carGridSection: {
-    height: 160,
+    height: isSmallDevice ? 120 : 160,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
@@ -731,7 +735,7 @@ const styles = StyleSheet.create({
   },
   carImage: {
     width: width * 0.58,
-    height: 120,
+    height: isSmallDevice ? 90 : 120,
     zIndex: 2,
     shadowColor: '#06b6d4',
     shadowOffset: { width: 0, height: 12 },
@@ -744,7 +748,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: isSmallDevice ? 12 : 20,
   },
   speedStatCardSide: {
     width: width * 0.26,
@@ -752,7 +756,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     borderColor: '#1e293b',
-    paddingVertical: 12,
+    paddingVertical: isSmallDevice ? 8 : 12,
     alignItems: 'center',
   },
   speedIconOuter: {
@@ -797,7 +801,7 @@ const styles = StyleSheet.create({
     borderRadius: 40,
     borderWidth: 1.5,
     borderColor: '#06b6d4',
-    paddingVertical: 15,
+    paddingVertical: isSmallDevice ? 10 : 15,
     alignItems: 'center',
     shadowColor: '#06b6d4',
     shadowOffset: { width: 0, height: 4 },
@@ -828,7 +832,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    marginBottom: 25,
+    marginBottom: isSmallDevice ? 15 : 25,
   },
   telemetryCard: {
     width: '48%',
@@ -836,8 +840,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#121e33',
     borderRadius: 16,
-    padding: 12,
-    marginBottom: 12,
+    padding: isSmallDevice ? 8 : 12,
+    marginBottom: isSmallDevice ? 8 : 12,
     position: 'relative',
   },
   telemetryIcon: {
@@ -872,8 +876,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#121e33',
     borderRadius: 20,
-    padding: 16,
-    marginBottom: 25,
+    padding: isSmallDevice ? 12 : 16,
+    marginBottom: isSmallDevice ? 15 : 25,
   },
   insightsSectionTitle: {
     color: '#64748b',
@@ -932,19 +936,19 @@ const styles = StyleSheet.create({
 
   // End Drive Button & Waves
   endDriveSection: {
-    height: 100,
+    height: isSmallDevice ? 80 : 100,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
-    marginVertical: 10,
+    marginVertical: isSmallDevice ? 5 : 10,
   },
   endDriveSvg: {
     position: 'absolute',
   },
   stopButtonCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: isSmallDevice ? 50 : 60,
+    height: isSmallDevice ? 50 : 60,
+    borderRadius: isSmallDevice ? 25 : 30,
     backgroundColor: '#ef4444',
     borderWidth: 3,
     borderColor: 'rgba(239, 68, 68, 0.4)',
@@ -959,7 +963,7 @@ const styles = StyleSheet.create({
   stopButtonGradient: {
     width: '100%',
     height: '100%',
-    borderRadius: 27,
+    borderRadius: isSmallDevice ? 22 : 27,
     alignItems: 'center',
     justifyContent: 'center',
   },

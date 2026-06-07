@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { Feather, MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
-import Svg, { Circle, Line, Path, Defs, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
+import Svg, { Circle, Line, Path, Defs, LinearGradient as SvgLinearGradient, Stop, G, Polygon, Text as SvgText, Rect, ClipPath } from 'react-native-svg';
 import { useRouter } from 'expo-router';
 import { useDriveStore } from '../src/store/driveStore';
 import { useSensorStore } from '../src/store/sensorStore';
@@ -241,11 +241,11 @@ export default function LiveAnalyticsScreen() {
               <Circle cx={needleX} cy={needleY} r="2" fill="#06b6d4" />
 
               {/* Speed Dial ticks & markers */}
-              <Text style={styles.dialTickLabel} x="45" y="155">0</Text>
-              <Text style={styles.dialTickLabel} x="35" y="95">40</Text>
-              <Text style={styles.dialTickLabel} x="100" y="45">80</Text>
-              <Text style={styles.dialTickLabel} x="150" y="95">120</Text>
-              <Text style={styles.dialTickLabel} x="140" y="155">160</Text>
+              <SvgText style={styles.dialTickLabel} x="45" y="155">0</SvgText>
+              <SvgText style={styles.dialTickLabel} x="35" y="95">40</SvgText>
+              <SvgText style={styles.dialTickLabel} x="100" y="45">80</SvgText>
+              <SvgText style={styles.dialTickLabel} x="150" y="95">120</SvgText>
+              <SvgText style={styles.dialTickLabel} x="140" y="155">160</SvgText>
             </Svg>
           </View>
 
@@ -302,14 +302,14 @@ export default function LiveAnalyticsScreen() {
             <Svg width={160} height={70} viewBox="0 0 160 70">
               {/* Horizontal grid guide */}
               <Line x1="0" y1="35" x2="160" y2="35" stroke="rgba(255, 255, 255, 0.05)" strokeWidth="1" strokeDasharray="3 3" />
-              <Text style={styles.chartAxisTick} x="0" y="15">2</Text>
-              <Text style={styles.chartAxisTick} x="0" y="40">0</Text>
-              <Text style={styles.chartAxisTick} x="0" y="65">-2</Text>
+              <SvgText style={styles.chartAxisTick} x="0" y="15">2</SvgText>
+              <SvgText style={styles.chartAxisTick} x="0" y="40">0</SvgText>
+              <SvgText style={styles.chartAxisTick} x="0" y="65">-2</SvgText>
               
               {/* Paths representing histories (scale factor 8) */}
               <Path d={getPathData(accelHistory.x, 8, 70)} stroke="#06b6d4" strokeWidth="1.5" fill="none" />
               <Path d={getPathData(accelHistory.y, 8, 70)} stroke="#84cc16" strokeWidth="1.5" fill="none" />
-              <Path d={getPathData(accelHistory.z - 9.81 ? accelHistory.z.map(z => z - 9.81) : [], 8, 70)} stroke="#eab308" strokeWidth="1.5" fill="none" />
+              <Path d={getPathData(accelHistory.z.length > 0 ? accelHistory.z.map(z => z - 9.81) : [], 8, 70)} stroke="#eab308" strokeWidth="1.5" fill="none" />
             </Svg>
           </View>
         </View>
@@ -340,9 +340,9 @@ export default function LiveAnalyticsScreen() {
           <View style={styles.sensorChartContainer}>
             <Svg width={160} height={70} viewBox="0 0 160 70">
               <Line x1="0" y1="35" x2="160" y2="35" stroke="rgba(255, 255, 255, 0.05)" strokeWidth="1" strokeDasharray="3 3" />
-              <Text style={styles.chartAxisTick} x="0" y="15">2</Text>
-              <Text style={styles.chartAxisTick} x="0" y="40">0</Text>
-              <Text style={styles.chartAxisTick} x="0" y="65">-2</Text>
+              <SvgText style={styles.chartAxisTick} x="0" y="15">2</SvgText>
+              <SvgText style={styles.chartAxisTick} x="0" y="40">0</SvgText>
+              <SvgText style={styles.chartAxisTick} x="0" y="65">-2</SvgText>
 
               <Path d={getPathData(gyroHistory.x, 0.3, 70)} stroke="#06b6d4" strokeWidth="1.5" fill="none" />
               <Path d={getPathData(gyroHistory.y, 0.3, 70)} stroke="#84cc16" strokeWidth="1.5" fill="none" />
@@ -389,11 +389,11 @@ export default function LiveAnalyticsScreen() {
                   <SvgText x="40" y="72" fill="#64748b" fontSize="9" fontWeight="bold" textAnchor="middle">S</SvgText>
                   <SvgText x="13" y="44" fill="#64748b" fontSize="9" fontWeight="bold" textAnchor="middle">W</SvgText>
                   <SvgText x="67" y="44" fill="#64748b" fontSize="9" fontWeight="bold" textAnchor="middle">E</SvgText>
-                  <g transform={`rotate(${-normalizedHeading} 40 40)`}>
+                  <G transform={`rotate(${-normalizedHeading} 40 40)`}>
                     <Polygon points="40,16 45,40 35,40" fill="#ef4444" />
                     <Polygon points="40,64 45,40 35,40" fill="#94a3b8" />
                     <Circle cx="40" cy="40" r="3.5" fill="#ffffff" />
-                  </g>
+                  </G>
                 </Svg>
                 <Text style={{ color: '#eab308', fontSize: 9, fontWeight: 'bold', marginTop: 4 }}>
                   {normalizedHeading}° {cardinal}
@@ -495,23 +495,23 @@ export default function LiveAnalyticsScreen() {
               <View style={styles.horizonIndicatorWrap}>
                 <Svg width={66} height={66} viewBox="0 0 80 80">
                   <Defs>
-                    <clipPath id="horizonClip">
+                    <ClipPath id="horizonClip">
                       <Circle cx="40" cy="40" r="30" />
-                    </clipPath>
+                    </ClipPath>
                   </Defs>
                   {/* Outer bezel */}
                   <Circle cx="40" cy="40" r="32" stroke="#122540" strokeWidth="2.5" fill="none" />
                   <Circle cx="40" cy="40" r="30" fill="#000000" />
                   
                   {/* Rotating/translating sky-ground plane */}
-                  <g clipPath="url(#horizonClip)" transform={`rotate(${-dmRollDeg} 40 40) translate(0 ${Math.min(18, Math.max(-18, dmPitch * 18))})`}>
+                  <G clipPath="url(#horizonClip)" transform={`rotate(${-dmRollDeg} 40 40) translate(0 ${Math.min(18, Math.max(-18, dmPitch * 18))})`}>
                     {/* Sky */}
                     <Rect x="-20" y="-20" width="120" height="60" fill="#0b2447" />
                     {/* Ground */}
                     <Rect x="-20" y="40" width="120" height="60" fill="#1b4235" />
                     {/* Horizon line */}
                     <Line x1="-20" y1="40" x2="100" y2="40" stroke="#00f5ff" strokeWidth="1.5" />
-                  </g>
+                  </G>
                   {/* Pitch indicator ticks */}
                   <Line x1="32" y1="28" x2="48" y2="28" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
                   <Line x1="32" y1="52" x2="48" y2="52" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
