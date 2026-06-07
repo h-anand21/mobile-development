@@ -65,7 +65,7 @@ export const useDetectionEngine = () => {
           timestamp: now,
           severity: filteredY < harshBrakeG * 1.5 ? 'HIGH' : 'MEDIUM',
           confidence: 90,
-          speed: currentSpeedKmH || Math.round(55 + Math.random() * 15), // fallback to mock speed if stationary
+          speed: currentSpeedKmH,
         });
         updateScore(PENALTIES.HARSH_BRAKE);
         lastBrakeTime.current = now;
@@ -81,7 +81,7 @@ export const useDetectionEngine = () => {
           timestamp: now,
           severity: filteredY > harshAccelG * 1.5 ? 'HIGH' : 'MEDIUM',
           confidence: 90,
-          speed: currentSpeedKmH || Math.round(45 + Math.random() * 15),
+          speed: currentSpeedKmH,
         });
         updateScore(PENALTIES.HARSH_ACCELERATION);
         lastAccelTime.current = now;
@@ -106,7 +106,7 @@ export const useDetectionEngine = () => {
           timestamp: now,
           severity: Math.abs(filteredZ) > sharpTurnRad * 1.5 ? 'HIGH' : 'MEDIUM',
           confidence: 85,
-          speed: currentSpeedKmH || Math.round(35 + Math.random() * 10),
+          speed: currentSpeedKmH,
         });
         updateScore(PENALTIES.SHARP_TURN);
         lastTurnTime.current = now;
@@ -138,7 +138,7 @@ export const useDetectionEngine = () => {
             severity: rotMagnitude > THRESHOLDS.PHONE_USAGE_ROTATION * 1.6 ? 'HIGH' : 'MEDIUM',
             confidence: 88,
             duration: Math.round(5 + Math.random() * 8), // mock phone usage duration in seconds
-            speed: currentSpeedKmH || Math.round(50 + Math.random() * 10),
+            speed: currentSpeedKmH,
           });
           updateScore(PENALTIES.PHONE_USAGE);
           lastPhoneUsageTime.current = now;
@@ -160,7 +160,7 @@ export const useDetectionEngine = () => {
             timestamp: now,
             severity: Math.abs(filteredX) > 0.55 ? 'HIGH' : 'MEDIUM',
             confidence: 80,
-            speed: currentSpeedKmH || Math.round(45 + Math.random() * 15),
+            speed: currentSpeedKmH,
           });
           updateScore(PENALTIES.AGGRESSIVE_STEERING);
           lastSteeringTime.current = now;

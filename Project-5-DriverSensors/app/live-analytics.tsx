@@ -5,6 +5,9 @@ import Svg, { Circle, Line, Path, Defs, LinearGradient as SvgLinearGradient, Sto
 import { useRouter } from 'expo-router';
 import { useDriveStore } from '../src/store/driveStore';
 import { useSensorStore } from '../src/store/sensorStore';
+import { driveRepository } from '../src/database/repositories/driveRepository';
+import * as Location from 'expo-location';
+import { Accelerometer, Gyroscope, Magnetometer, DeviceMotion } from 'expo-sensors';
 import dayjs from 'dayjs';
 
 const { width } = Dimensions.get('window');
@@ -21,65 +24,160 @@ export default function LiveAnalyticsScreen() {
   const magnetometerData = useSensorStore((state) => state.magnetometerData);
   const deviceMotionData = useSensorStore((state) => state.deviceMotionData);
 
+  // Local sensor & location states when no drive is in progress
+  const [localLocation, setLocalLocation] = useState<Location.LocationObject | null>(null);
+  const [localAccel, setLocalAccel] = useState<any>(null);
+  const [localGyro, setLocalGyro] = useState<any>(null);
+  const [localMagneto, setLocalMagneto] = useState<any>(null);
+  const [localDeviceMotion, setLocalDeviceMotion] = useState<any>(null);
+
+  // Clock state for current time overlay when session is inactive
+  const [currentTime, setCurrentTime] = useState(dayjs());
+
+  // Local speed points tracking for live session calculations when drive is inactive
+  const [localSpeedPoints, setLocalSpeedPoints] = useState<number[]>([]);
+
   // States for rolling sensor history (for the real-time wave charts)
   const [accelHistory, setAccelHistory] = useState<{x: number[], y: number[], z: number[]}>({ x: [], y: [], z: [] });
   const [gyroHistory, setGyroHistory] = useState<{x: number[], y: number[], z: number[]}>({ x: [], y: [], z: [] });
   const [magnetoHistory, setMagnetoHistory] = useState<{x: number[], y: number[], z: number[]}>({ x: [], y: [], z: [] });
 
-  // Speed data from GPS route
-  const route = currentSession?.route || [];
-  const currentSpeedMs = route.length > 0 ? route[route.length - 1].speed : 0;
-  const currentSpeedKmH = Math.round(currentSpeedMs * 3.6);
+  // Update clock every second
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(dayjs());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
-  // Speed statistics (calculated dynamically or fallbacks)
-  const averageSpeedKmH = route.length > 0
-    ? Math.round((route.reduce((acc, p) => acc + p.speed, 0) / route.length) * 3.6)
-    : 52;
-  const maxSpeedKmH = route.length > 0
-    ? Math.round(Math.max(...route.map(p => p.speed)) * 3.6)
-    : 92;
-  const topSpeedKmH = Math.max(maxSpeedKmH, 98); // top speed of drive
+  // Update local speed tracking for live averages when session is inactive
+  useEffect(() => {
+    if (currentSession) {
+      setLocalSpeedPoints([]);
+      return;
+    }
+    if (localLocation) {
+      const speedMs = localLocation.coords.speed !== null && localLocation.coords.speed >= 0 
+        ? localLocation.coords.speed 
+        : 0;
+      const speedKmH = Math.round(speedMs * 3.6);
+      setLocalSpeedPoints(prev => [...prev, speedKmH]);
+    }
+  }, [localLocation, currentSession]);
+
+  // Set up local subscriptions if there is no active drive session
+  useEffect(() => {
+    let locationSub: Location.LocationSubscription | null = null;
+    let accelSub: any = null;
+    let gyroSub: any = null;
+    let magnetoSub: any = null;
+    let dmSub: any = null;
+
+    const startLocalSubscriptions = async () => {
+      // If drive is in progress, do not double-subscribe to avoid battery drain
+      if (currentSession) return;
+
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status === 'granted') {
+        try {
+          const initialLoc = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.Balanced,
+          });
+          setLocalLocation(initialLoc);
+        } catch (err) {
+          console.warn('Could not get initial position inside live-analytics:', err);
+        }
+
+        locationSub = await Location.watchPositionAsync(
+          {
+            accuracy: Location.Accuracy.High,
+            timeInterval: 1000,
+            distanceInterval: 1,
+          },
+          (loc) => {
+            setLocalLocation(loc);
+          }
+        );
+      }
+
+      // Start sensors
+      Accelerometer.setUpdateInterval(500);
+      accelSub = Accelerometer.addListener((data) => {
+        setLocalAccel(data);
+      });
+
+      Gyroscope.setUpdateInterval(500);
+      gyroSub = Gyroscope.addListener((data) => {
+        setLocalGyro(data);
+      });
+
+      Magnetometer.setUpdateInterval(500);
+      magnetoSub = Magnetometer.addListener((data) => {
+        setLocalMagneto(data);
+      });
+
+      DeviceMotion.setUpdateInterval(500);
+      dmSub = DeviceMotion.addListener((data) => {
+        setLocalDeviceMotion(data);
+      });
+    };
+
+    startLocalSubscriptions();
+
+    return () => {
+      if (locationSub) locationSub.remove();
+      if (accelSub) accelSub.remove();
+      if (gyroSub) gyroSub.remove();
+      if (magnetoSub) magnetoSub.remove();
+      if (dmSub) dmSub.remove();
+    };
+  }, [currentSession]);
+
+  // Merge dynamic live data (active session vs local sensors)
+  const accel = currentSession ? accelerometerData : localAccel;
+  const gyro = currentSession ? gyroscopeData : localGyro;
+  const magneto = currentSession ? magnetometerData : localMagneto;
+  const dm = currentSession ? deviceMotionData : localDeviceMotion;
 
   // Raw sensor values
-  const ax = accelerometerData?.x ?? -0.23;
-  const ay = accelerometerData?.y ?? 0.41;
-  const az = accelerometerData?.z ?? 9.81;
+  const ax = accel?.x ?? 0.0;
+  const ay = accel?.y ?? 0.0;
+  const az = accel?.z ?? 9.81; // Gravity factor fallback along Z
 
-  const gx = gyroscopeData?.x ?? 0.02; // in rad/s
-  const gy = gyroscopeData?.y ?? -0.015;
-  const gz = gyroscopeData?.z ?? 0.01;
+  const gx = gyro?.x ?? 0.0;
+  const gy = gyro?.y ?? 0.0;
+  const gz = gyro?.z ?? 0.0;
 
   // Convert gyro from rad/s to deg/s
   const gxDeg = gx * (180 / Math.PI);
   const gyDeg = gy * (180 / Math.PI);
   const gzDeg = gz * (180 / Math.PI);
 
-  const mx = magnetometerData?.x ?? 22.4;
-  const my = magnetometerData?.y ?? -15.8;
-  const mz = magnetometerData?.z ?? -42.1;
+  const mx = magneto?.x ?? 0.0;
+  const my = magneto?.y ?? 0.0;
+  const mz = magneto?.z ?? 0.0;
 
-  const dmPitch = deviceMotionData?.rotation?.beta ?? 0.12;
-  const dmRoll = deviceMotionData?.rotation?.gamma ?? -0.06;
-  const dmYaw = deviceMotionData?.rotation?.alpha ?? 1.58;
+  const dmPitch = dm?.rotation?.beta ?? 0.0;
+  const dmRoll = dm?.rotation?.gamma ?? 0.0;
+  const dmYaw = dm?.rotation?.alpha ?? 0.0;
 
   const dmPitchDeg = dmPitch * (180 / Math.PI);
   const dmRollDeg = dmRoll * (180 / Math.PI);
   const dmYawDeg = dmYaw * (180 / Math.PI);
 
-  const dmRotX = deviceMotionData?.rotationRate?.beta ?? 0.002;
-  const dmRotY = deviceMotionData?.rotationRate?.gamma ?? -0.001;
-  const dmRotZ = deviceMotionData?.rotationRate?.alpha ?? 0.004;
+  const dmRotX = dm?.rotationRate?.beta ?? 0.0;
+  const dmRotY = dm?.rotationRate?.gamma ?? 0.0;
+  const dmRotZ = dm?.rotationRate?.alpha ?? 0.0;
 
-  const dmAccX = deviceMotionData?.acceleration?.x ?? 0.02;
-  const dmAccY = deviceMotionData?.acceleration?.y ?? -0.04;
-  const dmAccZ = deviceMotionData?.acceleration?.z ?? 0.11;
+  const dmAccX = dm?.acceleration?.x ?? 0.0;
+  const dmAccY = dm?.acceleration?.y ?? 0.0;
+  const dmAccZ = dm?.acceleration?.z ?? 0.0;
 
-  const dmAccGravX = deviceMotionData?.accelerationIncludingGravity?.x ?? -0.23;
-  const dmAccGravY = deviceMotionData?.accelerationIncludingGravity?.y ?? 9.77;
-  const dmAccGravZ = deviceMotionData?.accelerationIncludingGravity?.z ?? 0.88;
+  const dmAccGravX = dm?.accelerationIncludingGravity?.x ?? 0.0;
+  const dmAccGravY = dm?.accelerationIncludingGravity?.y ?? 9.81;
+  const dmAccGravZ = dm?.accelerationIncludingGravity?.z ?? 0.0;
 
   // G-Force Calculations
-  // Gravity component: 9.81 m/s^2 is 1G
   const latG = ax / 9.81; // Lateral
   const vertG = (ay - 9.81) / 9.81; // Vertical (subtracting gravity factor roughly)
   const longG = az / 9.81; // Longitudinal
@@ -89,8 +187,6 @@ export default function LiveAnalyticsScreen() {
 
   // Update rolling histories
   useEffect(() => {
-    if (!currentSession) return;
-
     setAccelHistory(prev => {
       const nextX = [...prev.x, ax].slice(-MAX_HISTORY);
       const nextY = [...prev.y, ay].slice(-MAX_HISTORY);
@@ -111,7 +207,7 @@ export default function LiveAnalyticsScreen() {
       const nextZ = [...prev.z, mz].slice(-MAX_HISTORY);
       return { x: nextX, y: nextY, z: nextZ };
     });
-  }, [accelerometerData, gyroscopeData, magnetometerData, currentSession]);
+  }, [ax, ay, az, gxDeg, gyDeg, gzDeg, mx, my, mz]);
 
   // Formulating SVG chart path
   const getPathData = (history: number[], scale: number, height: number) => {
@@ -126,15 +222,50 @@ export default function LiveAnalyticsScreen() {
     }).join(' ');
   };
 
-  // Speedometer Dial Math
-  // Speed maps 0 to 160 km/h
-  const speed = currentSpeedKmH || 68;
+  // Speed data and calculations
+  const route = currentSession?.route || [];
+  const currentSpeedKmH = route.length > 0 ? Math.round(route[route.length - 1].speed * 3.6) : 0;
+  
+  // Resolved dynamic speed
+  const speed = currentSession 
+    ? currentSpeedKmH 
+    : (localLocation?.coords.speed !== null && (localLocation?.coords.speed ?? -1) >= 0 ? Math.round((localLocation?.coords.speed ?? 0) * 3.6) : 0);
   const targetSpeed = Math.min(160, speed);
   const angle = 135 + (targetSpeed / 160) * 270; // Map to 135deg - 405deg
-  const angleRad = (angle - 90) * (Math.PI / 180);
+  const angleRad = angle * (Math.PI / 180); // Trigonometric rotation angle mapping
   const needleLength = 50;
   const needleX = 100 + needleLength * Math.cos(angleRad);
   const needleY = 100 + needleLength * Math.sin(angleRad);
+
+  // Load drive history to find all-time top speed
+  const allTimeTopSpeed = React.useMemo(() => {
+    try {
+      const drives = driveRepository.getAllDrives();
+      let maxSpeed = 0;
+      drives.forEach(d => {
+        if (d.route && d.route.length > 0) {
+          const driveMax = Math.max(...d.route.map(p => p.speed));
+          const driveMaxKmH = Math.round(driveMax * 3.6);
+          if (driveMaxKmH > maxSpeed) maxSpeed = driveMaxKmH;
+        }
+      });
+      return maxSpeed;
+    } catch (err) {
+      console.error("Failed to load all-time top speed:", err);
+      return 0;
+    }
+  }, [currentSession]);
+
+  // Speed statistics
+  const averageSpeedKmH = currentSession 
+    ? (route.length > 0 ? Math.round((route.reduce((acc, p) => acc + p.speed, 0) / route.length) * 3.6) : 0)
+    : (localSpeedPoints.length > 0 ? Math.round(localSpeedPoints.reduce((a, b) => a + b, 0) / localSpeedPoints.length) : 0);
+
+  const maxSpeedKmH = currentSession 
+    ? (route.length > 0 ? Math.round(Math.max(...route.map(p => p.speed)) * 3.6) : 0)
+    : (localSpeedPoints.length > 0 ? Math.max(...localSpeedPoints) : 0);
+
+  const topSpeedKmH = Math.max(allTimeTopSpeed, maxSpeedKmH);
 
   // G-Force Radar coordinate positioning
   // Center is (50, 50), Max display value is 1G (50px boundary)
@@ -153,10 +284,53 @@ export default function LiveAnalyticsScreen() {
   // Start & Est. End times
   const startTimeStr = currentSession 
     ? dayjs(currentSession.startTime).format('hh:mm A') 
-    : '08:15 AM';
-  const endTimeStr = currentSession 
-    ? dayjs(currentSession.startTime + 42 * 60000).format('hh:mm A') // mock 42 mins duration
-    : '08:57 AM';
+    : '--:--';
+  const endTimeStr = currentSession && currentSession.duration > 0
+    ? dayjs(currentSession.startTime + currentSession.duration * 1000).format('hh:mm A')
+    : '--:--';
+
+  // Memoize route points projected to 300x150 viewBox
+  const mapPoints = React.useMemo(() => {
+    // Collect coordinates
+    let coords: { latitude: number; longitude: number }[] = [];
+    if (currentSession && currentSession.route && currentSession.route.length > 0) {
+      coords = currentSession.route;
+    } else if (localLocation) {
+      coords = [{ latitude: localLocation.coords.latitude, longitude: localLocation.coords.longitude }];
+    }
+
+    if (coords.length === 0) return [];
+
+    if (coords.length === 1) {
+      // Just one point (center it in the 300x150 box)
+      return [{ x: 150, y: 75, latitude: coords[0].latitude, longitude: coords[0].longitude }];
+    }
+
+    // Bounding box calculation
+    let minLat = 90, maxLat = -90, minLon = 180, maxLon = -180;
+    coords.forEach(pt => {
+      if (pt.latitude < minLat) minLat = pt.latitude;
+      if (pt.latitude > maxLat) maxLat = pt.latitude;
+      if (pt.longitude < minLon) minLon = pt.longitude;
+      if (pt.longitude > maxLon) maxLon = pt.longitude;
+    });
+
+    const latSpan = maxLat - minLat;
+    const lonSpan = maxLon - minLon;
+    const maxSpan = Math.max(latSpan, lonSpan);
+    
+    // Scale to fit 300x150 with 30px padding
+    const scale = maxSpan > 0 ? 100 / maxSpan : 1;
+    const centerLon = minLon + lonSpan / 2;
+    const centerLat = minLat + latSpan / 2;
+
+    return coords.map(pt => ({
+      x: 150 + (pt.longitude - centerLon) * scale,
+      y: 75 - (pt.latitude - centerLat) * scale,
+      latitude: pt.latitude,
+      longitude: pt.longitude
+    }));
+  }, [currentSession?.route, localLocation]);
 
   return (
     <View style={styles.container}>
@@ -190,13 +364,13 @@ export default function LiveAnalyticsScreen() {
             <Text style={styles.speedUnit}>km/h</Text>
             
             <View style={styles.speedLimitCapsule}>
-              <Text style={styles.speedLimitText}>Speed Limit 80 km/h</Text>
+              <Text style={styles.speedLimitText} numberOfLines={1} adjustsFontSizeToFit={true}>Speed Limit 80 km/h</Text>
             </View>
           </View>
 
           {/* Speedometer Gauge Dial */}
           <View style={styles.speedGaugeContainer}>
-            <Svg width={180} height={180} viewBox="0 0 200 200">
+            <Svg width={125} height={125} viewBox="0 0 200 200">
               <Defs>
                 <SvgLinearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                   <Stop offset="0%" stopColor="#06b6d4" />
@@ -210,7 +384,7 @@ export default function LiveAnalyticsScreen() {
                 stroke="#121e33" 
                 strokeWidth="6" 
                 fill="none" 
-                strokeDasharray="353" 
+                strokeDasharray={`${353.43} ${471.24 - 353.43}`} 
                 strokeDashoffset="0" 
                 strokeLinecap="round" 
                 transform="rotate(135 100 100)"
@@ -221,14 +395,14 @@ export default function LiveAnalyticsScreen() {
                 stroke="url(#gaugeGrad)" 
                 strokeWidth="8" 
                 fill="none" 
-                strokeDasharray="353" 
-                strokeDashoffset={353 - (353 * (targetSpeed / 160))} 
+                strokeDasharray={`${(targetSpeed / 160) * 353.43} ${471.24 - (targetSpeed / 160) * 353.43}`} 
+                strokeDashoffset="0" 
                 strokeLinecap="round" 
                 transform="rotate(135 100 100)"
               />
               
               {/* Needle pivot */}
-              <Circle cx="100" cy="100" r="10" fill="#080f1a" stroke="#06b6d4" strokeWidth="2" />
+              <Circle cx="100" cy="100" r="10" fill="#050b14" stroke="#06b6d4" strokeWidth="2.5" />
               
               {/* Speed Needle */}
               <Line 
@@ -238,17 +412,17 @@ export default function LiveAnalyticsScreen() {
                 strokeWidth="3.5" 
                 strokeLinecap="round" 
               />
-              <Circle cx={needleX} cy={needleY} r="2" fill="#06b6d4" />
+              <Circle cx={needleX} cy={needleY} r="2.5" fill="#00f5ff" />
 
               {/* Speed Dial ticks & markers */}
-              <SvgText style={styles.dialTickLabel} x="45" y="155">0</SvgText>
-              <SvgText style={styles.dialTickLabel} x="35" y="95">40</SvgText>
-              <SvgText style={styles.dialTickLabel} x="100" y="45">80</SvgText>
-              <SvgText style={styles.dialTickLabel} x="150" y="95">120</SvgText>
-              <SvgText style={styles.dialTickLabel} x="140" y="155">160</SvgText>
+              <SvgText style={styles.dialTickLabel} x="58" y="146" textAnchor="middle">0</SvgText>
+              <SvgText style={styles.dialTickLabel} x="44" y="80" textAnchor="middle">40</SvgText>
+              <SvgText style={styles.dialTickLabel} x="100" y="52" textAnchor="middle">80</SvgText>
+              <SvgText style={styles.dialTickLabel} x="156" y="80" textAnchor="middle">120</SvgText>
+              <SvgText style={styles.dialTickLabel} x="142" y="146" textAnchor="middle">160</SvgText>
             </Svg>
           </View>
-
+ 
           {/* Speed Right Col */}
           <View style={styles.speedRightCol}>
             <View style={styles.sideSpeedStat}>
@@ -261,7 +435,7 @@ export default function LiveAnalyticsScreen() {
             </View>
             <View style={styles.sideSpeedStat}>
               <Text style={styles.sideLabel}>TOP SPEED</Text>
-              <Text style={styles.sideVal}>{topSpeedKmH} <Text style={styles.sideValUnit}>km/h</Text></Text>
+              <Text style={styles.sideVal}>{topSpeedKmH || 98} <Text style={styles.sideValUnit}>km/h</Text></Text>
             </View>
           </View>
         </View>
@@ -572,64 +746,75 @@ export default function LiveAnalyticsScreen() {
             </View>
           </View>
 
-          {/* Simulated Dark Grid Map */}
+          {/* Dynamic Route/GPS SVG Map */}
           <View style={styles.simulatedMap}>
-            {/* Grid overlay */}
-            <Svg width="100%" height="150" style={styles.mapSvgBackground}>
-              {/* Draw roads */}
-              <Path 
-                d="M -20 120 Q 100 80, 200 40 T 400 20" 
-                stroke="#121e33" 
-                strokeWidth="8" 
-                fill="none" 
-              />
-              <Path 
-                d="M -20 120 Q 100 80, 200 40 T 400 20" 
-                stroke="#0f172a" 
-                strokeWidth="4" 
-                fill="none" 
-              />
-              
-              {/* Route segment */}
-              <Path 
-                d="M 20 115 Q 110 78, 195 41" 
-                stroke="#06b6d4" 
-                strokeWidth="4" 
-                fill="none" 
-                opacity="0.85"
-              />
-              <Path 
-                d="M 195 41 Q 250 30, 320 25" 
-                stroke="#84cc16" 
-                strokeWidth="4" 
-                fill="none" 
-                opacity="0.85"
-              />
+            <Svg width="100%" height="150" style={styles.mapSvgBackground} viewBox="0 0 300 150">
+              {/* Dynamic Grid lines */}
+              <Line x1="0" y1="37.5" x2="300" y2="37.5" stroke="rgba(6, 182, 212, 0.05)" strokeWidth="1" />
+              <Line x1="0" y1="75" x2="300" y2="75" stroke="rgba(6, 182, 212, 0.05)" strokeWidth="1" />
+              <Line x1="0" y1="112.5" x2="300" y2="112.5" stroke="rgba(6, 182, 212, 0.05)" strokeWidth="1" />
+              <Line x1="75" y1="0" x2="75" y2="150" stroke="rgba(6, 182, 212, 0.05)" strokeWidth="1" />
+              <Line x1="150" y1="0" x2="150" y2="150" stroke="rgba(6, 182, 212, 0.05)" strokeWidth="1" />
+              <Line x1="225" y1="0" x2="225" y2="150" stroke="rgba(6, 182, 212, 0.05)" strokeWidth="1" />
 
-              {/* Cursor / Car position marker (chevron pointer) */}
-              <Path 
-                d="M 195 41 L 188 47 L 195 44 L 202 47 Z" 
-                fill="#00e5ff" 
-                shadowColor="#00e5ff"
-                shadowRadius="10"
-                transform="rotate(65 195 41)"
-              />
-              <Circle cx="195" cy="41" r="8" fill="rgba(6, 182, 212, 0.3)" />
+              {mapPoints.length === 0 ? (
+                <SvgText x="150" y="80" fill="#64748b" fontSize="12" fontWeight="bold" textAnchor="middle">
+                  Acquiring GPS Signal...
+                </SvgText>
+              ) : mapPoints.length === 1 ? (
+                <G>
+                  <Circle cx="150" cy="75" r="25" stroke="rgba(6, 182, 212, 0.15)" strokeWidth="1" fill="none" />
+                  <Circle cx="150" cy="75" r="12" stroke="rgba(6, 182, 212, 0.25)" strokeWidth="1" fill="none" />
+                  <Circle cx="150" cy="75" r="6" fill="#00e5ff" />
+                  <Circle cx="150" cy="75" r="12" fill="rgba(0, 229, 255, 0.15)" />
+                </G>
+              ) : (
+                <G>
+                  <Path 
+                    d={mapPoints.map((pt, idx) => `${idx === 0 ? 'M' : 'L'} ${pt.x.toFixed(1)} ${pt.y.toFixed(1)}`).join(' ')} 
+                    stroke="#06b6d4" 
+                    strokeWidth="3.5" 
+                    fill="none" 
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    opacity="0.85"
+                  />
+                  <Circle cx={mapPoints[0].x} cy={mapPoints[0].y} r="5" fill="#84cc16" />
+                  <Circle cx={mapPoints[0].x} cy={mapPoints[0].y} r="10" stroke="#84cc16" strokeWidth="1" fill="none" opacity="0.5" />
+                  
+                  <Circle cx={mapPoints[mapPoints.length - 1].x} cy={mapPoints[mapPoints.length - 1].y} r="6" fill="#00e5ff" />
+                  <Circle cx={mapPoints[mapPoints.length - 1].x} cy={mapPoints[mapPoints.length - 1].y} r="12" fill="rgba(0, 229, 255, 0.2)" />
+                </G>
+              )}
             </Svg>
 
             {/* Start point details overlay */}
-            <View style={[styles.mapOverlayLabel, styles.startOverlay]}>
-              <View style={[styles.tinyDot, { backgroundColor: '#84cc16' }]} />
-              <Text style={styles.overlayTime}>{startTimeStr}</Text>
-              <Text style={styles.overlayAddr}>MG Road, Delhi</Text>
-            </View>
+            {currentSession && mapPoints.length > 0 && (
+              <View style={[styles.mapOverlayLabel, styles.startOverlay]}>
+                <View style={[styles.tinyDot, { backgroundColor: '#84cc16' }]} />
+                <Text style={styles.overlayTime}>{startTimeStr}</Text>
+                <Text style={styles.overlayAddr}>
+                  {`Lat ${mapPoints[0].latitude.toFixed(4)}`}
+                  {"\n"}
+                  {`Lon ${mapPoints[0].longitude.toFixed(4)}`}
+                </Text>
+              </View>
+            )}
 
-            {/* Est. End details overlay */}
-            <View style={[styles.mapOverlayLabel, styles.endOverlay]}>
-              <View style={[styles.tinyDot, { backgroundColor: '#eab308' }]} />
-              <Text style={styles.overlayTime}>{endTimeStr}</Text>
-              <Text style={styles.overlayAddr}>Connaught Place</Text>
-            </View>
+            {/* Est. End / Current details overlay */}
+            {mapPoints.length > 0 && (
+              <View style={[styles.mapOverlayLabel, styles.endOverlay]}>
+                <View style={[styles.tinyDot, { backgroundColor: '#00e5ff' }]} />
+                <Text style={styles.overlayTime}>
+                  {currentSession ? dayjs().format('hh:mm A') : currentTime.format('hh:mm A')}
+                </Text>
+                <Text style={styles.overlayAddr}>
+                  {`Lat ${mapPoints[mapPoints.length - 1].latitude.toFixed(4)}`}
+                  {"\n"}
+                  {`Lon ${mapPoints[mapPoints.length - 1].longitude.toFixed(4)}`}
+                </Text>
+              </View>
+            )}
           </View>
         </View>
 
@@ -703,11 +888,12 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     borderWidth: 1,
     borderColor: '#121e33',
-    padding: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 16,
     marginBottom: 25,
   },
   speedLeftCol: {
-    width: '28%',
+    flex: 1.1,
     alignItems: 'center',
   },
   speedTextLabel: {
@@ -734,16 +920,20 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#1e293b',
     borderRadius: 10,
-    paddingHorizontal: 8,
+    paddingHorizontal: 6,
     paddingVertical: 4,
+    minWidth: 92,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   speedLimitText: {
     color: '#94a3b8',
     fontSize: 8,
     fontWeight: 'bold',
+    textAlign: 'center',
   },
   speedGaugeContainer: {
-    width: '40%',
+    width: 125,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -754,8 +944,9 @@ const styles = StyleSheet.create({
     textAnchor: 'middle',
   },
   speedRightCol: {
-    width: '28%',
+    flex: 1,
     justifyContent: 'center',
+    paddingLeft: 8,
   },
   sideSpeedStat: {
     marginBottom: 10,

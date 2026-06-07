@@ -132,6 +132,15 @@ export default function DriveScreen() {
               <Text style={styles.hugeStartText}>START NEW TRIP</Text>
             </LinearGradient>
           </TouchableOpacity>
+
+          {/* Live Sensor Analytics Shortcut */}
+          <TouchableOpacity 
+            style={styles.liveAnalyticsOutlineBtn} 
+            onPress={() => router.push('/live-analytics')}
+          >
+            <MaterialCommunityIcons name="waveform" size={18} color="#06b6d4" style={{ marginRight: 8 }} />
+            <Text style={styles.liveAnalyticsOutlineBtnText}>VIEW LIVE SENSOR TELEMETRY</Text>
+          </TouchableOpacity>
         </ScrollView>
       </View>
     );
@@ -165,7 +174,7 @@ export default function DriveScreen() {
 
   // Target trip progress: mock 10km (10,000m)
   const targetDistanceMeters = 10000;
-  const tripProgressPercent = Math.min(100, Math.round((currentSession.distance / targetDistanceMeters) * 100)) || 62;
+  const tripProgressPercent = Math.min(100, Math.round((currentSession.distance / targetDistanceMeters) * 100));
 
   // Arc stroke offset for 270 degree gauge dial
   // Circumference of R=80 is 502.6. 270 deg is 377.
@@ -332,13 +341,13 @@ export default function DriveScreen() {
               <MaterialCommunityIcons name="speedometer" size={22} color="#06b6d4" />
             </View>
             <Text style={styles.speedStatLabel}>Avg. Speed</Text>
-            <Text style={styles.speedStatVal}>{averageSpeedKmH || 52} km/h</Text>
+            <Text style={styles.speedStatVal}>{averageSpeedKmH} km/h</Text>
           </View>
 
           {/* Current Speed (Large Capsule) */}
           <View style={styles.currentSpeedCapsule}>
             <Text style={styles.currentSpeedLabel}>CURRENT SPEED</Text>
-            <Text style={styles.currentSpeedVal}>{currentSpeedKmH || 68}</Text>
+            <Text style={styles.currentSpeedVal}>{currentSpeedKmH}</Text>
             <Text style={styles.currentSpeedUnit}>km/h</Text>
           </View>
 
@@ -386,6 +395,26 @@ export default function DriveScreen() {
             <Text style={styles.telemetryUnit}>min</Text>
           </View>
         </View>
+
+        {/* Real-time Telemetry shortcut banner */}
+        <TouchableOpacity 
+          style={styles.liveTelemetryActiveBanner}
+          onPress={() => router.push('/live-analytics')}
+        >
+          <View style={styles.liveTelemetryActiveLeft}>
+            <View style={styles.waveformIconGlowCircle}>
+              <MaterialCommunityIcons name="waveform" size={20} color="#06b6d4" />
+            </View>
+            <View style={{ marginLeft: 12 }}>
+              <Text style={styles.liveTelemetryActiveTitle}>Real-time Sensor Waveform</Text>
+              <Text style={styles.liveTelemetryActiveDesc}>Monitor live accelerometer & gyroscope forces</Text>
+            </View>
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <View style={styles.liveTelemetryPulseDot} />
+            <Feather name="chevron-right" size={18} color="#06b6d4" />
+          </View>
+        </TouchableOpacity>
 
         {/* Driving Insights Progress Rows */}
         <View style={styles.insightsSection}>
@@ -1137,5 +1166,70 @@ const styles = StyleSheet.create({
     color: '#050B14',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  liveAnalyticsOutlineBtn: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: '#06b6d4',
+    borderRadius: 20,
+    paddingVertical: isSmallDevice ? 12 : 16,
+    marginTop: 15,
+    backgroundColor: 'rgba(6, 182, 212, 0.03)',
+  },
+  liveAnalyticsOutlineBtnText: {
+    color: '#06b6d4',
+    fontSize: 14,
+    fontWeight: 'bold',
+    letterSpacing: 1,
+  },
+  liveTelemetryActiveBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(6, 182, 212, 0.05)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(6, 182, 212, 0.25)',
+    borderRadius: 20,
+    padding: 14,
+    marginBottom: 15,
+  },
+  liveTelemetryActiveLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  waveformIconGlowCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(6, 182, 212, 0.3)',
+    backgroundColor: 'rgba(6, 182, 212, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  liveTelemetryActiveTitle: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: 'bold',
+  },
+  liveTelemetryActiveDesc: {
+    color: '#94a3b8',
+    fontSize: 10,
+    marginTop: 2,
+  },
+  liveTelemetryPulseDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#06b6d4',
+    marginRight: 8,
+    shadowColor: '#06b6d4',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 4,
   },
 });

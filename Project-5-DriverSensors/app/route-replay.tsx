@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { Feather, MaterialCommunityIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
-import Svg, { Circle, Line, Path, Defs, LinearGradient as SvgLinearGradient, Stop, Rect, Ellipse, Text as SvgText } from 'react-native-svg';
+import Svg, { Circle, Line, Path, Defs, LinearGradient as SvgLinearGradient, Stop, Rect, Ellipse, Text as SvgText, G } from 'react-native-svg';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { useDriveStore, DriveSession } from '../src/store/driveStore';
+import { useDriveStore } from '../src/store/driveStore';
 import { driveRepository } from '../src/database/repositories/driveRepository';
 import dayjs from 'dayjs';
 
@@ -93,7 +93,7 @@ export default function RouteReplayScreen() {
   const score = displaySession ? displaySession.score : 92;
   const rating = displaySession ? displaySession.rating : 'EXCELLENT';
   const distanceKm = displaySession ? (displaySession.distance / 1000).toFixed(1) : '28.6';
-  const durationSec = displaySession ? displaySession.duration : 2536; // 42:16
+  const durationSec = displaySession ? Math.max(1, displaySession.duration) : 2536; // 42:16
 
   const driveDateStr = displaySession ? dayjs(displaySession.startTime).format('MMMM DD, YYYY') : 'May 20, 2025';
   const driveTimeStr = displaySession ? dayjs(displaySession.startTime).format('hh:mm A') : '08:15 AM';
@@ -104,13 +104,118 @@ export default function RouteReplayScreen() {
   const phoneUsageCount = events.length > 0 ? events.filter(e => e.type === 'PHONE_USAGE').length : 1;
   const steeringCount = events.length > 0 ? events.filter(e => e.type === 'AGGRESSIVE_STEERING' || e.type === 'EXCESSIVE_MOVEMENT').length : 2;
 
+  // Determine if a real route with GPS points exists
+  const hasRealRoute = !!(displaySession && displaySession.route && displaySession.route.length > 0);
+
+  // Memoize active points projected to standard 400x400 viewBox with padding
+  const activeRoutePoints = React.useMemo(() => {
+    if (!hasRealRoute || !displaySession) {
+      return ROUTE_POINTS;
+    }
+    
+    const gpsRoute = displaySession.route;
+    let minLat = 90, maxLat = -90, minLon = 180, maxLon = -180;
+    gpsRoute.forEach(pt => {
+      if (pt.latitude < minLat) minLat = pt.latitude;
+      if (pt.latitude > maxLat) maxLat = pt.latitude;
+      if (pt.longitude < minLon) minLon = pt.longitude;
+      if (pt.longitude > maxLon) maxLon = pt.longitude;
+    });
+
+    const latSpan = maxLat - minLat;
+    const lonSpan = maxLon - minLon;
+    const maxSpan = Math.max(latSpan, lonSpan);
+    const scale = maxSpan > 0 ? 320 / maxSpan : 1;
+    const centerLon = minLon + lonSpan / 2;
+    const centerLat = minLat + latSpan / 2;
+
+    return gpsRoute.map((pt, idx) => {
+      const elapsed = Math.floor((pt.timestamp - displaySession.startTime) / 1000);
+      return {
+        x: 200 + (pt.longitude - centerLon) * scale,
+        y: 200 - (pt.latitude - centerLat) * scale,
+        time: elapsed >= 0 ? elapsed : idx * (durationSec / gpsRoute.length),
+        speed: pt.speed ? Math.round(pt.speed * 3.6) : 0,
+        latitude: pt.latitude,
+        longitude: pt.longitude
+      };
+    });
+  }, [displaySession, hasRealRoute, durationSec]);
+
+  // Helper to project an event or find its closest matched route point
+  const getEventProjectedPosition = React.useCallback((event: any) => {
+    if (event.location && event.location.latitude && event.location.longitude) {
+      if (displaySession && displaySession.route && displaySession.route.length > 0) {
+        const gpsRoute = displaySession.route;
+        let minLat = 90, maxLat = -90, minLon = 180, maxLon = -180;
+        gpsRoute.forEach(pt => {
+          if (pt.latitude < minLat) minLat = pt.latitude;
+          if (pt.latitude > maxLat) maxLat = pt.latitude;
+          if (pt.longitude < minLon) minLon = pt.longitude;
+          if (pt.longitude > maxLon) maxLon = pt.longitude;
+        });
+
+        const latSpan = maxLat - minLat;
+        const lonSpan = maxLon - minLon;
+        const maxSpan = Math.max(latSpan, lonSpan);
+        const scale = maxSpan > 0 ? 320 / maxSpan : 1;
+        const centerLon = minLon + lonSpan / 2;
+        const centerLat = minLat + latSpan / 2;
+
+        return {
+          x: 200 + (event.location.longitude - centerLon) * scale,
+          y: 200 - (event.location.latitude - centerLat) * scale,
+          time: Math.floor((event.timestamp - displaySession.startTime) / 1000)
+        };
+      }
+    }
+
+    // Match by timestamp
+    if (displaySession && displaySession.route && displaySession.route.length > 0) {
+      let closestPt = activeRoutePoints[0];
+      let minDiff = Infinity;
+      displaySession.route.forEach((pt, idx) => {
+        const diff = Math.abs(pt.timestamp - event.timestamp);
+        if (diff < minDiff) {
+          minDiff = diff;
+          closestPt = activeRoutePoints[idx];
+        }
+      });
+      return closestPt;
+    }
+
+    return null;
+  }, [displaySession, activeRoutePoints]);
+
+  const dynamicEvents = React.useMemo(() => {
+    if (!hasRealRoute) return [];
+    return events.map(evt => {
+      const pos = getEventProjectedPosition(evt);
+      if (!pos) return null;
+      return {
+        ...evt,
+        x: pos.x,
+        y: pos.y,
+        time: pos.time
+      };
+    }).filter(Boolean);
+  }, [hasRealRoute, events, getEventProjectedPosition]);
+
+  const routePathD = React.useMemo(() => {
+    if (activeRoutePoints.length === 0) return '';
+    return activeRoutePoints.map((pt, idx) => `${idx === 0 ? 'M' : 'L'} ${pt.x.toFixed(1)},${pt.y.toFixed(1)}`).join(' ');
+  }, [activeRoutePoints]);
+
+  const startPoint = activeRoutePoints[0];
+  const endPoint = activeRoutePoints[activeRoutePoints.length - 1];
+
   // Playback Loop
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
     if (isPlaying) {
       const intervalMs = 100;
-      // Fit 2536s into 42s of real time at 1x speed
-      const playSpeedScale = 2536 / 42;
+      // Fit durationSec into 42s of real time at 1x speed
+      const playSpeedScale = durationSec / 42;
       const stepSize = (intervalMs / 1000) * playSpeedScale * playbackSpeed;
       
       interval = setInterval(() => {
@@ -133,10 +238,11 @@ export default function RouteReplayScreen() {
 
   // Compute Animated Cursor Position
   const getCursorPosition = () => {
+    if (activeRoutePoints.length === 0) return null;
     const progress = currentTimeSec / durationSec;
-    const pointIdx = Math.round(progress * (ROUTE_POINTS.length - 1));
-    const clampedIdx = Math.max(0, Math.min(ROUTE_POINTS.length - 1, pointIdx));
-    return ROUTE_POINTS[clampedIdx];
+    const pointIdx = Math.round(progress * (activeRoutePoints.length - 1));
+    const clampedIdx = Math.max(0, Math.min(activeRoutePoints.length - 1, pointIdx));
+    return activeRoutePoints[clampedIdx];
   };
 
   const cursorPoint = getCursorPosition();
@@ -214,6 +320,14 @@ export default function RouteReplayScreen() {
   const viewBoxY = 200 - viewBoxHeight / 2 + mapOffset.y;
   const mapStyleViewBox = `${viewBoxX} ${viewBoxY} ${viewBoxWidth} ${viewBoxHeight}`;
 
+  const startLocLabel = hasRealRoute && startPoint && 'latitude' in startPoint
+    ? `Start: Lat ${startPoint.latitude.toFixed(4)}, Lon ${startPoint.longitude.toFixed(4)}`
+    : 'MG Road, Delhi';
+
+  const endLocLabel = hasRealRoute && endPoint && 'latitude' in endPoint
+    ? `End: Lat ${endPoint.latitude.toFixed(4)}, Lon ${endPoint.longitude.toFixed(4)}`
+    : 'Connaught Place, Delhi';
+
   return (
     <View style={styles.container}>
       {/* 1. Header Row */}
@@ -256,13 +370,13 @@ export default function RouteReplayScreen() {
 
             <View style={styles.locationPointsCol}>
               <View style={styles.locationRow}>
-                <View style={[styles.locPinIndicator, { backgroundColor: '#22c55e' }]} />
-                <Text style={styles.locationLabel} numberOfLines={1}>MG Road, Delhi</Text>
+                <View style={[styles.locPinIndicator, { backgroundColor: '#00f5ff' }]} />
+                <Text style={styles.locationLabel} numberOfLines={1}>{startLocLabel}</Text>
               </View>
               <View style={styles.locationConnector} />
               <View style={styles.locationRow}>
-                <View style={[styles.locPinIndicator, { backgroundColor: '#00f5ff' }]} />
-                <Text style={styles.locationLabel} numberOfLines={1}>Connaught Place, Delhi</Text>
+                <View style={[styles.locPinIndicator, { backgroundColor: '#22c55e' }]} />
+                <Text style={styles.locationLabel} numberOfLines={1}>{endLocLabel}</Text>
               </View>
             </View>
           </View>
@@ -346,61 +460,131 @@ export default function RouteReplayScreen() {
               <Line x1="10" y1="10" x2="390" y2="390" stroke="rgba(255,255,255,0.02)" strokeWidth="1" />
               <Line x1="390" y1="10" x2="10" y2="390" stroke="rgba(255,255,255,0.02)" strokeWidth="1" />
 
-              {/* Landmark text labels */}
-              <SvgText x="110" y="85" fill="rgba(255,255,255,0.12)" fontSize="9" fontWeight="bold">MG ROAD</SvgText>
-              <SvgText x="270" y="145" fill="rgba(255,255,255,0.12)" fontSize="9" fontWeight="bold">INDIA GATE</SvgText>
-              <SvgText x="50" y="240" fill="rgba(255,255,255,0.12)" fontSize="9" fontWeight="bold">SUPREME COURT</SvgText>
-              <SvgText x="135" y="270" fill="rgba(255,255,255,0.12)" fontSize="9" fontWeight="bold">JLN MARG</SvgText>
-              <SvgText x="235" y="360" fill="rgba(255,255,255,0.12)" fontSize="9" fontWeight="bold">CONNAUGHT PLACE</SvgText>
+              {/* Landmark text labels - Only show if not real route to avoid city mismatch */}
+              {!hasRealRoute && (
+                <>
+                  <SvgText x="110" y="85" fill="rgba(255,255,255,0.12)" fontSize="9" fontWeight="bold">MG ROAD</SvgText>
+                  <SvgText x="270" y="145" fill="rgba(255,255,255,0.12)" fontSize="9" fontWeight="bold">INDIA GATE</SvgText>
+                  <SvgText x="50" y="240" fill="rgba(255,255,255,0.12)" fontSize="9" fontWeight="bold">SUPREME COURT</SvgText>
+                  <SvgText x="135" y="270" fill="rgba(255,255,255,0.12)" fontSize="9" fontWeight="bold">JLN MARG</SvgText>
+                  <SvgText x="235" y="360" fill="rgba(255,255,255,0.12)" fontSize="9" fontWeight="bold">CONNAUGHT PLACE</SvgText>
+                </>
+              )}
 
               {/* The primary Route Path */}
-              <Path 
-                d="M 80,60 L 130,100 L 180,160 L 220,220 L 260,280 L 300,320 L 340,350"
-                stroke="url(#routeGrad)"
-                strokeWidth="5"
-                fill="none"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
+              {hasRealRoute ? (
+                <Path 
+                  d={routePathD}
+                  stroke="url(#routeGrad)"
+                  strokeWidth="5"
+                  fill="none"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              ) : (
+                <Path 
+                  d="M 80,60 L 130,100 L 180,160 L 220,220 L 260,280 L 300,320 L 340,350"
+                  stroke="url(#routeGrad)"
+                  strokeWidth="5"
+                  fill="none"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              )}
 
               {/* Event Markers & Callouts */}
               {/* 1. Start Marker */}
-              <Circle cx="80" cy="60" r="12" fill="none" stroke="#00f5ff" strokeWidth="2.5" />
-              <Circle cx="80" cy="60" r="5" fill="#00f5ff" />
+              {hasRealRoute ? (
+                startPoint && (
+                  <>
+                    <Circle cx={startPoint.x} cy={startPoint.y} r="12" fill="none" stroke="#00f5ff" strokeWidth="2.5" />
+                    <Circle cx={startPoint.x} cy={startPoint.y} r="5" fill="#00f5ff" />
+                  </>
+                )
+              ) : (
+                <>
+                  <Circle cx="80" cy="60" r="12" fill="none" stroke="#00f5ff" strokeWidth="2.5" />
+                  <Circle cx="80" cy="60" r="5" fill="#00f5ff" />
+                </>
+              )}
 
-              {/* 2. Sharp Turn (08:18 AM) */}
-              <Circle cx="130" cy="100" r="10" fill="#0c1626" stroke="#eab308" strokeWidth="2" />
-              
-              {/* 3. Harsh Brake 1 (08:22 AM) */}
-              <Circle cx="180" cy="160" r="10" fill="#0c1626" stroke="#ef4444" strokeWidth="2" />
-              
-              {/* 4. Phone Usage (08:27 AM) */}
-              <Circle cx="220" cy="220" r="10" fill="#0c1626" stroke="#00f5ff" strokeWidth="2" />
-              
-              {/* 5. Aggressive Steering (08:31 AM) */}
-              <Circle cx="260" cy="280" r="10" fill="#0c1626" stroke="#a3e635" strokeWidth="2" />
-              
-              {/* 6. Harsh Brake 2 (08:35 AM) */}
-              <Circle cx="300" cy="320" r="10" fill="#0c1626" stroke="#ef4444" strokeWidth="2" />
+              {/* Event Markers inside SVG */}
+              {hasRealRoute ? (
+                dynamicEvents.map((evt: any) => {
+                  let strokeColor = '#00f5ff';
+                  if (evt.type === 'HARSH_BRAKE' || evt.type === 'HARSH_ACCELERATION') strokeColor = '#ef4444';
+                  else if (evt.type === 'SHARP_TURN' || evt.type === 'AGGRESSIVE_STEERING') strokeColor = '#eab308';
+                  
+                  return (
+                    <G key={evt.id}>
+                      <Circle cx={evt.x} cy={evt.y} r="10" fill="#0c1626" stroke={strokeColor} strokeWidth="2" />
+                      {evt.type === 'HARSH_BRAKE' && (
+                        <>
+                          <Line x1={evt.x} y1={evt.y - 4} x2={evt.x} y2={evt.y + 1} stroke="#ef4444" strokeWidth="1.5" />
+                          <Circle cx={evt.x} cy={evt.y + 4} r="1" fill="#ef4444" />
+                        </>
+                      )}
+                      {evt.type === 'SHARP_TURN' && (
+                        <Path d={`M ${evt.x - 3},${evt.y + 3} L ${evt.x + 3},${evt.y + 3} L ${evt.x + 3},${evt.y - 3}`} stroke="#eab308" strokeWidth="1.2" fill="none" />
+                      )}
+                      {evt.type === 'PHONE_USAGE' && (
+                        <Path d={`M ${evt.x - 2},${evt.y - 3} L ${evt.x + 2},${evt.y - 3} L ${evt.x + 2},${evt.y + 3} L ${evt.x - 2},${evt.y + 3} Z`} fill="#00f5ff" />
+                      )}
+                    </G>
+                  );
+                })
+              ) : (
+                <>
+                  {/* 2. Sharp Turn (08:18 AM) */}
+                  <Circle cx="130" cy="100" r="10" fill="#0c1626" stroke="#eab308" strokeWidth="2" />
+                  
+                  {/* 3. Harsh Brake 1 (08:22 AM) */}
+                  <Circle cx="180" cy="160" r="10" fill="#0c1626" stroke="#ef4444" strokeWidth="2" />
+                  
+                  {/* 4. Phone Usage (08:27 AM) */}
+                  <Circle cx="220" cy="220" r="10" fill="#0c1626" stroke="#00f5ff" strokeWidth="2" />
+                  
+                  {/* 5. Aggressive Steering (08:31 AM) */}
+                  <Circle cx="260" cy="280" r="10" fill="#0c1626" stroke="#a3e635" strokeWidth="2" />
+                  
+                  {/* 6. Harsh Brake 2 (08:35 AM) */}
+                  <Circle cx="300" cy="320" r="10" fill="#0c1626" stroke="#ef4444" strokeWidth="2" />
+                </>
+              )}
 
-              {/* 7. End Marker */}
-              <Path d="M340,335 C334,335 330,339 330,345 C330,353 340,362 340,362 C340,362 350,353 350,345 C350,339 346,335 340,335 Z" fill="#22c55e" />
-              <Circle cx="340" cy="345" r="3" fill="#ffffff" />
+              {/* End Marker */}
+              {hasRealRoute ? (
+                endPoint && (
+                  <G transform={`translate(${endPoint.x - 340}, ${endPoint.y - 350})`}>
+                    <Path d="M340,335 C334,335 330,339 330,345 C330,353 340,362 340,362 C340,362 350,353 350,345 C350,339 346,335 340,335 Z" fill="#22c55e" />
+                    <Circle cx="340" cy="345" r="3" fill="#ffffff" />
+                  </G>
+                )
+              ) : (
+                <>
+                  <Path d="M340,335 C334,335 330,339 330,345 C330,353 340,362 340,362 C340,362 350,353 350,345 C350,339 346,335 340,335 Z" fill="#22c55e" />
+                  <Circle cx="340" cy="345" r="3" fill="#ffffff" />
+                </>
+              )}
 
-              {/* Inner Icons for markers */}
-              {/* Sharp Turn */}
-              <Path d="M 127,103 L 133,103 L 133,98" stroke="#eab308" strokeWidth="1.2" fill="none" />
-              <Path d="M 127,103 C 127,99 130,97 133,98" stroke="#eab308" strokeWidth="1.2" fill="none" />
-              {/* Harsh Brake 1 */}
-              <Line x1="180" y1="156" x2="180" y2="161" stroke="#ef4444" strokeWidth="1.5" />
-              <Circle cx="180" cy="164" r="1" fill="#ef4444" />
-              {/* Phone Usage */}
-              <Path d="M 218,217 L 222,217 L 222,223 L 218,223 Z" fill="#00f5ff" />
-              {/* Aggressive Steering */}
-              <Circle cx="260" cy="280" r="4" stroke="#a3e635" strokeWidth="1" fill="none" />
-              {/* Harsh Brake 2 */}
-              <Line x1="300" y1="316" x2="300" y2="321" stroke="#ef4444" strokeWidth="1.5" />
-              <Circle cx="300" cy="324" r="1" fill="#ef4444" />
+              {/* Inner Icons for markers (only for mock since dynamic uses custom code above) */}
+              {!hasRealRoute && (
+                <>
+                  {/* Sharp Turn */}
+                  <Path d="M 127,103 L 133,103 L 133,98" stroke="#eab308" strokeWidth="1.2" fill="none" />
+                  <Path d="M 127,103 C 127,99 130,97 133,98" stroke="#eab308" strokeWidth="1.2" fill="none" />
+                  {/* Harsh Brake 1 */}
+                  <Line x1="180" y1="156" x2="180" y2="161" stroke="#ef4444" strokeWidth="1.5" />
+                  <Circle cx="180" cy="164" r="1" fill="#ef4444" />
+                  {/* Phone Usage */}
+                  <Path d="M 218,217 L 222,217 L 222,223 L 218,223 Z" fill="#00f5ff" />
+                  {/* Aggressive Steering */}
+                  <Circle cx="260" cy="280" r="4" stroke="#a3e635" strokeWidth="1" fill="none" />
+                  {/* Harsh Brake 2 */}
+                  <Line x1="300" y1="316" x2="300" y2="321" stroke="#ef4444" strokeWidth="1.5" />
+                  <Circle cx="300" cy="324" r="1" fill="#ef4444" />
+                </>
+              )}
 
               {/* Replay Cursor (Car Position) */}
               {cursorPoint && (
@@ -413,48 +597,97 @@ export default function RouteReplayScreen() {
           </View>
 
           {/* Absolute Map Callout Popovers matching mockup and panning position */}
-          {/* Start Popover */}
-          <View style={[styles.mapCallout, getCalloutPosition(80, 60, -25, -20)]}>
-            <Text style={styles.calloutTitle}>START</Text>
-            <Text style={styles.calloutTime}>08:15 AM</Text>
-          </View>
+          {hasRealRoute ? (
+            <>
+              {/* Start Popover */}
+              {startPoint && (
+                <View style={[styles.mapCallout, getCalloutPosition(startPoint.x, startPoint.y, -25, -20)]}>
+                  <Text style={styles.calloutTitle}>START</Text>
+                  <Text style={styles.calloutTime}>{dayjs(displaySession?.startTime).format('hh:mm A')}</Text>
+                </View>
+              )}
 
-          {/* Sharp Turn Popover */}
-          <View style={[styles.mapCallout, getCalloutPosition(130, 100, -35, -35)]}>
-            <Text style={styles.calloutTime}>08:18 AM</Text>
-            <Text style={styles.calloutTitle}>Sharp Turn</Text>
-          </View>
+              {/* Dynamic Event Popovers */}
+              {dynamicEvents.map((evt: any) => {
+                const timeStr = dayjs(evt.timestamp).format('hh:mm A');
+                let label = 'Event';
+                if (evt.type === 'HARSH_BRAKE') label = 'Harsh Brake';
+                else if (evt.type === 'HARSH_ACCELERATION') label = 'Harsh Accel';
+                else if (evt.type === 'SHARP_TURN') label = 'Sharp Turn';
+                else if (evt.type === 'PHONE_USAGE') label = 'Phone Usage';
+                else if (evt.type === 'AGGRESSIVE_STEERING') label = 'Aggressive Steering';
+                else if (evt.type === 'OVERSPEEDING') label = 'Overspeeding';
+                
+                return (
+                  <View 
+                    key={`callout-${evt.id}`}
+                    style={[styles.mapCallout, getCalloutPosition(evt.x, evt.y, -35, -35)]}
+                  >
+                    <Text style={styles.calloutTime}>{timeStr}</Text>
+                    <Text style={styles.calloutTitle}>{label}</Text>
+                    {evt.duration && <Text style={styles.calloutSub}>{evt.duration} sec</Text>}
+                  </View>
+                );
+              })}
 
-          {/* Harsh Brake 1 Popover */}
-          <View style={[styles.mapCallout, getCalloutPosition(180, 160, -35, -35)]}>
-            <Text style={styles.calloutTime}>08:22 AM</Text>
-            <Text style={styles.calloutTitle}>Harsh Brake</Text>
-          </View>
+              {/* End Popover */}
+              {endPoint && (
+                <View style={[styles.mapCallout, getCalloutPosition(endPoint.x, endPoint.y, -25, -35)]}>
+                  <Text style={[styles.calloutTitle, { color: '#22c55e' }]}>END</Text>
+                  <Text style={styles.calloutTime}>
+                    {displaySession?.endTime 
+                      ? dayjs(displaySession.endTime).format('hh:mm A') 
+                      : dayjs(displaySession?.startTime).add(durationSec, 'second').format('hh:mm A')}
+                  </Text>
+                </View>
+              )}
+            </>
+          ) : (
+            <>
+              {/* Start Popover */}
+              <View style={[styles.mapCallout, getCalloutPosition(80, 60, -25, -20)]}>
+                <Text style={styles.calloutTitle}>START</Text>
+                <Text style={styles.calloutTime}>08:15 AM</Text>
+              </View>
 
-          {/* Phone Usage Popover */}
-          <View style={[styles.mapCallout, getCalloutPosition(220, 220, -35, -45)]}>
-            <Text style={styles.calloutTime}>08:27 AM</Text>
-            <Text style={styles.calloutTitle}>Phone Usage</Text>
-            <Text style={styles.calloutSub}>8 sec</Text>
-          </View>
+              {/* Sharp Turn Popover */}
+              <View style={[styles.mapCallout, getCalloutPosition(130, 100, -35, -35)]}>
+                <Text style={styles.calloutTime}>08:18 AM</Text>
+                <Text style={styles.calloutTitle}>Sharp Turn</Text>
+              </View>
 
-          {/* Aggressive Steering Popover */}
-          <View style={[styles.mapCallout, getCalloutPosition(260, 280, -45, -35)]}>
-            <Text style={styles.calloutTime}>08:31 AM</Text>
-            <Text style={styles.calloutTitle}>Aggressive Steering</Text>
-          </View>
+              {/* Harsh Brake 1 Popover */}
+              <View style={[styles.mapCallout, getCalloutPosition(180, 160, -35, -35)]}>
+                <Text style={styles.calloutTime}>08:22 AM</Text>
+                <Text style={styles.calloutTitle}>Harsh Brake</Text>
+              </View>
 
-          {/* Harsh Brake 2 Popover */}
-          <View style={[styles.mapCallout, getCalloutPosition(300, 320, -35, -35)]}>
-            <Text style={styles.calloutTime}>08:35 AM</Text>
-            <Text style={styles.calloutTitle}>Harsh Brake</Text>
-          </View>
+              {/* Phone Usage Popover */}
+              <View style={[styles.mapCallout, getCalloutPosition(220, 220, -35, -45)]}>
+                <Text style={styles.calloutTime}>08:27 AM</Text>
+                <Text style={styles.calloutTitle}>Phone Usage</Text>
+                <Text style={styles.calloutSub}>8 sec</Text>
+              </View>
 
-          {/* End Popover */}
-          <View style={[styles.mapCallout, getCalloutPosition(340, 350, -25, -35)]}>
-            <Text style={[styles.calloutTitle, { color: '#22c55e' }]}>END</Text>
-            <Text style={styles.calloutTime}>08:57 AM</Text>
-          </View>
+              {/* Aggressive Steering Popover */}
+              <View style={[styles.mapCallout, getCalloutPosition(260, 280, -45, -35)]}>
+                <Text style={styles.calloutTime}>08:31 AM</Text>
+                <Text style={styles.calloutTitle}>Aggressive Steering</Text>
+              </View>
+
+              {/* Harsh Brake 2 Popover */}
+              <View style={[styles.mapCallout, getCalloutPosition(300, 320, -35, -35)]}>
+                <Text style={styles.calloutTime}>08:35 AM</Text>
+                <Text style={styles.calloutTitle}>Harsh Brake</Text>
+              </View>
+
+              {/* End Popover */}
+              <View style={[styles.mapCallout, getCalloutPosition(340, 350, -25, -35)]}>
+                <Text style={[styles.calloutTitle, { color: '#22c55e' }]}>END</Text>
+                <Text style={styles.calloutTime}>08:57 AM</Text>
+              </View>
+            </>
+          )}
 
           {/* Float Map Overlay Buttons (Right) */}
           <View style={styles.mapControlsColumn}>
@@ -519,18 +752,36 @@ export default function RouteReplayScreen() {
                 <View style={[styles.sliderTrackFill, { width: `${(currentTimeSec / durationSec) * 100}%` }]} />
                 
                 {/* Event Marker Dots on seekbar track */}
-                <View style={[styles.sliderEventDot, { left: '7%', backgroundColor: '#eab308' }]} />
-                <View style={[styles.sliderEventDot, { left: '16.6%', backgroundColor: '#ef4444' }]} />
-                <View style={[styles.sliderEventDot, { left: '28.5%', backgroundColor: '#00f5ff' }]} />
-                <View style={[styles.sliderEventDot, { left: '38%', backgroundColor: '#a3e635' }]} />
-                <View style={[styles.sliderEventDot, { left: '47.6%', backgroundColor: '#ef4444' }]} />
+                {hasRealRoute ? (
+                  dynamicEvents.map((evt: any) => {
+                    let dotColor = '#00f5ff';
+                    if (evt.type === 'HARSH_BRAKE' || evt.type === 'HARSH_ACCELERATION') dotColor = '#ef4444';
+                    else if (evt.type === 'SHARP_TURN' || evt.type === 'AGGRESSIVE_STEERING') dotColor = '#eab308';
+                    
+                    const pct = Math.max(0, Math.min(100, (evt.time / durationSec) * 100));
+                    return (
+                      <View 
+                        key={`dot-${evt.id}`}
+                        style={[styles.sliderEventDot, { left: `${pct}%`, backgroundColor: dotColor }]} 
+                      />
+                    );
+                  })
+                ) : (
+                  <>
+                    <View style={[styles.sliderEventDot, { left: '7%', backgroundColor: '#eab308' }]} />
+                    <View style={[styles.sliderEventDot, { left: '16.6%', backgroundColor: '#ef4444' }]} />
+                    <View style={[styles.sliderEventDot, { left: '28.5%', backgroundColor: '#00f5ff' }]} />
+                    <View style={[styles.sliderEventDot, { left: '38%', backgroundColor: '#a3e635' }]} />
+                    <View style={[styles.sliderEventDot, { left: '47.6%', backgroundColor: '#ef4444' }]} />
+                  </>
+                )}
               </View>
 
               {/* Slider thumb dot */}
               <View style={[styles.sliderThumb, { left: `${(currentTimeSec / durationSec) * 96}%` }]} />
             </View>
             
-            <Text style={styles.sliderTimeText}>42:16</Text>
+            <Text style={styles.sliderTimeText}>{formatMMSS(durationSec)}</Text>
           </View>
 
           {/* Speed Toggle Badge */}

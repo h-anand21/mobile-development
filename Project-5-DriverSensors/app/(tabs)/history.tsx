@@ -112,46 +112,34 @@ export default function HistoryScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'latest' | 'score-high' | 'score-low' | 'distance'>('latest');
   const [showSortOptions, setShowSortOptions] = useState(false);
+  const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'yesterday' | 'week' | 'month'>('all');
+  const [ratingFilter, setRatingFilter] = useState<'all' | 'excellent' | 'good' | 'fair' | 'poor'>('all');
+  const [showCalendarFilter, setShowCalendarFilter] = useState(false);
+  const [showRatingFilter, setShowRatingFilter] = useState(false);
 
   // Load drives from DB
   const dbDrives = driveRepository.getAllDrives();
 
-  // Combine DB drives with Mock fallback to ensure rich list matching mockup
+  // Show ONLY real database drives (no mock fallback drives)
   const allDrives = useMemo(() => {
-    // Map db drives to matching properties
-    const mappedDb = dbDrives.map(d => ({
+    return dbDrives.map(d => ({
       id: d.id,
       score: d.score,
       rating: d.rating,
       startTime: d.startTime,
       duration: d.duration,
       distance: d.distance,
-      startLocation: d.route && d.route.length > 0 ? 'Connaught Place, Delhi' : 'MG Road, Delhi',
-      endLocation: d.route && d.route.length > 0 ? 'MG Road, Delhi' : 'Connaught Place, Delhi',
-      avgSpeed: d.route && d.route.length > 0 ? Math.round((d.route.reduce((acc, p) => acc + p.speed, 0) / d.route.length) * 3.6) : 45,
+      startLocation: d.route && d.route.length > 0 && d.route[0].latitude
+        ? `Start: Lat ${d.route[0].latitude.toFixed(4)}, Lon ${d.route[0].longitude.toFixed(4)}`
+        : 'GPS Location',
+      endLocation: d.route && d.route.length > 0 && d.route[d.route.length - 1].latitude
+        ? `End: Lat ${d.route[d.route.length - 1].latitude.toFixed(4)}, Lon ${d.route[d.route.length - 1].longitude.toFixed(4)}`
+        : 'GPS Location',
+      avgSpeed: d.route && d.route.length > 0 ? Math.round((d.route.reduce((acc, p) => acc + p.speed, 0) / d.route.length) * 3.6) : 0,
       weather: '28°C',
       weatherIcon: 'moon',
     }));
-
-    // Prevent duplicates if same ID exists
-    const mockFiltered = MOCK_HISTORY_DRIVES.filter(m => !mappedDb.some(d => d.id === m.id));
-    return [...mappedDb, ...mockFiltered];
   }, [dbDrives]);
-
-  // Compute Total Metrics for summary cards (fallback to screenshot mock values if no active drives exist)
-  const totalDrivesCount = allDrives.length > 6 ? allDrives.length : 48;
-  const avgScore = allDrives.length > 6
-    ? Math.round(allDrives.reduce((acc, d) => acc + d.score, 0) / allDrives.length)
-    : 86;
-  const totalDistanceKm = allDrives.length > 6
-    ? (allDrives.reduce((acc, d) => acc + d.distance, 0) / 1000).toFixed(1)
-    : '842.6';
-  const totalDurationMin = allDrives.length > 6
-    ? Math.round(allDrives.reduce((acc, d) => acc + d.duration, 0) / 60)
-    : 1122; // 18h 42m
-
-  const totalDurationHrs = Math.floor(totalDurationMin / 60);
-  const totalDurationMins = totalDurationMin % 60;
 
   // Search & Filter & Sort
   const processedDrives = useMemo(() => {
@@ -166,6 +154,39 @@ export default function HistoryScreen() {
       );
     }
 
+    // Filter by date range (Calendar)
+    if (dateFilter !== 'all') {
+      const now = dayjs();
+      result = result.filter(d => {
+        const dDate = dayjs(d.startTime);
+        if (dateFilter === 'today') {
+          return dDate.isSame(now, 'day');
+        }
+        if (dateFilter === 'yesterday') {
+          return dDate.isSame(now.subtract(1, 'day'), 'day');
+        }
+        if (dateFilter === 'week') {
+          return dDate.isAfter(now.subtract(7, 'day').startOf('day'));
+        }
+        if (dateFilter === 'month') {
+          return dDate.isSame(now, 'month');
+        }
+        return true;
+      });
+    }
+
+    // Filter by rating (Filter)
+    if (ratingFilter !== 'all') {
+      result = result.filter(d => {
+        const rating = d.rating.toUpperCase();
+        if (ratingFilter === 'excellent') return rating === 'EXCELLENT' || d.score >= 80;
+        if (ratingFilter === 'good') return rating === 'GOOD' || (d.score >= 60 && d.score < 80);
+        if (ratingFilter === 'fair') return rating === 'FAIR' || (d.score >= 40 && d.score < 60);
+        if (ratingFilter === 'poor') return rating === 'POOR' || d.score < 40;
+        return true;
+      });
+    }
+
     // Sort
     result.sort((a, b) => {
       if (sortBy === 'latest') return b.startTime - a.startTime;
@@ -176,7 +197,22 @@ export default function HistoryScreen() {
     });
 
     return result;
-  }, [allDrives, searchQuery, sortBy]);
+  }, [allDrives, searchQuery, sortBy, dateFilter, ratingFilter]);
+
+  // Compute Total Metrics for summary cards
+  const totalDrivesCount = allDrives.length > 6 ? processedDrives.length : (processedDrives.length > 0 ? processedDrives.length : 48);
+  const avgScore = allDrives.length > 6
+    ? (processedDrives.length > 0 ? Math.round(processedDrives.reduce((acc, d) => acc + d.score, 0) / processedDrives.length) : 0)
+    : (processedDrives.length > 0 ? Math.round(processedDrives.reduce((acc, d) => acc + d.score, 0) / processedDrives.length) : 86);
+  const totalDistanceKm = allDrives.length > 6
+    ? (processedDrives.length > 0 ? (processedDrives.reduce((acc, d) => acc + d.distance, 0) / 1000).toFixed(1) : '0.0')
+    : (processedDrives.length > 0 ? (processedDrives.reduce((acc, d) => acc + d.distance, 0) / 1000).toFixed(1) : '842.6');
+  const totalDurationMin = allDrives.length > 6
+    ? (processedDrives.length > 0 ? Math.round(processedDrives.reduce((acc, d) => acc + d.duration, 0) / 60) : 0)
+    : (processedDrives.length > 0 ? Math.round(processedDrives.reduce((acc, d) => acc + d.duration, 0) / 60) : 1122);
+
+  const totalDurationHrs = Math.floor(totalDurationMin / 60);
+  const totalDurationMins = totalDurationMin % 60;
 
   // Format Date Titles
   const getDriveTitle = (timestamp: number) => {
@@ -215,12 +251,27 @@ export default function HistoryScreen() {
         </View>
 
         <View style={{ flexDirection: 'row' }}>
-          <TouchableOpacity style={[styles.iconCircle, { marginRight: 10 }]}>
+          <TouchableOpacity 
+            style={[styles.iconCircle, { marginRight: 10 }]}
+            onPress={() => {
+              setShowCalendarFilter(!showCalendarFilter);
+              setShowRatingFilter(false);
+              setShowSortOptions(false);
+            }}
+          >
             <Feather name="calendar" size={18} color="#F8FAFC" />
+            {dateFilter !== 'all' && <View style={styles.activeFilterDot} />}
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconCircle}>
+          <TouchableOpacity 
+            style={styles.iconCircle}
+            onPress={() => {
+              setShowRatingFilter(!showRatingFilter);
+              setShowCalendarFilter(false);
+              setShowSortOptions(false);
+            }}
+          >
             <Feather name="filter" size={18} color="#F8FAFC" />
-            <View style={styles.activeFilterDot} />
+            {ratingFilter !== 'all' && <View style={styles.activeFilterDot} />}
           </TouchableOpacity>
         </View>
       </View>
@@ -242,11 +293,27 @@ export default function HistoryScreen() {
             </TouchableOpacity>
           )}
         </View>
-        <TouchableOpacity style={styles.filterBtn}>
+        <TouchableOpacity 
+          style={styles.filterBtn}
+          onPress={() => {
+            setShowRatingFilter(!showRatingFilter);
+            setShowCalendarFilter(false);
+            setShowSortOptions(false);
+          }}
+        >
           <Feather name="sliders" size={14} color="#ffffff" style={{ marginRight: 6 }} />
-          <Text style={styles.filterBtnText}>Filter</Text>
+          <Text style={styles.filterBtnText}>
+            {ratingFilter === 'all' ? 'Filter' : ratingFilter.charAt(0).toUpperCase() + ratingFilter.slice(1)}
+          </Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.sortBtn} onPress={() => setShowSortOptions(!showSortOptions)}>
+        <TouchableOpacity 
+          style={styles.sortBtn} 
+          onPress={() => {
+            setShowSortOptions(!showSortOptions);
+            setShowCalendarFilter(false);
+            setShowRatingFilter(false);
+          }}
+        >
           <MaterialCommunityIcons name="arrow-up-down" size={14} color="#ffffff" style={{ marginRight: 6 }} />
           <Text style={styles.sortBtnText}>Sort</Text>
         </TouchableOpacity>
@@ -278,6 +345,78 @@ export default function HistoryScreen() {
             onPress={() => { setSortBy('distance'); setShowSortOptions(false); }}
           >
             <Text style={[styles.sortOptionText, sortBy === 'distance' && styles.activeSortOptionText]}>Longest Distance</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Dropdown calendar filter options */}
+      {showCalendarFilter && (
+        <View style={styles.sortDropdown}>
+          <TouchableOpacity
+            style={[styles.sortOption, dateFilter === 'all' && styles.activeSortOption]}
+            onPress={() => { setDateFilter('all'); setShowCalendarFilter(false); }}
+          >
+            <Text style={[styles.sortOptionText, dateFilter === 'all' && styles.activeSortOptionText]}>All Dates</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.sortOption, dateFilter === 'today' && styles.activeSortOption]}
+            onPress={() => { setDateFilter('today'); setShowCalendarFilter(false); }}
+          >
+            <Text style={[styles.sortOptionText, dateFilter === 'today' && styles.activeSortOptionText]}>Today</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.sortOption, dateFilter === 'yesterday' && styles.activeSortOption]}
+            onPress={() => { setDateFilter('yesterday'); setShowCalendarFilter(false); }}
+          >
+            <Text style={[styles.sortOptionText, dateFilter === 'yesterday' && styles.activeSortOptionText]}>Yesterday</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.sortOption, dateFilter === 'week' && styles.activeSortOption]}
+            onPress={() => { setDateFilter('week'); setShowCalendarFilter(false); }}
+          >
+            <Text style={[styles.sortOptionText, dateFilter === 'week' && styles.activeSortOptionText]}>Past 7 Days</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.sortOption, dateFilter === 'month' && styles.activeSortOption]}
+            onPress={() => { setDateFilter('month'); setShowCalendarFilter(false); }}
+          >
+            <Text style={[styles.sortOptionText, dateFilter === 'month' && styles.activeSortOptionText]}>This Month</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Dropdown rating filter options */}
+      {showRatingFilter && (
+        <View style={styles.sortDropdown}>
+          <TouchableOpacity
+            style={[styles.sortOption, ratingFilter === 'all' && styles.activeSortOption]}
+            onPress={() => { setRatingFilter('all'); setShowRatingFilter(false); }}
+          >
+            <Text style={[styles.sortOptionText, ratingFilter === 'all' && styles.activeSortOptionText]}>All Ratings</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.sortOption, ratingFilter === 'excellent' && styles.activeSortOption]}
+            onPress={() => { setRatingFilter('excellent'); setShowRatingFilter(false); }}
+          >
+            <Text style={[styles.sortOptionText, ratingFilter === 'excellent' && styles.activeSortOptionText]}>Excellent (80-100)</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.sortOption, ratingFilter === 'good' && styles.activeSortOption]}
+            onPress={() => { setRatingFilter('good'); setShowRatingFilter(false); }}
+          >
+            <Text style={[styles.sortOptionText, ratingFilter === 'good' && styles.activeSortOptionText]}>Good (60-79)</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.sortOption, ratingFilter === 'fair' && styles.activeSortOption]}
+            onPress={() => { setRatingFilter('fair'); setShowRatingFilter(false); }}
+          >
+            <Text style={[styles.sortOptionText, ratingFilter === 'fair' && styles.activeSortOptionText]}>Fair (40-59)</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.sortOption, ratingFilter === 'poor' && styles.activeSortOption]}
+            onPress={() => { setRatingFilter('poor'); setShowRatingFilter(false); }}
+          >
+            <Text style={[styles.sortOptionText, ratingFilter === 'poor' && styles.activeSortOptionText]}>{"Poor (<40)"}</Text>
           </TouchableOpacity>
         </View>
       )}

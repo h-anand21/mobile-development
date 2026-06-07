@@ -1,90 +1,20 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { Feather, MaterialCommunityIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import Svg, { Circle, Line, Path, Defs, LinearGradient as SvgLinearGradient, Stop, Polygon, Text as SvgText, Rect } from 'react-native-svg';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useAnalyticsStore } from '../../src/store/analyticsStore';
+import { driveRepository } from '../../src/database/repositories/driveRepository';
+import dayjs from 'dayjs';
 
 const { width } = Dimensions.get('window');
 
-// Data structures for Weekly, Monthly, and Yearly views
-const WEEKLY_DATA = {
-  dateRange: 'Jun 1 – Jun 7, 2026',
-  avgScore: 87,
-  totalDrives: 7,
-  totalDistance: 186.4,
-  totalDuration: '5:42:16',
-  metrics: [
-    { label: 'Avg Safe Score', val: '87', sub: 'Excellent', diff: '↑ 8 pts vs last week', icon: 'shield-check-outline', color: '#22c55e' },
-    { label: 'Total Drives', val: '7', sub: 'Drives', diff: '↑ 2 vs last week', icon: 'steering', color: '#00f5ff' },
-    { label: 'Total Distance', val: '186.4', sub: 'km', diff: '↑ 24.6 km vs last week', icon: 'map-marker-outline', color: '#00f5ff' },
-    { label: 'Total Duration', val: '5:42:16', sub: 'hr', diff: '↑ 48 min vs last week', icon: 'clock-outline', color: '#00f5ff' },
-  ],
-  trend: {
-    points: [72, 76, 81, 85, 89, 91, 92],
-    labels: ['Jun 1', 'Jun 2', 'Jun 3', 'Jun 4', 'Jun 5', 'Jun 6', 'Jun 7'],
-  },
-  donut: {
-    total: 7,
-    segments: [
-      { label: 'Excellent (80-100)', count: 4, pct: 57, color: '#22c55e' },
-      { label: 'Good (60-79)', count: 2, pct: 29, color: '#00f5ff' },
-      { label: 'Fair (40-59)', count: 1, pct: 14, color: '#eab308' },
-      { label: 'Poor (<40)', count: 0, pct: 0, color: '#ef4444' },
-    ],
-  },
-  breakdown: {
-    braking: 88,
-    acceleration: 85,
-    steering: 83,
-    focus: 90,
-    consistency: 87,
-  },
-  insight: {
-    title: 'Great work, Himanshu! 🎉',
-    desc: 'You improved your score by 8 points compared to last week.',
-    topPerformance: 'Jun 7, 2026',
-    topScore: 92,
-  }
-};
-
-const MONTHLY_DATA = {
-  dateRange: 'June 2026',
-  avgScore: 84,
-  totalDistance: 742.8,
-  totalDrives: 28,
-  metrics: [
-    { label: 'Avg Safe Score', val: '84', sub: 'Good', diff: '↑ 6 pts vs May 2026', icon: 'shield-check-outline', color: '#22c55e', miniChart: [65, 70, 78, 82, 84] },
-    { label: 'Total Distance', val: '742.8', sub: 'km', diff: '↑ 128.4 km vs May 2026', icon: 'map-marker-outline', color: '#00f5ff', miniChart: [110, 140, 130, 160, 202] },
-    { label: 'Total Drives', val: '28', sub: 'Drives', diff: '↑ 5 vs May 2026', icon: 'steering', color: '#00f5ff', miniChart: [4, 5, 5, 7, 7] },
-  ],
-  trend: {
-    points: [78, 82, 85, 88, 90],
-    labels: ['Wk 1\nJun 1-7', 'Wk 2\nJun 8-14', 'Wk 3\nJun 15-21', 'Wk 4\nJun 22-28', 'Wk 5\nJun 29-Jul 5'],
-  }
-};
-
-const YEARLY_DATA = {
-  dateRange: 'Jan 1 – Dec 31, 2026',
-  avgScore: 86,
-  totalDrives: 312,
-  totalDistance: 8940.5,
-  totalDuration: '68:15:32',
-  metrics: [
-    { label: 'Avg Safe Score', val: '86', sub: 'Excellent', diff: '↑ 5 pts vs 2025', icon: 'shield-check-outline', color: '#22c55e' },
-    { label: 'Total Drives', val: '312', sub: 'Drives', diff: '↑ 42 vs 2025', icon: 'steering', color: '#00f5ff' },
-    { label: 'Total Distance', val: '8,940.5', sub: 'km', diff: '↑ 1,240 km vs 2025', icon: 'map-marker-outline', color: '#00f5ff' },
-    { label: 'Total Duration', val: '68:15', sub: 'hr', diff: '↑ 12 hr vs 2025', icon: 'clock-outline', color: '#00f5ff' },
-  ],
-  trend: {
-    points: [74, 76, 79, 81, 84, 86, 85, 87, 89, 90, 91, 92],
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-  }
-};
+// Dynamic data ranges will be generated inside the component using dayjs and drive store/repository.
 
 export default function DashboardScreen() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'week' | 'month' | 'year'>('week');
+  const [selectedDate, setSelectedDate] = useState(() => dayjs());
 
   const {
     totalDrives,
@@ -100,6 +30,271 @@ export default function DashboardScreen() {
       loadAnalytics();
     }, [])
   );
+
+  const drives = useMemo(() => driveRepository.getAllDrives(), [totalDrives]);
+  const today = selectedDate;
+
+  const isNextDisabled = useMemo(() => {
+    const now = dayjs();
+    if (activeTab === 'week') {
+      return selectedDate.isSame(now, 'day') || selectedDate.isAfter(now, 'day');
+    }
+    if (activeTab === 'month') {
+      return selectedDate.isSame(now, 'month') || selectedDate.isAfter(now, 'month');
+    }
+    if (activeTab === 'year') {
+      return selectedDate.isSame(now, 'year') || selectedDate.isAfter(now, 'year');
+    }
+    return false;
+  }, [selectedDate, activeTab]);
+
+  const handlePrevDate = useCallback(() => {
+    if (activeTab === 'week') {
+      setSelectedDate(prev => prev.subtract(7, 'day'));
+    } else if (activeTab === 'month') {
+      setSelectedDate(prev => prev.subtract(1, 'month'));
+    } else if (activeTab === 'year') {
+      setSelectedDate(prev => prev.subtract(1, 'year'));
+    }
+  }, [activeTab]);
+
+  const handleNextDate = useCallback(() => {
+    if (isNextDisabled) return;
+    if (activeTab === 'week') {
+      setSelectedDate(prev => prev.add(7, 'day'));
+    } else if (activeTab === 'month') {
+      setSelectedDate(prev => prev.add(1, 'month'));
+    } else if (activeTab === 'year') {
+      setSelectedDate(prev => prev.add(1, 'year'));
+    }
+  }, [activeTab, isNextDisabled]);
+
+  // Reset selectedDate when activeTab changes to avoid confusion
+  React.useEffect(() => {
+    setSelectedDate(dayjs());
+  }, [activeTab]);
+
+  // Dynamic Weekly Data
+  const WEEKLY_DATA = useMemo(() => {
+    const startOfWeek = today.subtract(6, 'day').startOf('day');
+    const endOfWeek = today.endOf('day');
+    const weeklyDrives = drives.filter(d => {
+      const driveTime = dayjs(d.startTime);
+      return (driveTime.isAfter(startOfWeek) || driveTime.isSame(startOfWeek)) &&
+             (driveTime.isBefore(endOfWeek) || driveTime.isSame(endOfWeek));
+    });
+    const totalWkDrives = weeklyDrives.length;
+
+    // Averages
+    const avgScore = totalWkDrives > 0
+      ? Math.round(weeklyDrives.reduce((sum, d) => sum + d.score, 0) / totalWkDrives)
+      : 0;
+    const totalDistanceKm = weeklyDrives.reduce((sum, d) => sum + (d.distance || 0), 0) / 1000;
+    const totalDurationSec = weeklyDrives.reduce((sum, d) => sum + (d.duration || 0), 0);
+    
+    // Formatting duration
+    const hrs = Math.floor(totalDurationSec / 3600);
+    const mins = Math.floor((totalDurationSec % 3600) / 60);
+    const secs = totalDurationSec % 60;
+    const durationString = [
+      hrs.toString().padStart(2, '0'),
+      mins.toString().padStart(2, '0'),
+      secs.toString().padStart(2, '0')
+    ].join(':');
+
+    // Violations & Breakdown
+    let brakes = 0;
+    let accels = 0;
+    let steering = 0;
+    let focus = 0;
+
+    weeklyDrives.forEach(d => {
+      if (d.events) {
+        d.events.forEach(e => {
+          if (e.type === 'HARSH_BRAKE') brakes++;
+          else if (e.type === 'HARSH_ACCELERATION') accels++;
+          else if (e.type === 'SHARP_TURN' || e.type === 'AGGRESSIVE_STEERING') steering++;
+          else if (e.type === 'PHONE_USAGE') focus++;
+        });
+      }
+    });
+
+    const brakingBreakdown = totalWkDrives > 0 ? Math.max(0, 100 - brakes * 10) : 0;
+    const accelerationBreakdown = totalWkDrives > 0 ? Math.max(0, 100 - accels * 10) : 0;
+    const steeringBreakdown = totalWkDrives > 0 ? Math.max(0, 100 - steering * 10) : 0;
+    const focusBreakdown = totalWkDrives > 0 ? Math.max(0, 100 - focus * 15) : 0;
+    const consistencyBreakdown = totalWkDrives > 0 
+      ? Math.round((brakingBreakdown + accelerationBreakdown + steeringBreakdown + focusBreakdown) / 4)
+      : 0;
+
+    // Trend points (past 7 days)
+    const trendLabels = Array.from({ length: 7 }).map((_, i) => today.subtract(6 - i, 'day').format('MMM DD'));
+    const trendPoints = Array.from({ length: 7 }).map((_, i) => {
+      const day = today.subtract(6 - i, 'day');
+      const dayDrives = weeklyDrives.filter(d => dayjs(d.startTime).isSame(day, 'day'));
+      return dayDrives.length > 0
+        ? Math.round(dayDrives.reduce((sum, d) => sum + d.score, 0) / dayDrives.length)
+        : 0; // Black / empty
+    });
+
+    // Donut Segments
+    const excelCount = weeklyDrives.filter(d => d.score >= 80).length;
+    const goodCount = weeklyDrives.filter(d => d.score >= 60 && d.score < 80).length;
+    const fairCount = weeklyDrives.filter(d => d.score >= 40 && d.score < 60).length;
+    const poorCount = weeklyDrives.filter(d => d.score < 40).length;
+
+    const donutSegments = [
+      { label: `Excellent (80-100)`, count: excelCount, pct: totalWkDrives > 0 ? Math.round((excelCount / totalWkDrives) * 100) : 0, color: '#22c55e' },
+      { label: `Good (60-79)`, count: goodCount, pct: totalWkDrives > 0 ? Math.round((goodCount / totalWkDrives) * 100) : 0, color: '#00f5ff' },
+      { label: `Fair (40-59)`, count: fairCount, pct: totalWkDrives > 0 ? Math.round((fairCount / totalWkDrives) * 100) : 0, color: '#eab308' },
+      { label: `Poor (<40)`, count: poorCount, pct: totalWkDrives > 0 ? Math.round((poorCount / totalWkDrives) * 100) : 0, color: '#ef4444' },
+    ];
+
+    // Insight
+    const topWkScore = weeklyDrives.length > 0 ? Math.max(...weeklyDrives.map(d => d.score)) : 0;
+    const topWkDrive = weeklyDrives.find(d => d.score === topWkScore);
+    const topWkDate = topWkDrive ? dayjs(topWkDrive.startTime).format('MMM DD, YYYY') : '--';
+
+    return {
+      dateRange: today.subtract(6, 'day').format('MMM DD') + ' – ' + today.format('MMM DD, YYYY'),
+      avgScore,
+      totalDrives: totalWkDrives,
+      totalDistance: totalDistanceKm.toFixed(1),
+      totalDuration: durationString,
+      metrics: [
+        { label: 'Avg Safe Score', val: totalWkDrives > 0 ? avgScore.toString() : '--', sub: totalWkDrives > 0 ? (avgScore >= 80 ? 'Excellent' : avgScore >= 60 ? 'Good' : 'Fair') : 'No Data', diff: totalWkDrives > 0 ? `${totalWkDrives} drives analyzed` : 'No drives recorded', icon: 'shield-check-outline', color: '#22c55e' },
+        { label: 'Total Drives', val: totalWkDrives.toString(), sub: 'Drives', diff: 'In the past 7 days', icon: 'steering', color: '#00f5ff' },
+        { label: 'Total Distance', val: totalDistanceKm.toFixed(1), sub: 'km', diff: 'Accumulated distance', icon: 'map-marker-outline', color: '#00f5ff' },
+        { label: 'Total Duration', val: hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`, sub: 'hr', diff: 'Time behind the wheel', icon: 'clock-outline', color: '#00f5ff' },
+      ],
+      trend: {
+        points: trendPoints,
+        labels: trendLabels,
+      },
+      donut: {
+        total: totalWkDrives,
+        segments: donutSegments,
+      },
+      breakdown: {
+        braking: brakingBreakdown,
+        acceleration: accelerationBreakdown,
+        steering: steeringBreakdown,
+        focus: focusBreakdown,
+        consistency: consistencyBreakdown,
+      },
+      insight: {
+        title: totalWkDrives > 0 ? 'Great work, Himanshu! 🎉' : 'No Drives Recorded 🚗',
+        desc: totalWkDrives > 0 ? 'Your driving profile is generated based on recent trips.' : 'Start driving with SafeDrive tracking to see weekly safety breakdown and insights.',
+        topPerformance: topWkDate,
+        topScore: topWkScore > 0 ? topWkScore : '--',
+      }
+    };
+  }, [drives, selectedDate]);
+
+  // Dynamic Monthly Data
+  const MONTHLY_DATA = useMemo(() => {
+    const monthlyDrives = drives.filter(d => dayjs(d.startTime).isSame(today, 'month'));
+    const totalMoDrives = monthlyDrives.length;
+
+    const avgScore = totalMoDrives > 0
+      ? Math.round(monthlyDrives.reduce((sum, d) => sum + d.score, 0) / totalMoDrives)
+      : 0;
+    const totalDistanceKm = monthlyDrives.reduce((sum, d) => sum + (d.distance || 0), 0) / 1000;
+    
+    // Split into 5 weeks
+    const trendPoints = [1, 2, 3, 4, 5].map(wkNum => {
+      const wkDrives = monthlyDrives.filter(d => {
+        const date = dayjs(d.startTime).date();
+        if (wkNum === 1) return date >= 1 && date <= 7;
+        if (wkNum === 2) return date >= 8 && date <= 14;
+        if (wkNum === 3) return date >= 15 && date <= 21;
+        if (wkNum === 4) return date >= 22 && date <= 28;
+        return date >= 29;
+      });
+      return wkDrives.length > 0
+        ? Math.round(wkDrives.reduce((sum, d) => sum + d.score, 0) / wkDrives.length)
+        : 0; // Black / empty
+    });
+
+    const monthName = today.format('MMM');
+    const daysInMonth = today.daysInMonth();
+    const trendLabels = [
+      `Wk 1\n${monthName} 1-7`,
+      `Wk 2\n${monthName} 8-14`,
+      `Wk 3\n${monthName} 15-21`,
+      `Wk 4\n${monthName} 22-28`,
+      `Wk 5\n${monthName} 29-${daysInMonth}`
+    ];
+
+    // Mini charts values
+    const prevMonthName = today.subtract(1, 'month').format('MMM YYYY');
+    const scoreHistory = [0, 0, 0, 0, avgScore];
+    const distHistory = [0, 0, 0, 0, Math.round(totalDistanceKm)];
+    const countHistory = [0, 0, 0, 0, totalMoDrives];
+
+    return {
+      dateRange: today.format('MMMM YYYY'),
+      avgScore,
+      totalDistance: totalDistanceKm.toFixed(1),
+      totalDrives: totalMoDrives,
+      metrics: [
+        { label: 'Avg Safe Score', val: totalMoDrives > 0 ? avgScore.toString() : '--', sub: totalMoDrives > 0 ? (avgScore >= 80 ? 'Excellent' : avgScore >= 60 ? 'Good' : 'Fair') : 'No Data', diff: `Monthly safety rating vs ${prevMonthName}`, icon: 'shield-check-outline', color: '#22c55e', miniChart: scoreHistory },
+        { label: 'Total Distance', val: totalDistanceKm.toFixed(1), sub: 'km', diff: `Distance logged vs ${prevMonthName}`, icon: 'map-marker-outline', color: '#00f5ff', miniChart: distHistory },
+        { label: 'Total Drives', val: totalMoDrives.toString(), sub: 'Drives', diff: `Drives recorded vs ${prevMonthName}`, icon: 'steering', color: '#00f5ff', miniChart: countHistory },
+      ],
+      trend: {
+        points: trendPoints,
+        labels: trendLabels,
+      }
+    };
+  }, [drives, selectedDate]);
+
+  // Dynamic Yearly Data
+  const YEARLY_DATA = useMemo(() => {
+    const yearlyDrives = drives.filter(d => dayjs(d.startTime).isSame(today, 'year'));
+    const totalYrDrives = yearlyDrives.length;
+
+    const avgScore = totalYrDrives > 0
+      ? Math.round(yearlyDrives.reduce((sum, d) => sum + d.score, 0) / totalYrDrives)
+      : 0;
+    const totalDistanceKm = yearlyDrives.reduce((sum, d) => sum + (d.distance || 0), 0) / 1000;
+    const totalDurationSec = yearlyDrives.reduce((sum, d) => sum + (d.duration || 0), 0);
+    const hrs = Math.floor(totalDurationSec / 3600);
+    const mins = Math.floor((totalDurationSec % 3600) / 60);
+
+    const trendPoints = Array.from({ length: 12 }).map((_, idx) => {
+      const mDrives = yearlyDrives.filter(d => dayjs(d.startTime).month() === idx);
+      return mDrives.length > 0
+        ? Math.round(mDrives.reduce((sum, d) => sum + d.score, 0) / mDrives.length)
+        : 0; // Black / empty
+    });
+
+    const prevYear = today.year() - 1;
+
+    return {
+      dateRange: 'Jan 1 – Dec 31, ' + today.format('YYYY'),
+      avgScore,
+      totalDrives: totalYrDrives,
+      totalDistance: totalDistanceKm.toFixed(1),
+      totalDuration: `${hrs}h ${mins}m`,
+      metrics: [
+        { label: 'Avg Safe Score', val: totalYrDrives > 0 ? avgScore.toString() : '--', sub: totalYrDrives > 0 ? (avgScore >= 80 ? 'Excellent' : avgScore >= 60 ? 'Good' : 'Fair') : 'No Data', diff: `Yearly rating vs ${prevYear}`, icon: 'shield-check-outline', color: '#22c55e' },
+        { label: 'Total Drives', val: totalYrDrives.toString(), sub: 'Drives', diff: `Drives vs ${prevYear}`, icon: 'steering', color: '#00f5ff' },
+        { label: 'Total Distance', val: totalDistanceKm.toFixed(1), sub: 'km', diff: `Distance vs ${prevYear}`, icon: 'map-marker-outline', color: '#00f5ff' },
+        { label: 'Total Duration', val: `${hrs}h ${mins}m`, sub: 'hr', diff: `Time behind wheel vs ${prevYear}`, icon: 'clock-outline', color: '#00f5ff' },
+      ],
+      trend: {
+        points: trendPoints,
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+      }
+    };
+  }, [drives, selectedDate]);
+
+  const currentDateRangeString = useMemo(() => {
+    if (activeTab === 'week') return WEEKLY_DATA.dateRange;
+    if (activeTab === 'month') return MONTHLY_DATA.dateRange;
+    return YEARLY_DATA.dateRange;
+  }, [activeTab, WEEKLY_DATA.dateRange, MONTHLY_DATA.dateRange, YEARLY_DATA.dateRange]);
 
   // Math for Line Chart coordinates
   const getLineChartPath = (points: number[], chartWidth: number, chartHeight: number, padding: number) => {
@@ -121,9 +316,9 @@ export default function DashboardScreen() {
   };
 
   // Math for Radar Pentagon corners
-  const cx = 80;
+  const cx = 110;
   const cy = 80;
-  const r = 52;
+  const r = 46;
   const getPentagonPoints = (scale: number) => {
     const angles = [-Math.PI / 2, -Math.PI / 2 + (2 * Math.PI) / 5, -Math.PI / 2 + (4 * Math.PI) / 5, -Math.PI / 2 + (6 * Math.PI) / 5, -Math.PI / 2 + (8 * Math.PI) / 5];
     return angles.map((angle) => {
@@ -147,34 +342,9 @@ export default function DashboardScreen() {
     <View style={styles.container}>
       {/* Top Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.headerMenuBtn}>
-          <Feather name="menu" size={24} color="#00f5ff" />
-        </TouchableOpacity>
-        
         <View style={styles.headerTitleContainer}>
           <Text style={styles.headerTitle}>Drive Dashboard</Text>
           <Text style={styles.headerSubtitle}>Your driving insights at a glance</Text>
-        </View>
-
-        <View style={styles.headerRightWrap}>
-          <TouchableOpacity style={styles.notificationBtn}>
-            <Feather name="bell" size={20} color="#F8FAFC" />
-            <View style={styles.notificationDot} />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.profileAvatar}>
-            <Svg width={36} height={36} viewBox="0 0 100 100">
-              <Defs>
-                <SvgLinearGradient id="profileGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <Stop offset="0%" stopColor="#00f5ff" />
-                  <Stop offset="100%" stopColor="#0ea5e9" />
-                </SvgLinearGradient>
-              </Defs>
-              <Circle cx="50" cy="50" r="46" stroke="url(#profileGrad)" strokeWidth="3" fill="#050B14" />
-              {/* Simple stylized neon user outline */}
-              <Circle cx="50" cy="38" r="15" fill="none" stroke="url(#profileGrad)" strokeWidth="4" />
-              <Path d="M22,78 C22,60 35,58 50,58 C65,58 78,60 78,78" fill="none" stroke="url(#profileGrad)" strokeWidth="4" strokeLinecap="round" />
-            </Svg>
-          </TouchableOpacity>
         </View>
       </View>
 
@@ -205,6 +375,24 @@ export default function DashboardScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* Premium Date Navigation Bar */}
+      <View style={styles.dateNavigationContainer}>
+        <TouchableOpacity onPress={handlePrevDate} style={styles.dateNavBtn}>
+          <Feather name="chevron-left" size={18} color="#00f5ff" />
+        </TouchableOpacity>
+        <View style={styles.dateLabelContainer}>
+          <Feather name="calendar" size={14} color="#64748b" style={{ marginRight: 6 }} />
+          <Text style={styles.dateRangeText}>{currentDateRangeString}</Text>
+        </View>
+        <TouchableOpacity 
+          onPress={handleNextDate} 
+          style={styles.dateNavBtn} 
+          disabled={isNextDisabled}
+        >
+          <Feather name="chevron-right" size={18} color={isNextDisabled ? "#1e293b" : "#00f5ff"} />
+        </TouchableOpacity>
+      </View>
+
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         
         {/* ==================== WEEK TAB ==================== */}
@@ -223,67 +411,21 @@ export default function DashboardScreen() {
             </View>
 
             {/* Metric Grid Cards */}
-            {(() => {
-              const estMin = Math.round((totalDistance * 0.072) / 60);
-              const estHours = Math.floor(estMin / 60);
-              const estMins = estMin % 60;
-              const durationString = estHours > 0 ? `${estHours}h ${estMins}m` : `${estMins}m`;
-
-              const displayMetrics = [
-                {
-                  label: 'Avg Safe Score',
-                  val: totalDrives > 0 ? averageScore.toString() : WEEKLY_DATA.metrics[0].val,
-                  sub: totalDrives > 0
-                    ? (averageScore >= 90 ? 'Excellent' : averageScore >= 80 ? 'Good' : averageScore >= 65 ? 'Fair' : 'Poor')
-                    : WEEKLY_DATA.metrics[0].sub,
-                  diff: totalDrives > 0 ? `${totalDrives} active drives analyzed` : WEEKLY_DATA.metrics[0].diff,
-                  icon: 'shield-check-outline',
-                  color: '#22c55e'
-                },
-                {
-                  label: 'Total Drives',
-                  val: totalDrives > 0 ? totalDrives.toString() : WEEKLY_DATA.metrics[1].val,
-                  sub: 'Drives',
-                  diff: totalDrives > 0 ? 'All-time drives recorded' : WEEKLY_DATA.metrics[1].diff,
-                  icon: 'steering',
-                  color: '#00f5ff'
-                },
-                {
-                  label: 'Total Distance',
-                  val: totalDrives > 0 ? (totalDistance / 1000).toFixed(1) : WEEKLY_DATA.metrics[2].val,
-                  sub: 'km',
-                  diff: totalDrives > 0 ? 'Accumulated distance' : WEEKLY_DATA.metrics[2].diff,
-                  icon: 'map-marker-outline',
-                  color: '#00f5ff'
-                },
-                {
-                  label: 'Total Duration',
-                  val: totalDrives > 0 ? durationString : WEEKLY_DATA.metrics[3].val,
-                  sub: 'hr',
-                  diff: totalDrives > 0 ? 'Estimated drive time' : WEEKLY_DATA.metrics[3].diff,
-                  icon: 'clock-outline',
-                  color: '#00f5ff'
-                }
-              ];
-
-              return (
-                <View style={styles.metricsGridContainer}>
-                  {displayMetrics.map((metric, idx) => (
-                    <View key={idx} style={styles.metricCard}>
-                      <View style={styles.metricCardHeader}>
-                        <MaterialCommunityIcons name={metric.icon as any} size={18} color={metric.color} />
-                        <Text style={styles.metricCardLabel} numberOfLines={1}>{metric.label}</Text>
-                      </View>
-                      <Text style={styles.metricCardValue}>{metric.val}</Text>
-                      <Text style={[styles.metricCardSub, metric.label === 'Avg Safe Score' && { color: '#22c55e', fontWeight: 'bold' }]}>
-                        {metric.sub}
-                      </Text>
-                      <Text style={styles.metricCardDiff}>{metric.diff}</Text>
-                    </View>
-                  ))}
+            <View style={styles.metricsGridContainer}>
+              {WEEKLY_DATA.metrics.map((metric, idx) => (
+                <View key={idx} style={styles.metricCard}>
+                  <View style={styles.metricCardHeader}>
+                    <MaterialCommunityIcons name={metric.icon as any} size={18} color={metric.color} />
+                    <Text style={styles.metricCardLabel} numberOfLines={1}>{metric.label}</Text>
+                  </View>
+                  <Text style={styles.metricCardValue}>{metric.val}</Text>
+                  <Text style={[styles.metricCardSub, metric.label === 'Avg Safe Score' && { color: '#22c55e', fontWeight: 'bold' }]}>
+                    {metric.sub}
+                  </Text>
+                  <Text style={styles.metricCardDiff}>{metric.diff}</Text>
                 </View>
-              );
-            })()}
+              ))}
+            </View>
 
             {/* ALL-TIME SAFETY RECORD SECTION */}
             <View style={styles.sectionHeaderRow}>
@@ -300,7 +442,7 @@ export default function DashboardScreen() {
                   <FontAwesome5 name="trophy" size={14} color="#eab308" />
                   <Text style={[styles.metricCardLabel, { color: '#eab308', fontWeight: 'bold' }]} numberOfLines={1}>Best Safe Score</Text>
                 </View>
-                <Text style={[styles.metricCardValue, { color: '#ffffff' }]}>{totalDrives > 0 ? bestScore : 98}</Text>
+                <Text style={[styles.metricCardValue, { color: '#ffffff' }]}>{totalDrives > 0 ? bestScore : '--'}</Text>
                 <Text style={[styles.metricCardSub, { color: '#eab308' }]}>Highest safety rating</Text>
                 <Text style={[styles.metricCardDiff, { color: '#a3e635' }]}>All-time record 🏆</Text>
               </View>
@@ -311,7 +453,7 @@ export default function DashboardScreen() {
                   <Feather name="alert-triangle" size={16} color="#ef4444" />
                   <Text style={[styles.metricCardLabel, { color: '#ef4444', fontWeight: 'bold' }]} numberOfLines={1}>Total Violations</Text>
                 </View>
-                <Text style={[styles.metricCardValue, { color: '#ffffff' }]}>{totalDrives > 0 ? totalEvents : 12}</Text>
+                <Text style={[styles.metricCardValue, { color: '#ffffff' }]}>{totalDrives > 0 ? totalEvents : 0}</Text>
                 <Text style={[styles.metricCardSub, { color: '#ef4444' }]}>Safety events logged</Text>
                 <Text style={[styles.metricCardDiff, { color: '#ef4444' }]}>Safe driving alerts</Text>
               </View>
@@ -396,15 +538,16 @@ export default function DashboardScreen() {
                   })}
 
                   {/* Final highlighted value bubble */}
-                  {(() => {
+                  {WEEKLY_DATA.totalDrives > 0 && (() => {
+                    const lastVal = WEEKLY_DATA.trend.points[WEEKLY_DATA.trend.points.length - 1];
                     const usableWidth = (width - 56) - 80;
                     const x = 40 + 6 * usableWidth;
-                    const y = 150 - 20 - (92 / 100) * 110;
+                    const y = 150 - 20 - (lastVal / 100) * 110;
                     return (
                       <React.Fragment>
                         <Rect x={x - 12} y={y - 25} width="24" height="15" rx="4" fill="#a3e635" />
                         <SvgText x={x} y={y - 14} fill="#050B14" fontSize="9" fontWeight="bold" textAnchor="middle">
-                          92
+                          {lastVal}
                         </SvgText>
                         <Circle cx={x} cy={y} r="6" fill="#a3e635" stroke="#050B14" strokeWidth="2" />
                       </React.Fragment>
@@ -477,29 +620,36 @@ export default function DashboardScreen() {
                 <Text style={styles.panelTitleSmall}>DRIVING BREAKDOWN</Text>
 
                 <View style={styles.radarWrapper}>
-                  <Svg width={160} height={160} viewBox="0 0 160 160">
+                  <Svg width="100%" height={140} viewBox="0 0 220 160">
                     {/* Concentric grid pentagons */}
-                    <Polygon points={getPentagonPoints(0.25)} stroke="rgba(255,255,255,0.04)" strokeWidth="1" fill="none" />
-                    <Polygon points={getPentagonPoints(0.50)} stroke="rgba(255,255,255,0.04)" strokeWidth="1" fill="none" />
-                    <Polygon points={getPentagonPoints(0.75)} stroke="rgba(255,255,255,0.04)" strokeWidth="1" fill="none" />
-                    <Polygon points={getPentagonPoints(1.00)} stroke="rgba(255,255,255,0.08)" strokeWidth="1" fill="none" />
+                    <Polygon points={getPentagonPoints(0.25)} stroke="rgba(0, 245, 255, 0.06)" strokeWidth="1" fill="none" />
+                    <Polygon points={getPentagonPoints(0.50)} stroke="rgba(0, 245, 255, 0.06)" strokeWidth="1" fill="none" />
+                    <Polygon points={getPentagonPoints(0.75)} stroke="rgba(0, 245, 255, 0.06)" strokeWidth="1" fill="none" />
+                    <Polygon points={getPentagonPoints(1.00)} stroke="rgba(0, 245, 255, 0.12)" strokeWidth="1" fill="none" />
 
                     {/* Polygon spoke axes */}
                     {[-Math.PI / 2, -Math.PI / 2 + (2 * Math.PI) / 5, -Math.PI / 2 + (4 * Math.PI) / 5, -Math.PI / 2 + (6 * Math.PI) / 5, -Math.PI / 2 + (8 * Math.PI) / 5].map((angle, idx) => {
                       const x = cx + r * Math.cos(angle);
                       const y = cy + r * Math.sin(angle);
-                      return <Line key={idx} x1={cx} y1={cy} x2={x} y2={y} stroke="rgba(255,255,255,0.04)" strokeWidth="1" />;
+                      return <Line key={idx} x1={cx} y1={cy} x2={x} y2={y} stroke="rgba(0, 245, 255, 0.08)" strokeWidth="1" />;
                     })}
 
-                    {/* Active Radar Polygon fill */}
+                    {/* Active Radar Polygon fill (Double stroke layer for premium neon glow) */}
                     <Polygon 
                       points={getRadarPoints(WEEKLY_DATA.breakdown)} 
                       stroke="#22c55e" 
-                      strokeWidth="2" 
-                      fill="rgba(34, 197, 94, 0.2)" 
+                      strokeWidth="4" 
+                      strokeOpacity="0.3"
+                      fill="none" 
+                    />
+                    <Polygon 
+                      points={getRadarPoints(WEEKLY_DATA.breakdown)} 
+                      stroke="#22c55e" 
+                      strokeWidth="1.8" 
+                      fill="rgba(34, 197, 94, 0.15)" 
                     />
 
-                    {/* Data corner dots */}
+                    {/* Data corner dots (Glowing green halo with white inner core) */}
                     {[-Math.PI / 2, -Math.PI / 2 + (2 * Math.PI) / 5, -Math.PI / 2 + (4 * Math.PI) / 5, -Math.PI / 2 + (6 * Math.PI) / 5, -Math.PI / 2 + (8 * Math.PI) / 5].map((angle, idx) => {
                       const scales = [
                         WEEKLY_DATA.breakdown.braking / 100,
@@ -510,29 +660,34 @@ export default function DashboardScreen() {
                       ];
                       const x = cx + r * scales[idx] * Math.cos(angle);
                       const y = cy + r * scales[idx] * Math.sin(angle);
-                      return <Circle key={idx} cx={x} cy={y} r="3.5" fill="#22c55e" />;
+                      return (
+                        <React.Fragment key={idx}>
+                          <Circle cx={x} cy={y} r="5" fill="#22c55e" opacity="0.35" />
+                          <Circle cx={x} cy={y} r="2.2" fill="#ffffff" />
+                        </React.Fragment>
+                      );
                     })}
 
                     {/* Corner Labels inside Svg */}
                     {/* Top: Braking */}
-                    <SvgText x={cx} y="11" fill="#94a3b8" fontSize="8" fontWeight="bold" textAnchor="middle">Braking</SvgText>
-                    <SvgText x={cx} y="20" fill="#00f5ff" fontSize="8" textAnchor="middle">88%</SvgText>
+                    <SvgText x={cx} y="13" fill="#94a3b8" fontSize="9" fontWeight="bold" textAnchor="middle">Braking</SvgText>
+                    <SvgText x={cx} y="23" fill="#00f5ff" fontSize="9" textAnchor="middle">{WEEKLY_DATA.breakdown.braking}%</SvgText>
 
                     {/* Right-Top: Acceleration */}
-                    <SvgText x={cx + r + 5} y={cy - 12} fill="#94a3b8" fontSize="8" fontWeight="bold" textAnchor="start">Acceleration</SvgText>
-                    <SvgText x={cx + r + 5} y={cy - 3} fill="#00f5ff" fontSize="8" textAnchor="start">85%</SvgText>
+                    <SvgText x={cx + r + 5} y={cy - 12} fill="#94a3b8" fontSize="9" fontWeight="bold" textAnchor="start">Acceleration</SvgText>
+                    <SvgText x={cx + r + 5} y={cy - 2} fill="#00f5ff" fontSize="9" textAnchor="start">{WEEKLY_DATA.breakdown.acceleration}%</SvgText>
 
                     {/* Right-Bottom: Steering */}
-                    <SvgText x={cx + r - 8} y={cy + r + 10} fill="#94a3b8" fontSize="8" fontWeight="bold" textAnchor="start">Steering</SvgText>
-                    <SvgText x={cx + r - 8} y={cy + r + 19} fill="#00f5ff" fontSize="8" textAnchor="start">83%</SvgText>
+                    <SvgText x={cx + r - 8} y={cy + r + 6} fill="#94a3b8" fontSize="9" fontWeight="bold" textAnchor="start">Steering</SvgText>
+                    <SvgText x={cx + r - 8} y={cy + r + 16} fill="#00f5ff" fontSize="9" textAnchor="start">{WEEKLY_DATA.breakdown.steering}%</SvgText>
 
                     {/* Left-Bottom: Focus */}
-                    <SvgText x={cx - r + 8} y={cy + r + 10} fill="#94a3b8" fontSize="8" fontWeight="bold" textAnchor="end">Focus</SvgText>
-                    <SvgText x={cx - r + 8} y={cy + r + 19} fill="#00f5ff" fontSize="8" textAnchor="end">90%</SvgText>
+                    <SvgText x={cx - r + 8} y={cy + r + 6} fill="#94a3b8" fontSize="9" fontWeight="bold" textAnchor="end">Focus</SvgText>
+                    <SvgText x={cx - r + 8} y={cy + r + 16} fill="#00f5ff" fontSize="9" textAnchor="end">{WEEKLY_DATA.breakdown.focus}%</SvgText>
 
                     {/* Left-Top: Consistency */}
-                    <SvgText x={cx - r - 5} y={cy - 12} fill="#94a3b8" fontSize="8" fontWeight="bold" textAnchor="end">Consistency</SvgText>
-                    <SvgText x={cx - r - 5} y={cy - 3} fill="#00f5ff" fontSize="8" textAnchor="end">87%</SvgText>
+                    <SvgText x={cx - r - 5} y={cy - 12} fill="#94a3b8" fontSize="9" fontWeight="bold" textAnchor="end">Consistency</SvgText>
+                    <SvgText x={cx - r - 5} y={cy - 2} fill="#00f5ff" fontSize="9" textAnchor="end">{WEEKLY_DATA.breakdown.consistency}%</SvgText>
                   </Svg>
                 </View>
               </View>
@@ -704,15 +859,16 @@ export default function DashboardScreen() {
                   })}
 
                   {/* End highlight bubble for Wk 5 */}
-                  {(() => {
+                  {MONTHLY_DATA.totalDrives > 0 && (() => {
+                    const lastVal = MONTHLY_DATA.trend.points[MONTHLY_DATA.trend.points.length - 1];
                     const usableWidth = (width - 56) - 80;
                     const x = 40 + 4 * usableWidth;
-                    const y = 160 - 25 - (90 / 100) * 110;
+                    const y = 160 - 25 - (lastVal / 100) * 110;
                     return (
                       <React.Fragment>
                         <Rect x={x - 12} y={y - 25} width="24" height="15" rx="4" fill="#a3e635" />
                         <SvgText x={x} y={y - 14} fill="#050B14" fontSize="9" fontWeight="bold" textAnchor="middle">
-                          90
+                          {lastVal}
                         </SvgText>
                         <Circle cx={x} cy={y} r="6" fill="#a3e635" stroke="#050B14" strokeWidth="2" />
                       </React.Fragment>
@@ -833,15 +989,16 @@ export default function DashboardScreen() {
                   })}
 
                   {/* Highlight bubble for Dec */}
-                  {(() => {
+                  {YEARLY_DATA.totalDrives > 0 && (() => {
+                    const lastVal = YEARLY_DATA.trend.points[YEARLY_DATA.trend.points.length - 1];
                     const usableWidth = (width - 56) - 80;
                     const x = 40 + 11 * usableWidth;
-                    const y = 150 - 20 - (92 / 100) * 110;
+                    const y = 150 - 20 - (lastVal / 100) * 110;
                     return (
                       <React.Fragment>
                         <Rect x={x - 12} y={y - 25} width="24" height="15" rx="4" fill="#a3e635" />
                         <SvgText x={x} y={y - 14} fill="#050B14" fontSize="9" fontWeight="bold" textAnchor="middle">
-                          92
+                          {lastVal}
                         </SvgText>
                         <Circle cx={x} cy={y} r="6" fill="#a3e635" stroke="#050B14" strokeWidth="2" />
                       </React.Fragment>
@@ -870,7 +1027,7 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: 50,
@@ -1167,8 +1324,8 @@ const styles = StyleSheet.create({
   radarWrapper: {
     alignItems: 'center',
     justifyContent: 'center',
-    height: 120,
-    marginTop: -8,
+    height: 140,
+    marginTop: 0,
   },
 
   // Insights Panel Card
@@ -1279,5 +1436,37 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     width: 80,
+  },
+  dateNavigationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(8, 15, 26, 0.4)',
+    borderWidth: 1,
+    borderColor: '#122540',
+    borderRadius: 14,
+    marginHorizontal: 20,
+    marginBottom: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  dateNavBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#0c1626',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#122540',
+  },
+  dateLabelContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  dateRangeText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
 });

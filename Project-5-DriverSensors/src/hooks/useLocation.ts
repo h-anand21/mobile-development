@@ -37,6 +37,26 @@ export const useLocation = () => {
         return;
       }
 
+      // Get initial position immediately to populate the start point
+      try {
+        const initialLocation = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+        if (initialLocation) {
+          const coords = initialLocation.coords;
+          const speedMs = coords.speed !== null && coords.speed >= 0 ? coords.speed : 0;
+          addLocationPoint({
+            latitude: coords.latitude,
+            longitude: coords.longitude,
+            timestamp: Date.now(),
+            speed: speedMs,
+          });
+          previousLocation.current = coords;
+        }
+      } catch (err) {
+        console.warn("Could not get initial position immediately: ", err);
+      }
+
       sub = await Location.watchPositionAsync(
         {
           accuracy: Location.Accuracy.High,

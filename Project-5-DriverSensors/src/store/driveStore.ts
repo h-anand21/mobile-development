@@ -59,7 +59,7 @@ export const useDriveStore = create<DriveState>((set) => ({
       driveRepository.saveDrive(completedSession);
 
       return {
-        currentSession: completedSession,
+        currentSession: null,
       };
     });
   },

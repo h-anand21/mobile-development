@@ -35,6 +35,14 @@ export default function DriveDetailsScreen() {
   const driveDateStr = displaySession ? dayjs(displaySession.startTime).format('MMMM DD, YYYY') : 'May 20, 2025';
   const driveTimeStr = displaySession ? dayjs(displaySession.startTime).format('hh:mm A') : '08:15 PM';
 
+  const startLocLabel = displaySession && displaySession.route && displaySession.route.length > 0 && displaySession.route[0].latitude
+    ? `Start: Lat ${displaySession.route[0].latitude.toFixed(4)}, Lon ${displaySession.route[0].longitude.toFixed(4)}`
+    : 'Connaught Place, Delhi';
+
+  const endLocLabel = displaySession && displaySession.route && displaySession.route.length > 0 && displaySession.route[displaySession.route.length - 1].latitude
+    ? `End: Lat ${displaySession.route[displaySession.route.length - 1].latitude.toFixed(4)}, Lon ${displaySession.route[displaySession.route.length - 1].longitude.toFixed(4)}`
+    : 'MG Road, Delhi';
+
   const events = displaySession?.events || [];
   const harshBrakeCount = events.length > 0 ? events.filter(e => e.type === 'HARSH_BRAKE').length : 2;
   const sharpTurnCount = events.length > 0 ? events.filter(e => e.type === 'SHARP_TURN').length : 2;
@@ -177,11 +185,11 @@ export default function DriveDetailsScreen() {
         {/* 3. Location & Weather Card */}
         <View style={styles.locationWeatherCard}>
           <View style={styles.routeHeader}>
-            <View style={[styles.locIndicatorDot, { backgroundColor: '#22c55e' }]} />
-            <Text style={styles.routeText} numberOfLines={1}>Connaught Place, Delhi</Text>
+            <View style={[styles.locIndicatorDot, { backgroundColor: '#00f5ff' }]} />
+            <Text style={styles.routeText} numberOfLines={1}>{startLocLabel}</Text>
             <Feather name="arrow-right" size={12} color="#64748b" style={{ marginHorizontal: 8 }} />
-            <View style={[styles.locIndicatorDot, { backgroundColor: '#ef4444' }]} />
-            <Text style={styles.routeText} numberOfLines={1}>MG Road, Delhi</Text>
+            <View style={[styles.locIndicatorDot, { backgroundColor: '#22c55e' }]} />
+            <Text style={styles.routeText} numberOfLines={1}>{endLocLabel}</Text>
           </View>
           
           <View style={styles.weatherCol}>
