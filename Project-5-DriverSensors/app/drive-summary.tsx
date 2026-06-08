@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { Feather, MaterialCommunityIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
-import Svg, { Circle, Line, Path, Defs, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
+import Svg, { Circle, Line, Path, Defs, LinearGradient as SvgLinearGradient, Stop, Text as SvgText } from 'react-native-svg';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useDriveStore, DriveSession } from '../src/store/driveStore';
 import { driveRepository } from '../src/database/repositories/driveRepository';
@@ -284,9 +284,9 @@ export default function DriveSummaryScreen() {
                 <Line x1="0" y1="80" x2={width * 0.44} y2="80" stroke="rgba(255, 255, 255, 0.05)" strokeWidth="0.8" />
                 
                 {/* Chart Axes */}
-                <Text style={styles.yTick} x="5" y="23">120</Text>
-                <Text style={styles.yTick} x="5" y="53">80</Text>
-                <Text style={styles.yTick} x="5" y="83">0</Text>
+                <SvgText style={styles.yTick} x="5" y="23">120</SvgText>
+                <SvgText style={styles.yTick} x="5" y="53">80</SvgText>
+                <SvgText style={styles.yTick} x="5" y="83">0</SvgText>
                 
                 {/* Draw speed curve path */}
                 <Path 
@@ -873,6 +873,23 @@ export default function DriveSummaryScreen() {
       backgroundColor: colors.accent,
       alignItems: 'center',
       justifyContent: 'center',
+    },
+    chartsPanelRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: 20,
+    },
+    chartPanel: {
+      width: '48.5%',
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 20,
+      padding: 12,
+      alignItems: 'center',
+    },
+    bottomSpacer: {
+      height: 40,
     },
   });
 }
