@@ -4,6 +4,7 @@ import { Feather, MaterialCommunityIcons, Ionicons, FontAwesome5 } from '@expo/v
 import Svg, { Circle, Path, Line, Rect, Text as SvgText, Defs, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
 import { useRouter } from 'expo-router';
 import { driveRepository } from '../src/database/repositories/driveRepository';
+import { useAppTheme } from '../src/ui/theme';
 import dayjs from 'dayjs';
 
 const { width } = Dimensions.get('window');
@@ -186,6 +187,8 @@ const MONTHLY_REPORTS = [
 
 export default function ReportsScreen() {
   const router = useRouter();
+  const { colors, isDark } = useAppTheme();
+  const styles = getStyles(colors);
   const [reportType, setReportType] = useState<'weekly' | 'monthly'>('weekly');
   const [reportIndex, setReportIndex] = useState(0);
   const [isExporting, setIsExporting] = useState(false);
@@ -377,44 +380,44 @@ Telemetry data processed locally. SafeDrive v1.0.0.
             onPress={() => { setReportType('weekly'); setReportIndex(0); }}
           >
             <View style={styles.tabContentRow}>
-              <MaterialCommunityIcons name="calendar-week" size={16} color={reportType === 'weekly' ? '#00f5ff' : '#94a3b8'} style={{ marginRight: 8 }} />
+              <MaterialCommunityIcons name="calendar-week" size={16} color={reportType === 'weekly' ? colors.accent : colors.textMuted} style={{ marginRight: 8 }} />
               <Text style={[styles.tabBtnText, reportType === 'weekly' && styles.activeTabBtnText]}>Weekly Report</Text>
             </View>
             {reportType === 'weekly' && <View style={styles.tabIndicator} />}
           </TouchableOpacity>
-
+ 
           <TouchableOpacity
             style={[styles.tabBtn, reportType === 'monthly' && styles.activeTabBtn]}
             onPress={() => { setReportType('monthly'); setReportIndex(0); }}
           >
             <View style={styles.tabContentRow}>
-              <MaterialCommunityIcons name="calendar-month" size={16} color={reportType === 'monthly' ? '#00f5ff' : '#94a3b8'} style={{ marginRight: 8 }} />
+              <MaterialCommunityIcons name="calendar-month" size={16} color={reportType === 'monthly' ? colors.accent : colors.textMuted} style={{ marginRight: 8 }} />
               <Text style={[styles.tabBtnText, reportType === 'monthly' && styles.activeTabBtnText]}>Monthly Report</Text>
             </View>
             {reportType === 'monthly' && <View style={styles.tabIndicator} />}
           </TouchableOpacity>
         </View>
-
+ 
         {/* 3. Date Range Navigation */}
         <View style={styles.dateNavRow}>
           <TouchableOpacity
             style={[styles.dateNavArrow, reportIndex === (reportType === 'weekly' ? WEEKLY_REPORTS.length - 1 : MONTHLY_REPORTS.length - 1) && styles.disabledDateNav]}
             onPress={handlePrevReport}
           >
-            <Feather name="chevron-left" size={18} color="#94a3b8" />
+            <Feather name="chevron-left" size={18} color={colors.textMuted} />
           </TouchableOpacity>
-
+ 
           <View style={styles.dateSelectorBox}>
-            <Feather name="calendar" size={14} color="#64748b" style={{ marginRight: 8 }} />
+            <Feather name="calendar" size={14} color={colors.textSlate} style={{ marginRight: 8 }} />
             <Text style={styles.dateSelectorText}>{reportData.dateRange}</Text>
-            <Feather name="chevron-down" size={12} color="#64748b" style={{ marginLeft: 6 }} />
+            <Feather name="chevron-down" size={12} color={colors.textSlate} style={{ marginLeft: 6 }} />
           </View>
-
+ 
           <TouchableOpacity
             style={[styles.dateNavArrow, reportIndex === 0 && styles.disabledDateNav]}
             onPress={handleNextReport}
           >
-            <Feather name="chevron-right" size={18} color="#94a3b8" />
+            <Feather name="chevron-right" size={18} color={colors.textMuted} />
           </TouchableOpacity>
         </View>
 
@@ -454,12 +457,12 @@ Telemetry data processed locally. SafeDrive v1.0.0.
                     <Text style={[styles.diffText, { color: '#22c55e' }]}> {reportData.totalDrivesDiff}</Text>
                   </View>
                 </View>
-                <View style={[styles.cardIconWrap, { borderColor: '#00f5ff', backgroundColor: 'rgba(0, 245, 255, 0.05)' }]}>
-                  <MaterialCommunityIcons name="steering" size={16} color="#00f5ff" />
+                <View style={[styles.cardIconWrap, { borderColor: colors.accent, backgroundColor: colors.isDark ? 'rgba(0, 245, 255, 0.05)' : 'rgba(8, 145, 178, 0.05)' }]}>
+                  <MaterialCommunityIcons name="steering" size={16} color={colors.accent} />
                 </View>
               </View>
               <Svg width={116} height={20} style={styles.miniWave}>
-                <Path d="M 0,12 L 15,6 L 30,14 L 45,8 L 60,12 L 75,5 L 90,10 L 105,4 L 116,9" stroke="#00f5ff" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+                <Path d="M 0,12 L 15,6 L 30,14 L 45,8 L 60,12 L 75,5 L 90,10 L 105,4 L 116,9" stroke={colors.accent} strokeWidth="1.5" fill="none" strokeLinecap="round" />
               </Svg>
             </View>
 
@@ -527,15 +530,15 @@ Telemetry data processed locally. SafeDrive v1.0.0.
             <Text style={styles.panelTitle}>Score Trend</Text>
             <TouchableOpacity style={styles.chartFilterDropdown}>
               <Text style={styles.chartFilterText}>Daily Average</Text>
-              <Feather name="chevron-down" size={10} color="#64748b" style={{ marginLeft: 4 }} />
+              <Feather name="chevron-down" size={10} color={colors.textSlate} style={{ marginLeft: 4 }} />
             </TouchableOpacity>
           </View>
-
+ 
           <View style={styles.chartWrapper}>
             <Svg width={chartWidth} height={chartHeight}>
               <Defs>
                 <SvgLinearGradient id="chartLineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <Stop offset="0%" stopColor="#00f5ff" />
+                  <Stop offset="0%" stopColor={colors.accent} />
                   <Stop offset="50%" stopColor="#a3e635" />
                   <Stop offset="100%" stopColor="#22c55e" />
                 </SvgLinearGradient>
@@ -544,28 +547,28 @@ Telemetry data processed locally. SafeDrive v1.0.0.
                   <Stop offset="100%" stopColor="#22c55e" stopOpacity="0.0" />
                 </SvgLinearGradient>
               </Defs>
-
+ 
               {/* Grid Lines */}
               {[0, 25, 50, 75, 100].map((level, i) => {
                 const y = chartHeight - chartPadding - (level / 100) * (chartHeight - chartPadding * 2);
                 return (
                   <React.Fragment key={level}>
-                    <Line x1={chartPadding} y1={y} x2={chartWidth - chartPadding} y2={y} stroke="rgba(255,255,255,0.03)" strokeWidth="1" />
-                    <SvgText x={chartPadding - 6} y={y + 3} fill="#475569" fontSize="8" fontWeight="bold" textAnchor="end">{level}</SvgText>
+                    <Line x1={chartPadding} y1={y} x2={chartWidth - chartPadding} y2={y} stroke={colors.isDark ? "rgba(255,255,255,0.03)" : "rgba(15, 23, 42, 0.06)"} strokeWidth="1" />
+                    <SvgText x={chartPadding - 6} y={y + 3} fill={colors.textSlate} fontSize="8" fontWeight="bold" textAnchor="end">{level}</SvgText>
                   </React.Fragment>
                 );
               })}
-
+ 
               {/* Area Under Curve */}
               {chartPaths.fillPath.length > 0 && (
                 <Path d={chartPaths.fillPath} fill="url(#chartAreaGrad)" />
               )}
-
+ 
               {/* Line Curve */}
               {chartPaths.linePath.length > 0 && (
                 <Path d={chartPaths.linePath} stroke="url(#chartLineGrad)" strokeWidth="2.5" fill="none" strokeLinecap="round" />
               )}
-
+ 
               {/* Data Dots & Value Labels */}
               {chartPaths.coords.map((c, i) => {
                 const isLast = i === chartPaths.coords.length - 1;
@@ -575,23 +578,23 @@ Telemetry data processed locally. SafeDrive v1.0.0.
                     {isLast && (
                       <Circle cx={c.x} cy={c.y} r="6" fill="rgba(34, 197, 94, 0.4)" />
                     )}
-                    <Circle cx={c.x} cy={c.y} r="3.5" fill={isLast ? '#22c55e' : '#00f5ff'} stroke="#0c1626" strokeWidth="1.5" />
+                    <Circle cx={c.x} cy={c.y} r="3.5" fill={isLast ? '#22c55e' : colors.accent} stroke={colors.card} strokeWidth="1.5" />
                     
                     {/* Score value above dot */}
                     {!isLast && (
-                      <SvgText x={c.x} y={c.y - 8} fill="#ffffff" fontSize="9" fontWeight="bold" textAnchor="middle">{c.val}</SvgText>
+                      <SvgText x={c.x} y={c.y - 8} fill={colors.text} fontSize="9" fontWeight="bold" textAnchor="middle">{c.val}</SvgText>
                     )}
                   </React.Fragment>
                 );
               })}
-
+ 
               {/* Highlighted last value bubble */}
               {chartPaths.coords.length > 0 && (() => {
                 const last = chartPaths.coords[chartPaths.coords.length - 1];
                 return (
                   <React.Fragment>
                     <Rect x={last.x - 12} y={last.y - 25} width={24} height={16} rx={4} fill="#22c55e" />
-                    <SvgText x={last.x} y={last.y - 14} fill="#050B14" fontSize="9" fontWeight="900" textAnchor="middle">{last.val}</SvgText>
+                    <SvgText x={last.x} y={last.y - 14} fill={colors.powerBg} fontSize="9" fontWeight="900" textAnchor="middle">{last.val}</SvgText>
                   </React.Fragment>
                 );
               })()}
@@ -678,7 +681,7 @@ Telemetry data processed locally. SafeDrive v1.0.0.
               <View style={styles.donutChartContainer}>
                 <Svg width={100} height={100} viewBox="0 0 100 100">
                   {/* Background base */}
-                  <Circle cx={cx} cy={cy} r={radius} stroke="#122540" strokeWidth="10" fill="none" />
+                  <Circle cx={cx} cy={cy} r={radius} stroke={colors.border} strokeWidth="10" fill="none" />
                   
                   {/* Highway (42%) */}
                   <Circle
@@ -698,7 +701,7 @@ Telemetry data processed locally. SafeDrive v1.0.0.
                     cx={cx}
                     cy={cy}
                     r={radius}
-                    stroke="#00f5ff"
+                    stroke={colors.accent}
                     strokeWidth="10"
                     fill="none"
                     strokeDasharray={circumference}
@@ -738,7 +741,7 @@ Telemetry data processed locally. SafeDrive v1.0.0.
                   <Text style={styles.donutCenterLabel}>Drives</Text>
                 </View>
               </View>
-
+ 
               {/* Legend */}
               <View style={styles.donutLegend}>
                 <View style={styles.legendRow}>
@@ -748,7 +751,7 @@ Telemetry data processed locally. SafeDrive v1.0.0.
                   <Text style={styles.legendCount}>({reportData.distribution.highway.count})</Text>
                 </View>
                 <View style={styles.legendRow}>
-                  <View style={[styles.legendDot, { backgroundColor: '#00f5ff' }]} />
+                  <View style={[styles.legendDot, { backgroundColor: colors.accent }]} />
                   <Text style={styles.legendText}>City</Text>
                   <Text style={styles.legendPct}>{reportData.distribution.city.pct}%</Text>
                   <Text style={styles.legendCount}>({reportData.distribution.city.count})</Text>
@@ -792,13 +795,13 @@ Telemetry data processed locally. SafeDrive v1.0.0.
               <View style={styles.improvementItem}>
                 <View style={styles.improvementHeader}>
                   <View style={styles.improvementLabelRow}>
-                    <MaterialCommunityIcons name="steering" size={13} color="#00f5ff" style={{ marginRight: 4 }} />
+                    <MaterialCommunityIcons name="steering" size={13} color={colors.accent} style={{ marginRight: 4 }} />
                     <Text style={styles.improvementName}>Steering Control</Text>
                   </View>
-                  <Text style={[styles.improvementDiff, { color: '#00f5ff' }]}>↑ 12%</Text>
+                  <Text style={[styles.improvementDiff, { color: colors.accent }]}>↑ 12%</Text>
                 </View>
                 <View style={styles.progressBarBg}>
-                  <View style={[styles.progressBarFill, { width: `${reportData.improvements.steering}%`, backgroundColor: '#00f5ff' }]} />
+                  <View style={[styles.progressBarFill, { width: `${reportData.improvements.steering}%`, backgroundColor: colors.accent }]} />
                 </View>
               </View>
 
@@ -836,7 +839,7 @@ Telemetry data processed locally. SafeDrive v1.0.0.
         {/* 8. Top Drives Section */}
         <View style={[styles.panelCard, { marginBottom: 30 }]}>
           <View style={styles.sectionHeaderRow}>
-            <Text style={styles.panelTitle}>Top Drives <Text style={{ fontSize: 9, fontWeight: 'normal', color: '#64748b' }}>(By Score)</Text></Text>
+            <Text style={styles.panelTitle}>Top Drives <Text style={{ fontSize: 9, fontWeight: 'normal', color: colors.textSlate }}>(By Score)</Text></Text>
             <TouchableOpacity onPress={() => router.push('/history')}>
               <Text style={styles.viewAllText}>View All</Text>
             </TouchableOpacity>
@@ -844,7 +847,7 @@ Telemetry data processed locally. SafeDrive v1.0.0.
 
           <View style={styles.topDrivesList}>
             {reportData.topDrives.map((d, index) => {
-              const ringColor = index === 0 ? '#eab308' : index === 1 ? '#94a3b8' : '#d97706';
+              const ringColor = index === 0 ? '#eab308' : index === 1 ? colors.textMuted : '#d97706';
               return (
                 <TouchableOpacity
                   key={d.id}
@@ -858,18 +861,18 @@ Telemetry data processed locally. SafeDrive v1.0.0.
                   <View style={styles.topDriveMiddle}>
                     <View style={styles.topDriveScoreRow}>
                       <Text style={styles.topDriveScore}>{d.score}</Text>
-                      <Text style={[styles.topDriveRating, { color: d.score >= 90 ? '#22c55e' : '#00f5ff' }]}>{d.rating}</Text>
+                      <Text style={[styles.topDriveRating, { color: d.score >= 90 ? '#22c55e' : colors.accent }]}>{d.rating}</Text>
                     </View>
                     <Text style={styles.topDriveDate}>{d.date}</Text>
                     <View style={styles.topDriveStats}>
-                      <FontAwesome5 name="road" size={8} color="#64748b" style={{ marginRight: 4 }} />
+                      <FontAwesome5 name="road" size={8} color={colors.textSlate} style={{ marginRight: 4 }} />
                       <Text style={styles.topDriveStatText}>{d.distance} km</Text>
-                      <Feather name="clock" size={8} color="#64748b" style={{ marginLeft: 10, marginRight: 4 }} />
+                      <Feather name="clock" size={8} color={colors.textSlate} style={{ marginLeft: 10, marginRight: 4 }} />
                       <Text style={styles.topDriveStatText}>{d.duration}</Text>
                     </View>
                   </View>
 
-                  <Feather name="chevron-right" size={16} color="#475569" />
+                  <Feather name="chevron-right" size={16} color={colors.textMuted} />
                 </TouchableOpacity>
               );
             })}
@@ -880,489 +883,491 @@ Telemetry data processed locally. SafeDrive v1.0.0.
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#050B14',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 50,
-    paddingBottom: 15,
-    backgroundColor: '#050B14',
-  },
-  backBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: '#0c1626',
-    borderWidth: 1,
-    borderColor: '#122540',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitleContainer: {
-    flex: 1,
-    marginLeft: 14,
-  },
-  headerTitle: {
-    color: '#ffffff',
-    fontSize: 22,
-    fontWeight: 'bold',
-  },
-  headerSubtitle: {
-    color: '#94a3b8',
-    fontSize: 10,
-    marginTop: 2,
-  },
-  exportBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#0c1626',
-    borderWidth: 1,
-    borderColor: '#122540',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    height: 44,
-  },
-  exportText: {
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 5,
-  },
+function getStyles(colors: any) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+      paddingTop: 50,
+      paddingBottom: 15,
+      backgroundColor: colors.background,
+    },
+    backBtn: {
+      width: 44,
+      height: 44,
+      borderRadius: 12,
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    headerTitleContainer: {
+      flex: 1,
+      marginLeft: 14,
+    },
+    headerTitle: {
+      color: colors.text,
+      fontSize: 22,
+      fontWeight: 'bold',
+    },
+    headerSubtitle: {
+      color: colors.textMuted,
+      fontSize: 10,
+      marginTop: 2,
+    },
+    exportBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 12,
+      paddingHorizontal: 12,
+      height: 44,
+    },
+    exportText: {
+      color: colors.text,
+      fontSize: 12,
+      fontWeight: 'bold',
+    },
+    scrollContent: {
+      paddingHorizontal: 20,
+      paddingTop: 5,
+    },
 
-  // Tabs
-  tabsContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#0c1626',
-    borderWidth: 1,
-    borderColor: '#122540',
-    borderRadius: 12,
-    overflow: 'hidden',
-    marginBottom: 16,
-    height: 48,
-  },
-  tabBtn: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-  },
-  activeTabBtn: {
-    backgroundColor: 'rgba(0, 245, 255, 0.03)',
-  },
-  tabContentRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  tabBtnText: {
-    color: '#94a3b8',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  activeTabBtnText: {
-    color: '#00f5ff',
-  },
-  tabIndicator: {
-    position: 'absolute',
-    bottom: 0,
-    left: 20,
-    right: 20,
-    height: 2.5,
-    backgroundColor: '#00f5ff',
-    borderRadius: 1.5,
-  },
+    // Tabs
+    tabsContainer: {
+      flexDirection: 'row',
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 12,
+      overflow: 'hidden',
+      marginBottom: 16,
+      height: 48,
+    },
+    tabBtn: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      position: 'relative',
+    },
+    activeTabBtn: {
+      backgroundColor: colors.isDark ? 'rgba(0, 245, 255, 0.03)' : 'rgba(8, 145, 178, 0.03)',
+    },
+    tabContentRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    tabBtnText: {
+      color: colors.textMuted,
+      fontSize: 12,
+      fontWeight: 'bold',
+    },
+    activeTabBtnText: {
+      color: colors.accent,
+    },
+    tabIndicator: {
+      position: 'absolute',
+      bottom: 0,
+      left: 20,
+      right: 20,
+      height: 2.5,
+      backgroundColor: colors.accent,
+      borderRadius: 1.5,
+    },
 
-  // Date Navigator
-  dateNavRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  dateNavArrow: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: '#0c1626',
-    borderWidth: 1,
-    borderColor: '#122540',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  disabledDateNav: {
-    opacity: 0.4,
-  },
-  dateSelectorBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#0c1626',
-    borderWidth: 1,
-    borderColor: '#122540',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    height: 36,
-  },
-  dateSelectorText: {
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
+    // Date Navigator
+    dateNavRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 20,
+    },
+    dateNavArrow: {
+      width: 36,
+      height: 36,
+      borderRadius: 10,
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    disabledDateNav: {
+      opacity: 0.4,
+    },
+    dateSelectorBox: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 12,
+      paddingHorizontal: 16,
+      height: 36,
+    },
+    dateSelectorText: {
+      color: colors.text,
+      fontSize: 12,
+      fontWeight: 'bold',
+    },
 
-  // Panels
-  panelCard: {
-    backgroundColor: '#0c1626',
-    borderWidth: 1,
-    borderColor: '#122540',
-    borderRadius: 24,
-    padding: 16,
-    marginBottom: 16,
-  },
-  panelTitle: {
-    color: '#64748b',
-    fontSize: 10,
-    fontWeight: 'bold',
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-    marginBottom: 14,
-  },
-  metricsRow: {
-    paddingRight: 10,
-  },
-  metricCard: {
-    width: 140,
-    backgroundColor: 'rgba(8, 15, 26, 0.4)',
-    borderWidth: 1,
-    borderColor: '#122540',
-    borderRadius: 18,
-    padding: 12,
-    marginRight: 10,
-    height: 105,
-    position: 'relative',
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  cardLabel: {
-    color: '#64748b',
-    fontSize: 8,
-    fontWeight: '700',
-  },
-  cardVal: {
-    color: '#ffffff',
-    fontSize: 18,
-    fontWeight: '900',
-    marginTop: 2,
-  },
-  cardUnit: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: '#94a3b8',
-  },
-  diffRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 1,
-  },
-  cardRating: {
-    color: '#22c55e',
-    fontSize: 8,
-    fontWeight: 'bold',
-  },
-  diffText: {
-    fontSize: 8,
-    fontWeight: 'bold',
-  },
-  cardSub: {
-    color: '#475569',
-    fontSize: 8,
-  },
-  cardIconWrap: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  miniWave: {
-    position: 'absolute',
-    bottom: 6,
-    left: 12,
-  },
+    // Panels
+    panelCard: {
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 24,
+      padding: 16,
+      marginBottom: 16,
+    },
+    panelTitle: {
+      color: colors.textSlate,
+      fontSize: 10,
+      fontWeight: 'bold',
+      letterSpacing: 1.2,
+      textTransform: 'uppercase',
+      marginBottom: 14,
+    },
+    metricsRow: {
+      paddingRight: 10,
+    },
+    metricCard: {
+      width: 140,
+      backgroundColor: colors.isDark ? 'rgba(8, 15, 26, 0.4)' : 'rgba(241, 245, 249, 0.5)',
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 18,
+      padding: 12,
+      marginRight: 10,
+      height: 105,
+      position: 'relative',
+    },
+    cardHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+    },
+    cardLabel: {
+      color: colors.textSlate,
+      fontSize: 8,
+      fontWeight: '700',
+    },
+    cardVal: {
+      color: colors.text,
+      fontSize: 18,
+      fontWeight: '900',
+      marginTop: 2,
+    },
+    cardUnit: {
+      fontSize: 10,
+      fontWeight: '600',
+      color: colors.textMuted,
+    },
+    diffRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginTop: 1,
+    },
+    cardRating: {
+      color: '#22c55e',
+      fontSize: 8,
+      fontWeight: 'bold',
+    },
+    diffText: {
+      fontSize: 8,
+      fontWeight: 'bold',
+    },
+    cardSub: {
+      color: colors.textSlate,
+      fontSize: 8,
+    },
+    cardIconWrap: {
+      width: 28,
+      height: 28,
+      borderRadius: 14,
+      borderWidth: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    miniWave: {
+      position: 'absolute',
+      bottom: 6,
+      left: 12,
+    },
 
-  // Chart
-  chartHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  chartFilterDropdown: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#050B14',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#122540',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  chartFilterText: {
-    color: '#64748b',
-    fontSize: 8,
-    fontWeight: 'bold',
-  },
-  chartWrapper: {
-    marginTop: 10,
-    alignItems: 'center',
-  },
-  chartLabelsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: width - 80,
-    marginTop: 8,
-  },
-  chartAxisLabel: {
-    color: '#475569',
-    fontSize: 8,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
+    // Chart
+    chartHeaderRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+    },
+    chartFilterDropdown: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.background,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+    },
+    chartFilterText: {
+      color: colors.textSlate,
+      fontSize: 8,
+      fontWeight: 'bold',
+    },
+    chartWrapper: {
+      marginTop: 10,
+      alignItems: 'center',
+    },
+    chartLabelsRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      width: width - 80,
+      marginTop: 8,
+    },
+    chartAxisLabel: {
+      color: colors.textSlate,
+      fontSize: 8,
+      fontWeight: 'bold',
+      textAlign: 'center',
+    },
 
-  // Events Summary Grid
-  eventsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  eventGridCard: {
-    width: (width - 82) / 2,
-    backgroundColor: 'rgba(8, 15, 26, 0.4)',
-    borderWidth: 1,
-    borderColor: '#122540',
-    borderRadius: 18,
-    padding: 12,
-    marginBottom: 12,
-  },
-  eventIconContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-  eventCardLabel: {
-    color: '#64748b',
-    fontSize: 9,
-    fontWeight: 'bold',
-    marginBottom: 2,
-  },
-  eventCardVal: {
-    color: '#ffffff',
-    fontSize: 18,
-    fontWeight: '900',
-    marginBottom: 4,
-  },
-  eventDiffRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  eventDiffLabel: {
-    color: '#475569',
-    fontSize: 8,
-  },
-  eventDiffVal: {
-    fontSize: 8,
-    fontWeight: 'bold',
-  },
+    // Events Summary Grid
+    eventsGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+    },
+    eventGridCard: {
+      width: (width - 82) / 2,
+      backgroundColor: colors.isDark ? 'rgba(8, 15, 26, 0.4)' : 'rgba(241, 245, 249, 0.5)',
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 18,
+      padding: 12,
+      marginBottom: 12,
+    },
+    eventIconContainer: {
+      width: 32,
+      height: 32,
+      borderRadius: 8,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 8,
+    },
+    eventCardLabel: {
+      color: colors.textSlate,
+      fontSize: 9,
+      fontWeight: 'bold',
+      marginBottom: 2,
+    },
+    eventCardVal: {
+      color: colors.text,
+      fontSize: 18,
+      fontWeight: '900',
+      marginBottom: 4,
+    },
+    eventDiffRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    eventDiffLabel: {
+      color: colors.textSlate,
+      fontSize: 8,
+    },
+    eventDiffVal: {
+      fontSize: 8,
+      fontWeight: 'bold',
+    },
 
-  // Side-by-side Layout
-  sideBySideRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  panelCardHalf: {
-    flex: 1,
-    backgroundColor: '#0c1626',
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: '#122540',
-    padding: 14,
-  },
+    // Side-by-side Layout
+    sideBySideRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: 16,
+    },
+    panelCardHalf: {
+      flex: 1,
+      backgroundColor: colors.card,
+      borderRadius: 24,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: 14,
+    },
 
-  // Driving Distribution Donut
-  donutLayout: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  donutChartContainer: {
-    position: 'relative',
-    width: 100,
-    height: 100,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  donutCenter: {
-    position: 'absolute',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  donutCenterVal: {
-    color: '#ffffff',
-    fontSize: 20,
-    fontWeight: '900',
-    lineHeight: 22,
-  },
-  donutCenterLabel: {
-    color: '#64748b',
-    fontSize: 8,
-    fontWeight: 'bold',
-  },
-  donutLegend: {
-    width: '100%',
-  },
-  legendRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: 20,
-  },
-  legendDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginRight: 6,
-  },
-  legendText: {
-    color: '#94a3b8',
-    fontSize: 8,
-    fontWeight: '600',
-    flex: 1,
-  },
-  legendPct: {
-    color: '#ffffff',
-    fontSize: 9,
-    fontWeight: 'bold',
-    marginRight: 4,
-  },
-  legendCount: {
-    color: '#475569',
-    fontSize: 8,
-  },
+    // Driving Distribution Donut
+    donutLayout: {
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    donutChartContainer: {
+      position: 'relative',
+      width: 100,
+      height: 100,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 12,
+    },
+    donutCenter: {
+      position: 'absolute',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    donutCenterVal: {
+      color: colors.text,
+      fontSize: 20,
+      fontWeight: '900',
+      lineHeight: 22,
+    },
+    donutCenterLabel: {
+      color: colors.textSlate,
+      fontSize: 8,
+      fontWeight: 'bold',
+    },
+    donutLegend: {
+      width: '100%',
+    },
+    legendRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      height: 20,
+    },
+    legendDot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      marginRight: 6,
+    },
+    legendText: {
+      color: colors.textMuted,
+      fontSize: 8,
+      fontWeight: '600',
+      flex: 1,
+    },
+    legendPct: {
+      color: colors.text,
+      fontSize: 9,
+      fontWeight: 'bold',
+      marginRight: 4,
+    },
+    legendCount: {
+      color: colors.textSlate,
+      fontSize: 8,
+    },
 
-  // Improvements List
-  improvementsList: {
-    marginTop: 2,
-  },
-  improvementItem: {
-    marginBottom: 10,
-  },
-  improvementHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  improvementLabelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  improvementName: {
-    color: '#94a3b8',
-    fontSize: 9,
-    fontWeight: '600',
-  },
-  improvementDiff: {
-    fontSize: 9,
-    fontWeight: 'bold',
-  },
-  progressBarBg: {
-    height: 5,
-    backgroundColor: '#122540',
-    borderRadius: 2.5,
-    overflow: 'hidden',
-  },
-  progressBarFill: {
-    height: '100%',
-    borderRadius: 2.5,
-  },
+    // Improvements List
+    improvementsList: {
+      marginTop: 2,
+    },
+    improvementItem: {
+      marginBottom: 10,
+    },
+    improvementHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 4,
+    },
+    improvementLabelRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    improvementName: {
+      color: colors.textMuted,
+      fontSize: 9,
+      fontWeight: '600',
+    },
+    improvementDiff: {
+      fontSize: 9,
+      fontWeight: 'bold',
+    },
+    progressBarBg: {
+      height: 5,
+      backgroundColor: colors.border,
+      borderRadius: 2.5,
+      overflow: 'hidden',
+    },
+    progressBarFill: {
+      height: '100%',
+      borderRadius: 2.5,
+    },
 
-  // Top Drives List
-  topDrivesList: {
-    marginTop: 2,
-  },
-  topDriveCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(8, 15, 26, 0.4)',
-    borderWidth: 1,
-    borderColor: '#122540',
-    borderRadius: 16,
-    padding: 10,
-    marginBottom: 10,
-  },
-  rankCircle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-  },
-  rankText: {
-    color: '#050B14',
-    fontSize: 11,
-    fontWeight: '900',
-  },
-  topDriveMiddle: {
-    flex: 1,
-  },
-  topDriveScoreRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  topDriveScore: {
-    color: '#ffffff',
-    fontSize: 15,
-    fontWeight: 'bold',
-    marginRight: 6,
-  },
-  topDriveRating: {
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  topDriveDate: {
-    color: '#64748b',
-    fontSize: 9,
-    fontWeight: '600',
-    marginVertical: 1,
-  },
-  topDriveStats: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  topDriveStatText: {
-    color: '#475569',
-    fontSize: 8,
-    fontWeight: 'bold',
-  },
-  viewAllText: {
-    color: '#00f5ff',
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  bottomSpacer: {
-    height: 40,
-  }
-});
+    // Top Drives List
+    topDrivesList: {
+      marginTop: 2,
+    },
+    topDriveCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.isDark ? 'rgba(8, 15, 26, 0.4)' : 'rgba(241, 245, 249, 0.5)',
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 16,
+      padding: 10,
+      marginBottom: 10,
+    },
+    rankCircle: {
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 10,
+    },
+    rankText: {
+      color: colors.powerBg,
+      fontSize: 11,
+      fontWeight: '900',
+    },
+    topDriveMiddle: {
+      flex: 1,
+    },
+    topDriveScoreRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    topDriveScore: {
+      color: colors.text,
+      fontSize: 15,
+      fontWeight: 'bold',
+      marginRight: 6,
+    },
+    topDriveRating: {
+      fontSize: 10,
+      fontWeight: 'bold',
+    },
+    topDriveDate: {
+      color: colors.textSlate,
+      fontSize: 9,
+      fontWeight: '600',
+      marginVertical: 1,
+    },
+    topDriveStats: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    topDriveStatText: {
+      color: colors.textSlate,
+      fontSize: 8,
+      fontWeight: 'bold',
+    },
+    viewAllText: {
+      color: colors.accent,
+      fontSize: 10,
+      fontWeight: 'bold',
+    },
+    bottomSpacer: {
+      height: 40,
+    }
+  });
+}

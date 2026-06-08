@@ -7,11 +7,14 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useDriveStore, DriveSession } from '../src/store/driveStore';
 import { driveRepository } from '../src/database/repositories/driveRepository';
 import dayjs from 'dayjs';
+import { useAppTheme } from '../src/ui/theme';
 
 const { width } = Dimensions.get('window');
 
 export default function DriveDetailsScreen() {
   const router = useRouter();
+  const { colors, isDark } = useAppTheme();
+  const styles = getStyles(colors);
   const { id } = useLocalSearchParams();
   const [activeSubTab, setActiveSubTab] = useState<'overview' | 'events' | 'route' | 'analytics'>('overview');
 
@@ -478,91 +481,8 @@ export default function DriveDetailsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#050B14',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 50,
-    paddingBottom: 15,
-    backgroundColor: '#050B14',
-  },
-  iconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#0c1626',
-    borderWidth: 1,
-    borderColor: '#1e293b',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitleContainer: {
-    alignItems: 'center',
-  },
-  headerTitle: {
-    color: '#ffffff',
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  headerSubtitle: {
-    color: '#94a3b8',
-    fontSize: 10,
-    marginTop: 2,
-  },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 10,
-  },
-  bottomSpacer: {
-    height: 60,
-  },
-
-  // Metrics Box
-  metricsBox: {
-    flexDirection: 'row',
-    backgroundColor: '#0c1626',
-    borderWidth: 1,
-    borderColor: '#122540',
-    borderRadius: 16,
-    overflow: 'hidden',
-    paddingVertical: 10,
-    marginBottom: 15,
-  },
-  metricCell: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 4,
-  },
-  cellBorder: {
-    borderRightWidth: 1,
-    borderRightColor: '#122540',
-  },
-  metricLabel: {
-    color: '#64748b',
-    fontSize: 8,
-    fontWeight: '600',
-    marginBottom: 6,
-    textAlign: 'center',
-  },
-  scoreGaugeContainer: {
-    position: 'relative',
-    width: 54,
-    height: 54,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  scoreGaugeInner: {
-    position: 'absolute',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+function getStyles(colors: any) {
+  return StyleSheet.create({
   scoreGaugeVal: {
     color: '#ffffff',
     fontSize: 15,
@@ -888,3 +808,4 @@ const styles = StyleSheet.create({
     lineHeight: 14,
   },
 });
+}

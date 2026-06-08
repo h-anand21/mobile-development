@@ -39,6 +39,30 @@ When values exceed customizable threshold limits, events are logged and the safe
 
 ---
 
+## 📱 Screen-by-Screen Details
+
+The application consists of the following 14 dedicated screens and modules, organized dynamically:
+
+### 1. Tab Navigation Screens (Main Hub)
+*   **Home HUD Dashboard (`app/(tabs)/index.tsx`):** trip dashboard with HUD styling. Visual SVG pointer lines anchor dashboard panels directly to schematic representation elements of the vehicle. Features trip telemetry summaries, active status gauges, and the main "Start Drive" button.
+*   **Active Drive Dashboard (`app/(tabs)/drive.tsx`):** Trip tracking cockpit. Shows telemetry gauge dial, current speed, duration, distance, G-Force logs, and active status checks.
+*   **History Logs (`app/(tabs)/history.tsx`):** Chronological log of all completed trips, including safety score ratings, route summaries, distances, durations, weather data, and safety event triggers.
+*   **Profile Manager (`app/(tabs)/profile.tsx`):** User profile card, vehicle profile selections (e.g. sedan, SUV, electric), driving metrics, and dynamic privacy checkboxes.
+*   **Metrics Dashboard (`app/(tabs)/dashboard.tsx`):** Aggregated metrics panel displaying historical metrics across Week, Month, and Year tabs, complete with Svg line charts, radar breakdown graphs, donut distribution charts, and weekly insights cards.
+
+### 2. Inner Action Screens & Diagnostics
+*   **Settings Controller (`app/settings.tsx`):** Configurations cockpit where users toggle notifications, switch theme configurations (Light, Dark, System), select accent color, adjust metric/imperial units, clear drive history, and fine-tune event trigger thresholds (harsh braking, sharp turn, speeding, and phone usage).
+*   **Achievements & Rewards (`app/achievements.tsx`):** Reward and recognition dashboard showing driving tiers, progress bars, locked/unlocked achievements, and redeemable copyable discount coupon vouchers.
+*   **AI Coach (`app/ai-coach.tsx`):** Interactive diagnostic interface providing personalized recommendations, feedback cards, and overall driving ratings.
+*   **Trip Details Replay (`app/drive-details.tsx`):** Post-drive telemetry logs, including safety score breakdowns, weather summaries, lateral/vertical G-force indicators, and interactive routes.
+*   **Drive Summary (`app/drive-summary.tsx`):** Summary screen showing the results of a completed driving session immediately after saving, highlighting safety score dials, category progress bars, and basic trip stats.
+*   **Live Sensor Analytics (`app/live-analytics.tsx`):** Real-time hardware diagnostics plotting raw accelerometer, gyroscope, magnetometer, and 3D device motion waveforms with sub-second latency.
+*   **Live Alerts log (`app/live-events.tsx`):** Rolling real-time console showing safety alerts (e.g., sharp turns, phone pickups) as they are registered by the sensor engine.
+*   **Exportable Reports (`app/reports.tsx`):** Markdown safety report exporter with copy capabilities and native sharing triggers.
+*   **Route Replay playback (`app/route-replay.tsx`):** Coordinate map playback viewer with dynamic zoom, panning gestures, playback speeds, and floating coordinate overlay widgets.
+
+---
+
 ## 🛠️ Architecture & Technical Stack
 
 ### 📂 Directory Map

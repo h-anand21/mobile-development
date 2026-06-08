@@ -4,37 +4,12 @@ import { Feather, MaterialCommunityIcons, Ionicons, FontAwesome5 } from '@expo/v
 import Svg, { Circle, Path, Polygon, Ellipse } from 'react-native-svg';
 import { useRouter } from 'expo-router';
 import { driveRepository } from '../src/database/repositories/driveRepository';
+import { useAppTheme } from '../src/ui/theme';
 
 const { width } = Dimensions.get('window');
 
 // 3-Column Card Width Math
 const cardWidth = (width - 40 - 16) / 3;
-
-// Hexagon Badge Wrapper
-const HexagonBadge = ({ size = 42, color = '#22c55e', isLocked = false, children }: { size?: number, color?: string, isLocked?: boolean, children?: React.ReactNode }) => {
-  const borderColor = isLocked ? '#475569' : color;
-  return (
-    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
-      <Svg width={size} height={size} viewBox="0 0 100 100" style={StyleSheet.absoluteFill}>
-        <Polygon
-          points="50,5 93,25 93,75 50,95 7,75 7,25"
-          fill="rgba(8, 15, 26, 0.4)"
-          stroke={borderColor}
-          strokeWidth="6"
-          strokeLinejoin="round"
-        />
-      </Svg>
-      <View style={{ zIndex: 2 }}>
-        {children}
-      </View>
-      {isLocked && (
-        <View style={styles.lockOverlay}>
-          <Feather name="lock" size={9} color="#94a3b8" />
-        </View>
-      )}
-    </View>
-  );
-};
 
 // Mock Achievement List Data
 const INITIAL_ACHIEVEMENTS = [
@@ -148,6 +123,35 @@ const INITIAL_ACHIEVEMENTS = [
 
 export default function AchievementsScreen() {
   const router = useRouter();
+  const { colors, isDark } = useAppTheme();
+  const styles = getStyles(colors);
+
+  // Hexagon Badge Wrapper
+  const HexagonBadge = ({ size = 42, color = '#22c55e', isLocked = false, children }: { size?: number, color?: string, isLocked?: boolean, children?: React.ReactNode }) => {
+    const borderColor = isLocked ? colors.textSlate : color;
+    return (
+      <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+        <Svg width={size} height={size} viewBox="0 0 100 100" style={StyleSheet.absoluteFill}>
+          <Polygon
+            points="50,5 93,25 93,75 50,95 7,75 7,25"
+            fill={isDark ? "rgba(8, 15, 26, 0.4)" : "rgba(0, 0, 0, 0.05)"}
+            stroke={borderColor}
+            strokeWidth="6"
+            strokeLinejoin="round"
+          />
+        </Svg>
+        <View style={{ zIndex: 2 }}>
+          {children}
+        </View>
+        {isLocked && (
+          <View style={styles.lockOverlay}>
+            <Feather name="lock" size={9} color={colors.textSlate} />
+          </View>
+        )}
+      </View>
+    );
+  };
+
   const [activeTab, setActiveTab] = useState<'all' | 'driving' | 'milestone' | 'streak' | 'special'>('all');
   const [sortBy, setSortBy] = useState<'rarity' | 'points' | 'unlocked'>('rarity');
   const [showSort, setShowSort] = useState(false);
@@ -627,693 +631,680 @@ export default function AchievementsScreen() {
     </View>
   );
 }
+function getStyles(colors: any) {
+  const isDark = colors.background === '#050B14';
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+      paddingTop: 50,
+      paddingBottom: 15,
+      backgroundColor: colors.background,
+    },
+    iconBtn: {
+      width: 44,
+      height: 44,
+      borderRadius: 12,
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    headerTitleContainer: {
+      flex: 1,
+      marginLeft: 14,
+    },
+    headerTitle: {
+      color: colors.text,
+      fontSize: 22,
+      fontWeight: 'bold',
+    },
+    headerSubtitle: {
+      color: colors.textMuted,
+      fontSize: 10,
+      marginTop: 2,
+    },
+    scrollContent: {
+      paddingHorizontal: 20,
+      paddingTop: 5,
+    },
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#050B14',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 50,
-    paddingBottom: 15,
-    backgroundColor: '#050B14',
-  },
-  iconBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: '#0c1626',
-    borderWidth: 1,
-    borderColor: '#122540',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitleContainer: {
-    flex: 1,
-    marginLeft: 14,
-  },
-  headerTitle: {
-    color: '#ffffff',
-    fontSize: 22,
-    fontWeight: 'bold',
-  },
-  headerSubtitle: {
-    color: '#94a3b8',
-    fontSize: 10,
-    marginTop: 2,
-  },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 5,
-  },
+    // Trophy Banner Card
+    trophyBannerCard: {
+      flexDirection: 'row',
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 24,
+      padding: 16,
+      marginBottom: 16,
+      alignItems: 'center',
+    },
+    trophyVisual: {
+      marginRight: 14,
+    },
+    trophyInfo: {
+      flex: 1,
+    },
+    bannerTitle: {
+      color: colors.text,
+      fontSize: 18,
+      fontWeight: 'bold',
+      marginBottom: 2,
+    },
+    bannerSubtitle: {
+      color: colors.textSlate,
+      fontSize: 11.5,
+      marginBottom: 12,
+    },
+    bannerStatsRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+    },
+    bannerStatItem: {
+      flex: 1,
+      alignItems: 'center',
+      marginRight: 4,
+    },
+    bannerStatValue: {
+      color: colors.text,
+      fontSize: 12.5,
+      fontWeight: 'bold',
+    },
+    bannerStatLabel: {
+      color: colors.textSlate,
+      fontSize: 8,
+      textAlign: 'center',
+      marginTop: 2,
+    },
 
-  // Trophy Banner Card
-  trophyBannerCard: {
-    flexDirection: 'row',
-    backgroundColor: '#0c1626',
-    borderWidth: 1,
-    borderColor: '#122540',
-    borderRadius: 24,
-    padding: 16,
-    marginBottom: 16,
-    alignItems: 'center',
-  },
-  trophyVisual: {
-    marginRight: 14,
-  },
-  trophyInfo: {
-    flex: 1,
-  },
-  bannerTitle: {
-    color: '#ffffff',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 2,
-  },
-  bannerSubtitle: {
-    color: '#64748b',
-    fontSize: 11.5,
-    marginBottom: 12,
-  },
-  bannerStatsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  bannerStatItem: {
-    flex: 1,
-    alignItems: 'center',
-    marginRight: 4,
-  },
-  bannerStatValue: {
-    color: '#ffffff',
-    fontSize: 12.5,
-    fontWeight: 'bold',
-  },
-  bannerStatLabel: {
-    color: '#64748b',
-    fontSize: 8,
-    textAlign: 'center',
-    marginTop: 2,
-  },
+    // Level Progression Bar
+    levelBarCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 20,
+      padding: 14,
+      marginBottom: 16,
+    },
+    levelMiddle: {
+      flex: 1,
+      marginLeft: 12,
+    },
+    levelTitleRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 2,
+    },
+    levelMainText: {
+      color: colors.text,
+      fontSize: 13,
+      fontWeight: 'bold',
+    },
+    levelXpText: {
+      color: '#84cc16',
+      fontSize: 11,
+      fontWeight: 'bold',
+    },
+    levelSubText: {
+      color: colors.textSlate,
+      fontSize: 10,
+      marginBottom: 6,
+    },
+    progressBarBg: {
+      height: 6,
+      backgroundColor: colors.border,
+      borderRadius: 3,
+      overflow: 'hidden',
+      marginBottom: 4,
+    },
+    progressBarFill: {
+      height: '100%',
+      backgroundColor: '#84cc16',
+      borderRadius: 3,
+    },
+    progressBarSub: {
+      color: colors.textSlate,
+      fontSize: 8.5,
+      fontWeight: '500',
+    },
 
-  // Level Progression Bar
-  levelBarCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#0c1626',
-    borderWidth: 1,
-    borderColor: '#122540',
-    borderRadius: 20,
-    padding: 14,
-    marginBottom: 16,
-  },
-  levelMiddle: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  levelTitleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 2,
-  },
-  levelMainText: {
-    color: '#ffffff',
-    fontSize: 13,
-    fontWeight: 'bold',
-  },
-  levelXpText: {
-    color: '#84cc16',
-    fontSize: 11,
-    fontWeight: 'bold',
-  },
-  levelSubText: {
-    color: '#64748b',
-    fontSize: 10,
-    marginBottom: 6,
-  },
-  progressBarBg: {
-    height: 6,
-    backgroundColor: '#122540',
-    borderRadius: 3,
-    overflow: 'hidden',
-    marginBottom: 4,
-  },
-  progressBarFill: {
-    height: '100%',
-    backgroundColor: '#84cc16',
-    borderRadius: 3,
-  },
-  progressBarSub: {
-    color: '#475569',
-    fontSize: 8.5,
-    fontWeight: '500',
-  },
+    // Lock Overlay on Hexagon
+    lockOverlay: {
+      position: 'absolute',
+      bottom: -2,
+      right: -2,
+      backgroundColor: colors.card,
+      borderRadius: 6,
+      borderWidth: 1,
+      borderColor: colors.textSlate,
+      width: 14,
+      height: 14,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
 
-  // Lock Overlay on Hexagon
-  lockOverlay: {
-    position: 'absolute',
-    bottom: -2,
-    right: -2,
-    backgroundColor: '#0c1626',
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#475569',
-    width: 14,
-    height: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+    // Tabs Selector
+    tabsContainer: {
+      marginBottom: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    tabsScrollContent: {
+      paddingBottom: 2,
+    },
+    tabItem: {
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      marginRight: 8,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: 'transparent',
+    },
+    activeTabItem: {
+      backgroundColor: colors.card,
+      borderColor: colors.border,
+    },
+    tabText: {
+      color: colors.textSlate,
+      fontSize: 12.5,
+      fontWeight: 'bold',
+    },
+    activeTabText: {
+      color: colors.accent,
+    },
 
-  // Tabs Selector
-  tabsContainer: {
-    marginBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#122540',
-  },
-  tabsScrollContent: {
-    paddingBottom: 2,
-  },
-  tabItem: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    marginRight: 10,
-    position: 'relative',
-  },
-  activeTabItem: {},
-  tabText: {
-    color: '#64748b',
-    fontSize: 12.5,
-    fontWeight: 'bold',
-  },
-  activeTabText: {
-    color: '#00f5ff',
-  },
-  tabIndicator: {
-    position: 'absolute',
-    bottom: -1,
-    left: 12,
-    right: 12,
-    height: 2.5,
-    backgroundColor: '#00f5ff',
-    borderRadius: 1.5,
-  },
+    // Achievements Grid List
+    gridContainer: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+      paddingBottom: 10,
+    },
+    cardWrapper: {
+      width: cardWidth,
+      marginBottom: 16,
+    },
+    achievementCard: {
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 20,
+      padding: 10,
+      alignItems: 'center',
+      height: 125,
+      justifyContent: 'center',
+    },
+    cardLocked: {
+      opacity: 0.65,
+    },
+    cardLabel: {
+      color: colors.text,
+      fontSize: 10,
+      fontWeight: 'bold',
+      marginTop: 8,
+      textAlign: 'center',
+      lineHeight: 12,
+      height: 24, // fits max 2 lines
+    },
+    cardPoints: {
+      fontSize: 8.5,
+      fontWeight: '800',
+      marginTop: 4,
+    },
 
-  // Counts & Filter Row
-  countSortRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 14,
-  },
-  unlockedHeading: {
-    fontSize: 11,
-    fontWeight: 'bold',
-  },
-  sortDropdownBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#0c1626',
-    borderWidth: 1,
-    borderColor: '#122540',
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    height: 32,
-  },
-  sortBtnLabel: {
-    color: '#ffffff',
-    fontSize: 10.5,
-    fontWeight: 'bold',
-  },
+    // Details Slider Section (Single selected achievement highlight card)
+    focusAchievementCard: {
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 24,
+      padding: 16,
+      marginBottom: 16,
+      position: 'relative',
+      overflow: 'hidden',
+    },
+    focusGradientAccent: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      height: 4,
+    },
+    focusHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 14,
+    },
+    focusHeaderRight: {
+      flex: 1,
+      marginLeft: 12,
+    },
+    focusPointsBadge: {
+      alignSelf: 'flex-start',
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 8,
+      marginTop: 4,
+    },
+    focusPointsText: {
+      fontSize: 9,
+      fontWeight: 'bold',
+    },
+    focusTitle: {
+      color: colors.text,
+      fontSize: 15.5,
+      fontWeight: 'bold',
+    },
+    focusDesc: {
+      color: colors.textMuted,
+      fontSize: 12,
+      lineHeight: 16,
+      marginBottom: 14,
+    },
 
-  // Sort Overlay Box
-  sortOverlayBox: {
-    backgroundColor: '#0c1626',
-    borderWidth: 1,
-    borderColor: '#122540',
-    borderRadius: 10,
-    paddingVertical: 4,
-    marginBottom: 14,
-    position: 'absolute',
-    top: 250, // estimated top offset
-    right: 20,
-    zIndex: 20,
-    width: 130,
-  },
-  sortOption: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-  },
-  sortOptionText: {
-    color: '#94a3b8',
-    fontSize: 11,
-    fontWeight: '500',
-  },
-  activeSortOptionText: {
-    color: '#00f5ff',
-    fontWeight: 'bold',
-  },
+    // Progression Bar Row
+    progressRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    progressBarOuter: {
+      flex: 1,
+      height: 8,
+      backgroundColor: colors.border,
+      borderRadius: 4,
+      marginRight: 12,
+      overflow: 'hidden',
+    },
+    progressBarInner: {
+      height: '100%',
+      borderRadius: 4,
+    },
+    progressPercentText: {
+      color: colors.text,
+      fontSize: 11,
+      fontWeight: 'bold',
+    },
 
-  // Achievements 3x3 Grid
-  achievementsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  achievementCard: {
-    width: cardWidth,
-    backgroundColor: '#0c1626',
-    borderWidth: 1,
-    borderColor: '#122540',
-    borderRadius: 18,
-    padding: 10,
-    marginBottom: 10,
-    alignItems: 'center',
-    position: 'relative',
-    height: 145,
-  },
-  lockedCard: {
-    opacity: 0.6,
-  },
-  cardTitle: {
-    color: '#ffffff',
-    fontSize: 9.5,
-    fontWeight: 'bold',
-    marginTop: 8,
-    textAlign: 'center',
-    width: '100%',
-  },
-  cardDesc: {
-    color: '#64748b',
-    fontSize: 7.5,
-    lineHeight: 10,
-    textAlign: 'center',
-    marginTop: 4,
-    height: 30,
-    width: '100%',
-  },
-  cardFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    width: '100%',
-    position: 'absolute',
-    bottom: 8,
-    paddingHorizontal: 8,
-  },
-  completedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(34, 197, 94, 0.12)',
-    borderWidth: 0.5,
-    borderColor: 'rgba(34, 197, 94, 0.3)',
-    borderRadius: 6,
-    paddingHorizontal: 4,
-    paddingVertical: 1.5,
-  },
-  completedBadgeText: {
-    color: '#22c55e',
-    fontSize: 6.5,
-    fontWeight: 'bold',
-  },
-  progressRatioText: {
-    fontSize: 9,
-    fontWeight: 'bold',
-  },
-  lockedBadge: {
-    backgroundColor: 'rgba(100, 116, 139, 0.15)',
-    borderRadius: 6,
-    paddingHorizontal: 4,
-    paddingVertical: 1.5,
-  },
-  lockedBadgeText: {
-    color: '#94a3b8',
-    fontSize: 6.5,
-    fontWeight: 'bold',
-  },
-  cardXpLabel: {
-    color: '#94a3b8',
-    fontSize: 8,
-    fontWeight: 'bold',
-  },
-  cardProgressBarBg: {
-    width: '80%',
-    height: 3,
-    backgroundColor: '#122540',
-    borderRadius: 1.5,
-    position: 'absolute',
-    bottom: 24,
-    overflow: 'hidden',
-  },
-  cardProgressBarFill: {
-    height: '100%',
-    borderRadius: 1.5,
-  },
+    // Quick Stats Row
+    statBadgeText: {
+      color: colors.text,
+      fontSize: 10,
+      fontWeight: 'bold',
+    },
+    focusStatusBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      alignSelf: 'flex-start',
+      backgroundColor: 'rgba(34, 197, 94, 0.12)',
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: 'rgba(34, 197, 94, 0.25)',
+    },
+    focusStatusText: {
+      color: '#22c55e',
+      fontSize: 10,
+      fontWeight: 'bold',
+      marginLeft: 4,
+    },
 
-  // Streak Panel Card
-  streakPanelCard: {
-    backgroundColor: '#0c1626',
-    borderWidth: 1,
-    borderColor: '#122540',
-    borderRadius: 24,
-    padding: 16,
-    marginBottom: 16,
-  },
-  streakCardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  streakLeftCol: {
-    alignItems: 'flex-start',
-  },
-  streakLabel: {
-    color: '#64748b',
-    fontSize: 9,
-    fontWeight: 'bold',
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-  },
-  streakDaysValRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  streakDaysText: {
-    color: '#ffffff',
-    fontSize: 18,
-    fontWeight: '900',
-  },
-  streakDivider: {
-    width: 1,
-    backgroundColor: '#122540',
-    height: '75%',
-    alignSelf: 'center',
-  },
-  streakMiddleCol: {
-    flex: 1,
-    paddingHorizontal: 12,
-  },
-  streakTitle: {
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: 'bold',
-    marginBottom: 2,
-  },
-  streakDesc: {
-    color: '#64748b',
-    fontSize: 9,
-    lineHeight: 12,
-  },
-  streakRightCol: {
-    alignItems: 'flex-end',
-  },
-  bestStreakRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 4,
-    marginBottom: 2,
-  },
-  bestStreakVal: {
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  bestStreakDate: {
-    color: '#64748b',
-    fontSize: 8.5,
-    fontWeight: '500',
-  },
-  streakDotsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    borderTopWidth: 1,
-    borderTopColor: '#122540',
-    paddingTop: 14,
-  },
-  streakDotItem: {
-    alignItems: 'center',
-  },
-  streakDotRing: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 4,
-  },
-  checkedDotRing: {
-    borderColor: '#22c55e',
-    backgroundColor: 'rgba(34, 197, 94, 0.08)',
-  },
-  uncheckedDotRing: {
-    borderColor: '#475569',
-    backgroundColor: 'transparent',
-  },
-  dotPlaceholder: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#475569',
-  },
-  streakDotLabel: {
-    color: '#64748b',
-    fontSize: 8.5,
-    fontWeight: 'bold',
-  },
+    // Streak Calendar Panel
+    streakCard: {
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 24,
+      padding: 16,
+      marginBottom: 16,
+    },
+    streakHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+      paddingBottom: 12,
+      marginBottom: 14,
+    },
+    streakHeaderLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    streakLabel: {
+      color: colors.textMuted,
+      fontSize: 9,
+      fontWeight: 'bold',
+      textTransform: 'uppercase',
+      letterSpacing: 0.6,
+    },
+    streakDaysValRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginTop: 4,
+    },
+    streakDaysText: {
+      color: colors.text,
+      fontSize: 18,
+      fontWeight: '900',
+    },
+    streakDivider: {
+      width: 1,
+      backgroundColor: colors.border,
+      height: '75%',
+      alignSelf: 'center',
+    },
+    streakMiddleCol: {
+      flex: 1,
+      paddingHorizontal: 12,
+    },
+    streakTitle: {
+      color: colors.text,
+      fontSize: 12,
+      fontWeight: 'bold',
+      marginBottom: 2,
+    },
+    streakDesc: {
+      color: colors.textSlate,
+      fontSize: 9,
+      lineHeight: 12,
+    },
+    streakRightCol: {
+      alignItems: 'flex-end',
+    },
+    bestStreakRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginTop: 4,
+      marginBottom: 2,
+    },
+    bestStreakVal: {
+      color: colors.text,
+      fontSize: 12,
+      fontWeight: 'bold',
+    },
+    bestStreakDate: {
+      color: colors.textSlate,
+      fontSize: 8.5,
+      fontWeight: '500',
+    },
+    streakDotsRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      paddingTop: 14,
+    },
+    streakDotItem: {
+      alignItems: 'center',
+    },
+    streakDotRing: {
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      borderWidth: 1.5,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 4,
+    },
+    checkedDotRing: {
+      borderColor: '#22c55e',
+      backgroundColor: 'rgba(34, 197, 94, 0.08)',
+    },
+    uncheckedDotRing: {
+      borderColor: colors.textSlate,
+      backgroundColor: 'transparent',
+    },
+    dotPlaceholder: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      backgroundColor: colors.textSlate,
+    },
+    streakDotLabel: {
+      color: colors.textSlate,
+      fontSize: 8.5,
+      fontWeight: 'bold',
+    },
 
-  // Rewards Banner
-  rewardsBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#0c1626',
-    borderWidth: 1,
-    borderColor: '#00f5ff',
-    borderRadius: 20,
-    padding: 14,
-    marginBottom: 16,
-    shadowColor: '#00f5ff',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-  },
-  rewardsLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    marginRight: 10,
-  },
-  rewardsTextCol: {
-    marginLeft: 12,
-    flex: 1,
-  },
-  rewardsTitle: {
-    color: '#ffffff',
-    fontSize: 13,
-    fontWeight: 'bold',
-    marginBottom: 2,
-  },
-  rewardsSub: {
-    color: '#64748b',
-    fontSize: 9.5,
-  },
-  rewardsBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#00f5ff',
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-  rewardsBtnText: {
-    color: '#00f5ff',
-    fontSize: 10.5,
-    fontWeight: 'bold',
-  },
-  bottomSpacer: {
-    height: 60,
-  },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(5, 11, 20, 0.9)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    width: '90%',
-    maxHeight: '85%',
-    backgroundColor: '#0c1626',
-    borderWidth: 1,
-    borderColor: '#122540',
-    borderRadius: 24,
-    padding: 20,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#122540',
-    paddingBottom: 15,
-    marginBottom: 10,
-  },
-  modalTitle: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginLeft: 10,
-    flex: 1,
-  },
-  modalCloseBtn: {
-    padding: 4,
-  },
-  modalScroll: {
-    flexGrow: 0,
-  },
-  modalBody: {
-    paddingVertical: 10,
-  },
-  rewardsIntro: {
-    color: '#94a3b8',
-    fontSize: 11.5,
-    lineHeight: 16,
-    marginBottom: 15,
-  },
-  rewardCard: {
-    backgroundColor: '#070f1e',
-    borderWidth: 1,
-    borderColor: '#122540',
-    borderRadius: 16,
-    padding: 12,
-    marginBottom: 14,
-  },
-  rewardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  rewardTitleCol: {
-    flex: 1,
-    marginLeft: 10,
-    marginRight: 6,
-  },
-  rewardTitleText: {
-    color: '#ffffff',
-    fontSize: 11.5,
-    fontWeight: 'bold',
-  },
-  rewardSource: {
-    color: '#64748b',
-    fontSize: 9,
-    marginTop: 1,
-  },
-  unlockedBadge: {
-    backgroundColor: 'rgba(34, 197, 94, 0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.3)',
-    borderRadius: 8,
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-  },
-  unlockedText: {
-    color: '#22c55e',
-    fontSize: 8,
-    fontWeight: 'bold',
-  },
-  lockedBadge: {
-    backgroundColor: 'rgba(71, 85, 105, 0.12)',
-    borderWidth: 1,
-    borderColor: '#47556940',
-    borderRadius: 8,
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-  },
-  lockedText: {
-    color: '#94a3b8',
-    fontSize: 8,
-    fontWeight: 'bold',
-  },
-  rewardDesc: {
-    color: '#94a3b8',
-    fontSize: 10,
-    lineHeight: 14,
-    marginBottom: 8,
-  },
-  couponCodeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#0c1626',
-    borderWidth: 1,
-    borderColor: '#122540',
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    marginTop: 4,
-  },
-  couponCodeLabel: {
-    color: '#64748b',
-    fontSize: 9,
-    fontWeight: '500',
-  },
-  couponCodeText: {
-    color: '#00f5ff',
-    fontSize: 10.5,
-    fontWeight: 'bold',
-    marginLeft: 6,
-    flex: 1,
-  },
-  copyBtn: {
-    backgroundColor: 'rgba(0, 245, 255, 0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(0, 245, 255, 0.25)',
-    borderRadius: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-  },
-  copyBtnText: {
-    color: '#00f5ff',
-    fontSize: 9.5,
-    fontWeight: 'bold',
-  },
-  rewardProgressRow: {
-    marginTop: 6,
-  },
-  progressLabel: {
-    color: '#64748b',
-    fontSize: 9,
-    marginBottom: 4,
-  },
-  progressBarBg: {
-    height: 4,
-    backgroundColor: '#122540',
-    borderRadius: 2,
-  },
-  progressBarFill: {
-    height: '100%',
-    backgroundColor: '#00f5ff',
-    borderRadius: 2,
-  },
-  modalCloseMainBtn: {
-    backgroundColor: '#0c1626',
-    borderWidth: 1,
-    borderColor: '#122540',
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: 'center',
-    marginTop: 15,
-  },
-  modalCloseMainBtnText: {
-    color: '#ffffff',
-    fontSize: 13,
-    fontWeight: 'bold',
-  },
-});
+    // Rewards Banner
+    rewardsBanner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.accent,
+      borderRadius: 20,
+      padding: 14,
+      marginBottom: 16,
+      shadowColor: colors.accent,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.1,
+      shadowRadius: 10,
+    },
+    rewardsLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flex: 1,
+      marginRight: 10,
+    },
+    rewardsTextCol: {
+      marginLeft: 12,
+      flex: 1,
+    },
+    rewardsTitle: {
+      color: colors.text,
+      fontSize: 13,
+      fontWeight: 'bold',
+      marginBottom: 2,
+    },
+    rewardsSub: {
+      color: colors.textSlate,
+      fontSize: 9.5,
+    },
+    rewardsBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: colors.accent,
+      borderRadius: 10,
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+    },
+    rewardsBtnText: {
+      color: colors.accent,
+      fontSize: 10.5,
+      fontWeight: 'bold',
+    },
+    bottomSpacer: {
+      height: 60,
+    },
+    modalBackdrop: {
+      flex: 1,
+      backgroundColor: isDark ? 'rgba(5, 11, 20, 0.9)' : 'rgba(241, 245, 249, 0.9)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    modalContent: {
+      width: '90%',
+      maxHeight: '85%',
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 24,
+      padding: 20,
+    },
+    modalHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+      paddingBottom: 15,
+      marginBottom: 10,
+    },
+    modalTitle: {
+      color: colors.text,
+      fontSize: 16,
+      fontWeight: 'bold',
+      marginLeft: 10,
+      flex: 1,
+    },
+    modalCloseBtn: {
+      padding: 4,
+    },
+    modalScroll: {
+      flexGrow: 0,
+    },
+    modalBody: {
+      paddingVertical: 10,
+    },
+    rewardsIntro: {
+      color: colors.textMuted,
+      fontSize: 11.5,
+      lineHeight: 16,
+      marginBottom: 15,
+    },
+    rewardCard: {
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 16,
+      padding: 12,
+      marginBottom: 14,
+    },
+    rewardHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 8,
+    },
+    rewardTitleCol: {
+      flex: 1,
+      marginLeft: 10,
+      marginRight: 6,
+    },
+    rewardTitleText: {
+      color: colors.text,
+      fontSize: 11.5,
+      fontWeight: 'bold',
+    },
+    rewardSource: {
+      color: colors.textSlate,
+      fontSize: 9,
+      marginTop: 1,
+    },
+    unlockedBadge: {
+      backgroundColor: 'rgba(34, 197, 94, 0.12)',
+      borderWidth: 1,
+      borderColor: 'rgba(34, 197, 94, 0.3)',
+      borderRadius: 8,
+      paddingHorizontal: 6,
+      paddingVertical: 3,
+    },
+    unlockedText: {
+      color: '#22c55e',
+      fontSize: 8,
+      fontWeight: 'bold',
+    },
+    lockedBadge: {
+      backgroundColor: 'rgba(71, 85, 105, 0.12)',
+      borderWidth: 1,
+      borderColor: '#47556940',
+      borderRadius: 8,
+      paddingHorizontal: 6,
+      paddingVertical: 3,
+    },
+    lockedText: {
+      color: colors.textMuted,
+      fontSize: 8,
+      fontWeight: 'bold',
+    },
+    rewardDesc: {
+      color: colors.textMuted,
+      fontSize: 10,
+      lineHeight: 14,
+      marginBottom: 8,
+    },
+    couponCodeRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.background,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 10,
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      marginTop: 4,
+    },
+    couponCodeLabel: {
+      color: colors.textSlate,
+      fontSize: 9,
+      fontWeight: '500',
+    },
+    couponCodeText: {
+      color: colors.accent,
+      fontSize: 10.5,
+      fontWeight: 'bold',
+      marginLeft: 6,
+      flex: 1,
+    },
+    copyBtn: {
+      backgroundColor: 'rgba(0, 245, 255, 0.1)',
+      borderWidth: 1,
+      borderColor: 'rgba(0, 245, 255, 0.25)',
+      borderRadius: 6,
+      paddingHorizontal: 10,
+      paddingVertical: 3,
+    },
+    copyBtnText: {
+      color: colors.accent,
+      fontSize: 9.5,
+      fontWeight: 'bold',
+    },
+    rewardProgressRow: {
+      marginTop: 6,
+    },
+    progressLabel: {
+      color: colors.textSlate,
+      fontSize: 9,
+      marginBottom: 4,
+    },
+    progressBarBg: {
+      height: 4,
+      backgroundColor: colors.border,
+      borderRadius: 2,
+    },
+    progressBarFill: {
+      height: '100%',
+      backgroundColor: colors.accent,
+      borderRadius: 2,
+    },
+    modalCloseMainBtn: {
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 12,
+      paddingVertical: 12,
+      alignItems: 'center',
+      marginTop: 15,
+    },
+    modalCloseMainBtnText: {
+      color: colors.text,
+      fontSize: 13,
+      fontWeight: 'bold',
+    },
+  });
+}

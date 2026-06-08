@@ -5,6 +5,7 @@ import Svg, { Circle, Line, Path, Defs, LinearGradient as SvgLinearGradient, Sto
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useDriveStore } from '../src/store/driveStore';
 import { driveRepository } from '../src/database/repositories/driveRepository';
+import { useAppTheme } from '../src/ui/theme';
 import dayjs from 'dayjs';
 
 const { width } = Dimensions.get('window');
@@ -64,6 +65,8 @@ const ROUTE_POINTS = generateInterpolatedRoute();
 
 export default function RouteReplayScreen() {
   const router = useRouter();
+  const { colors, isDark } = useAppTheme();
+  const styles = getStyles(colors);
   const { id } = useLocalSearchParams();
   const sliderWidthRef = useRef<number>(0);
 
@@ -889,412 +892,416 @@ export default function RouteReplayScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#050B14',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 50,
-    paddingBottom: 15,
-    backgroundColor: '#050B14',
-  },
-  iconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#0c1626',
-    borderWidth: 1,
-    borderColor: '#1e293b',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitleContainer: {
-    alignItems: 'center',
-  },
-  headerTitle: {
-    color: '#ffffff',
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  headerStatusRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 2,
-  },
-  completedDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#22c55e',
-    marginRight: 6,
-  },
-  headerSubtitle: {
-    color: '#00f5ff',
-    fontSize: 10,
-    fontWeight: '600',
-  },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 10,
-  },
-  bottomSpacer: {
-    height: 60,
-  },
+function getStyles(colors: any) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+      paddingTop: 50,
+      paddingBottom: 15,
+      backgroundColor: colors.background,
+    },
+    iconCircle: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    headerTitleContainer: {
+      alignItems: 'center',
+    },
+    headerTitle: {
+      color: colors.text,
+      fontSize: 20,
+      fontWeight: 'bold',
+    },
+    headerStatusRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginTop: 2,
+    },
+    completedDot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      backgroundColor: '#22c55e',
+      marginRight: 6,
+    },
+    headerSubtitle: {
+      color: colors.accent,
+      fontSize: 10,
+      fontWeight: '600',
+    },
+    scrollContent: {
+      paddingHorizontal: 20,
+      paddingTop: 10,
+    },
+    bottomSpacer: {
+      height: 60,
+    },
 
-  // Overview Card
-  overviewCard: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#0c1626',
-    borderWidth: 1,
-    borderColor: '#122540',
-    borderRadius: 16,
-    padding: 14,
-    marginBottom: 15,
-  },
-  overviewLeft: {
-    flex: 1,
-    marginRight: 10,
-  },
-  overviewInfoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  overviewText: {
-    color: '#94a3b8',
-    fontSize: 11,
-    fontWeight: '500',
-  },
-  locationPointsCol: {
-    position: 'relative',
-  },
-  locationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: 20,
-  },
-  locPinIndicator: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 10,
-  },
-  locationLabel: {
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  locationConnector: {
-    position: 'absolute',
-    left: 3,
-    top: 10,
-    width: 2,
-    height: 12,
-    backgroundColor: '#122540',
-  },
-  overviewRight: {
-    justifyContent: 'center',
-  },
-  ratingBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 245, 255, 0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(0, 245, 255, 0.2)',
-    borderRadius: 12,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-  },
-  badgeScoreVal: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '900',
-    lineHeight: 18,
-  },
-  badgeScoreLabel: {
-    color: '#64748b',
-    fontSize: 8,
-    fontWeight: '500',
-  },
-  badgeRatingText: {
-    color: '#22c55e',
-    fontSize: 9,
-    fontWeight: 'bold',
-  },
+    // Overview Card
+    overviewCard: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 16,
+      padding: 14,
+      marginBottom: 15,
+    },
+    overviewLeft: {
+      flex: 1,
+      marginRight: 10,
+    },
+    overviewInfoRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 10,
+    },
+    overviewText: {
+      color: colors.textMuted,
+      fontSize: 11,
+      fontWeight: '500',
+    },
+    locationPointsCol: {
+      position: 'relative',
+    },
+    locationRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      height: 20,
+    },
+    locPinIndicator: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      marginRight: 10,
+    },
+    locationLabel: {
+      color: colors.text,
+      fontSize: 12,
+      fontWeight: 'bold',
+    },
+    locationConnector: {
+      position: 'absolute',
+      left: 3,
+      top: 10,
+      width: 2,
+      height: 12,
+      backgroundColor: colors.border,
+    },
+    overviewRight: {
+      justifyContent: 'center',
+    },
+    ratingBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.isDark ? 'rgba(0, 245, 255, 0.08)' : 'rgba(8, 145, 178, 0.08)',
+      borderWidth: 1,
+      borderColor: colors.isDark ? 'rgba(0, 245, 255, 0.2)' : 'rgba(8, 145, 178, 0.2)',
+      borderRadius: 12,
+      paddingVertical: 8,
+      paddingHorizontal: 10,
+    },
+    badgeScoreVal: {
+      color: colors.text,
+      fontSize: 16,
+      fontWeight: '900',
+      lineHeight: 18,
+    },
+    badgeScoreLabel: {
+      color: colors.textSlate,
+      fontSize: 8,
+      fontWeight: '500',
+    },
+    badgeRatingText: {
+      color: '#22c55e',
+      fontSize: 9,
+      fontWeight: 'bold',
+    },
 
-  // Map Container
-  mapContainer: {
-    height: 380,
-    backgroundColor: '#040a12',
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: '#122540',
-    overflow: 'hidden',
-    position: 'relative',
-    marginBottom: 15,
-  },
-  mapCallout: {
-    position: 'absolute',
-    backgroundColor: 'rgba(4, 10, 18, 0.9)',
-    borderWidth: 1,
-    borderColor: '#122540',
-    borderRadius: 6,
-    paddingVertical: 3,
-    paddingHorizontal: 6,
-    alignItems: 'center',
-  },
-  calloutTitle: {
-    color: '#ffffff',
-    fontSize: 8,
-    fontWeight: 'bold',
-  },
-  calloutTime: {
-    color: '#94a3b8',
-    fontSize: 7,
-  },
-  calloutSub: {
-    color: '#00f5ff',
-    fontSize: 7,
-    fontWeight: 'bold',
-  },
-  mapControlsColumn: {
-    position: 'absolute',
-    top: 15,
-    right: 15,
-    backgroundColor: 'rgba(4, 10, 18, 0.85)',
-    borderWidth: 1,
-    borderColor: '#122540',
-    borderRadius: 12,
-    padding: 4,
-  },
-  mapFloatBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginVertical: 4,
-  },
-  legendContainer: {
-    position: 'absolute',
-    bottom: 15,
-    left: 15,
-    backgroundColor: 'rgba(4, 10, 18, 0.85)',
-    borderWidth: 1,
-    borderColor: '#122540',
-    borderRadius: 10,
-    padding: 8,
-  },
-  legendRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 2.5,
-  },
-  legendDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginRight: 8,
-  },
-  legendText: {
-    color: '#94a3b8',
-    fontSize: 8,
-    fontWeight: '500',
-  },
+    // Map Container
+    mapContainer: {
+      height: 380,
+      backgroundColor: colors.isDark ? '#040a12' : '#e2e8f0',
+      borderRadius: 24,
+      borderWidth: 1,
+      borderColor: colors.border,
+      overflow: 'hidden',
+      position: 'relative',
+      marginBottom: 15,
+    },
+    mapCallout: {
+      position: 'absolute',
+      backgroundColor: colors.isDark ? 'rgba(4, 10, 18, 0.9)' : 'rgba(255, 255, 255, 0.9)',
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 6,
+      paddingVertical: 3,
+      paddingHorizontal: 6,
+      alignItems: 'center',
+    },
+    calloutTitle: {
+      color: colors.text,
+      fontSize: 8,
+      fontWeight: 'bold',
+    },
+    calloutTime: {
+      color: colors.textMuted,
+      fontSize: 7,
+    },
+    calloutSub: {
+      color: colors.accent,
+      fontSize: 7,
+      fontWeight: 'bold',
+    },
+    mapControlsColumn: {
+      position: 'absolute',
+      top: 15,
+      right: 15,
+      backgroundColor: colors.isDark ? 'rgba(4, 10, 18, 0.85)' : 'rgba(255, 255, 255, 0.85)',
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 12,
+      padding: 4,
+    },
+    mapFloatBtn: {
+      width: 32,
+      height: 32,
+      borderRadius: 8,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginVertical: 4,
+    },
+    legendContainer: {
+      position: 'absolute',
+      bottom: 15,
+      left: 15,
+      backgroundColor: colors.isDark ? 'rgba(4, 10, 18, 0.85)' : 'rgba(255, 255, 255, 0.85)',
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 10,
+      padding: 8,
+    },
+    legendRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginVertical: 2.5,
+    },
+    legendDot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      marginRight: 8,
+    },
+    legendText: {
+      color: colors.textMuted,
+      fontSize: 8,
+      fontWeight: '500',
+    },
 
-  // Player Panel
-  playerPanel: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(8, 15, 26, 0.6)',
-    borderWidth: 1,
-    borderColor: '#122540',
-    borderRadius: 20,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    marginBottom: 15,
-  },
-  playButtonCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 2,
-    borderColor: '#00f5ff',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(0, 245, 255, 0.05)',
-  },
-  playingBtn: {
-    backgroundColor: 'rgba(0, 245, 255, 0.15)',
-  },
-  sliderContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginHorizontal: 12,
-  },
-  sliderTimeText: {
-    color: '#64748b',
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  sliderTrackWrap: {
-    flex: 1,
-    height: 24,
-    justifyContent: 'center',
-    marginHorizontal: 8,
-    position: 'relative',
-  },
-  sliderTrackBg: {
-    height: 4,
-    backgroundColor: '#1e293b',
-    borderRadius: 2,
-    position: 'relative',
-  },
-  sliderTrackFill: {
-    height: '100%',
-    backgroundColor: '#00f5ff',
-    borderRadius: 2,
-  },
-  sliderThumb: {
-    position: 'absolute',
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: '#00f5ff',
-    borderWidth: 2,
-    borderColor: '#050B14',
-    top: 5,
-  },
-  sliderEventDot: {
-    position: 'absolute',
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    top: -1,
-  },
-  speedPill: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: '#00f5ff',
-    backgroundColor: 'rgba(0, 245, 255, 0.05)',
-  },
-  speedText: {
-    color: '#00f5ff',
-    fontSize: 11,
-    fontWeight: 'bold',
-  },
+    // Player Panel
+    playerPanel: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 20,
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      marginBottom: 15,
+    },
+    playButtonCircle: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      borderWidth: 2,
+      borderColor: colors.accent,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.isDark ? 'rgba(0, 245, 255, 0.05)' : 'rgba(8, 145, 178, 0.05)',
+    },
+    playingBtn: {
+      backgroundColor: colors.isDark ? 'rgba(0, 245, 255, 0.15)' : 'rgba(8, 145, 178, 0.15)',
+    },
+    sliderContainer: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginHorizontal: 12,
+    },
+    sliderTimeText: {
+      color: colors.textSlate,
+      fontSize: 10,
+      fontWeight: 'bold',
+    },
+    sliderTrackWrap: {
+      flex: 1,
+      height: 24,
+      justifyContent: 'center',
+      marginHorizontal: 8,
+      position: 'relative',
+    },
+    sliderTrackBg: {
+      height: 4,
+      backgroundColor: colors.border,
+      borderRadius: 2,
+      position: 'relative',
+    },
+    sliderTrackFill: {
+      height: '100%',
+      backgroundColor: colors.accent,
+      borderRadius: 2,
+    },
+    sliderThumb: {
+      position: 'absolute',
+      width: 14,
+      height: 14,
+      borderRadius: 7,
+      backgroundColor: colors.accent,
+      borderWidth: 2,
+      borderColor: colors.background,
+      top: 5,
+    },
+    sliderEventDot: {
+      position: 'absolute',
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      top: -1,
+    },
+    speedPill: {
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: 12,
+      borderWidth: 1.5,
+      borderColor: colors.accent,
+      backgroundColor: colors.isDark ? 'rgba(0, 245, 255, 0.05)' : 'rgba(8, 145, 178, 0.05)',
+    },
+    speedText: {
+      color: colors.accent,
+      fontSize: 11,
+      fontWeight: 'bold',
+    },
 
-  // Metrics Grid Box
-  metricsBox: {
-    flexDirection: 'row',
-    backgroundColor: '#0c1626',
-    borderWidth: 1,
-    borderColor: '#122540',
-    borderRadius: 16,
-    overflow: 'hidden',
-    marginBottom: 20,
-  },
-  metricCell: {
-    flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cellBorder: {
-    borderRightWidth: 1,
-    borderRightColor: '#122540',
-  },
-  metricLabelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  metricLabel: {
-    color: '#64748b',
-    fontSize: 9,
-    fontWeight: '500',
-  },
-  metricVal: {
-    color: '#ffffff',
-    fontSize: 13,
-    fontWeight: 'bold',
-  },
-  metricSubText: {
-    color: '#22c55e',
-    fontSize: 8,
-    fontWeight: 'bold',
-    marginTop: 1,
-  },
+    // Metrics Grid Box
+    metricsBox: {
+      flexDirection: 'row',
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 16,
+      overflow: 'hidden',
+      marginBottom: 20,
+    },
+    metricCell: {
+      flex: 1,
+      paddingVertical: 12,
+      paddingHorizontal: 10,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    cellBorder: {
+      borderRightWidth: 1,
+      borderRightColor: colors.border,
+    },
+    metricLabelRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 4,
+    },
+    metricLabel: {
+      color: colors.textSlate,
+      fontSize: 9,
+      fontWeight: '500',
+    },
+    metricVal: {
+      color: colors.text,
+      fontSize: 13,
+      fontWeight: 'bold',
+    },
+    metricSubText: {
+      color: '#22c55e',
+      fontSize: 8,
+      fontWeight: 'bold',
+      marginTop: 1,
+    },
 
-  // Event Summary Section
-  eventSection: {
-    marginBottom: 20,
-  },
-  sectionHeaderRowMain: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    color: '#ffffff',
-    fontSize: 15,
-    fontWeight: 'bold',
-  },
-  linkButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  linkText: {
-    color: '#00f5ff',
-    fontSize: 12,
-    fontWeight: 'bold',
-    marginRight: 2,
-  },
-  eventsScroll: {
-    paddingRight: 10,
-  },
-  eventCounterCard: {
-    width: 125,
-    backgroundColor: '#0c1626',
-    borderWidth: 1,
-    borderRadius: 14,
-    padding: 10,
-    marginRight: 10,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  eventCardTitle: {
-    color: '#94a3b8',
-    fontSize: 9,
-    fontWeight: '500',
-  },
-  eventCardCount: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  phoneValRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-  },
-  phoneSecText: {
-    color: '#64748b',
-    fontSize: 9,
-    marginLeft: 6,
-    fontWeight: '500',
-  },
-});
+    // Event Summary Section
+    eventSection: {
+      marginBottom: 20,
+    },
+    sectionHeaderRowMain: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 12,
+    },
+    sectionTitle: {
+      color: colors.text,
+      fontSize: 15,
+      fontWeight: 'bold',
+    },
+    linkButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    linkText: {
+      color: colors.accent,
+      fontSize: 12,
+      fontWeight: 'bold',
+      marginRight: 2,
+    },
+    eventsScroll: {
+      paddingRight: 10,
+    },
+    eventCounterCard: {
+      width: 125,
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 14,
+      padding: 10,
+      marginRight: 10,
+    },
+    cardHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 6,
+    },
+    eventCardTitle: {
+      color: colors.textMuted,
+      fontSize: 9,
+      fontWeight: '500',
+    },
+    eventCardCount: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: colors.text,
+    },
+    phoneValRow: {
+      flexDirection: 'row',
+      alignItems: 'baseline',
+    },
+    phoneSecText: {
+      color: colors.textSlate,
+      fontSize: 9,
+      marginLeft: 6,
+      fontWeight: '500',
+    },
+  });
+}

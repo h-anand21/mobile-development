@@ -41,3 +41,9 @@ app-example
 # generated native folders
 /ios
 /android
+
+# python helper scripts
+*.py
+scratch_*.py
+scratch_check*.py
+

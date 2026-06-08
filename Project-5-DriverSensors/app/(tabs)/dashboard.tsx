@@ -6,6 +6,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { useAnalyticsStore } from '../../src/store/analyticsStore';
 import { driveRepository } from '../../src/database/repositories/driveRepository';
 import dayjs from 'dayjs';
+import { useAppTheme } from '../../src/ui/theme';
 
 const { width } = Dimensions.get('window');
 
@@ -13,6 +14,8 @@ const { width } = Dimensions.get('window');
 
 export default function DashboardScreen() {
   const router = useRouter();
+  const { colors, isDark } = useAppTheme();
+  const styles = getStyles(colors);
   const [activeTab, setActiveTab] = useState<'week' | 'month' | 'year'>('week');
   const [selectedDate, setSelectedDate] = useState(() => dayjs());
 
@@ -1009,464 +1012,560 @@ export default function DashboardScreen() {
             </View>
           </View>
         )}
-
         <View style={styles.bottomSpacer} />
       </ScrollView>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#050B14',
-  },
-  scrollView: {
-    flex: 1,
-    marginBottom: 90, // Ends exactly above the floating tab bar
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 50,
-    paddingBottom: 10,
-    backgroundColor: '#050B14',
-  },
-  headerMenuBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#0c1626',
-    borderWidth: 1,
-    borderColor: '#122540',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitleContainer: {
-    alignItems: 'center',
-  },
-  headerTitle: {
-    color: '#ffffff',
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  headerSubtitle: {
-    color: '#00f5ff',
-    fontSize: 10,
-    marginTop: 2,
-    fontWeight: '500',
-  },
-  headerRightWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  notificationBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#0c1626',
-    borderWidth: 1,
-    borderColor: '#1e293b',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-    position: 'relative',
-  },
-  notificationDot: {
-    position: 'absolute',
-    top: 13,
-    right: 14,
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-    backgroundColor: '#f59e0b',
-  },
-  profileAvatar: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+function getStyles(colors: any) {
+  const isDark = colors.background === '#050B14';
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    scrollView: {
+      flex: 1,
+      marginBottom: 90, // Ends exactly above the floating tab bar
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+      paddingTop: 50,
+      paddingBottom: 10,
+      backgroundColor: colors.background,
+    },
+    headerMenuBtn: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    headerTitleContainer: {
+      alignItems: 'center',
+    },
+    headerTitle: {
+      color: colors.text,
+      fontSize: 20,
+      fontWeight: 'bold',
+    },
+    headerSubtitle: {
+      color: colors.accent,
+      fontSize: 10,
+      marginTop: 2,
+      fontWeight: '500',
+    },
+    headerRightWrap: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    notificationBtn: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 10,
+      position: 'relative',
+    },
+    notificationDot: {
+      position: 'absolute',
+      top: 13,
+      right: 14,
+      width: 7,
+      height: 7,
+      borderRadius: 3.5,
+      backgroundColor: '#f59e0b',
+    },
+    profileAvatar: {
+      width: 38,
+      height: 38,
+      borderRadius: 19,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
 
-  // Tabs selector styling
-  tabsRow: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(8, 15, 26, 0.8)',
-    borderWidth: 1,
-    borderColor: '#122540',
-    borderRadius: 14,
-    marginHorizontal: 20,
-    marginVertical: 14,
-    padding: 4,
-  },
-  tabItem: {
-    flex: 1,
-    paddingVertical: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-    borderRadius: 10,
-  },
-  activeTabItem: {
-    backgroundColor: '#0c1626',
-  },
-  tabText: {
-    color: '#64748b',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  activeTabText: {
-    color: '#00f5ff',
-  },
-  tabGlowUnderline: {
-    position: 'absolute',
-    bottom: -4,
-    width: 28,
-    height: 2,
-    backgroundColor: '#00f5ff',
-    borderRadius: 1,
-    shadowColor: '#00f5ff',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 3,
-  },
+    // Tabs selector styling
+    tabsRow: {
+      flexDirection: 'row',
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 14,
+      padding: 4,
+      marginHorizontal: 20,
+      marginVertical: 15,
+    },
+    tabItem: {
+      flex: 1,
+      paddingVertical: 10,
+      alignItems: 'center',
+      borderRadius: 10,
+      position: 'relative',
+    },
+    activeTabItem: {
+      backgroundColor: colors.background,
+      shadowColor: colors.accent,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.15,
+      shadowRadius: 4,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    tabText: {
+      color: colors.textSlate,
+      fontSize: 12,
+      fontWeight: 'bold',
+    },
+    activeTabText: {
+      color: colors.accent,
+    },
+    tabGlowUnderline: {
+      position: 'absolute',
+      bottom: 2,
+      width: 16,
+      height: 3,
+      borderRadius: 1.5,
+      backgroundColor: colors.accent,
+      shadowColor: colors.accent,
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.8,
+      shadowRadius: 2,
+    },
+    scrollContent: {
+      paddingBottom: 110,
+    },
+    metricsGridContainer: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+      paddingHorizontal: 20,
+      marginBottom: 10,
+    },
+    metricCard: {
+      width: '48%',
+      backgroundColor: colors.card,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: 14,
+      marginBottom: 14,
+      position: 'relative',
+    },
+    metricCardHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 8,
+    },
+    metricCardLabel: {
+      color: colors.textSlate,
+      fontSize: 9.5,
+      fontWeight: 'bold',
+      letterSpacing: 0.5,
+      marginLeft: 6,
+      flex: 1,
+    },
+    metricCardValue: {
+      color: colors.text,
+      fontSize: 20,
+      fontWeight: 'bold',
+    },
+    sectionHeaderRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+      marginTop: 5,
+      marginBottom: 15,
+    },
+    sectionTitle: {
+      color: colors.textSlate,
+      fontSize: 10,
+      fontWeight: 'bold',
+      letterSpacing: 1.5,
+    },
+    sectionHeaderRight: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    sectionHeaderTime: {
+      color: colors.textMuted,
+      fontSize: 10,
+      fontWeight: '500',
+    },
 
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 5,
-  },
-  bottomSpacer: {
-    height: 40,
-  },
+    // All-time highlights grid
+    allTimeGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+      paddingHorizontal: 20,
+      marginBottom: 15,
+    },
+    highlightCard: {
+      width: '48%',
+      backgroundColor: colors.card,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: 14,
+      marginBottom: 14,
+      position: 'relative',
+    },
+    hlIconOuter: {
+      width: 32,
+      height: 32,
+      borderRadius: 8,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 10,
+    },
+    hlVal: {
+      color: colors.text,
+      fontSize: 18,
+      fontWeight: 'bold',
+    },
+    hlUnit: {
+      color: colors.textSlate,
+      fontSize: 9,
+      fontWeight: '500',
+    },
+    hlLabel: {
+      color: colors.textMuted,
+      fontSize: 9.5,
+      fontWeight: 'bold',
+      marginTop: 4,
+    },
 
-  // Section Headers
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    color: '#64748b',
-    fontSize: 10,
-    fontWeight: 'bold',
-    letterSpacing: 1.2,
-  },
-  sectionHeaderRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  sectionHeaderTime: {
-    color: '#64748b',
-    fontSize: 10,
-    fontWeight: '500',
-  },
+    // Standard metric cards (Weekly/Monthly/Yearly)
+    metricsGrid: {
+      paddingHorizontal: 20,
+      marginBottom: 10,
+    },
+    metricCardHalf: {
+      flex: 1,
+      backgroundColor: colors.card,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: 14,
+      marginBottom: 14,
+    },
+    metricCardTitle: {
+      color: colors.textSlate,
+      fontSize: 9,
+      fontWeight: 'bold',
+      letterSpacing: 1,
+      marginBottom: 8,
+    },
+    metricCardValRow: {
+      flexDirection: 'row',
+      alignItems: 'baseline',
+    },
+    metricCardValText: {
+      color: colors.text,
+      fontSize: 20,
+      fontWeight: 'bold',
+    },
+    metricCardUnitText: {
+      color: colors.textSlate,
+      fontSize: 9.5,
+      marginLeft: 4,
+      fontWeight: '500',
+    },
+    metricCardDiffRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginTop: 6,
+    },
+    metricCardVal: {
+      color: colors.text,
+      fontSize: 22,
+      fontWeight: '900',
+      lineHeight: 24,
+    },
+    metricCardSub: {
+      color: colors.textMuted,
+      fontSize: 10,
+      marginTop: 2,
+      marginBottom: 6,
+    },
+    metricCardDiff: {
+      color: '#22c55e',
+      fontSize: 8,
+      fontWeight: 'bold',
+    },
 
-  // Metrics Grid Cards
-  metricsGridContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginBottom: 15,
-  },
-  metricCard: {
-    width: '48.5%',
-    backgroundColor: '#0c1626',
-    borderWidth: 1,
-    borderColor: '#122540',
-    borderRadius: 16,
-    padding: 12,
-    marginBottom: 12,
-  },
-  metricCardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  metricCardLabel: {
-    color: '#64748b',
-    fontSize: 9,
-    fontWeight: '600',
-    marginLeft: 6,
-    flex: 1,
-  },
-  metricCardValue: {
-    color: '#ffffff',
-    fontSize: 22,
-    fontWeight: '900',
-    lineHeight: 24,
-  },
-  metricCardSub: {
-    color: '#94a3b8',
-    fontSize: 10,
-    marginTop: 2,
-    marginBottom: 6,
-  },
-  metricCardDiff: {
-    color: '#22c55e',
-    fontSize: 8,
-    fontWeight: 'bold',
-  },
+    // Score Trend Panel Card
+    panelCard: {
+      backgroundColor: colors.card,
+      borderRadius: 24,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: 16,
+      marginBottom: 15,
+    },
+    panelHeaderRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 15,
+    },
+    panelTitle: {
+      color: colors.textSlate,
+      fontSize: 10,
+      fontWeight: 'bold',
+      letterSpacing: 1.2,
+    },
+    panelHeaderRightLabel: {
+      color: colors.accent,
+      fontSize: 10,
+      fontWeight: 'bold',
+    },
+    chartContainer: {
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
 
-  // Score Trend Panel Card
-  panelCard: {
-    backgroundColor: 'rgba(8, 15, 26, 0.6)',
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: '#122540',
-    padding: 16,
-    marginBottom: 15,
-  },
-  panelHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  panelTitle: {
-    color: '#64748b',
-    fontSize: 10,
-    fontWeight: 'bold',
-    letterSpacing: 1.2,
-  },
-  panelHeaderRightLabel: {
-    color: '#00f5ff',
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  chartContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+    // Side by Side Cards
+    twoCardsRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: 15,
+    },
+    panelCardHalf: {
+      flex: 1,
+      backgroundColor: colors.card,
+      borderRadius: 24,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: 14,
+    },
+    panelTitleSmall: {
+      color: colors.textSlate,
+      fontSize: 9,
+      fontWeight: 'bold',
+      letterSpacing: 1,
+      marginBottom: 12,
+    },
 
-  // Side by Side Cards
-  twoCardsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 15,
-  },
-  panelCardHalf: {
-    flex: 1,
-    backgroundColor: 'rgba(8, 15, 26, 0.6)',
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: '#122540',
-    padding: 14,
-  },
-  panelTitleSmall: {
-    color: '#64748b',
-    fontSize: 9,
-    fontWeight: 'bold',
-    letterSpacing: 1,
-    marginBottom: 12,
-  },
+    // Donut chart layout
+    donutRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    donutContainer: {
+      position: 'relative',
+      width: 74,
+      height: 74,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    donutInner: {
+      position: 'absolute',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    donutScoreVal: {
+      color: colors.text,
+      fontSize: 22,
+      fontWeight: '900',
+      lineHeight: 24,
+    },
+    donutScoreLabel: {
+      color: colors.textSlate,
+      fontSize: 8,
+      fontWeight: '500',
+    },
+    donutLegendCol: {
+      flex: 1,
+      marginLeft: 10,
+    },
+    donutLegendRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 6,
+    },
+    donutLegendDot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      marginRight: 6,
+    },
+    legendLabelText: {
+      color: colors.textMuted,
+      fontSize: 8,
+      fontWeight: 'bold',
+    },
+    legendValText: {
+      color: colors.textSlate,
+      fontSize: 7,
+      fontWeight: 'bold',
+      marginTop: 1,
+    },
 
-  // Donut chart layout
-  donutRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  donutContainer: {
-    position: 'relative',
-    width: 74,
-    height: 74,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  donutInner: {
-    position: 'absolute',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  donutScoreVal: {
-    color: '#ffffff',
-    fontSize: 22,
-    fontWeight: '900',
-    lineHeight: 24,
-  },
-  donutScoreLabel: {
-    color: '#64748b',
-    fontSize: 8,
-    fontWeight: '500',
-  },
-  donutLegendCol: {
-    flex: 1,
-    marginLeft: 10,
-  },
-  donutLegendRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  donutLegendDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginRight: 6,
-  },
-  legendLabelText: {
-    color: '#94a3b8',
-    fontSize: 8,
-    fontWeight: 'bold',
-  },
-  legendValText: {
-    color: '#475569',
-    fontSize: 7,
-    fontWeight: 'bold',
-    marginTop: 1,
-  },
+    // Radar chart layout
+    radarWrapper: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      height: 140,
+      marginTop: 0,
+    },
 
-  // Radar chart layout
-  radarWrapper: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 140,
-    marginTop: 0,
-  },
+    // Insights Panel Card
+    insightsPanelCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: isDark ? 'rgba(0, 245, 255, 0.04)' : 'rgba(8, 145, 178, 0.04)',
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(0, 245, 255, 0.15)' : 'rgba(8, 145, 178, 0.15)',
+      borderRadius: 20,
+      padding: 14,
+      marginBottom: 20,
+    },
+    insightsLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flex: 1,
+      marginRight: 10,
+    },
+    trophyIconOuter: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      borderWidth: 1.5,
+      borderColor: isDark ? 'rgba(0, 245, 255, 0.3)' : 'rgba(8, 145, 178, 0.3)',
+      backgroundColor: isDark ? 'rgba(0, 245, 255, 0.1)' : 'rgba(8, 145, 178, 0.1)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 12,
+    },
+    trophyIconInner: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: colors.card,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    insightsTextCol: {
+      flex: 1,
+    },
+    insightTitle: {
+      color: colors.accent,
+      fontSize: 9,
+      fontWeight: 'bold',
+      letterSpacing: 1,
+      marginBottom: 2,
+    },
+    insightMain: {
+      color: colors.text,
+      fontSize: 13,
+      fontWeight: 'bold',
+      marginBottom: 2,
+    },
+    insightDesc: {
+      color: colors.textMuted,
+      fontSize: 10,
+      lineHeight: 14,
+    },
+    insightsRight: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    insPerfText: {
+      color: colors.textSlate,
+      fontSize: 8,
+      fontWeight: '500',
+    },
+    insDateText: {
+      color: colors.text,
+      fontSize: 9,
+      fontWeight: 'bold',
+      marginTop: 2,
+    },
+    insightScoreCircle: {
+      width: 38,
+      height: 38,
+      borderRadius: 19,
+      borderWidth: 2,
+      borderColor: '#22c55e',
+      backgroundColor: 'rgba(34, 197, 94, 0.05)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    insightScoreVal: {
+      color: colors.text,
+      fontSize: 14,
+      fontWeight: '900',
+    },
 
-  // Insights Panel Card
-  insightsPanelCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: 'rgba(0, 245, 255, 0.04)',
-    borderWidth: 1,
-    borderColor: 'rgba(0, 245, 255, 0.15)',
-    borderRadius: 20,
-    padding: 14,
-    marginBottom: 20,
-  },
-  insightsLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    marginRight: 10,
-  },
-  trophyIconOuter: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 1.5,
-    borderColor: 'rgba(0, 245, 255, 0.3)',
-    backgroundColor: 'rgba(0, 245, 255, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  trophyIconInner: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#0c1626',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  insightsTextCol: {
-    flex: 1,
-  },
-  insightTitle: {
-    color: '#00f5ff',
-    fontSize: 9,
-    fontWeight: 'bold',
-    letterSpacing: 1,
-    marginBottom: 2,
-  },
-  insightMain: {
-    color: '#ffffff',
-    fontSize: 13,
-    fontWeight: 'bold',
-    marginBottom: 2,
-  },
-  insightDesc: {
-    color: '#94a3b8',
-    fontSize: 10,
-    lineHeight: 14,
-  },
-  insightsRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  insPerfText: {
-    color: '#64748b',
-    fontSize: 8,
-    fontWeight: '500',
-  },
-  insDateText: {
-    color: '#ffffff',
-    fontSize: 9,
-    fontWeight: 'bold',
-    marginTop: 2,
-  },
-  insightScoreCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    borderWidth: 2,
-    borderColor: '#22c55e',
-    backgroundColor: 'rgba(34, 197, 94, 0.05)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  insightScoreVal: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: '900',
-  },
-
-  // Monthly wide card style
-  metricCardWide: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#0c1626',
-    borderWidth: 1,
-    borderColor: '#122540',
-    borderRadius: 20,
-    padding: 14,
-    marginBottom: 14,
-  },
-  metricWideLeft: {
-    flex: 1,
-  },
-  metricWideRight: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: 80,
-  },
-  dateNavigationContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: 'rgba(8, 15, 26, 0.4)',
-    borderWidth: 1,
-    borderColor: '#122540',
-    borderRadius: 14,
-    marginHorizontal: 20,
-    marginBottom: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  dateNavBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#0c1626',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#122540',
-  },
-  dateLabelContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  dateRangeText: {
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-});
+    // Monthly wide card style
+    metricCardWide: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 20,
+      padding: 14,
+      marginBottom: 14,
+    },
+    metricWideLeft: {
+      flex: 1,
+    },
+    metricWideRight: {
+      justifyContent: 'center',
+      alignItems: 'center',
+      width: 80,
+    },
+    dateNavigationContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 14,
+      marginHorizontal: 20,
+      marginBottom: 10,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+    },
+    dateNavBtn: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: colors.background,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    dateLabelContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    dateRangeText: {
+      color: colors.text,
+      fontSize: 12,
+      fontWeight: 'bold',
+    },
+    bottomSpacer: {
+      height: 40,
+    },
+  });
+}

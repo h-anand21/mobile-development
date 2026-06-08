@@ -9,6 +9,7 @@ import { driveRepository } from '../src/database/repositories/driveRepository';
 import * as Location from 'expo-location';
 import { Accelerometer, Gyroscope, Magnetometer, DeviceMotion } from 'expo-sensors';
 import dayjs from 'dayjs';
+import { useAppTheme } from '../src/ui/theme';
 
 const { width } = Dimensions.get('window');
 
@@ -16,6 +17,8 @@ const MAX_HISTORY = 20;
 
 export default function LiveAnalyticsScreen() {
   const router = useRouter();
+  const { colors, isDark } = useAppTheme();
+  const styles = getStyles(colors);
   
   // Stores
   const currentSession = useDriveStore((state) => state.currentSession);
@@ -824,469 +827,461 @@ export default function LiveAnalyticsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#050B14',
-  },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 10,
-  },
-  bottomSpacer: {
-    height: 60,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 50,
-    paddingBottom: 15,
-    backgroundColor: '#050B14',
-  },
-  iconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#0c1626',
-    borderWidth: 1,
-    borderColor: '#1e293b',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitleContainer: {
-    alignItems: 'center',
-  },
-  headerTitle: {
-    color: '#ffffff',
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  statusRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 3,
-  },
-  statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginRight: 6,
-  },
-  statusText: {
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
+function getStyles(colors: any) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 16,
+      paddingTop: 50,
+      paddingBottom: 16,
+      backgroundColor: colors.card,
+    },
+    iconCircle: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    headerTitleContainer: {
+      alignItems: 'center',
+    },
+    headerTitle: {
+      color: colors.text,
+      fontSize: 18,
+      fontWeight: 'bold',
+    },
+    statusRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginTop: 4,
+    },
+    statusDot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      marginRight: 6,
+    },
+    statusText: {
+      fontSize: 11,
+      fontWeight: '600',
+    },
+    scrollContent: {
+      padding: 16,
+      paddingBottom: 120,
+    },
+    speedStatsSection: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 20,
+      padding: 16,
+      marginBottom: 16,
+    },
+    speedLeftCol: {
+      width: '38%',
+      alignItems: 'center',
+    },
+    speedTextLabel: {
+      color: colors.textMuted,
+      fontSize: 8,
+      fontWeight: 'bold',
+      letterSpacing: 0.5,
+      marginBottom: 4,
+    },
+    speedValue: {
+      color: colors.text,
+      fontSize: 48,
+      fontWeight: '800',
+      lineHeight: 48,
+    },
+    speedUnit: {
+      color: colors.textMuted,
+      fontSize: 10,
+      fontWeight: '600',
+      marginTop: 2,
+      marginBottom: 8,
+    },
+    speedLimitCapsule: {
+      backgroundColor: 'rgba(239, 68, 68, 0.1)',
+      borderWidth: 1,
+      borderColor: 'rgba(239, 68, 68, 0.2)',
+      borderRadius: 12,
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+    },
+    speedLimitText: {
+      color: '#ef4444',
+      fontSize: 8,
+      fontWeight: 'bold',
+    },
+    speedGaugeContainer: {
+      width: '32%',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    dialTickLabel: {
+      fill: colors.textMuted,
+      fontSize: 10,
+      fontWeight: '600',
+    },
+    speedRightCol: {
+      width: '28%',
+      justifyContent: 'center',
+    },
+    sideSpeedStat: {
+      marginBottom: 10,
+    },
+    sideLabel: {
+      color: colors.textSlate,
+      fontSize: 8,
+      fontWeight: 'bold',
+      letterSpacing: 0.5,
+    },
+    sideVal: {
+      color: colors.text,
+      fontSize: 14,
+      fontWeight: 'bold',
+    },
+    sideValUnit: {
+      color: colors.textSlate,
+      fontSize: 10,
+    },
 
-  // Speed Stats Section
-  speedStatsSection: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: 'rgba(8, 15, 26, 0.6)',
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: '#121e33',
-    paddingHorizontal: 12,
-    paddingVertical: 16,
-    marginBottom: 25,
-  },
-  speedLeftCol: {
-    flex: 1.1,
-    alignItems: 'center',
-  },
-  speedTextLabel: {
-    color: '#64748b',
-    fontSize: 8,
-    fontWeight: 'bold',
-    letterSpacing: 0.8,
-    marginBottom: 4,
-  },
-  speedValue: {
-    color: '#06b6d4',
-    fontSize: 44,
-    fontWeight: '900',
-    lineHeight: 48,
-  },
-  speedUnit: {
-    color: '#06b6d4',
-    fontSize: 12,
-    fontWeight: '600',
-    marginBottom: 12,
-  },
-  speedLimitCapsule: {
-    backgroundColor: '#0c1626',
-    borderWidth: 1,
-    borderColor: '#1e293b',
-    borderRadius: 10,
-    paddingHorizontal: 6,
-    paddingVertical: 4,
-    minWidth: 92,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  speedLimitText: {
-    color: '#94a3b8',
-    fontSize: 8,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  speedGaugeContainer: {
-    width: 125,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  dialTickLabel: {
-    fill: '#94a3b8',
-    fontSize: 10,
-    fontWeight: 'bold',
-    textAnchor: 'middle',
-  },
-  speedRightCol: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingLeft: 8,
-  },
-  sideSpeedStat: {
-    marginBottom: 10,
-  },
-  sideLabel: {
-    color: '#64748b',
-    fontSize: 8,
-    fontWeight: 'bold',
-    letterSpacing: 0.5,
-  },
-  sideVal: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  sideValUnit: {
-    color: '#64748b',
-    fontSize: 10,
-  },
+    // Section Headers
+    sectionHeaderRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    sectionTitle: {
+      color: colors.textSlate,
+      fontSize: 10,
+      fontWeight: 'bold',
+      letterSpacing: 1.5,
+    },
+    viewAllBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    viewAllText: {
+      color: colors.accent,
+      fontSize: 12,
+      fontWeight: 'bold',
+      marginRight: 2,
+    },
 
-  // Section Headers
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    color: '#64748b',
-    fontSize: 10,
-    fontWeight: 'bold',
-    letterSpacing: 1.5,
-  },
-  viewAllBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  viewAllText: {
-    color: '#06b6d4',
-    fontSize: 12,
-    fontWeight: 'bold',
-    marginRight: 2,
-  },
+    // Sensor Cards
+    sensorCard: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 20,
+      padding: 16,
+      marginBottom: 16,
+    },
+    sensorLeftCol: {
+      width: '50%',
+    },
+    sensorIconCircle: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      borderWidth: 1.5,
+      borderColor: colors.accent + '33',
+      backgroundColor: colors.accent + '0d',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 8,
+    },
+    sensorCardTitle: {
+      color: colors.textSlate,
+      fontSize: 10,
+      fontWeight: 'bold',
+      letterSpacing: 0.8,
+      marginBottom: 8,
+    },
+    axisValueRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 4,
+    },
+    axisDot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      marginRight: 8,
+    },
+    axisLabel: {
+      color: colors.textMuted,
+      fontSize: 10,
+    },
+    axisVal: {
+      color: colors.text,
+      fontSize: 13,
+      fontWeight: 'bold',
+    },
+    sensorChartContainer: {
+      width: '48%',
+      height: 70,
+      alignItems: 'flex-end',
+      justifyContent: 'center',
+    },
+    chartAxisTick: {
+      fill: colors.textSlate,
+      fontSize: 9,
+      fontWeight: 'bold',
+    },
 
-  // Sensor Cards
-  sensorCard: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#080f1a',
-    borderWidth: 1,
-    borderColor: '#121e33',
-    borderRadius: 20,
-    padding: 16,
-    marginBottom: 16,
-  },
-  sensorLeftCol: {
-    width: '50%',
-  },
-  sensorIconCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: 'rgba(14, 165, 233, 0.2)',
-    backgroundColor: 'rgba(14, 165, 233, 0.05)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-  sensorCardTitle: {
-    color: '#64748b',
-    fontSize: 10,
-    fontWeight: 'bold',
-    letterSpacing: 0.8,
-    marginBottom: 8,
-  },
-  axisValueRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  axisDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginRight: 8,
-  },
-  axisLabel: {
-    color: '#94a3b8',
-    fontSize: 10,
-  },
-  axisVal: {
-    color: '#ffffff',
-    fontSize: 13,
-    fontWeight: 'bold',
-  },
-  sensorChartContainer: {
-    width: '48%',
-    height: 70,
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-  },
-  chartAxisTick: {
-    fill: '#334155',
-    fontSize: 9,
-    fontWeight: 'bold',
-  },
+    // G-Force Card
+    gForceCard: {
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 20,
+      padding: 16,
+      marginBottom: 20,
+    },
+    gForceHeader: {
+      color: colors.textSlate,
+      fontSize: 10,
+      fontWeight: 'bold',
+      letterSpacing: 1.5,
+      marginBottom: 16,
+    },
+    gForceRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    gForceIconOuter: {
+      width: 38,
+      height: 38,
+      borderRadius: 19,
+      backgroundColor: colors.accent + '1a',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    gForceGaugeWrap: {
+      position: 'relative',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    gForceInnerValue: {
+      position: 'absolute',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    gForceNumText: {
+      color: colors.text,
+      fontSize: 18,
+      fontWeight: 'bold',
+    },
+    gForceUnitText: {
+      color: colors.textSlate,
+      fontSize: 9,
+    },
+    gForceLabelColumn: {
+      width: '32%',
+    },
+    gForceAxisLabel: {
+      color: colors.textSlate,
+      fontSize: 7,
+      fontWeight: 'bold',
+      marginBottom: 1,
+    },
+    gForceAxisValueCyan: {
+      color: colors.accent,
+      fontSize: 11,
+      fontWeight: 'bold',
+      marginBottom: 6,
+    },
+    gForceAxisValueGreen: {
+      color: colors.success,
+      fontSize: 11,
+      fontWeight: 'bold',
+      marginBottom: 6,
+    },
+    gForceAxisValueYellow: {
+      color: '#eab308',
+      fontSize: 11,
+      fontWeight: 'bold',
+    },
+    radarContainer: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 45,
+      overflow: 'hidden',
+      backgroundColor: colors.background,
+    },
 
-  // G-Force Card
-  gForceCard: {
-    backgroundColor: '#080f1a',
-    borderWidth: 1,
-    borderColor: '#121e33',
-    borderRadius: 20,
-    padding: 16,
-    marginBottom: 20,
-  },
-  gForceHeader: {
-    color: '#64748b',
-    fontSize: 10,
-    fontWeight: 'bold',
-    letterSpacing: 1.5,
-    marginBottom: 16,
-  },
-  gForceRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  gForceIconOuter: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: 'rgba(234, 179, 8, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  gForceGaugeWrap: {
-    position: 'relative',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  gForceInnerValue: {
-    position: 'absolute',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  gForceNumText: {
-    color: '#ffffff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  gForceUnitText: {
-    color: '#64748b',
-    fontSize: 9,
-  },
-  gForceLabelColumn: {
-    width: '32%',
-  },
-  gForceAxisLabel: {
-    color: '#64748b',
-    fontSize: 7,
-    fontWeight: 'bold',
-    marginBottom: 1,
-  },
-  gForceAxisValueCyan: {
-    color: '#06b6d4',
-    fontSize: 11,
-    fontWeight: 'bold',
-    marginBottom: 6,
-  },
-  gForceAxisValueGreen: {
-    color: '#84cc16',
-    fontSize: 11,
-    fontWeight: 'bold',
-    marginBottom: 6,
-  },
-  gForceAxisValueYellow: {
-    color: '#eab308',
-    fontSize: 11,
-    fontWeight: 'bold',
-  },
-  radarContainer: {
-    borderWidth: 1,
-    borderColor: 'rgba(6, 182, 212, 0.1)',
-    borderRadius: 45,
-    overflow: 'hidden',
-    backgroundColor: '#050B14',
-  },
+    // Map Card
+    mapCard: {
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 20,
+      padding: 16,
+    },
+    mapHeaderRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 12,
+    },
+    mapTitle: {
+      color: colors.textSlate,
+      fontSize: 10,
+      fontWeight: 'bold',
+      letterSpacing: 1.5,
+    },
+    liveLocationContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    blueLocationDot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      backgroundColor: colors.accent,
+      marginRight: 6,
+    },
+    liveLocationText: {
+      color: colors.accent,
+      fontSize: 10,
+      fontWeight: 'bold',
+    },
+    simulatedMap: {
+      height: 150,
+      backgroundColor: colors.background,
+      borderRadius: 16,
+      overflow: 'hidden',
+      position: 'relative',
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    mapSvgBackground: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+    },
+    mapOverlayLabel: {
+      position: 'absolute',
+      backgroundColor: colors.isDark ? 'rgba(12, 22, 38, 0.85)' : 'rgba(255, 255, 255, 0.85)',
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 10,
+      paddingHorizontal: 8,
+      paddingVertical: 5,
+      minWidth: 100,
+    },
+    startOverlay: {
+      bottom: 12,
+      left: 12,
+    },
+    endOverlay: {
+      top: 12,
+      right: 12,
+    },
+    tinyDot: {
+      width: 5,
+      height: 5,
+      borderRadius: 2.5,
+      marginBottom: 3,
+    },
+    overlayTime: {
+      color: colors.text,
+      fontSize: 11,
+      fontWeight: 'bold',
+    },
+    overlayAddr: {
+      color: colors.textMuted,
+      fontSize: 8,
+    },
+    dmRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+    },
+    dmColAttitude: {
+      width: '33%',
+      alignItems: 'center',
+    },
+    dmColRate: {
+      width: '32%',
+      paddingLeft: 4,
+    },
+    dmColAccel: {
+      width: '33%',
+      paddingLeft: 6,
+    },
+    horizonIndicatorWrap: {
+      marginBottom: 8,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    dmValLabelContainer: {
+      alignItems: 'center',
+    },
+    dmValLabel: {
+      color: colors.textSlate,
+      fontSize: 8,
+      fontWeight: 'bold',
+      marginBottom: 2,
+    },
+    dmValText: {
+      color: colors.text,
+      fontWeight: 'bold',
+    },
+    dmSubHeader: {
+      color: colors.accent,
+      fontSize: 8,
+      fontWeight: 'bold',
+      letterSpacing: 0.5,
+      marginBottom: 6,
+    },
+    dmStatRow: {
+      marginBottom: 6,
+    },
+    dmStatLabel: {
+      color: colors.textSlate,
+      fontSize: 8,
+      fontWeight: '500',
+    },
+    dmStatValue: {
+      color: colors.text,
+      fontSize: 10,
+      fontWeight: 'bold',
+      marginTop: 1,
+    },
+    dmStatUnit: {
+      color: colors.textSlate,
+      fontSize: 8,
+      fontWeight: '400',
+    },
+    dmAccelVal: {
+      color: colors.textSlate,
+      fontSize: 9.5,
+      marginBottom: 2,
+    },
+  });
+}
 
-  // Map Card
-  mapCard: {
-    backgroundColor: '#080f1a',
-    borderWidth: 1,
-    borderColor: '#121e33',
-    borderRadius: 20,
-    padding: 16,
-  },
-  mapHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  mapTitle: {
-    color: '#64748b',
-    fontSize: 10,
-    fontWeight: 'bold',
-    letterSpacing: 1.5,
-  },
-  liveLocationContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  blueLocationDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#00e5ff',
-    marginRight: 6,
-  },
-  liveLocationText: {
-    color: '#00e5ff',
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  simulatedMap: {
-    height: 150,
-    backgroundColor: '#050b14',
-    borderRadius: 16,
-    overflow: 'hidden',
-    position: 'relative',
-    borderWidth: 1,
-    borderColor: '#121e33',
-  },
-  mapSvgBackground: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-  mapOverlayLabel: {
-    position: 'absolute',
-    backgroundColor: 'rgba(12, 22, 38, 0.85)',
-    borderWidth: 1,
-    borderColor: '#1e293b',
-    borderRadius: 10,
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-    minWidth: 100,
-  },
-  startOverlay: {
-    bottom: 12,
-    left: 12,
-  },
-  endOverlay: {
-    top: 12,
-    right: 12,
-  },
-  tinyDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
-    marginBottom: 3,
-  },
-  overlayTime: {
-    color: '#ffffff',
-    fontSize: 11,
-    fontWeight: 'bold',
-  },
-  overlayAddr: {
-    color: '#94a3b8',
-    fontSize: 8,
-  },
-  dmRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  dmColAttitude: {
-    width: '33%',
-    alignItems: 'center',
-  },
-  dmColRate: {
-    width: '32%',
-    paddingLeft: 4,
-  },
-  dmColAccel: {
-    width: '33%',
-    paddingLeft: 6,
-  },
-  horizonIndicatorWrap: {
-    marginBottom: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  dmValLabelContainer: {
-    alignItems: 'center',
-  },
-  dmValLabel: {
-    color: '#64748b',
-    fontSize: 8,
-    fontWeight: 'bold',
-    marginBottom: 2,
-  },
-  dmValText: {
-    color: '#ffffff',
-    fontWeight: 'bold',
-  },
-  dmSubHeader: {
-    color: '#06b6d4',
-    fontSize: 8,
-    fontWeight: 'bold',
-    letterSpacing: 0.5,
-    marginBottom: 6,
-  },
-  dmStatRow: {
-    marginBottom: 6,
-  },
-  dmStatLabel: {
-    color: '#64748b',
-    fontSize: 8,
-    fontWeight: '500',
-  },
-  dmStatValue: {
-    color: '#ffffff',
-    fontSize: 10,
-    fontWeight: 'bold',
-    marginTop: 1,
-  },
-  dmStatUnit: {
-    color: '#64748b',
-    fontSize: 8,
-    fontWeight: '400',
-  },
-  dmAccelVal: {
-    color: '#64748b',
-    fontSize: 9.5,
-    marginBottom: 2,
-  },
-});

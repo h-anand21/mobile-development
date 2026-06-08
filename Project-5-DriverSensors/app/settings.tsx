@@ -443,7 +443,7 @@ export default function SettingsScreen() {
                   <Feather name="sun" size={16} color={selectedTheme === 'light' ? currentAccent : '#64748b'} style={{ marginRight: 8 }} />
                   <Text style={[styles.themeBoxLabel, selectedTheme === 'light' && styles.activeThemeBoxLabel]}>Light</Text>
                   <View style={[styles.themeRadioCircle, selectedTheme === 'light' && { borderColor: currentAccent, backgroundColor: currentAccent }]}>
-                    {selectedTheme === 'light' && <Feather name="check" size={8} color="#ffffff" />}
+                    {selectedTheme === 'light' ? <Feather name="check" size={8} color="#ffffff" /> : null}
                   </View>
                 </TouchableOpacity>
 
@@ -455,7 +455,7 @@ export default function SettingsScreen() {
                   <Feather name="moon" size={16} color={selectedTheme === 'dark' ? currentAccent : '#64748b'} style={{ marginRight: 8 }} />
                   <Text style={[styles.themeBoxLabel, selectedTheme === 'dark' && styles.activeThemeBoxLabel]}>Dark</Text>
                   <View style={[styles.themeRadioCircle, selectedTheme === 'dark' && { borderColor: currentAccent, backgroundColor: currentAccent }]}>
-                    {selectedTheme === 'dark' && <Feather name="check" size={8} color="#ffffff" />}
+                    {selectedTheme === 'dark' ? <Feather name="check" size={8} color="#ffffff" /> : null}
                   </View>
                 </TouchableOpacity>
 
@@ -467,7 +467,7 @@ export default function SettingsScreen() {
                   <Feather name="smartphone" size={16} color={selectedTheme === 'system' ? currentAccent : '#64748b'} style={{ marginRight: 8 }} />
                   <Text style={[styles.themeBoxLabel, selectedTheme === 'system' && styles.activeThemeBoxLabel]}>System</Text>
                   <View style={[styles.themeRadioCircle, selectedTheme === 'system' && { borderColor: currentAccent, backgroundColor: currentAccent }]}>
-                    {selectedTheme === 'system' && <Feather name="check" size={8} color="#ffffff" />}
+                    {selectedTheme === 'system' ? <Feather name="check" size={8} color="#ffffff" /> : null}
                   </View>
                 </TouchableOpacity>
               </View>
@@ -488,7 +488,7 @@ export default function SettingsScreen() {
                         style={[styles.accentDot, { backgroundColor: color }]}
                         onPress={() => setAccentColor(idx)}
                       >
-                        {isChecked && <Feather name="check" size={10} color="#050B14" />}
+                        {isChecked ? <Feather name="check" size={10} color="#050B14" /> : null}
                       </TouchableOpacity>
                     );
                   })}
@@ -651,7 +651,8 @@ export default function SettingsScreen() {
   );
 }
 
-const getStyles = (colors: any) => StyleSheet.create({
+function getStyles(colors: any) {
+  return StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -980,3 +981,4 @@ const getStyles = (colors: any) => StyleSheet.create({
     fontWeight: 'bold',
   },
 });
+}

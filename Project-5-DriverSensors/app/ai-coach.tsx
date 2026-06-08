@@ -7,6 +7,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useDriveStore, DriveSession } from '../src/store/driveStore';
 import { driveRepository } from '../src/database/repositories/driveRepository';
 import dayjs from 'dayjs';
+import { useAppTheme } from '../src/ui/theme';
 
 const { width } = Dimensions.get('window');
 
@@ -32,6 +33,8 @@ const MOCK_COACH_SESSION: DriveSession = {
 
 export default function AICoachScreen() {
   const router = useRouter();
+  const { colors, isDark } = useAppTheme();
+  const styles = getStyles(colors);
   const { id } = useLocalSearchParams();
   
   // Find historical session, or active session, or use latest drive, or demo mock
@@ -527,398 +530,401 @@ export default function AICoachScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#050B14',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 50,
-    paddingBottom: 15,
-    backgroundColor: '#050B14',
-  },
-  iconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#0c1626',
-    borderWidth: 1,
-    borderColor: '#1e293b',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitleContainer: {
-    alignItems: 'center',
-  },
-  headerTitle: {
-    color: '#ffffff',
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  headerSubtitle: {
-    color: '#94a3b8',
-    fontSize: 11,
-    marginTop: 2,
-  },
-  robotHeaderIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 1.5,
-    borderColor: '#00f5ff',
-    backgroundColor: 'rgba(0, 245, 255, 0.05)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#00f5ff',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.4,
-    shadowRadius: 5,
-    elevation: 3,
-  },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 10,
-  },
-  bottomSpacer: {
-    height: 60,
-  },
+function getStyles(colors: any) {
+  const isDark = colors.background === '#050B14';
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+      paddingTop: 50,
+      paddingBottom: 15,
+      backgroundColor: colors.background,
+    },
+    iconCircle: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    headerTitleContainer: {
+      alignItems: 'center',
+    },
+    headerTitle: {
+      color: colors.text,
+      fontSize: 20,
+      fontWeight: 'bold',
+    },
+    headerSubtitle: {
+      color: colors.textMuted,
+      fontSize: 11,
+      marginTop: 2,
+    },
+    robotHeaderIcon: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      borderWidth: 1.5,
+      borderColor: colors.accent,
+      backgroundColor: isDark ? 'rgba(0, 245, 255, 0.05)' : 'rgba(8, 145, 178, 0.05)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: colors.accent,
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.4,
+      shadowRadius: 5,
+      elevation: 3,
+    },
+    scrollContent: {
+      paddingHorizontal: 20,
+      paddingTop: 10,
+    },
+    bottomSpacer: {
+      height: 60,
+    },
 
-  // Feedback Section
-  feedbackSection: {
-    backgroundColor: 'rgba(8, 15, 26, 0.6)',
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: '#122540',
-    padding: 16,
-    marginBottom: 20,
-  },
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    color: '#64748b',
-    fontSize: 10,
-    fontWeight: 'bold',
-    letterSpacing: 1.2,
-  },
-  feedbackRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  dialContainer: {
-    position: 'relative',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: 130,
-    height: 130,
-  },
-  dialScoreInner: {
-    position: 'absolute',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  dialScoreVal: {
-    color: '#ffffff',
-    fontSize: 38,
-    fontWeight: '900',
-    lineHeight: 40,
-  },
-  dialStatement: {
-    color: '#22c55e',
-    fontSize: 9,
-    fontWeight: 'bold',
-    marginVertical: 2,
-  },
-  capsuleBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 20,
-    borderWidth: 1,
-  },
-  badgeDot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    marginRight: 4,
-  },
-  badgeText: {
-    fontSize: 8,
-    fontWeight: 'bold',
-  },
-  feedbackTextCol: {
-    width: '56%',
-  },
-  feedbackGreeting: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 6,
-  },
-  feedbackGreetingSub: {
-    color: '#94a3b8',
-    fontSize: 10,
-    lineHeight: 14,
-    marginBottom: 10,
-  },
+    // Feedback Section
+    feedbackSection: {
+      backgroundColor: colors.card,
+      borderRadius: 24,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: 16,
+      marginBottom: 20,
+    },
+    sectionHeaderRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    sectionTitle: {
+      color: colors.textSlate,
+      fontSize: 10,
+      fontWeight: 'bold',
+      letterSpacing: 1.2,
+    },
+    feedbackRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    dialContainer: {
+      position: 'relative',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: 130,
+      height: 130,
+    },
+    dialScoreInner: {
+      position: 'absolute',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    dialScoreVal: {
+      color: colors.text,
+      fontSize: 38,
+      fontWeight: '900',
+      lineHeight: 40,
+    },
+    dialStatement: {
+      color: '#22c55e',
+      fontSize: 9,
+      fontWeight: 'bold',
+      marginVertical: 2,
+    },
+    capsuleBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 20,
+      borderWidth: 1,
+    },
+    badgeDot: {
+      width: 4,
+      height: 4,
+      borderRadius: 2,
+      marginRight: 4,
+    },
+    badgeText: {
+      fontSize: 8,
+      fontWeight: 'bold',
+    },
+    feedbackTextCol: {
+      width: '56%',
+    },
+    feedbackGreeting: {
+      color: colors.text,
+      fontSize: 16,
+      fontWeight: 'bold',
+      marginBottom: 6,
+    },
+    feedbackGreetingSub: {
+      color: colors.textMuted,
+      fontSize: 10,
+      lineHeight: 14,
+      marginBottom: 10,
+    },
 
-  // 2x2 Metrics Grid Box
-  metricsGridBox: {
-    backgroundColor: '#070f1e',
-    borderWidth: 1,
-    borderColor: '#122540',
-    borderRadius: 12,
-    overflow: 'hidden',
-    marginTop: 4,
-  },
-  metricsGridRow: {
-    flexDirection: 'row',
-  },
-  metricsGridRowBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#122540',
-  },
-  metricGridCell: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 10,
-  },
-  metricGridCellBorder: {
-    borderRightWidth: 1,
-    borderRightColor: '#122540',
-  },
-  metricGridIcon: {
-    marginRight: 8,
-  },
-  miniLabel: {
-    color: '#64748b',
-    fontSize: 9,
-    fontWeight: '500',
-  },
-  miniValue: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginTop: 1,
-  },
+    // 2x2 Metrics Grid Box
+    metricsGridBox: {
+      backgroundColor: colors.background,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 12,
+      overflow: 'hidden',
+      marginTop: 4,
+    },
+    metricsGridRow: {
+      flexDirection: 'row',
+    },
+    metricsGridRowBorder: {
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    metricGridCell: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 10,
+      paddingHorizontal: 10,
+    },
+    metricGridCellBorder: {
+      borderRightWidth: 1,
+      borderRightColor: colors.border,
+    },
+    metricGridIcon: {
+      marginRight: 8,
+    },
+    miniLabel: {
+      color: colors.textSlate,
+      fontSize: 9,
+      fontWeight: '500',
+    },
+    miniValue: {
+      fontSize: 14,
+      fontWeight: 'bold',
+      marginTop: 1,
+    },
 
-  // Tips section
-  tipsSection: {
-    marginBottom: 20,
-  },
-  sectionHeaderRowMain: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 14,
-  },
-  linkButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  linkText: {
-    color: '#00f5ff',
-    fontSize: 12,
-    fontWeight: 'bold',
-    marginRight: 2,
-  },
-  tipCardItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#0c1626',
-    borderWidth: 1,
-    borderColor: '#122540',
-    borderRadius: 16,
-    borderLeftWidth: 4,
-    padding: 12,
-    marginBottom: 12,
-  },
-  tipIconCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-    borderWidth: 1,
-  },
-  tipTextCol: {
-    flex: 1,
-    marginRight: 6,
-  },
-  tipCardTitle: {
-    color: '#ffffff',
-    fontSize: 13,
-    fontWeight: 'bold',
-    marginBottom: 2,
-  },
-  tipCardDesc: {
-    color: '#94a3b8',
-    fontSize: 10,
-    lineHeight: 14,
-  },
-  tipCardRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  impactBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 10,
-    borderWidth: 1,
-  },
-  impactText: {
-    fontSize: 8,
-    fontWeight: 'bold',
-  },
+    // Tips section
+    tipsSection: {
+      marginBottom: 20,
+    },
+    sectionHeaderRowMain: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 14,
+    },
+    linkButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    linkText: {
+      color: colors.accent,
+      fontSize: 12,
+      fontWeight: 'bold',
+      marginRight: 2,
+    },
+    tipCardItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 16,
+      borderLeftWidth: 4,
+      padding: 12,
+      marginBottom: 12,
+    },
+    tipIconCircle: {
+      width: 38,
+      height: 38,
+      borderRadius: 19,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 12,
+      borderWidth: 1,
+    },
+    tipTextCol: {
+      flex: 1,
+      marginRight: 6,
+    },
+    tipCardTitle: {
+      color: colors.text,
+      fontSize: 13,
+      fontWeight: 'bold',
+      marginBottom: 2,
+    },
+    tipCardDesc: {
+      color: colors.textMuted,
+      fontSize: 10,
+      lineHeight: 14,
+    },
+    tipCardRight: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    impactBadge: {
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 10,
+      borderWidth: 1,
+    },
+    impactText: {
+      fontSize: 8,
+      fontWeight: 'bold',
+    },
 
-  // Risk Section
-  riskSection: {
-    backgroundColor: 'rgba(8, 15, 26, 0.6)',
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: '#122540',
-    padding: 16,
-    marginBottom: 20,
-  },
-  riskRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  riskGaugeWrap: {
-    position: 'relative',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '32%',
-  },
-  riskInnerVal: {
-    position: 'absolute',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  riskLabelNum: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    lineHeight: 20,
-  },
-  riskLabelSub: {
-    color: '#64748b',
-    fontSize: 8,
-    fontWeight: '600',
-    marginTop: 2,
-  },
-  riskBarsCol: {
-    width: '64%',
-  },
-  riskBarItem: {
-    marginBottom: 6,
-  },
-  riskBarHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 3,
-  },
-  riskBarLabel: {
-    color: '#94a3b8',
-    fontSize: 9,
-  },
-  riskBarValText: {
-    fontSize: 9,
-    fontWeight: 'bold',
-  },
-  riskBarTrack: {
-    height: 4,
-    backgroundColor: '#121e33',
-    borderRadius: 2,
-    overflow: 'hidden',
-  },
-  riskBarFill: {
-    height: '100%',
-    borderRadius: 2,
-  },
+    // Risk Section
+    riskSection: {
+      backgroundColor: colors.card,
+      borderRadius: 24,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: 16,
+      marginBottom: 20,
+    },
+    riskRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    riskGaugeWrap: {
+      position: 'relative',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: '32%',
+    },
+    riskInnerVal: {
+      position: 'absolute',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    riskLabelNum: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      lineHeight: 20,
+    },
+    riskLabelSub: {
+      color: colors.textSlate,
+      fontSize: 8,
+      fontWeight: '600',
+      marginTop: 2,
+    },
+    riskBarsCol: {
+      width: '64%',
+    },
+    riskBarItem: {
+      marginBottom: 6,
+    },
+    riskBarHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 3,
+    },
+    riskBarLabel: {
+      color: colors.textMuted,
+      fontSize: 9,
+    },
+    riskBarValText: {
+      fontSize: 9,
+      fontWeight: 'bold',
+    },
+    riskBarTrack: {
+      height: 4,
+      backgroundColor: colors.border,
+      borderRadius: 2,
+      overflow: 'hidden',
+    },
+    riskBarFill: {
+      height: '100%',
+      borderRadius: 2,
+    },
 
-  // Trophy Banner
-  bannerTrophyCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: 'rgba(0, 245, 255, 0.04)',
-    borderWidth: 1,
-    borderColor: 'rgba(0, 245, 255, 0.15)',
-    borderRadius: 20,
-    padding: 16,
-    marginBottom: 20,
-    overflow: 'hidden',
-  },
-  bannerLeftWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    marginRight: 10,
-  },
-  shieldCheckBadge: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 1.5,
-    borderColor: 'rgba(0, 245, 255, 0.3)',
-    backgroundColor: 'rgba(0, 245, 255, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 14,
-    position: 'relative',
-  },
-  bannerTextCol: {
-    flex: 1,
-  },
-  bannerTitle: {
-    color: '#ffffff',
-    fontSize: 13,
-    fontWeight: 'bold',
-    marginBottom: 2,
-  },
-  bannerDesc: {
-    color: '#94a3b8',
-    fontSize: 10,
-    lineHeight: 14,
-  },
-  trophyIllustrationContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: 70,
-    height: 70,
-  },
+    // Trophy Banner
+    bannerTrophyCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: isDark ? 'rgba(0, 245, 255, 0.04)' : 'rgba(8, 145, 178, 0.04)',
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(0, 245, 255, 0.15)' : 'rgba(8, 145, 178, 0.15)',
+      borderRadius: 20,
+      padding: 16,
+      marginBottom: 20,
+      overflow: 'hidden',
+    },
+    bannerLeftWrap: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flex: 1,
+      marginRight: 10,
+    },
+    shieldCheckBadge: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      borderWidth: 1.5,
+      borderColor: isDark ? 'rgba(0, 245, 255, 0.3)' : 'rgba(8, 145, 178, 0.3)',
+      backgroundColor: isDark ? 'rgba(0, 245, 255, 0.1)' : 'rgba(8, 145, 178, 0.1)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 14,
+      position: 'relative',
+    },
+    bannerTextCol: {
+      flex: 1,
+    },
+    bannerTitle: {
+      color: colors.text,
+      fontSize: 13,
+      fontWeight: 'bold',
+      marginBottom: 2,
+    },
+    bannerDesc: {
+      color: colors.textMuted,
+      fontSize: 10,
+      lineHeight: 14,
+    },
+    trophyIllustrationContainer: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: 70,
+      height: 70,
+    },
 
-  // View Progress Button
-  progressBtnContainer: {
-    borderRadius: 16,
-    overflow: 'hidden',
-    shadowColor: '#a3e635',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    elevation: 5,
-  },
-  progressBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-  },
-  progressBtnText: {
-    color: '#050B14',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-});
+    // View Progress Button
+    progressBtnContainer: {
+      borderRadius: 16,
+      overflow: 'hidden',
+      shadowColor: '#a3e635',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.25,
+      shadowRadius: 10,
+      elevation: 5,
+    },
+    progressBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 16,
+      paddingHorizontal: 20,
+    },
+    progressBtnText: {
+      color: colors.powerBg,
+      fontSize: 14,
+      fontWeight: 'bold',
+    },
+  });
+}

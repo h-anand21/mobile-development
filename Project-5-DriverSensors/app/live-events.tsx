@@ -4,6 +4,7 @@ import { Feather, MaterialCommunityIcons, Ionicons, FontAwesome5 } from '@expo/v
 import { useRouter } from 'expo-router';
 import { useDriveStore } from '../src/store/driveStore';
 import { driveRepository } from '../src/database/repositories/driveRepository';
+import { useAppTheme } from '../src/ui/theme';
 import dayjs from 'dayjs';
 
 const { width } = Dimensions.get('window');
@@ -68,6 +69,8 @@ const MOCK_EVENTS = [
 
 export default function LiveEventsScreen() {
   const router = useRouter();
+  const { colors, isDark } = useAppTheme();
+  const styles = getStyles(colors);
   const currentSession = useDriveStore((state) => state.currentSession);
   
   // Use current session, fallback to last completed session, fallback to mock data
@@ -349,313 +352,315 @@ export default function LiveEventsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#050B14',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 50,
-    paddingBottom: 15,
-    backgroundColor: '#050B14',
-  },
-  iconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#0c1626',
-    borderWidth: 1,
-    borderColor: '#1e293b',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitleContainer: {
-    alignItems: 'center',
-  },
-  headerTitle: {
-    color: '#ffffff',
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  statusRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 3,
-  },
-  statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginRight: 6,
-  },
-  statusText: {
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
+function getStyles(colors: any) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+      paddingTop: 50,
+      paddingBottom: 15,
+      backgroundColor: colors.background,
+    },
+    iconCircle: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    headerTitleContainer: {
+      alignItems: 'center',
+    },
+    headerTitle: {
+      color: colors.text,
+      fontSize: 20,
+      fontWeight: 'bold',
+    },
+    statusRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginTop: 3,
+    },
+    statusDot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      marginRight: 6,
+    },
+    statusText: {
+      fontSize: 10,
+      fontWeight: 'bold',
+    },
 
-  // Summary matrix row
-  summaryMatrix: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    backgroundColor: 'rgba(8, 15, 26, 0.6)',
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#121e33',
-    marginHorizontal: 20,
-    marginVertical: 10,
-    paddingVertical: 15,
-  },
-  matrixBox: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  matrixLabel: {
-    color: '#64748b',
-    fontSize: 8,
-    fontWeight: 'bold',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  matrixIconCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    borderWidth: 1.5,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#050B14',
-    marginBottom: 6,
-  },
-  matrixCount: {
-    fontSize: 15,
-    fontWeight: 'bold',
-  },
-  matrixDivider: {
-    width: 1,
-    backgroundColor: '#121e33',
-    alignSelf: 'center',
-    height: '70%',
-  },
+    // Summary matrix row
+    summaryMatrix: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      backgroundColor: colors.card,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: colors.border,
+      marginHorizontal: 20,
+      marginVertical: 10,
+      paddingVertical: 15,
+    },
+    matrixBox: {
+      flex: 1,
+      alignItems: 'center',
+    },
+    matrixLabel: {
+      color: colors.textSlate,
+      fontSize: 8,
+      fontWeight: 'bold',
+      marginBottom: 8,
+      textAlign: 'center',
+    },
+    matrixIconCircle: {
+      width: 38,
+      height: 38,
+      borderRadius: 19,
+      borderWidth: 1.5,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.background,
+      marginBottom: 6,
+    },
+    matrixCount: {
+      fontSize: 15,
+      fontWeight: 'bold',
+    },
+    matrixDivider: {
+      width: 1,
+      backgroundColor: colors.border,
+      alignSelf: 'center',
+      height: '70%',
+    },
 
-  // Timeline section
-  timelineContent: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-  },
-  timelineSectionTitle: {
-    color: '#64748b',
-    fontSize: 10,
-    fontWeight: 'bold',
-    letterSpacing: 1.5,
-    marginBottom: 20,
-  },
-  timelineWrapper: {
-    position: 'relative',
-    paddingLeft: 70, // offset for time label and vertical line
-  },
-  timelineLine: {
-    position: 'absolute',
-    left: 80, // aligned with dot center
-    top: 5,
-    bottom: 5,
-    width: 2,
-    backgroundColor: '#1e293b',
-  },
-  timelineItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-    position: 'relative',
-  },
-  timeLabelContainer: {
-    position: 'absolute',
-    left: -70,
-    width: 60,
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-  },
-  timeLabel: {
-    color: '#64748b',
-    fontSize: 10,
-    fontWeight: '500',
-  },
-  timelineDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    position: 'absolute',
-    left: 10 - 4, // 80 - 70 - dot_width/2
-    zIndex: 2,
-    borderWidth: 2,
-    borderColor: '#050B14',
-  },
-  eventCard: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#0c1626',
-    borderWidth: 1,
-    borderColor: '#1e293b',
-    borderRadius: 16,
-    padding: 12,
-    marginLeft: 25,
-  },
-  eventIconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  cardContent: {
-    flex: 1,
-  },
-  cardTitle: {
-    color: '#ffffff',
-    fontSize: 13,
-    fontWeight: 'bold',
-    marginBottom: 2,
-  },
-  cardDesc: {
-    color: '#94a3b8',
-    fontSize: 10,
-    marginBottom: 4,
-  },
-  cardExtra: {
-    color: '#06b6d4',
-    fontSize: 9,
-    fontWeight: '500',
-  },
-  cardRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  severityBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  severityText: {
-    fontSize: 9,
-    fontWeight: 'bold',
-  },
+    // Timeline section
+    timelineContent: {
+      paddingHorizontal: 20,
+      paddingTop: 20,
+    },
+    timelineSectionTitle: {
+      color: colors.textSlate,
+      fontSize: 10,
+      fontWeight: 'bold',
+      letterSpacing: 1.5,
+      marginBottom: 20,
+    },
+    timelineWrapper: {
+      position: 'relative',
+      paddingLeft: 70, // offset for time label and vertical line
+    },
+    timelineLine: {
+      position: 'absolute',
+      left: 80, // aligned with dot center
+      top: 5,
+      bottom: 5,
+      width: 2,
+      backgroundColor: colors.border,
+    },
+    timelineItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 16,
+      position: 'relative',
+    },
+    timeLabelContainer: {
+      position: 'absolute',
+      left: -70,
+      width: 60,
+      alignItems: 'flex-end',
+      justifyContent: 'center',
+    },
+    timeLabel: {
+      color: colors.textSlate,
+      fontSize: 10,
+      fontWeight: '500',
+    },
+    timelineDot: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      position: 'absolute',
+      left: 10 - 4, // 80 - 70 - dot_width/2
+      zIndex: 2,
+      borderWidth: 2,
+      borderColor: colors.background,
+    },
+    eventCard: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 16,
+      padding: 12,
+      marginLeft: 25,
+    },
+    eventIconWrap: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 12,
+    },
+    cardContent: {
+      flex: 1,
+    },
+    cardTitle: {
+      color: colors.text,
+      fontSize: 13,
+      fontWeight: 'bold',
+      marginBottom: 2,
+    },
+    cardDesc: {
+      color: colors.textMuted,
+      fontSize: 10,
+      marginBottom: 4,
+    },
+    cardExtra: {
+      color: '#06b6d4',
+      fontSize: 9,
+      fontWeight: '500',
+    },
+    cardRight: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    severityBadge: {
+      paddingHorizontal: 12,
+      paddingVertical: 4,
+      borderRadius: 12,
+      borderWidth: 1,
+    },
+    severityText: {
+      fontSize: 9,
+      fontWeight: 'bold',
+    },
 
-  // Braking custom icon geometry
-  brakingIconWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-    width: 28,
-    height: 28,
-  },
-  brakingCurve: {
-    position: 'absolute',
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-  },
+    // Braking custom icon geometry
+    brakingIconWrap: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      position: 'relative',
+      width: 28,
+      height: 28,
+    },
+    brakingCurve: {
+      position: 'absolute',
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+    },
 
-  // Empty state styling
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
-    paddingHorizontal: 20,
-  },
-  shieldGlowCircle: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    backgroundColor: 'rgba(6, 182, 212, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: 'rgba(6, 182, 212, 0.2)',
-    marginBottom: 20,
-    shadowColor: '#06b6d4',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-  },
-  emptyStateTitle: {
-    color: '#ffffff',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  emptyStateSubtitle: {
-    color: '#94a3b8',
-    fontSize: 12,
-    lineHeight: 18,
-    textAlign: 'center',
-  },
+    // Empty state styling
+    emptyState: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 60,
+      paddingHorizontal: 20,
+    },
+    shieldGlowCircle: {
+      width: 90,
+      height: 90,
+      borderRadius: 45,
+      backgroundColor: 'rgba(6, 182, 212, 0.1)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1.5,
+      borderColor: 'rgba(6, 182, 212, 0.2)',
+      marginBottom: 20,
+      shadowColor: '#06b6d4',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.2,
+      shadowRadius: 10,
+    },
+    emptyStateTitle: {
+      color: colors.text,
+      fontSize: 18,
+      fontWeight: 'bold',
+      marginBottom: 10,
+    },
+    emptyStateSubtitle: {
+      color: colors.textMuted,
+      fontSize: 12,
+      lineHeight: 18,
+      textAlign: 'center',
+    },
 
-  // Tip box
-  tipCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(6, 182, 212, 0.05)',
-    borderWidth: 1,
-    borderColor: 'rgba(6, 182, 212, 0.15)',
-    borderRadius: 16,
-    padding: 16,
-    marginTop: 25,
-    marginBottom: 16,
-  },
-  tipIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 1.5,
-    borderColor: 'rgba(6, 182, 212, 0.3)',
-    backgroundColor: 'rgba(6, 182, 212, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 14,
-    position: 'relative',
-  },
-  tipTextWrap: {
-    flex: 1,
-  },
-  tipTitle: {
-    color: '#ffffff',
-    fontSize: 13,
-    fontWeight: 'bold',
-    marginBottom: 2,
-  },
-  tipDesc: {
-    color: '#94a3b8',
-    fontSize: 10,
-  },
+    // Tip box
+    tipCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: 'rgba(6, 182, 212, 0.05)',
+      borderWidth: 1,
+      borderColor: 'rgba(6, 182, 212, 0.15)',
+      borderRadius: 16,
+      padding: 16,
+      marginTop: 25,
+      marginBottom: 16,
+    },
+    tipIconWrap: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      borderWidth: 1.5,
+      borderColor: 'rgba(6, 182, 212, 0.3)',
+      backgroundColor: 'rgba(6, 182, 212, 0.1)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 14,
+      position: 'relative',
+    },
+    tipTextWrap: {
+      flex: 1,
+    },
+    tipTitle: {
+      color: colors.text,
+      fontSize: 13,
+      fontWeight: 'bold',
+      marginBottom: 2,
+    },
+    tipDesc: {
+      color: colors.textMuted,
+      fontSize: 10,
+    },
 
-  // View Insights Button
-  insightsButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#0c1626',
-    borderWidth: 1.5,
-    borderColor: '#06b6d4',
-    borderRadius: 16,
-    padding: 15,
-    marginVertical: 10,
-    shadowColor: '#06b6d4',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
-  },
-  insightsButtonText: {
-    color: '#06b6d4',
-    fontSize: 13,
-    fontWeight: 'bold',
-  },
-  bottomSpacer: {
-    height: 60,
-  },
-});
+    // View Insights Button
+    insightsButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.card,
+      borderWidth: 1.5,
+      borderColor: '#06b6d4',
+      borderRadius: 16,
+      padding: 15,
+      marginVertical: 10,
+      shadowColor: '#06b6d4',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.15,
+      shadowRadius: 10,
+    },
+    insightsButtonText: {
+      color: '#06b6d4',
+      fontSize: 13,
+      fontWeight: 'bold',
+    },
+    bottomSpacer: {
+      height: 60,
+    },
+  });
+}

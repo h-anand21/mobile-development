@@ -641,7 +641,8 @@ export default function ProfileScreen() {
   );
 }
 
-const getStyles = (colors: any) => StyleSheet.create({
+function getStyles(colors: any) {
+  return StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -1153,3 +1154,4 @@ const getStyles = (colors: any) => StyleSheet.create({
     fontWeight: 'bold',
   },
 });
+}

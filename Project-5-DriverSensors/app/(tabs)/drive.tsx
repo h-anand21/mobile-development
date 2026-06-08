@@ -551,11 +551,12 @@ export default function DriveScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function getStyles(colors: any) {
+  return StyleSheet.create({
   // General
   container: {
     flex: 1,
-    backgroundColor: '#050B14',
+    backgroundColor: colors.background,
   },
   scrollView: {
     flex: 1,
@@ -575,15 +576,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 50,
     paddingBottom: 10,
-    backgroundColor: '#050B14',
+    backgroundColor: colors.background,
   },
   iconCircle: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#0c1626',
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: '#1e293b',
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -591,10 +592,10 @@ const styles = StyleSheet.create({
   // Inactive Drive screen
   inactiveContainer: {
     flex: 1,
-    backgroundColor: '#050B14',
+    backgroundColor: colors.background,
   },
   headerTitleInactive: {
-    color: '#ffffff',
+    color: colors.text,
     fontSize: 18,
     fontWeight: 'bold',
   },
@@ -636,14 +637,14 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
   },
   inactiveTitle: {
-    color: '#ffffff',
+    color: colors.text,
     fontSize: isSmallDevice ? 22 : 26,
     fontWeight: 'bold',
     marginBottom: isSmallDevice ? 10 : 15,
     textAlign: 'center',
   },
   inactiveDescription: {
-    color: '#94a3b8',
+    color: colors.textMuted,
     fontSize: isSmallDevice ? 12 : 14,
     lineHeight: isSmallDevice ? 18 : 22,
     textAlign: 'center',
@@ -653,9 +654,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#0c1626',
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: '#1e293b',
+    borderColor: colors.border,
     borderRadius: 12,
     paddingVertical: 8,
     paddingHorizontal: 16,
@@ -673,7 +674,7 @@ const styles = StyleSheet.create({
     marginRight: 6,
   },
   diagnosticLabel: {
-    color: '#64748b',
+    color: colors.textSlate,
     fontSize: 9,
     fontWeight: 'bold',
   },
@@ -685,7 +686,7 @@ const styles = StyleSheet.create({
   diagnosticDivider: {
     width: 1,
     height: 12,
-    backgroundColor: '#1e293b',
+    backgroundColor: colors.border,
     marginHorizontal: 12,
   },
   featureGrid: {
@@ -696,11 +697,11 @@ const styles = StyleSheet.create({
   },
   featureItemCard: {
     width: '48%',
-    backgroundColor: 'rgba(12, 22, 38, 0.7)',
+    backgroundColor: colors.card,
     borderRadius: 16,
     padding: isSmallDevice ? 12 : 15,
     borderWidth: 1,
-    borderColor: '#1e293b',
+    borderColor: colors.border,
     borderLeftColor: '#06b6d4',
     borderTopColor: '#06b6d4',
     borderLeftWidth: 2,
@@ -718,19 +719,19 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(6, 182, 212, 0.15)',
   },
   featureTitleText: {
-    color: '#ffffff',
+    color: colors.text,
     fontSize: 13,
     fontWeight: 'bold',
     marginTop: 8,
     marginBottom: 4,
   },
   featureSubText: {
-    color: '#64748b',
+    color: colors.textSlate,
     fontSize: 10,
     lineHeight: 14,
   },
   startButtonSubtitle: {
-    color: '#64748b',
+    color: colors.textSlate,
     fontSize: 8,
     fontWeight: 'bold',
     letterSpacing: 1.5,
@@ -754,7 +755,7 @@ const styles = StyleSheet.create({
     paddingVertical: isSmallDevice ? 14 : 18,
   },
   hugeStartText: {
-    color: '#050B14',
+    color: colors.powerBg,
     fontSize: 18,
     fontWeight: 'bold',
     letterSpacing: 1,
@@ -794,7 +795,7 @@ const styles = StyleSheet.create({
     marginRight: 4,
   },
   gpsText: {
-    color: '#94a3b8',
+    color: colors.textMuted,
     fontSize: 10,
     fontWeight: 'bold',
   },
@@ -821,13 +822,13 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   scoreNumber: {
-    color: '#ffffff',
+    color: colors.text,
     fontSize: isSmallDevice ? 52 : 66,
     fontWeight: 'bold',
     lineHeight: isSmallDevice ? 58 : 74,
   },
   scoreLabel: {
-    color: '#94a3b8',
+    color: colors.textMuted,
     fontSize: 11,
     letterSpacing: 2,
     fontWeight: '500',
@@ -852,13 +853,13 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   gaugeSubtext: {
-    color: '#64748b',
+    color: colors.textSlate,
     fontSize: 11,
     marginTop: 6,
   },
   tickLabel: {
     position: 'absolute',
-    color: '#94a3b8',
+    color: colors.textMuted,
     fontSize: 10,
     fontWeight: 'bold',
   },
@@ -894,10 +895,10 @@ const styles = StyleSheet.create({
   },
   speedStatCardSide: {
     width: width * 0.26,
-    backgroundColor: '#0c1626',
+    backgroundColor: colors.card,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#1e293b',
+    borderColor: colors.border,
     paddingVertical: isSmallDevice ? 8 : 12,
     alignItems: 'center',
   },
@@ -927,19 +928,19 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   speedStatLabel: {
-    color: '#94a3b8',
+    color: colors.textMuted,
     fontSize: 9,
     fontWeight: '500',
     marginBottom: 2,
   },
   speedStatVal: {
-    color: '#ffffff',
+    color: colors.text,
     fontSize: 12,
     fontWeight: 'bold',
   },
   currentSpeedCapsule: {
     width: width * 0.36,
-    backgroundColor: '#0f172a',
+    backgroundColor: colors.inputBg,
     borderRadius: 40,
     borderWidth: 1.5,
     borderColor: '#06b6d4',
@@ -958,7 +959,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   currentSpeedVal: {
-    color: '#ffffff',
+    color: colors.text,
     fontSize: 32,
     fontWeight: '900',
     lineHeight: 34,
@@ -978,9 +979,9 @@ const styles = StyleSheet.create({
   },
   telemetryCard: {
     width: '48%',
-    backgroundColor: '#080f1a',
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: '#121e33',
+    borderColor: colors.border,
     borderRadius: 16,
     padding: isSmallDevice ? 8 : 12,
     marginBottom: isSmallDevice ? 8 : 12,
@@ -992,7 +993,7 @@ const styles = StyleSheet.create({
     left: 12,
   },
   telemetryLabel: {
-    color: '#64748b',
+    color: colors.textSlate,
     fontSize: 8,
     fontWeight: 'bold',
     letterSpacing: 0.8,
@@ -1000,13 +1001,13 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   telemetryValue: {
-    color: '#ffffff',
+    color: colors.text,
     fontSize: 18,
     fontWeight: 'bold',
     textAlign: 'center',
   },
   telemetryUnit: {
-    color: '#64748b',
+    color: colors.textSlate,
     fontSize: 9,
     textAlign: 'center',
     marginTop: 2,
@@ -1014,15 +1015,15 @@ const styles = StyleSheet.create({
 
   // Insights Section
   insightsSection: {
-    backgroundColor: 'rgba(12, 22, 38, 0.4)',
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: '#121e33',
+    borderColor: colors.border,
     borderRadius: 20,
     padding: isSmallDevice ? 12 : 16,
     marginBottom: isSmallDevice ? 15 : 25,
   },
   insightsSectionTitle: {
-    color: '#64748b',
+    color: colors.textSlate,
     fontSize: 10,
     fontWeight: 'bold',
     letterSpacing: 1.5,
@@ -1057,7 +1058,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   insightName: {
-    color: '#cbd5e1',
+    color: colors.text,
     fontSize: 12,
     fontWeight: '500',
   },
@@ -1067,7 +1068,7 @@ const styles = StyleSheet.create({
   },
   progressBarTrack: {
     height: 6,
-    backgroundColor: '#1e293b',
+    backgroundColor: colors.border,
     borderRadius: 3,
     overflow: 'hidden',
   },
@@ -1130,7 +1131,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 30,
     overflow: 'hidden',
     borderWidth: 1.5,
-    borderColor: '#1e293b',
+    borderColor: colors.border,
   },
   modalGradient: {
     flex: 1,
@@ -1144,28 +1145,28 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#1e293b',
+    backgroundColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
   modalHeaderTitle: {
-    color: '#ffffff',
+    color: colors.text,
     fontSize: 22,
     fontWeight: 'bold',
     marginBottom: 20,
     textAlign: 'center',
   },
   modalScoreCard: {
-    backgroundColor: 'rgba(30, 41, 59, 0.4)',
+    backgroundColor: colors.card,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(51, 65, 85, 0.5)',
+    borderColor: colors.border,
     padding: 20,
     alignItems: 'center',
     marginBottom: 20,
   },
   modalScoreLabel: {
-    color: '#94a3b8',
+    color: colors.textMuted,
     fontSize: 10,
     letterSpacing: 1.5,
     fontWeight: 'bold',
@@ -1178,9 +1179,9 @@ const styles = StyleSheet.create({
   modalStatsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    backgroundColor: '#0c1626',
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: '#1e293b',
+    borderColor: colors.border,
     borderRadius: 16,
     paddingVertical: 15,
     paddingHorizontal: 25,
@@ -1191,23 +1192,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalStatLabelText: {
-    color: '#64748b',
+    color: colors.textSlate,
     fontSize: 10,
     fontWeight: 'bold',
     marginBottom: 4,
   },
   modalStatValText: {
-    color: '#ffffff',
+    color: colors.text,
     fontSize: 16,
     fontWeight: 'bold',
   },
   modalStatDivider: {
     width: 1,
-    backgroundColor: '#1e293b',
+    backgroundColor: colors.border,
     alignSelf: 'stretch',
   },
   modalSectionTitle: {
-    color: '#94a3b8',
+    color: colors.textMuted,
     fontSize: 10,
     fontWeight: 'bold',
     letterSpacing: 1,
@@ -1220,30 +1221,30 @@ const styles = StyleSheet.create({
   },
   eventBadgeCount: {
     width: '23%',
-    backgroundColor: '#080f1a',
+    backgroundColor: colors.card,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#121e33',
+    borderColor: colors.border,
     paddingVertical: 10,
     alignItems: 'center',
   },
   eventCountNumber: {
-    color: '#ffffff',
+    color: colors.text,
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 2,
   },
   eventCountLabel: {
-    color: '#64748b',
+    color: colors.textSlate,
     fontSize: 9,
   },
   feedbackContainer: {
     maxHeight: 110,
-    backgroundColor: 'rgba(8, 15, 26, 0.6)',
+    backgroundColor: colors.card,
     borderRadius: 16,
     padding: 12,
     borderWidth: 1,
-    borderColor: '#121e33',
+    borderColor: colors.border,
     marginBottom: 20,
   },
   tipRow: {
@@ -1260,7 +1261,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   tipText: {
-    color: '#cbd5e1',
+    color: colors.text,
     fontSize: 11,
     lineHeight: 16,
     flex: 1,
@@ -1276,7 +1277,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   modalDismissText: {
-    color: '#050B14',
+    color: colors.powerBg,
     fontSize: 16,
     fontWeight: 'bold',
   },
@@ -1325,12 +1326,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   liveTelemetryActiveTitle: {
-    color: '#ffffff',
+    color: colors.text,
     fontSize: 13,
     fontWeight: 'bold',
   },
   liveTelemetryActiveDesc: {
-    color: '#94a3b8',
+    color: colors.textMuted,
     fontSize: 10,
     marginTop: 2,
   },
@@ -1346,3 +1347,4 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
 });
+}
