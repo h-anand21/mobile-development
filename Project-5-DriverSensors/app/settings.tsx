@@ -166,7 +166,7 @@ export default function SettingsScreen() {
                 <Text style={[styles.rowValueText, { color: '#84cc16' }]}>{permissions.location}</Text>
                 <Feather name="chevron-right" size={14} color="#475569" style={{ marginLeft: 6 }} />
               </TouchableOpacity>
- 
+
               {/* Notifications */}
               <TouchableOpacity style={styles.rowItem} onPress={() => handlePermissionPress('Notifications Access', 'Used to send safe driving alerts, weekly summary updates, and achievements reminders.')}>
                 <View style={[styles.iconContainer, { borderColor: '#3b82f640', backgroundColor: '#3b82f60a' }]}>
@@ -179,7 +179,7 @@ export default function SettingsScreen() {
                 <Text style={[styles.rowValueText, { color: '#3b82f6' }]}>{permissions.notifications}</Text>
                 <Feather name="chevron-right" size={14} color="#475569" style={{ marginLeft: 6 }} />
               </TouchableOpacity>
- 
+
               {/* Motion & Activity */}
               <TouchableOpacity style={styles.rowItem} onPress={() => handlePermissionPress('Motion & Activity Access', 'Essential for detecting vehicle movement and driving behavior dynamically.')}>
                 <View style={[styles.iconContainer, { borderColor: '#a855f740', backgroundColor: '#a855f70a' }]}>
@@ -192,7 +192,7 @@ export default function SettingsScreen() {
                 <Text style={[styles.rowValueText, { color: '#a855f7' }]}>{permissions.motion}</Text>
                 <Feather name="chevron-right" size={14} color="#475569" style={{ marginLeft: 6 }} />
               </TouchableOpacity>
- 
+
               {/* Phone Usage Access */}
               <TouchableOpacity style={styles.rowItem} onPress={() => handlePermissionPress('Phone Usage Access', 'Analyzes phone handling anomalies while driving to compute focus rating.')}>
                 <View style={[styles.iconContainer, { borderColor: '#eab30840', backgroundColor: '#eab3080a' }]}>
@@ -205,7 +205,7 @@ export default function SettingsScreen() {
                 <Text style={[styles.rowValueText, { color: '#eab308' }]}>{permissions.phoneUsage}</Text>
                 <Feather name="chevron-right" size={14} color="#475569" style={{ marginLeft: 6 }} />
               </TouchableOpacity>
- 
+
               {/* Background App Refresh */}
               <TouchableOpacity style={[styles.rowItem, { borderBottomWidth: 0 }]} onPress={() => handlePermissionPress('Background App Refresh', 'Allows telemetry sensing engines to operate in the background during driving.')}>
                 <View style={[styles.iconContainer, { borderColor: '#14b8a640', backgroundColor: '#14b8a60a' }]}>
@@ -387,7 +387,7 @@ export default function SettingsScreen() {
               {/* Achievements */}
               <View style={styles.switchRowItem}>
                 <View style={[styles.iconContainer, { borderColor: '#eab30840', backgroundColor: '#eab3080a' }]}>
-                  <Feather name="trophy" size={16} color="#eab308" />
+                  <MaterialCommunityIcons name="trophy-outline" size={16} color="#eab308" />
                 </View>
                 <View style={styles.rowTextCol}>
                   <Text style={styles.rowTitle}>Achievements</Text>
@@ -478,7 +478,6 @@ export default function SettingsScreen() {
                   <MaterialCommunityIcons name="palette" size={16} color={currentAccent} />
                 </View>
                 <Text style={[styles.rowTitle, { flex: 1, marginLeft: 12 }]}>Accent Color</Text>
-                
                 {/* Dots row */}
                 <View style={styles.accentDotsRow}>
                   {ACCENT_COLORS.map((color, idx) => {

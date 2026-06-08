@@ -6,16 +6,23 @@ import Svg, { Circle, Defs, LinearGradient as SvgLinearGradient, Stop, Line, Pat
 import { useRouter } from 'expo-router';
 import { useDriveStore, DriveSession } from '../../src/store/driveStore';
 import { useSensorStore } from '../../src/store/sensorStore';
+
+
 import { generateAIFeedback } from '../../src/services/ai/aiCoach';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAppTheme } from '../../src/ui/theme';
 
 const { width, height } = Dimensions.get('window');
 const isSmallDevice = height < 750;
 
+
+  
 export default function DriveScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  
+  const { colors, isDark } = useAppTheme();
+  const styles = getStyles(colors);
+
   // Store actions & state
   const currentSession = useDriveStore((state) => state.currentSession);
   const startDrive = useDriveStore((state) => state.startDrive);
@@ -91,14 +98,28 @@ export default function DriveScreen() {
         </View>
 
         <ScrollView style={styles.scrollView} contentContainerStyle={styles.inactiveContent}>
-          {/* Neon Steering Wheel Emblem */}
-          <View style={styles.inactiveEmblemContainer}>
-            <LinearGradient
-              colors={['rgba(6, 182, 212, 0.1)', 'rgba(6, 182, 212, 0)']}
-              style={styles.emblemGlowCircle}
-            >
-              <MaterialCommunityIcons name="steering" size={isSmallDevice ? 80 : 120} color="#06b6d4" style={styles.glowingEmblem} />
-            </LinearGradient>
+          {/* Cyber HUD steering Wheel Emblem */}
+          <View style={styles.hudEmblemContainer}>
+            <Svg width={isSmallDevice ? 150 : 200} height={isSmallDevice ? 150 : 200} viewBox="0 0 200 200" style={styles.hudEmblemSvg}>
+              <Circle cx="100" cy="100" r="92" stroke="rgba(6, 182, 212, 0.15)" strokeWidth="1" strokeDasharray="3 3" fill="none" />
+              <Circle cx="100" cy="100" r="80" stroke="rgba(6, 182, 212, 0.25)" strokeWidth="1.5" fill="none" />
+              {/* Crosshair ticks */}
+              <Line x1="100" y1="10" x2="100" y2="25" stroke="#06b6d4" strokeWidth="2" />
+              <Line x1="100" y1="175" x2="100" y2="190" stroke="#06b6d4" strokeWidth="2" />
+              <Line x1="10" y1="100" x2="25" y2="100" stroke="#06b6d4" strokeWidth="2" />
+              <Line x1="175" y1="100" x2="190" y2="100" stroke="#06b6d4" strokeWidth="2" />
+              {/* Compass letters */}
+              <SvgText x="100" y="38" fill="#06b6d4" fontSize="11" fontWeight="bold" textAnchor="middle">N</SvgText>
+              <SvgText x="100" y="171" fill="rgba(6, 182, 212, 0.5)" fontSize="10" fontWeight="bold" textAnchor="middle">S</SvgText>
+              <SvgText x="38" y="103" fill="rgba(6, 182, 212, 0.5)" fontSize="10" fontWeight="bold" textAnchor="middle">W</SvgText>
+              <SvgText x="162" y="103" fill="rgba(6, 182, 212, 0.5)" fontSize="10" fontWeight="bold" textAnchor="middle">E</SvgText>
+              {/* Ring of micro-dashes */}
+              <Circle cx="100" cy="100" r="62" stroke="rgba(6, 182, 212, 0.15)" strokeWidth="4" strokeDasharray="2 6" fill="none" />
+              <Circle cx="100" cy="100" r="54" stroke="#06b6d4" strokeWidth="1" fill="none" opacity="0.4" />
+            </Svg>
+            <View style={styles.steeringWheelGlowPod}>
+              <MaterialCommunityIcons name="steering" size={isSmallDevice ? 52 : 72} color="#00f5ff" style={styles.glowingEmblem} />
+            </View>
           </View>
 
           <Text style={styles.inactiveTitle}>Ready for your drive?</Text>
@@ -106,21 +127,47 @@ export default function DriveScreen() {
             Start SafeDrive tracking to log your route, speed limits, and analyze your driving behavior. Get real-time AI safety coaching and maintain your safe score!
           </Text>
 
+          {/* Cockpit Diagnostics HUD Row */}
+          <View style={styles.diagnosticsRow}>
+            <View style={styles.diagnosticItem}>
+              <View style={styles.diagnosticPulseDot} />
+              <Text style={styles.diagnosticLabel}>SENSORS: </Text>
+              <Text style={styles.diagnosticValue}>ONLINE</Text>
+            </View>
+            <View style={styles.diagnosticDivider} />
+            <View style={styles.diagnosticItem}>
+              <Feather name="navigation" size={10} color="#22c55e" style={{ marginRight: 4 }} />
+              <Text style={styles.diagnosticLabel}>GPS: </Text>
+              <Text style={styles.diagnosticValue}>ACTIVE</Text>
+            </View>
+            <View style={styles.diagnosticDivider} />
+            <View style={styles.diagnosticItem}>
+              <MaterialCommunityIcons name="database-outline" size={11} color="#22c55e" style={{ marginRight: 4 }} />
+              <Text style={styles.diagnosticLabel}>LOGS: </Text>
+              <Text style={styles.diagnosticValue}>NOMINAL</Text>
+            </View>
+          </View>
+
           {/* Feature highlights */}
           <View style={styles.featureGrid}>
             <View style={styles.featureItemCard}>
-              <Feather name="activity" size={22} color="#0ea5e9" />
+              <View style={styles.featureIconContainer}>
+                <Feather name="activity" size={20} color="#0ea5e9" />
+              </View>
               <Text style={styles.featureTitleText}>Telemetry Tracking</Text>
               <Text style={styles.featureSubText}>Accelerometer & Gyro sensors monitor road conditions</Text>
             </View>
             <View style={styles.featureItemCard}>
-              <Feather name="navigation" size={22} color="#84cc16" />
+              <View style={styles.featureIconContainer}>
+                <Feather name="navigation" size={20} color="#84cc16" />
+              </View>
               <Text style={styles.featureTitleText}>GPS Analytics</Text>
               <Text style={styles.featureSubText}>Track speed limits, distance, and trip mapping</Text>
             </View>
           </View>
 
           {/* Start Drive CTA */}
+          <Text style={styles.startButtonSubtitle}>SYSTEM STATUS // READY TO DEPLOY</Text>
           <TouchableOpacity style={styles.hugeStartButton} onPress={handleStart}>
             <LinearGradient
               colors={['#06b6d4', '#0ea5e9']}
@@ -557,26 +604,30 @@ const styles = StyleSheet.create({
     paddingTop: isSmallDevice ? 20 : 40,
     paddingBottom: isSmallDevice ? 20 : 40,
   },
-  inactiveEmblemContainer: {
-    width: isSmallDevice ? 170 : 220,
-    height: isSmallDevice ? 170 : 220,
-    borderRadius: isSmallDevice ? 85 : 110,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: isSmallDevice ? 20 : 40,
-  },
-  emblemGlowCircle: {
+  hudEmblemContainer: {
     width: isSmallDevice ? 150 : 200,
     height: isSmallDevice ? 150 : 200,
-    borderRadius: isSmallDevice ? 75 : 100,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(6, 182, 212, 0.3)',
-    shadowColor: '#06b6d4',
+    position: 'relative',
+    marginBottom: isSmallDevice ? 15 : 25,
+  },
+  hudEmblemSvg: {
+    position: 'absolute',
+  },
+  steeringWheelGlowPod: {
+    width: isSmallDevice ? 80 : 110,
+    height: isSmallDevice ? 80 : 110,
+    borderRadius: isSmallDevice ? 40 : 55,
+    backgroundColor: 'rgba(6, 182, 212, 0.08)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(6, 182, 212, 0.4)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#00f5ff',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.6,
-    shadowRadius: 15,
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
   },
   glowingEmblem: {
     shadowColor: '#06b6d4',
@@ -598,6 +649,45 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: isSmallDevice ? 20 : 30,
   },
+  diagnosticsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#0c1626',
+    borderWidth: 1,
+    borderColor: '#1e293b',
+    borderRadius: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    marginBottom: 25,
+  },
+  diagnosticItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  diagnosticPulseDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#22c55e',
+    marginRight: 6,
+  },
+  diagnosticLabel: {
+    color: '#64748b',
+    fontSize: 9,
+    fontWeight: 'bold',
+  },
+  diagnosticValue: {
+    color: '#22c55e',
+    fontSize: 9,
+    fontWeight: 'bold',
+  },
+  diagnosticDivider: {
+    width: 1,
+    height: 12,
+    backgroundColor: '#1e293b',
+    marginHorizontal: 12,
+  },
   featureGrid: {
     width: '100%',
     flexDirection: 'row',
@@ -606,11 +696,26 @@ const styles = StyleSheet.create({
   },
   featureItemCard: {
     width: '48%',
-    backgroundColor: '#0c1626',
+    backgroundColor: 'rgba(12, 22, 38, 0.7)',
     borderRadius: 16,
     padding: isSmallDevice ? 12 : 15,
     borderWidth: 1,
     borderColor: '#1e293b',
+    borderLeftColor: '#06b6d4',
+    borderTopColor: '#06b6d4',
+    borderLeftWidth: 2,
+    borderTopWidth: 2,
+  },
+  featureIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(6, 182, 212, 0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(6, 182, 212, 0.15)',
   },
   featureTitleText: {
     color: '#ffffff',
@@ -623,6 +728,14 @@ const styles = StyleSheet.create({
     color: '#64748b',
     fontSize: 10,
     lineHeight: 14,
+  },
+  startButtonSubtitle: {
+    color: '#64748b',
+    fontSize: 8,
+    fontWeight: 'bold',
+    letterSpacing: 1.5,
+    marginBottom: 8,
+    textAlign: 'center',
   },
   hugeStartButton: {
     width: '100%',

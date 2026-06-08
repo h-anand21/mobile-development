@@ -141,7 +141,7 @@ const INITIAL_ACHIEVEMENTS = [
     desc: 'Get 7 safe drives in a single week',
     points: 300,
     status: 'LOCKED',
-    icon: <Feather name="trophy" size={16} color="#94a3b8" style={{ opacity: 0.4 }} />,
+    icon: <FontAwesome5 name="trophy" size={16} color="#94a3b8" style={{ opacity: 0.4 }} />,
     color: '#64748b'
   }
 ];
@@ -228,7 +228,7 @@ export default function AchievementsScreen() {
         </View>
 
         <TouchableOpacity style={styles.iconBtn}>
-          <Feather name="trophy" size={20} color="#F8FAFC" />
+          <FontAwesome5 name="trophy" size={20} color="#F8FAFC" />
         </TouchableOpacity>
       </View>
 
@@ -432,7 +432,7 @@ export default function AchievementsScreen() {
             <View style={styles.streakRightCol}>
               <Text style={styles.streakLabel}>Best Streak</Text>
               <View style={styles.bestStreakRow}>
-                <Feather name="trophy" size={13} color="#eab308" style={{ marginRight: 4 }} />
+                <FontAwesome5 name="trophy" size={13} color="#eab308" style={{ marginRight: 4 }} />
                 <Text style={styles.bestStreakVal}>12 Days</Text>
               </View>
               <Text style={styles.bestStreakDate}>Apr 22 – May 3</Text>

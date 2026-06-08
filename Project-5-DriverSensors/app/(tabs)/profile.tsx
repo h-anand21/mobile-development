@@ -4,6 +4,7 @@ import { Feather, MaterialCommunityIcons, Ionicons, FontAwesome5 } from '@expo/v
 import Svg, { Circle, Path, Polygon } from 'react-native-svg';
 import { useRouter } from 'expo-router';
 import { driveRepository } from '../../src/database/repositories/driveRepository';
+import { useAppTheme } from '../../src/ui/theme';
 
 const { width } = Dimensions.get('window');
 
@@ -29,6 +30,8 @@ const HexagonBadge = ({ size = 56, color = '#22c55e', children }: { size?: numbe
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = getStyles(colors);
 
   // Load drives from DB
   const dbDrives = driveRepository.getAllDrives();
@@ -638,10 +641,10 @@ export default function ProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#050B14',
+    backgroundColor: colors.background,
   },
   scrollView: {
     flex: 1,
@@ -654,20 +657,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 50,
     paddingBottom: 15,
-    backgroundColor: '#050B14',
+    backgroundColor: colors.background,
   },
   iconBtn: {
     width: 44,
     height: 44,
     borderRadius: 12,
-    backgroundColor: '#0c1626',
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: '#122540',
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerTitle: {
-    color: '#ffffff',
+    color: colors.text,
     fontSize: 20,
     fontWeight: 'bold',
   },
@@ -680,9 +683,9 @@ const styles = StyleSheet.create({
   profileCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0c1626',
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: '#122540',
+    borderColor: colors.border,
     borderRadius: 24,
     padding: 16,
     marginBottom: 16,
@@ -693,7 +696,7 @@ const styles = StyleSheet.create({
     height: 76,
     borderRadius: 38,
     borderWidth: 2,
-    borderColor: '#00f5ff',
+    borderColor: colors.accent,
     padding: 2,
   },
   avatarImg: {
@@ -708,9 +711,9 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: '#050B14',
+    backgroundColor: colors.background,
     borderWidth: 1.5,
-    borderColor: '#00f5ff',
+    borderColor: colors.accent,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -719,13 +722,13 @@ const styles = StyleSheet.create({
     marginLeft: 14,
   },
   profileName: {
-    color: '#ffffff',
+    color: colors.text,
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 2,
   },
   profileEmail: {
-    color: '#64748b',
+    color: colors.textSlate,
     fontSize: 12,
     marginBottom: 6,
   },
@@ -734,7 +737,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   verifiedText: {
-    color: '#00f5ff',
+    color: colors.accent,
     fontSize: 10.5,
     fontWeight: 'bold',
   },
@@ -742,15 +745,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.3)',
-    backgroundColor: 'rgba(34, 197, 94, 0.05)',
+    borderColor: colors.success + '4d',
+    backgroundColor: colors.success + '0d',
     borderRadius: 14,
     width: 76,
     height: 64,
     position: 'relative',
   },
   safeDriverText: {
-    color: '#22c55e',
+    color: colors.success,
     fontSize: 8.5,
     fontWeight: 'bold',
     marginTop: 22,
@@ -760,10 +763,10 @@ const styles = StyleSheet.create({
   // Stats row
   statsRow: {
     flexDirection: 'row',
-    backgroundColor: '#0c1626',
+    backgroundColor: colors.card,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#122540',
+    borderColor: colors.border,
     paddingVertical: 14,
     marginBottom: 16,
   },
@@ -774,24 +777,24 @@ const styles = StyleSheet.create({
   },
   statDivider: {
     width: 1,
-    backgroundColor: '#122540',
+    backgroundColor: colors.border,
     height: '60%',
     alignSelf: 'center',
   },
   statLabel: {
-    color: '#64748b',
+    color: colors.textSlate,
     fontSize: 8,
     fontWeight: 'bold',
     marginBottom: 6,
     textAlign: 'center',
   },
   statValue: {
-    color: '#ffffff',
+    color: colors.text,
     fontSize: 14,
     fontWeight: 'bold',
   },
   statSubText: {
-    color: '#64748b',
+    color: colors.textSlate,
     fontSize: 9,
     marginTop: 2,
   },
@@ -810,7 +813,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   gaugeCenterText: {
-    color: '#ffffff',
+    color: colors.text,
     fontSize: 14,
     fontWeight: '900',
   },
@@ -819,9 +822,9 @@ const styles = StyleSheet.create({
   levelCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0c1626',
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: '#122540',
+    borderColor: colors.border,
     borderRadius: 20,
     padding: 14,
     marginBottom: 20,
@@ -837,29 +840,29 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   levelTitle: {
-    color: '#ffffff',
+    color: colors.text,
     fontSize: 13,
     fontWeight: 'bold',
   },
   levelXp: {
-    color: '#84cc16',
+    color: colors.success,
     fontSize: 11,
     fontWeight: 'bold',
   },
   levelSub: {
-    color: '#64748b',
+    color: colors.textSlate,
     fontSize: 10,
     marginBottom: 8,
   },
   progressBarBg: {
     height: 6,
-    backgroundColor: '#122540',
+    backgroundColor: colors.border,
     borderRadius: 3,
     overflow: 'hidden',
   },
   progressBarFill: {
     height: '100%',
-    backgroundColor: '#84cc16',
+    backgroundColor: colors.success,
     borderRadius: 3,
   },
   nextLevelCol: {
@@ -867,7 +870,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   nextLevelLabel: {
-    color: '#64748b',
+    color: colors.textSlate,
     fontSize: 8,
     fontWeight: '500',
     marginBottom: 2,
@@ -877,7 +880,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   nextLevelVal: {
-    color: '#ffffff',
+    color: colors.text,
     fontSize: 11,
     fontWeight: 'bold',
   },
@@ -890,7 +893,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   sectionHeaderTitle: {
-    color: '#ffffff',
+    color: colors.text,
     fontSize: 15,
     fontWeight: 'bold',
   },
@@ -899,7 +902,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   viewAllText: {
-    color: '#00f5ff',
+    color: colors.accent,
     fontSize: 11,
     fontWeight: 'bold',
   },
@@ -910,9 +913,9 @@ const styles = StyleSheet.create({
   },
   summaryGridCard: {
     width: 115,
-    backgroundColor: '#0c1626',
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: '#122540',
+    borderColor: colors.border,
     borderRadius: 18,
     padding: 12,
     marginRight: 10,
@@ -925,7 +928,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   summaryCardTitle: {
-    color: '#64748b',
+    color: colors.textSlate,
     fontSize: 9,
     fontWeight: 'bold',
     flex: 1,
@@ -933,6 +936,7 @@ const styles = StyleSheet.create({
   summaryCardValue: {
     fontSize: 18,
     fontWeight: '900',
+    color: colors.text,
   },
   miniWaveChart: {
     position: 'absolute',
@@ -943,9 +947,9 @@ const styles = StyleSheet.create({
   // Achievements
   achievementCard: {
     width: 130,
-    backgroundColor: '#0c1626',
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: '#122540',
+    borderColor: colors.border,
     borderRadius: 18,
     padding: 12,
     marginRight: 10,
@@ -954,14 +958,14 @@ const styles = StyleSheet.create({
     height: 120,
   },
   achievementTitle: {
-    color: '#ffffff',
+    color: colors.text,
     fontSize: 11,
     fontWeight: 'bold',
     marginTop: 10,
     textAlign: 'center',
   },
   achievementSub: {
-    color: '#64748b',
+    color: colors.textSlate,
     fontSize: 9,
     marginTop: 2,
     textAlign: 'center',
@@ -969,9 +973,9 @@ const styles = StyleSheet.create({
 
   // Menu Settings Card
   menuListCard: {
-    backgroundColor: '#0c1626',
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: '#122540',
+    borderColor: colors.border,
     borderRadius: 20,
     paddingHorizontal: 16,
     marginBottom: 30,
@@ -981,7 +985,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#122540',
+    borderBottomColor: colors.border,
   },
   menuIconContainer: {
     width: 36,
@@ -993,7 +997,7 @@ const styles = StyleSheet.create({
     marginRight: 14,
   },
   menuItemText: {
-    color: '#ffffff',
+    color: colors.text,
     fontSize: 13.5,
     fontWeight: 'bold',
     flex: 1,
@@ -1002,7 +1006,7 @@ const styles = StyleSheet.create({
     height: 40,
   },
   menuItemSubtext: {
-    color: '#64748b',
+    color: colors.textSlate,
     fontSize: 11,
     marginTop: 2,
   },
@@ -1014,9 +1018,9 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     width: '90%',
-    backgroundColor: '#0c1626',
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: '#122540',
+    borderColor: colors.border,
     borderRadius: 24,
     padding: 20,
   },
@@ -1024,12 +1028,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderBottomWidth: 1,
-    borderBottomColor: '#122540',
+    borderBottomColor: colors.border,
     paddingBottom: 15,
     marginBottom: 10,
   },
   modalTitle: {
-    color: '#ffffff',
+    color: colors.text,
     fontSize: 16,
     fontWeight: 'bold',
     marginLeft: 10,
@@ -1042,19 +1046,19 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   inputLabel: {
-    color: '#94a3b8',
+    color: colors.textSlate,
     fontSize: 11,
     fontWeight: 'bold',
     marginBottom: 6,
     marginTop: 12,
   },
   modalInput: {
-    backgroundColor: '#070f1e',
+    backgroundColor: colors.inputBg,
     borderWidth: 1,
-    borderColor: '#122540',
+    borderColor: colors.border,
     borderRadius: 12,
     padding: 12,
-    color: '#ffffff',
+    color: colors.text,
     fontSize: 13.5,
   },
   modalActions: {
@@ -1069,12 +1073,12 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   btnCancelText: {
-    color: '#64748b',
+    color: colors.textSlate,
     fontSize: 13,
     fontWeight: 'bold',
   },
   btnSave: {
-    backgroundColor: '#22c55e',
+    backgroundColor: colors.success,
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 10,
@@ -1091,25 +1095,25 @@ const styles = StyleSheet.create({
   },
   vehicleTypeBtn: {
     flex: 1,
-    backgroundColor: '#070f1e',
+    backgroundColor: colors.inputBg,
     borderWidth: 1,
-    borderColor: '#122540',
+    borderColor: colors.border,
     borderRadius: 10,
     paddingVertical: 10,
     alignItems: 'center',
     marginRight: 6,
   },
   vehicleTypeBtnSelected: {
-    borderColor: '#22c55e',
-    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+    borderColor: colors.success,
+    backgroundColor: colors.success + '1a',
   },
   vehicleTypeBtnText: {
-    color: '#64748b',
+    color: colors.textSlate,
     fontSize: 12,
     fontWeight: 'bold',
   },
   vehicleTypeBtnTextSelected: {
-    color: '#22c55e',
+    color: colors.success,
   },
   privacyOptionRow: {
     flexDirection: 'row',
@@ -1117,34 +1121,34 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#122540',
+    borderBottomColor: colors.border,
   },
   privacyOptionInfo: {
     flex: 1,
     marginRight: 15,
   },
   privacyOptionTitle: {
-    color: '#ffffff',
+    color: colors.text,
     fontSize: 13,
     fontWeight: 'bold',
   },
   privacyOptionDesc: {
-    color: '#64748b',
-    fontSize: 10,
+    color: colors.textSlate,
+    fontSize: 10.5,
     lineHeight: 14,
     marginTop: 2,
   },
   modalCloseMainBtn: {
-    backgroundColor: '#0c1626',
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: '#122540',
+    borderColor: colors.border,
     borderRadius: 12,
     paddingVertical: 12,
     alignItems: 'center',
     marginTop: 15,
   },
   modalCloseMainBtnText: {
-    color: '#ffffff',
+    color: colors.text,
     fontSize: 13,
     fontWeight: 'bold',
   },

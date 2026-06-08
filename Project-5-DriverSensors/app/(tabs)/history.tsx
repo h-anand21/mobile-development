@@ -1,3 +1,5 @@
+
+
 import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Dimensions } from 'react-native';
 import { Feather, MaterialCommunityIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
@@ -6,6 +8,7 @@ import { useRouter } from 'expo-router';
 import { useDriveStore } from '../../src/store/driveStore';
 import { driveRepository } from '../../src/database/repositories/driveRepository';
 import dayjs from 'dayjs';
+import { useAppTheme } from '../../src/ui/theme';
 
 const { width } = Dimensions.get('window');
 
@@ -107,8 +110,11 @@ const formatRating = (str: string) => {
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 };
 
+
 export default function HistoryScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = getStyles(colors);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'latest' | 'score-high' | 'score-low' | 'distance'>('latest');
   const [showSortOptions, setShowSortOptions] = useState(false);
@@ -603,10 +609,10 @@ export default function HistoryScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#050B14',
+    backgroundColor: colors.background,
   },
   scrollView: {
     flex: 1,
@@ -619,15 +625,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 50,
     paddingBottom: 15,
-    backgroundColor: '#050B14',
+    backgroundColor: colors.background,
   },
   iconCircle: {
     width: 44,
     height: 44,
     borderRadius: 12,
-    backgroundColor: '#0c1626',
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: '#122540',
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
@@ -639,20 +645,20 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#00f5ff',
+    backgroundColor: colors.accent,
     borderWidth: 1.5,
-    borderColor: '#0c1626',
+    borderColor: colors.card,
   },
   headerTitleContainer: {
     alignItems: 'center',
   },
   headerTitle: {
-    color: '#ffffff',
+    color: colors.text,
     fontSize: 20,
     fontWeight: 'bold',
   },
   headerSubtitle: {
-    color: '#94a3b8',
+    color: colors.textMuted,
     fontSize: 10,
     marginTop: 2,
   },
@@ -675,9 +681,9 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0c1626',
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: '#122540',
+    borderColor: colors.border,
     borderRadius: 12,
     paddingHorizontal: 12,
     height: 44,
@@ -685,47 +691,47 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    color: '#ffffff',
+    color: colors.text,
     fontSize: 12,
     fontWeight: '500',
   },
   filterBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0c1626',
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: '#122540',
+    borderColor: colors.border,
     borderRadius: 12,
     paddingHorizontal: 10,
     height: 44,
     marginRight: 10,
   },
   filterBtnText: {
-    color: '#ffffff',
+    color: colors.text,
     fontSize: 11,
     fontWeight: 'bold',
   },
   sortBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0c1626',
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: '#122540',
+    borderColor: colors.border,
     borderRadius: 12,
     paddingHorizontal: 10,
     height: 44,
   },
   sortBtnText: {
-    color: '#ffffff',
+    color: colors.text,
     fontSize: 11,
     fontWeight: 'bold',
   },
 
   // Sort Dropdown
   sortDropdown: {
-    backgroundColor: '#0c1626',
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: '#122540',
+    borderColor: colors.border,
     borderRadius: 12,
     marginHorizontal: 20,
     marginBottom: 15,
@@ -741,15 +747,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   activeSortOption: {
-    backgroundColor: 'rgba(0, 245, 255, 0.05)',
+    backgroundColor: colors.accent + '1c',
   },
   sortOptionText: {
-    color: '#94a3b8',
+    color: colors.textSlate,
     fontSize: 12,
     fontWeight: '500',
   },
   activeSortOptionText: {
-    color: '#00f5ff',
+    color: colors.accent,
     fontWeight: 'bold',
   },
 
@@ -759,9 +765,9 @@ const styles = StyleSheet.create({
   },
   summaryCard: {
     width: 140,
-    backgroundColor: '#0c1626',
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: '#122540',
+    borderColor: colors.border,
     borderRadius: 16,
     padding: 12,
     marginRight: 10,
@@ -774,12 +780,12 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   summaryCardLabel: {
-    color: '#64748b',
+    color: colors.textSlate,
     fontSize: 8,
     fontWeight: '600',
   },
   summaryCardValue: {
-    color: '#ffffff',
+    color: colors.text,
     fontSize: 18,
     fontWeight: '900',
     marginTop: 2,
@@ -787,10 +793,10 @@ const styles = StyleSheet.create({
   summaryUnit: {
     fontSize: 10,
     fontWeight: '600',
-    color: '#94a3b8',
+    color: colors.textMuted,
   },
   summaryCardSub: {
-    color: '#94a3b8',
+    color: colors.textMuted,
     fontSize: 8,
     marginTop: 1,
   },
@@ -816,7 +822,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   listHeaderTitle: {
-    color: '#ffffff',
+    color: colors.text,
     fontSize: 15,
     fontWeight: 'bold',
   },
@@ -825,7 +831,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   listHeaderDropdownText: {
-    color: '#64748b',
+    color: colors.textSlate,
     fontSize: 11,
     fontWeight: 'bold',
   },
@@ -834,9 +840,9 @@ const styles = StyleSheet.create({
   driveCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0c1626',
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: '#122540',
+    borderColor: colors.border,
     borderRadius: 18,
     padding: 12,
     marginBottom: 12,
@@ -855,7 +861,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   cardDialVal: {
-    color: '#ffffff',
+    color: colors.text,
     fontSize: 18,
     fontWeight: '900',
   },
@@ -863,7 +869,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 0,
     right: 2,
-    backgroundColor: '#0c1626',
+    backgroundColor: colors.card,
     borderRadius: 6,
     padding: 1,
   },
@@ -872,7 +878,7 @@ const styles = StyleSheet.create({
     marginRight: 6,
   },
   cardTimeTitle: {
-    color: '#94a3b8',
+    color: colors.textMuted,
     fontSize: 11,
     fontWeight: 'bold',
     marginBottom: 2,
@@ -883,7 +889,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   cardRouteText: {
-    color: '#ffffff',
+    color: colors.text,
     fontSize: 12,
     fontWeight: 'bold',
     flex: 1,
@@ -898,7 +904,7 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   cardStatText: {
-    color: '#64748b',
+    color: colors.textSlate,
     fontSize: 9,
     fontWeight: '500',
   },
@@ -923,7 +929,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   weatherLabelText: {
-    color: '#64748b',
+    color: colors.textSlate,
     fontSize: 9,
     fontWeight: '600',
   },
@@ -934,7 +940,7 @@ const styles = StyleSheet.create({
     paddingVertical: 60,
   },
   emptyText: {
-    color: '#475569',
+    color: colors.textSlate,
     fontSize: 12,
     fontWeight: 'bold',
   },

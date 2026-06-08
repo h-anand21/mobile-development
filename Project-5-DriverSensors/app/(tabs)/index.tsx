@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather, MaterialCommunityIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
@@ -18,20 +18,72 @@ export default function HomeScreen() {
   const currentSession = useDriveStore((state) => state.currentSession);
   const { colors, isDark } = useAppTheme();
 
-  // Dynamic calculations (fallback to mockup values if no session is active)
-  const score = currentSession ? currentSession.score : 92;
-  const rating = currentSession ? currentSession.rating : 'Excellent';
+  // State for mock animated values (active when not driving)
+  const [mockScore, setMockScore] = useState(92);
+  const [mockSpeed, setMockSpeed] = useState(68);
+  const [mockDistance, setMockDistance] = useState(28.6);
+  const [mockDurationSeconds, setMockDurationSeconds] = useState(2536);
+  const [mockPhoneUsage, setMockPhoneUsage] = useState(0);
+
+  // Simulated direction of speed changes (accelerating or decelerating)
+  const speedTrend = useRef(1); // 1 = accelerating, -1 = decelerating
+
+  useEffect(() => {
+    // If a session is active, do not run the mock animation
+    if (currentSession) {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      // 1. Animate Speed: oscillate between 45 and 85 km/h
+      setMockSpeed((prevSpeed) => {
+        let newSpeed = prevSpeed + speedTrend.current * Math.floor(Math.random() * 4 + 1);
+        if (newSpeed >= 85) {
+          newSpeed = 85;
+          speedTrend.current = -1; // start decelerating
+        } else if (newSpeed <= 45) {
+          newSpeed = 45;
+          speedTrend.current = 1; // start accelerating
+        }
+        return newSpeed;
+      });
+
+      // 2. Animate Distance: slowly increase by 0.01 - 0.02 km per tick
+      setMockDistance((prevDistance) => {
+        return parseFloat((prevDistance + 0.015).toFixed(2));
+      });
+
+      // 3. Animate Duration: increment by 1 second per tick
+      setMockDurationSeconds((prevSecs) => prevSecs + 1);
+
+      // 4. Animate Safety Score: slowly drift between 88 and 96 to show activity
+      setMockScore((prevScore) => {
+        const drift = Math.random() > 0.7 ? (Math.random() > 0.5 ? 1 : -1) : 0;
+        const newScore = Math.max(88, Math.min(98, prevScore + drift));
+        return newScore;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [currentSession]);
+
+  // Dynamic calculations (fallback to animated mock values if no session is active)
+  const score = currentSession ? currentSession.score : mockScore;
+  const rating = currentSession 
+    ? currentSession.rating 
+    : (score >= 90 ? 'Excellent' : score >= 70 ? 'Good' : score >= 50 ? 'Fair' : 'Poor');
   
   const currentSpeedMs = currentSession && currentSession.route.length > 0 
     ? currentSession.route[currentSession.route.length - 1].speed 
     : 0;
-  const displaySpeed = currentSession ? Math.round(currentSpeedMs * 3.6) : 68;
+  const displaySpeed = currentSession ? Math.round(currentSpeedMs * 3.6) : mockSpeed;
   
-  const displayDistance = currentSession ? (currentSession.distance / 1000).toFixed(1) : '28.6';
+  const displayDistance = currentSession ? (currentSession.distance / 1000).toFixed(1) : mockDistance.toFixed(1);
   
   const elapsedSeconds = currentSession 
     ? Math.floor((Date.now() - currentSession.startTime) / 1000) 
-    : 2536; // 42 minutes 16 seconds
+    : mockDurationSeconds;
+  
   const formatHHMM = (totalSeconds: number) => {
     const hrs = Math.floor(totalSeconds / 3600);
     const mins = Math.floor((totalSeconds % 3600) / 60);
@@ -42,7 +94,7 @@ export default function HomeScreen() {
   const phoneUsageCount = currentSession 
     ? currentSession.events.filter(e => e.type === 'PHONE_USAGE').length 
     : 0;
-  const displayPhoneUsage = currentSession ? phoneUsageCount : 0;
+  const displayPhoneUsage = currentSession ? phoneUsageCount : mockPhoneUsage;
 
   // Arc stroke offset for 270 degree gauge dial
   const strokeDashoffset = 377 - (377 * score) / 100;
