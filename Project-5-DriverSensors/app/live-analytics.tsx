@@ -215,10 +215,13 @@ export default function LiveAnalyticsScreen() {
   // Formulating SVG chart path
   const getPathData = (history: number[], scale: number, height: number) => {
     const pointsCount = history.length;
-    if (pointsCount === 0) return `M 0 ${height / 2}`;
+    const leftOffset = 25; // Space for the y-axis tick labels
+    const chartWidth = 160 - leftOffset;
+    
+    if (pointsCount === 0) return `M ${leftOffset} ${height / 2}`;
     
     return history.map((val, index) => {
-      const xPos = (index / (MAX_HISTORY - 1)) * 160; // chart width is 160
+      const xPos = leftOffset + (index / (MAX_HISTORY - 1)) * chartWidth;
       const yPos = (height / 2) - (val * scale);
       const clampedY = Math.max(3, Math.min(height - 3, yPos));
       return `${index === 0 ? 'M' : 'L'} ${xPos.toFixed(1)} ${clampedY.toFixed(1)}`;
@@ -483,7 +486,7 @@ export default function LiveAnalyticsScreen() {
             <View style={styles.sensorChartContainer}>
               <Svg width={160} height={70} viewBox="0 0 160 70">
                 {/* Horizontal grid guide */}
-                <Line x1="0" y1="35" x2="160" y2="35" stroke="rgba(255, 255, 255, 0.05)" strokeWidth="1" strokeDasharray="3 3" />
+                <Line x1="25" y1="35" x2="160" y2="35" stroke="rgba(255, 255, 255, 0.05)" strokeWidth="1" strokeDasharray="3 3" />
                 <SvgText style={styles.chartAxisTick} x="6" y="14">2</SvgText>
                 <SvgText style={styles.chartAxisTick} x="6" y="40">0</SvgText>
                 <SvgText style={styles.chartAxisTick} x="6" y="66">-2</SvgText>
@@ -527,7 +530,7 @@ export default function LiveAnalyticsScreen() {
             {/* Gyro rolling chart (scale factor 0.3) */}
             <View style={styles.sensorChartContainer}>
               <Svg width={160} height={70} viewBox="0 0 160 70">
-                <Line x1="0" y1="35" x2="160" y2="35" stroke="rgba(255, 255, 255, 0.05)" strokeWidth="1" strokeDasharray="3 3" />
+                <Line x1="25" y1="35" x2="160" y2="35" stroke="rgba(255, 255, 255, 0.05)" strokeWidth="1" strokeDasharray="3 3" />
                 <SvgText style={styles.chartAxisTick} x="6" y="14">2</SvgText>
                 <SvgText style={styles.chartAxisTick} x="6" y="40">0</SvgText>
                 <SvgText style={styles.chartAxisTick} x="6" y="66">-2</SvgText>
@@ -597,7 +600,7 @@ export default function LiveAnalyticsScreen() {
                 {/* Magnetometer rolling chart */}
                 <View style={[styles.sensorChartContainer, { width: '38%' }]}>
                   <Svg width={120} height={70} viewBox="0 0 160 70">
-                    <Line x1="0" y1="35" x2="160" y2="35" stroke="rgba(255, 255, 255, 0.05)" strokeWidth="1" strokeDasharray="3 3" />
+                    <Line x1="25" y1="35" x2="160" y2="35" stroke="rgba(255, 255, 255, 0.05)" strokeWidth="1" strokeDasharray="3 3" />
                     <Path d={getPathData(magnetoHistory.x, 0.3, 70)} stroke="#06b6d4" strokeWidth="2" strokeOpacity={0.8} fill="none" />
                     <Path d={getPathData(magnetoHistory.y, 0.3, 70)} stroke="#84cc16" strokeWidth="1.5" strokeOpacity={0.85} fill="none" />
                     <Path d={getPathData(magnetoHistory.z, 0.3, 70)} stroke="#eab308" strokeWidth="1" strokeOpacity={0.9} fill="none" />
