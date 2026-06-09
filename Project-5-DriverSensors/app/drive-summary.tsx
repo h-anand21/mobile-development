@@ -458,7 +458,7 @@ export default function DriveSummaryScreen() {
         >
           <Text style={styles.routeReplayBtnText}>VIEW ROUTE REPLAY</Text>
           <View style={styles.routeReplayBtnArrow}>
-            <Feather name="chevron-right" size={18} color="#050B14" />
+            <Feather name="chevron-right" size={18} color={colors.powerBg} />
           </View>
         </TouchableOpacity>
 

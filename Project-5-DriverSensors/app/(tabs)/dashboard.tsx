@@ -523,11 +523,11 @@ export default function DashboardScreen() {
                     return (
                       <React.Fragment key={idx}>
                         {/* Point Circle */}
-                        <Circle cx={x} cy={y} r="4.5" fill="#00f5ff" stroke="#050B14" strokeWidth="1.5" />
+                        <Circle cx={x} cy={y} r="4.5" fill="#00f5ff" stroke={colors.card} strokeWidth="1.5" />
                         
                         {/* Value text above point */}
                         {idx !== 6 && (
-                          <SvgText x={x} y={y - 10} fill="#ffffff" fontSize="9" fontWeight="bold" textAnchor="middle">
+                          <SvgText x={x} y={y - 10} fill={colors.text} fontSize="9" fontWeight="bold" textAnchor="middle">
                             {val}
                           </SvgText>
                         )}
@@ -552,7 +552,7 @@ export default function DashboardScreen() {
                         <SvgText x={x} y={y - 14} fill="#050B14" fontSize="9" fontWeight="bold" textAnchor="middle">
                           {lastVal}
                         </SvgText>
-                        <Circle cx={x} cy={y} r="6" fill="#a3e635" stroke="#050B14" strokeWidth="2" />
+                        <Circle cx={x} cy={y} r="6" fill="#a3e635" stroke={colors.card} strokeWidth="2" />
                       </React.Fragment>
                     );
                   })()}
@@ -774,7 +774,7 @@ export default function DashboardScreen() {
                           x={x} y={y} 
                           width={barW} height={barH} 
                           rx="2" 
-                          fill={hIdx === 4 ? '#00f5ff' : '#122540'} 
+                          fill={hIdx === 4 ? colors.accent : colors.border} 
                         />
                       );
                     })}
@@ -846,10 +846,10 @@ export default function DashboardScreen() {
 
                     return (
                       <React.Fragment key={idx}>
-                        <Circle cx={x} cy={y} r="4.5" fill="#00f5ff" stroke="#050B14" strokeWidth="1.5" />
+                        <Circle cx={x} cy={y} r="4.5" fill="#00f5ff" stroke={colors.card} strokeWidth="1.5" />
                         
                         {idx !== 4 && (
-                          <SvgText x={x} y={y - 10} fill="#ffffff" fontSize="9" fontWeight="bold" textAnchor="middle">
+                          <SvgText x={x} y={y - 10} fill={colors.text} fontSize="9" fontWeight="bold" textAnchor="middle">
                             {val}
                           </SvgText>
                         )}
@@ -873,7 +873,7 @@ export default function DashboardScreen() {
                         <SvgText x={x} y={y - 14} fill="#050B14" fontSize="9" fontWeight="bold" textAnchor="middle">
                           {lastVal}
                         </SvgText>
-                        <Circle cx={x} cy={y} r="6" fill="#a3e635" stroke="#050B14" strokeWidth="2" />
+                        <Circle cx={x} cy={y} r="6" fill="#a3e635" stroke={colors.card} strokeWidth="2" />
                       </React.Fragment>
                     );
                   })()}
@@ -975,10 +975,10 @@ export default function DashboardScreen() {
                     const y = 150 - 20 - (val / 100) * 110;
                     return (
                       <React.Fragment key={idx}>
-                        <Circle cx={x} cy={y} r="4" fill="#00f5ff" stroke="#050B14" strokeWidth="1.5" />
+                        <Circle cx={x} cy={y} r="4" fill="#00f5ff" stroke={colors.card} strokeWidth="1.5" />
                         
                         {idx !== 11 && idx % 2 === 0 && (
-                          <SvgText x={x} y={y - 10} fill="#ffffff" fontSize="9" fontWeight="bold" textAnchor="middle">
+                          <SvgText x={x} y={y - 10} fill={colors.text} fontSize="9" fontWeight="bold" textAnchor="middle">
                             {val}
                           </SvgText>
                         )}
@@ -1003,7 +1003,7 @@ export default function DashboardScreen() {
                         <SvgText x={x} y={y - 14} fill="#050B14" fontSize="9" fontWeight="bold" textAnchor="middle">
                           {lastVal}
                         </SvgText>
-                        <Circle cx={x} cy={y} r="6" fill="#a3e635" stroke="#050B14" strokeWidth="2" />
+                        <Circle cx={x} cy={y} r="6" fill="#a3e635" stroke={colors.card} strokeWidth="2" />
                       </React.Fragment>
                     );
                   })()}

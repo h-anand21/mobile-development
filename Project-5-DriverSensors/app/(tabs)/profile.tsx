@@ -191,7 +191,7 @@ export default function ProfileScreen() {
             <Text style={styles.statLabel}>Average Score</Text>
             <View style={styles.gaugeContainer}>
               <Svg width={44} height={44} viewBox="0 0 50 50">
-                <Circle cx="25" cy="25" r="20" stroke="#122540" strokeWidth="3.5" fill="none" />
+                <Circle cx="25" cy="25" r="20" stroke={colors.border} strokeWidth="3.5" fill="none" />
                 <Circle
                   cx="25"
                   cy="25"
@@ -574,7 +574,7 @@ export default function ProfileScreen() {
                 <Switch
                   value={shareTelemetry}
                   onValueChange={setShareTelemetry}
-                  trackColor={{ false: '#122540', true: '#00f5ff30' }}
+                  trackColor={{ false: colors.border, true: '#00f5ff30' }}
                   thumbColor={shareTelemetry ? '#00f5ff' : '#64748b'}
                 />
               </View>
@@ -589,7 +589,7 @@ export default function ProfileScreen() {
                 <Switch
                   value={encryption}
                   onValueChange={setEncryption}
-                  trackColor={{ false: '#122540', true: '#22c55e30' }}
+                  trackColor={{ false: colors.border, true: '#22c55e30' }}
                   thumbColor={encryption ? '#22c55e' : '#64748b'}
                 />
               </View>
@@ -604,7 +604,7 @@ export default function ProfileScreen() {
                 <Switch
                   value={anonymousAnalytics}
                   onValueChange={setAnonymousAnalytics}
-                  trackColor={{ false: '#122540', true: '#eab30830' }}
+                  trackColor={{ false: colors.border, true: '#eab30830' }}
                   thumbColor={anonymousAnalytics ? '#eab308' : '#64748b'}
                 />
               </View>
@@ -619,7 +619,7 @@ export default function ProfileScreen() {
                 <Switch
                   value={saveHistory}
                   onValueChange={setSaveHistory}
-                  trackColor={{ false: '#122540', true: '#a855f730' }}
+                  trackColor={{ false: colors.border, true: '#a855f730' }}
                   thumbColor={saveHistory ? '#a855f7' : '#64748b'}
                 />
               </View>

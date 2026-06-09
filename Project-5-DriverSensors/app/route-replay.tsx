@@ -520,7 +520,7 @@ export default function RouteReplayScreen() {
                   
                   return (
                     <G key={evt.id}>
-                      <Circle cx={evt.x} cy={evt.y} r="10" fill="#0c1626" stroke={strokeColor} strokeWidth="2" />
+                      <Circle cx={evt.x} cy={evt.y} r="10" fill={colors.card} stroke={strokeColor} strokeWidth="2" />
                       {evt.type === 'HARSH_BRAKE' && (
                         <>
                           <Line x1={evt.x} y1={evt.y - 4} x2={evt.x} y2={evt.y + 1} stroke="#ef4444" strokeWidth="1.5" />
@@ -539,19 +539,19 @@ export default function RouteReplayScreen() {
               ) : (
                 <>
                   {/* 2. Sharp Turn (08:18 AM) */}
-                  <Circle cx="130" cy="100" r="10" fill="#0c1626" stroke="#eab308" strokeWidth="2" />
+                  <Circle cx="130" cy="100" r="10" fill={colors.card} stroke="#eab308" strokeWidth="2" />
                   
                   {/* 3. Harsh Brake 1 (08:22 AM) */}
-                  <Circle cx="180" cy="160" r="10" fill="#0c1626" stroke="#ef4444" strokeWidth="2" />
+                  <Circle cx="180" cy="160" r="10" fill={colors.card} stroke="#ef4444" strokeWidth="2" />
                   
                   {/* 4. Phone Usage (08:27 AM) */}
-                  <Circle cx="220" cy="220" r="10" fill="#0c1626" stroke="#00f5ff" strokeWidth="2" />
+                  <Circle cx="220" cy="220" r="10" fill={colors.card} stroke="#00f5ff" strokeWidth="2" />
                   
                   {/* 5. Aggressive Steering (08:31 AM) */}
-                  <Circle cx="260" cy="280" r="10" fill="#0c1626" stroke="#a3e635" strokeWidth="2" />
+                  <Circle cx="260" cy="280" r="10" fill={colors.card} stroke="#a3e635" strokeWidth="2" />
                   
                   {/* 6. Harsh Brake 2 (08:35 AM) */}
-                  <Circle cx="300" cy="320" r="10" fill="#0c1626" stroke="#ef4444" strokeWidth="2" />
+                  <Circle cx="300" cy="320" r="10" fill={colors.card} stroke="#ef4444" strokeWidth="2" />
                 </>
               )}
 

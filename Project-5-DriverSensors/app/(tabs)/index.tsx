@@ -17,6 +17,7 @@ export default function HomeScreen() {
   const setTracking = useSensorStore((state) => state.setTracking);
   const currentSession = useDriveStore((state) => state.currentSession);
   const { colors, isDark } = useAppTheme();
+  const styles = getStyles(colors);
 
   // State for mock animated values (active when not driving)
   const [mockScore, setMockScore] = useState(92);
@@ -345,10 +346,10 @@ export default function HomeScreen() {
             <Feather name={currentSession ? "eye" : "power"} size={22} color={colors.accent} />
           </View>
           <View style={styles.startButtonTextWrap}>
-            <Text style={[styles.startButtonTitle, { color: colors.isDark ? '#050B14' : '#ffffff' }]}>
+            <Text style={[styles.startButtonTitle, { color: isDark ? '#050B14' : '#ffffff' }]}>
               {currentSession ? 'VIEW ACTIVE DRIVE' : 'START DRIVE'}
             </Text>
-            <Text style={[styles.startButtonSub, { color: colors.isDark ? '#050B14' : '#ffffff', opacity: 0.8 }]}>
+            <Text style={[styles.startButtonSub, { color: isDark ? '#050B14' : '#ffffff', opacity: 0.8 }]}>
               {currentSession ? 'A drive is in progress. Tap to monitor.' : 'Track your drive & improve your score'}
             </Text>
           </View>
@@ -357,283 +358,284 @@ export default function HomeScreen() {
           </View>
         </LinearGradient>
       </TouchableOpacity>
-
-      <View style={styles.bottomSpacer} />
+          <View style={styles.bottomSpacer} />
       </ScrollView>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#050B14', // Very dark blue/black
-  },
-  scrollView: {
-    flex: 1,
-    marginBottom: 90, // Ends exactly above the floating tab bar
-  },
-  contentContainer: {
-    padding: 20,
-    paddingTop: 50,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 20,
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  greetingContainer: {
-    marginLeft: 15,
-  },
-  greetingSub: {
-    color: '#94a3b8',
-    fontSize: 12,
-  },
-  nameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 2,
-  },
-  greetingName: {
-    color: '#ffffff',
-    fontSize: 22,
-    fontWeight: 'bold',
-  },
-  waveEmoji: {
-    fontSize: 20,
-    marginLeft: 5,
-  },
-  tagline: {
-    color: '#22c55e',
-    fontSize: 12,
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  bellIcon: {
-    marginRight: 15,
-  },
-  notificationDot: {
-    position: 'absolute',
-    top: -2,
-    right: -2,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#f59e0b',
-  },
-  profilePicContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 2,
-    borderColor: '#0ea5e9',
-    padding: 2,
-  },
-  profilePic: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 20,
-  },
-  gaugeContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 280,
-    marginVertical: 10,
-  },
-  svgGauge: {
-    position: 'absolute',
-  },
-  scoreInner: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  shieldIconContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 5,
-  },
-  scoreNumber: {
-    color: '#ffffff',
-    fontSize: 72,
-    fontWeight: 'bold',
-    lineHeight: 80,
-  },
-  scoreLabel: {
-    color: '#e2e8f0',
-    fontSize: 14,
-    letterSpacing: 2,
-    marginBottom: 10,
-  },
-  excellentBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(6, 182, 212, 0.15)',
-    paddingHorizontal: 15,
-    paddingVertical: 6,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(6, 182, 212, 0.3)',
-  },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#06b6d4',
-    marginRight: 6,
-  },
-  excellentText: {
-    color: '#06b6d4',
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  metricsRowUnified: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: 'rgba(12, 22, 38, 0.5)',
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#122540',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    marginBottom: 25,
-  },
-  metricDivider: {
-    width: 1,
-    height: '60%',
-    backgroundColor: '#122540',
-  },
-  tickLabel: {
-    position: 'absolute',
-    color: '#94a3b8',
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  menuBtn: {
-    marginRight: 10,
-  },
-  metricItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  metricIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 8,
-    backgroundColor: 'rgba(15, 23, 42, 0.6)',
-  },
-  metricTitle: {
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  metricSub: {
-    color: '#94a3b8',
-    fontSize: 10,
-  },
-  carSection: {
-    height: 250,
-    position: 'relative',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 30,
-  },
-  carImage: {
-    width: width * 0.7,
-    height: 180,
-    opacity: 0.9,
-    shadowColor: '#0ea5e9',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.5,
-    shadowRadius: 20,
-  },
-  floatingWidget: {
-    position: 'absolute',
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(15, 23, 42, 0.8)',
-    padding: 10,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(51, 65, 85, 0.8)',
-    minWidth: 110,
-  },
-  widgetTopLeft: { top: 10, left: 0 },
-  widgetTopRight: { top: 10, right: 0 },
-  widgetBottomLeft: { bottom: 20, left: 0 },
-  widgetBottomRight: { bottom: 20, right: 0 },
-  widgetTextContainer: {
-    marginLeft: 8,
-  },
-  widgetLabel: {
-    color: '#94a3b8',
-    fontSize: 8,
-    letterSpacing: 1,
-  },
-  widgetValue: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  widgetUnit: {
-    color: '#94a3b8',
-    fontSize: 10,
-  },
-  startButtonContainer: {
-    borderRadius: 20,
-    overflow: 'hidden',
-    shadowColor: '#22c55e',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.4,
-    shadowRadius: 15,
-  },
-  startButtonGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 15,
-  },
-  powerIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#050B14',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  startButtonTextWrap: {
-    alignItems: 'center',
-  },
-  startButtonTitle: {
-    color: '#050B14',
-    fontSize: 18,
-    fontWeight: '900',
-    letterSpacing: 1,
-  },
-  startButtonSub: {
-    color: '#050B14',
-    fontSize: 10,
-    opacity: 0.8,
-  },
-  arrowIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#050B14',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  bottomSpacer: {
-    height: 40,
-  }
-});
+function getStyles(colors: any) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    scrollView: {
+      flex: 1,
+      marginBottom: 90, // Ends exactly above the floating tab bar
+    },
+    contentContainer: {
+      padding: 20,
+      paddingTop: 50,
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      marginBottom: 20,
+    },
+    headerLeft: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+    },
+    greetingContainer: {
+      marginLeft: 15,
+    },
+    greetingSub: {
+      color: colors.textMuted,
+      fontSize: 12,
+    },
+    nameRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginVertical: 2,
+    },
+    greetingName: {
+      color: colors.text,
+      fontSize: 22,
+      fontWeight: 'bold',
+    },
+    waveEmoji: {
+      fontSize: 20,
+      marginLeft: 5,
+    },
+    tagline: {
+      color: colors.success,
+      fontSize: 12,
+    },
+    headerRight: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    bellIcon: {
+      marginRight: 10,
+    },
+    notificationDot: {
+      position: 'absolute',
+      top: -2,
+      right: -2,
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: '#f59e0b',
+    },
+    profilePicContainer: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      borderWidth: 2,
+      borderColor: colors.accent,
+      padding: 2,
+    },
+    profilePic: {
+      width: '100%',
+      height: '100%',
+      borderRadius: 20,
+    },
+    gaugeContainer: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      height: 280,
+      marginVertical: 10,
+    },
+    svgGauge: {
+      position: 'absolute',
+    },
+    scoreInner: {
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    shieldIconContainer: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 5,
+    },
+    scoreNumber: {
+      color: colors.text,
+      fontSize: 72,
+      fontWeight: 'bold',
+      lineHeight: 80,
+    },
+    scoreLabel: {
+      color: colors.textMuted,
+      fontSize: 14,
+      letterSpacing: 2,
+      marginBottom: 10,
+    },
+    excellentBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.isDark ? 'rgba(6, 182, 212, 0.15)' : 'rgba(8, 145, 178, 0.15)',
+      paddingHorizontal: 15,
+      paddingVertical: 6,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: colors.isDark ? 'rgba(6, 182, 212, 0.3)' : 'rgba(8, 145, 178, 0.3)',
+    },
+    dot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      backgroundColor: colors.accent,
+      marginRight: 6,
+    },
+    excellentText: {
+      color: colors.accent,
+      fontSize: 12,
+      fontWeight: '500',
+    },
+    metricsRowUnified: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      backgroundColor: colors.card,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingVertical: 14,
+      paddingHorizontal: 16,
+      marginBottom: 25,
+    },
+    metricDivider: {
+      width: 1,
+      height: '60%',
+      backgroundColor: colors.border,
+    },
+    tickLabel: {
+      position: 'absolute',
+      color: colors.textSlate,
+      fontSize: 10,
+      fontWeight: 'bold',
+    },
+    menuBtn: {
+      marginRight: 10,
+    },
+    metricItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    metricIconWrap: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      borderWidth: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 8,
+      backgroundColor: colors.background,
+      borderColor: colors.border,
+    },
+    metricTitle: {
+      color: colors.text,
+      fontSize: 12,
+      fontWeight: 'bold',
+    },
+    metricSub: {
+      color: colors.textMuted,
+      fontSize: 10,
+    },
+    carSection: {
+      height: 250,
+      position: 'relative',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 30,
+    },
+    carImage: {
+      width: width * 0.7,
+      height: 180,
+      opacity: 0.9,
+      shadowColor: colors.accent,
+      shadowOffset: { width: 0, height: 10 },
+      shadowOpacity: 0.5,
+      shadowRadius: 20,
+    },
+    floatingWidget: {
+      position: 'absolute',
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.card,
+      padding: 10,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      minWidth: 110,
+    },
+    widgetTopLeft: { top: 10, left: 0 },
+    widgetTopRight: { top: 10, right: 0 },
+    widgetBottomLeft: { bottom: 20, left: 0 },
+    widgetBottomRight: { bottom: 20, right: 0 },
+    widgetTextContainer: {
+      marginLeft: 8,
+    },
+    widgetLabel: {
+      color: colors.textSlate,
+      fontSize: 8,
+      letterSpacing: 1,
+    },
+    widgetValue: {
+      color: colors.text,
+      fontSize: 16,
+      fontWeight: 'bold',
+    },
+    widgetUnit: {
+      color: colors.textMuted,
+      fontSize: 10,
+    },
+    startButtonContainer: {
+      borderRadius: 20,
+      overflow: 'hidden',
+      shadowColor: colors.success,
+      shadowOffset: { width: 0, height: 5 },
+      shadowOpacity: 0.4,
+      shadowRadius: 15,
+      elevation: 5,
+    },
+    startButtonGradient: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: 15,
+    },
+    powerIconWrap: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: colors.powerBg,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    startButtonTextWrap: {
+      alignItems: 'center',
+    },
+    startButtonTitle: {
+      fontSize: 18,
+      fontWeight: '900',
+      letterSpacing: 1,
+    },
+    startButtonSub: {
+      fontSize: 10,
+    },
+    arrowIconWrap: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: colors.powerBg,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    bottomSpacer: {
+      height: 40,
+    }
+  });
+}

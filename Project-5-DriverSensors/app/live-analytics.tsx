@@ -561,7 +561,7 @@ export default function LiveAnalyticsScreen() {
               {/* Dynamic SVG Compass Dial */}
               <View style={{ width: '25%', alignItems: 'center', justifyContent: 'center' }}>
                 <Svg width={52} height={52} viewBox="0 0 80 80">
-                  <Circle cx="40" cy="40" r="32" stroke="#122540" strokeWidth="2.5" fill="#050B14" />
+                  <Circle cx="40" cy="40" r="32" stroke={colors.border} strokeWidth="2.5" fill={colors.background} />
                   <SvgText x="40" y="16" fill="#64748b" fontSize="9" fontWeight="bold" textAnchor="middle">N</SvgText>
                   <SvgText x="40" y="72" fill="#64748b" fontSize="9" fontWeight="bold" textAnchor="middle">S</SvgText>
                   <SvgText x="13" y="44" fill="#64748b" fontSize="9" fontWeight="bold" textAnchor="middle">W</SvgText>
@@ -677,7 +677,7 @@ export default function LiveAnalyticsScreen() {
                     </ClipPath>
                   </Defs>
                   {/* Outer bezel */}
-                  <Circle cx="40" cy="40" r="32" stroke="#122540" strokeWidth="2.5" fill="none" />
+                  <Circle cx="40" cy="40" r="32" stroke={colors.border} strokeWidth="2.5" fill="none" />
                   <Circle cx="40" cy="40" r="30" fill="#000000" />
                   
                   {/* Rotating/translating sky-ground plane */}

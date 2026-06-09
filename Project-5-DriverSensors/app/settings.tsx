@@ -362,7 +362,7 @@ export default function SettingsScreen() {
                 <Switch
                   value={reminders}
                   onValueChange={(val) => setNotification('reminders', val)}
-                  trackColor={{ false: "#122540", true: "#3b82f6" }}
+                  trackColor={{ false: colors.border, true: "#3b82f6" }}
                   thumbColor={reminders ? "#ffffff" : "#64748b"}
                 />
               </View>
@@ -379,7 +379,7 @@ export default function SettingsScreen() {
                 <Switch
                   value={weeklyReports}
                   onValueChange={(val) => setNotification('weeklyReports', val)}
-                  trackColor={{ false: "#122540", true: "#3b82f6" }}
+                  trackColor={{ false: colors.border, true: "#3b82f6" }}
                   thumbColor={weeklyReports ? "#ffffff" : "#64748b"}
                 />
               </View>
@@ -396,7 +396,7 @@ export default function SettingsScreen() {
                 <Switch
                   value={achievements}
                   onValueChange={(val) => setNotification('achievements', val)}
-                  trackColor={{ false: "#122540", true: "#3b82f6" }}
+                  trackColor={{ false: colors.border, true: "#3b82f6" }}
                   thumbColor={achievements ? "#ffffff" : "#64748b"}
                 />
               </View>
@@ -413,7 +413,7 @@ export default function SettingsScreen() {
                 <Switch
                   value={safetyAlerts}
                   onValueChange={(val) => setNotification('safetyAlerts', val)}
-                  trackColor={{ false: "#122540", true: "#3b82f6" }}
+                  trackColor={{ false: colors.border, true: "#3b82f6" }}
                   thumbColor={safetyAlerts ? "#ffffff" : "#64748b"}
                 />
               </View>

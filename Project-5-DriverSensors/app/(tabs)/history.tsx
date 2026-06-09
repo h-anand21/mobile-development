@@ -534,7 +534,7 @@ export default function HistoryScreen() {
                 {/* Score Dial (Left) */}
                 <View style={styles.cardDialWrap}>
                   <Svg width={64} height={64} viewBox="0 0 80 80">
-                    <Circle cx="40" cy="40" r="30" stroke="#122540" strokeWidth="4" fill="none" />
+                    <Circle cx="40" cy="40" r="30" stroke={colors.border} strokeWidth="4" fill="none" />
                     <Circle
                       cx="40" cy="40" r="30"
                       stroke={rColor} strokeWidth="5" fill="none"

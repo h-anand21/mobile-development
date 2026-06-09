@@ -168,7 +168,7 @@ export default function AICoachScreen() {
                 {/* Background track */}
                 <Circle 
                   cx="80" cy="80" r="62" 
-                  stroke="#122540" strokeWidth="8" fill="none" 
+                  stroke={colors.border} strokeWidth="8" fill="none" 
                   strokeDasharray="292 389" 
                   transform="rotate(135 80 80)"
                   strokeLinecap="round"

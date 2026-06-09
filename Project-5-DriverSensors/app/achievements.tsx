@@ -243,8 +243,8 @@ export default function AchievementsScreen() {
           <View style={styles.trophyVisual}>
             <Svg width={76} height={85} viewBox="0 0 100 110">
               {/* Pedestal base */}
-              <Ellipse cx="50" cy="95" rx="35" ry="8" fill="#122540" stroke="#00f5ff" strokeWidth="1" />
-              <Ellipse cx="50" cy="90" rx="30" ry="7" fill="#0c1626" stroke="#00f5ff" strokeWidth="1.5" />
+              <Ellipse cx="50" cy="95" rx="35" ry="8" fill={colors.border} stroke={colors.accent} strokeWidth="1" />
+              <Ellipse cx="50" cy="90" rx="30" ry="7" fill={colors.card} stroke={colors.accent} strokeWidth="1.5" />
               {/* Laurel Leaves */}
               <Path d="M22,75 Q10,60 20,40 T35,25" fill="none" stroke="rgba(34, 197, 94, 0.4)" strokeWidth="2.5" />
               <Path d="M78,75 Q90,60 80,40 T65,25" fill="none" stroke="rgba(34, 197, 94, 0.4)" strokeWidth="2.5" />
