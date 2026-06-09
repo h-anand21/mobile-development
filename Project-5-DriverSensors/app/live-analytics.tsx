@@ -142,10 +142,10 @@ export default function LiveAnalyticsScreen() {
   const magneto = currentSession ? magnetometerData : localMagneto;
   const dm = currentSession ? deviceMotionData : localDeviceMotion;
 
-  // Raw sensor values
-  const ax = accel?.x ?? 0.0;
-  const ay = accel?.y ?? 0.0;
-  const az = accel?.z ?? 9.81; // Gravity factor fallback along Z
+  // Raw sensor values (converted from Gs to m/s²)
+  const ax = (accel?.x ?? 0.0) * 9.81;
+  const ay = (accel?.y ?? 0.0) * 9.81;
+  const az = (accel?.z ?? 1.0) * 9.81; // Gravity factor fallback along Z (1.0G = 9.81 m/s²)
 
   const gx = gyro?.x ?? 0.0;
   const gy = gyro?.y ?? 0.0;
@@ -180,12 +180,12 @@ export default function LiveAnalyticsScreen() {
   const dmAccGravY = dm?.accelerationIncludingGravity?.y ?? 9.81;
   const dmAccGravZ = dm?.accelerationIncludingGravity?.z ?? 0.0;
 
-  // G-Force Calculations
-  const latG = ax / 9.81; // Lateral
-  const vertG = (ay - 9.81) / 9.81; // Vertical (subtracting gravity factor roughly)
-  const longG = az / 9.81; // Longitudinal
+  // G-Force Calculations (converting m/s² back to Gs, and using standard axis orientation)
+  const latG = ax / 9.81; // Lateral (X-axis)
+  const longG = ay / 9.81; // Longitudinal (Y-axis)
+  const vertG = (az - 9.81) / 9.81; // Vertical (Z-axis minus gravity)
   
-  // Linear G-force magnitude (approximate)
+  // Linear G-force magnitude (approximate horizontal acceleration)
   const totalG = Math.sqrt(latG * latG + longG * longG);
 
   // Update rolling histories
@@ -454,77 +454,89 @@ export default function LiveAnalyticsScreen() {
 
         {/* Accelerometer Sensor Card */}
         <View style={styles.sensorCard}>
-          <View style={styles.sensorLeftCol}>
+          {/* Card Header */}
+          <View style={styles.sensorCardHeader}>
             <View style={styles.sensorIconCircle}>
               <MaterialCommunityIcons name="pulse" size={20} color="#0ea5e9" />
             </View>
             <Text style={styles.sensorCardTitle}>ACCELEROMETER</Text>
-            
-            <View style={styles.axisValueRow}>
-              <View style={[styles.axisDot, { backgroundColor: '#06b6d4' }]} />
-              <Text style={styles.axisLabel}>X  <Text style={styles.axisVal}>{ax.toFixed(2)}</Text> m/s²</Text>
-            </View>
-            <View style={styles.axisValueRow}>
-              <View style={[styles.axisDot, { backgroundColor: '#84cc16' }]} />
-              <Text style={styles.axisLabel}>Y  <Text style={styles.axisVal}>{ay.toFixed(2)}</Text> m/s²</Text>
-            </View>
-            <View style={styles.axisValueRow}>
-              <View style={[styles.axisDot, { backgroundColor: '#eab308' }]} />
-              <Text style={styles.axisLabel}>Z  <Text style={styles.axisVal}>{az.toFixed(2)}</Text> m/s²</Text>
-            </View>
           </View>
 
-          {/* Real-time Rolling Waveform Chart */}
-          <View style={styles.sensorChartContainer}>
-            <Svg width={160} height={70} viewBox="0 0 160 70">
-              {/* Horizontal grid guide */}
-              <Line x1="0" y1="35" x2="160" y2="35" stroke="rgba(255, 255, 255, 0.05)" strokeWidth="1" strokeDasharray="3 3" />
-              <SvgText style={styles.chartAxisTick} x="0" y="15">2</SvgText>
-              <SvgText style={styles.chartAxisTick} x="0" y="40">0</SvgText>
-              <SvgText style={styles.chartAxisTick} x="0" y="65">-2</SvgText>
-              
-              {/* Paths representing histories (scale factor 8) */}
-              <Path d={getPathData(accelHistory.x, 8, 70)} stroke="#06b6d4" strokeWidth="1.5" fill="none" />
-              <Path d={getPathData(accelHistory.y, 8, 70)} stroke="#84cc16" strokeWidth="1.5" fill="none" />
-              <Path d={getPathData(accelHistory.z.length > 0 ? accelHistory.z.map(z => z - 9.81) : [], 8, 70)} stroke="#eab308" strokeWidth="1.5" fill="none" />
-            </Svg>
+          {/* Card Body */}
+          <View style={styles.sensorCardBody}>
+            <View style={styles.sensorLeftCol}>
+              <View style={styles.axisValueRow}>
+                <View style={[styles.axisDot, { backgroundColor: '#06b6d4' }]} />
+                <Text style={styles.axisLabel}>X  <Text style={styles.axisVal}>{ax.toFixed(2)}</Text> m/s²</Text>
+              </View>
+              <View style={styles.axisValueRow}>
+                <View style={[styles.axisDot, { backgroundColor: '#84cc16' }]} />
+                <Text style={styles.axisLabel}>Y  <Text style={styles.axisVal}>{ay.toFixed(2)}</Text> m/s²</Text>
+              </View>
+              <View style={styles.axisValueRow}>
+                <View style={[styles.axisDot, { backgroundColor: '#eab308' }]} />
+                <Text style={styles.axisLabel}>Z  <Text style={styles.axisVal}>{az.toFixed(2)}</Text> m/s²</Text>
+              </View>
+            </View>
+
+            {/* Real-time Rolling Waveform Chart */}
+            <View style={styles.sensorChartContainer}>
+              <Svg width={160} height={70} viewBox="0 0 160 70">
+                {/* Horizontal grid guide */}
+                <Line x1="0" y1="35" x2="160" y2="35" stroke="rgba(255, 255, 255, 0.05)" strokeWidth="1" strokeDasharray="3 3" />
+                <SvgText style={styles.chartAxisTick} x="6" y="14">2</SvgText>
+                <SvgText style={styles.chartAxisTick} x="6" y="40">0</SvgText>
+                <SvgText style={styles.chartAxisTick} x="6" y="66">-2</SvgText>
+                
+                {/* Paths representing histories (scale factor 8) */}
+                <Path d={getPathData(accelHistory.x, 8, 70)} stroke="#06b6d4" strokeWidth="2" strokeOpacity={0.8} fill="none" />
+                <Path d={getPathData(accelHistory.y, 8, 70)} stroke="#84cc16" strokeWidth="1.5" strokeOpacity={0.85} fill="none" />
+                <Path d={getPathData(accelHistory.z.length > 0 ? accelHistory.z.map(z => z - 9.81) : [], 8, 70)} stroke="#eab308" strokeWidth="1" strokeOpacity={0.9} fill="none" />
+              </Svg>
+            </View>
           </View>
         </View>
 
         {/* Gyroscope Sensor Card */}
         <View style={styles.sensorCard}>
-          <View style={styles.sensorLeftCol}>
+          {/* Card Header */}
+          <View style={styles.sensorCardHeader}>
             <View style={[styles.sensorIconCircle, { borderColor: 'rgba(34, 197, 94, 0.2)' }]}>
               <MaterialCommunityIcons name="orbit" size={20} color="#84cc16" />
             </View>
             <Text style={styles.sensorCardTitle}>GYROSCOPE</Text>
-            
-            <View style={styles.axisValueRow}>
-              <View style={[styles.axisDot, { backgroundColor: '#06b6d4' }]} />
-              <Text style={styles.axisLabel}>X  <Text style={styles.axisVal}>{gxDeg.toFixed(1)}</Text> °/s</Text>
-            </View>
-            <View style={styles.axisValueRow}>
-              <View style={[styles.axisDot, { backgroundColor: '#84cc16' }]} />
-              <Text style={styles.axisLabel}>Y  <Text style={styles.axisVal}>{gyDeg.toFixed(1)}</Text> °/s</Text>
-            </View>
-            <View style={styles.axisValueRow}>
-              <View style={[styles.axisDot, { backgroundColor: '#eab308' }]} />
-              <Text style={styles.axisLabel}>Z  <Text style={styles.axisVal}>{gzDeg.toFixed(1)}</Text> °/s</Text>
-            </View>
           </View>
 
-          {/* Gyro rolling chart (scale factor 0.3) */}
-          <View style={styles.sensorChartContainer}>
-            <Svg width={160} height={70} viewBox="0 0 160 70">
-              <Line x1="0" y1="35" x2="160" y2="35" stroke="rgba(255, 255, 255, 0.05)" strokeWidth="1" strokeDasharray="3 3" />
-              <SvgText style={styles.chartAxisTick} x="0" y="15">2</SvgText>
-              <SvgText style={styles.chartAxisTick} x="0" y="40">0</SvgText>
-              <SvgText style={styles.chartAxisTick} x="0" y="65">-2</SvgText>
+          {/* Card Body */}
+          <View style={styles.sensorCardBody}>
+            <View style={styles.sensorLeftCol}>
+              <View style={styles.axisValueRow}>
+                <View style={[styles.axisDot, { backgroundColor: '#06b6d4' }]} />
+                <Text style={styles.axisLabel}>X  <Text style={styles.axisVal}>{gxDeg.toFixed(1)}</Text> °/s</Text>
+              </View>
+              <View style={styles.axisValueRow}>
+                <View style={[styles.axisDot, { backgroundColor: '#84cc16' }]} />
+                <Text style={styles.axisLabel}>Y  <Text style={styles.axisVal}>{gyDeg.toFixed(1)}</Text> °/s</Text>
+              </View>
+              <View style={styles.axisValueRow}>
+                <View style={[styles.axisDot, { backgroundColor: '#eab308' }]} />
+                <Text style={styles.axisLabel}>Z  <Text style={styles.axisVal}>{gzDeg.toFixed(1)}</Text> °/s</Text>
+              </View>
+            </View>
 
-              <Path d={getPathData(gyroHistory.x, 0.3, 70)} stroke="#06b6d4" strokeWidth="1.5" fill="none" />
-              <Path d={getPathData(gyroHistory.y, 0.3, 70)} stroke="#84cc16" strokeWidth="1.5" fill="none" />
-              <Path d={getPathData(gyroHistory.z, 0.3, 70)} stroke="#eab308" strokeWidth="1.5" fill="none" />
-            </Svg>
+            {/* Gyro rolling chart (scale factor 0.3) */}
+            <View style={styles.sensorChartContainer}>
+              <Svg width={160} height={70} viewBox="0 0 160 70">
+                <Line x1="0" y1="35" x2="160" y2="35" stroke="rgba(255, 255, 255, 0.05)" strokeWidth="1" strokeDasharray="3 3" />
+                <SvgText style={styles.chartAxisTick} x="6" y="14">2</SvgText>
+                <SvgText style={styles.chartAxisTick} x="6" y="40">0</SvgText>
+                <SvgText style={styles.chartAxisTick} x="6" y="66">-2</SvgText>
+
+                <Path d={getPathData(gyroHistory.x, 0.3, 70)} stroke="#06b6d4" strokeWidth="2" strokeOpacity={0.8} fill="none" />
+                <Path d={getPathData(gyroHistory.y, 0.3, 70)} stroke="#84cc16" strokeWidth="1.5" strokeOpacity={0.85} fill="none" />
+                <Path d={getPathData(gyroHistory.z, 0.3, 70)} stroke="#eab308" strokeWidth="1" strokeOpacity={0.9} fill="none" />
+              </Svg>
+            </View>
           </View>
         </View>
 
@@ -538,53 +550,59 @@ export default function LiveAnalyticsScreen() {
 
           return (
             <View style={styles.sensorCard}>
-              <View style={[styles.sensorLeftCol, { width: '35%' }]}>
+              {/* Card Header */}
+              <View style={styles.sensorCardHeader}>
                 <View style={[styles.sensorIconCircle, { borderColor: 'rgba(234, 179, 8, 0.2)', backgroundColor: 'rgba(234, 179, 8, 0.05)' }]}>
                   <MaterialCommunityIcons name="compass-outline" size={20} color="#eab308" />
                 </View>
                 <Text style={styles.sensorCardTitle}>MAGNETOMETER</Text>
-                
-                <View style={styles.axisValueRow}>
-                  <View style={[styles.axisDot, { backgroundColor: '#06b6d4' }]} />
-                  <Text style={styles.axisLabel}>X  <Text style={styles.axisVal}>{mx.toFixed(1)}</Text> µT</Text>
-                </View>
-                <View style={styles.axisValueRow}>
-                  <View style={[styles.axisDot, { backgroundColor: '#84cc16' }]} />
-                  <Text style={styles.axisLabel}>Y  <Text style={styles.axisVal}>{my.toFixed(1)}</Text> µT</Text>
-                </View>
-                <View style={styles.axisValueRow}>
-                  <View style={[styles.axisDot, { backgroundColor: '#eab308' }]} />
-                  <Text style={styles.axisLabel}>Z  <Text style={styles.axisVal}>{mz.toFixed(1)}</Text> µT</Text>
-                </View>
               </View>
 
-              {/* Dynamic SVG Compass Dial */}
-              <View style={{ width: '25%', alignItems: 'center', justifyContent: 'center' }}>
-                <Svg width={52} height={52} viewBox="0 0 80 80">
-                  <Circle cx="40" cy="40" r="32" stroke={colors.border} strokeWidth="2.5" fill={colors.background} />
-                  <SvgText x="40" y="16" fill="#64748b" fontSize="9" fontWeight="bold" textAnchor="middle">N</SvgText>
-                  <SvgText x="40" y="72" fill="#64748b" fontSize="9" fontWeight="bold" textAnchor="middle">S</SvgText>
-                  <SvgText x="13" y="44" fill="#64748b" fontSize="9" fontWeight="bold" textAnchor="middle">W</SvgText>
-                  <SvgText x="67" y="44" fill="#64748b" fontSize="9" fontWeight="bold" textAnchor="middle">E</SvgText>
-                  <G transform={`rotate(${-normalizedHeading} 40 40)`}>
-                    <Polygon points="40,16 45,40 35,40" fill="#ef4444" />
-                    <Polygon points="40,64 45,40 35,40" fill="#94a3b8" />
-                    <Circle cx="40" cy="40" r="3.5" fill="#ffffff" />
-                  </G>
-                </Svg>
-                <Text style={{ color: '#eab308', fontSize: 9, fontWeight: 'bold', marginTop: 4 }}>
-                  {normalizedHeading}° {cardinal}
-                </Text>
-              </View>
+              {/* Card Body */}
+              <View style={styles.sensorCardBody}>
+                <View style={[styles.sensorLeftCol, { width: '35%' }]}>
+                  <View style={styles.axisValueRow}>
+                    <View style={[styles.axisDot, { backgroundColor: '#06b6d4' }]} />
+                    <Text style={styles.axisLabel}>X  <Text style={styles.axisVal}>{mx.toFixed(1)}</Text> µT</Text>
+                  </View>
+                  <View style={styles.axisValueRow}>
+                    <View style={[styles.axisDot, { backgroundColor: '#84cc16' }]} />
+                    <Text style={styles.axisLabel}>Y  <Text style={styles.axisVal}>{my.toFixed(1)}</Text> µT</Text>
+                  </View>
+                  <View style={styles.axisValueRow}>
+                    <View style={[styles.axisDot, { backgroundColor: '#eab308' }]} />
+                    <Text style={styles.axisLabel}>Z  <Text style={styles.axisVal}>{mz.toFixed(1)}</Text> µT</Text>
+                  </View>
+                </View>
 
-              {/* Magnetometer rolling chart */}
-              <View style={[styles.sensorChartContainer, { width: '38%' }]}>
-                <Svg width={120} height={70} viewBox="0 0 160 70">
-                  <Line x1="0" y1="35" x2="160" y2="35" stroke="rgba(255, 255, 255, 0.05)" strokeWidth="1" strokeDasharray="3 3" />
-                  <Path d={getPathData(magnetoHistory.x, 0.3, 70)} stroke="#06b6d4" strokeWidth="1.5" fill="none" />
-                  <Path d={getPathData(magnetoHistory.y, 0.3, 70)} stroke="#84cc16" strokeWidth="1.5" fill="none" />
-                  <Path d={getPathData(magnetoHistory.z, 0.3, 70)} stroke="#eab308" strokeWidth="1.5" fill="none" />
-                </Svg>
+                {/* Dynamic SVG Compass Dial */}
+                <View style={{ width: '25%', alignItems: 'center', justifyContent: 'center' }}>
+                  <Svg width={52} height={52} viewBox="0 0 80 80">
+                    <Circle cx="40" cy="40" r="32" stroke={colors.border} strokeWidth="2.5" fill={colors.background} />
+                    <SvgText x="40" y="16" fill="#64748b" fontSize="9" fontWeight="bold" textAnchor="middle">N</SvgText>
+                    <SvgText x="40" y="72" fill="#64748b" fontSize="9" fontWeight="bold" textAnchor="middle">S</SvgText>
+                    <SvgText x="13" y="44" fill="#64748b" fontSize="9" fontWeight="bold" textAnchor="middle">W</SvgText>
+                    <SvgText x="67" y="44" fill="#64748b" fontSize="9" fontWeight="bold" textAnchor="middle">E</SvgText>
+                    <G transform={`rotate(${-normalizedHeading} 40 40)`}>
+                      <Polygon points="40,16 45,40 35,40" fill="#ef4444" />
+                      <Polygon points="40,64 45,40 35,40" fill="#94a3b8" />
+                      <Circle cx="40" cy="40" r="3.5" fill="#ffffff" />
+                    </G>
+                  </Svg>
+                  <Text style={{ color: '#eab308', fontSize: 9, fontWeight: 'bold', marginTop: 4 }}>
+                    {normalizedHeading}° {cardinal}
+                  </Text>
+                </View>
+
+                {/* Magnetometer rolling chart */}
+                <View style={[styles.sensorChartContainer, { width: '38%' }]}>
+                  <Svg width={120} height={70} viewBox="0 0 160 70">
+                    <Line x1="0" y1="35" x2="160" y2="35" stroke="rgba(255, 255, 255, 0.05)" strokeWidth="1" strokeDasharray="3 3" />
+                    <Path d={getPathData(magnetoHistory.x, 0.3, 70)} stroke="#06b6d4" strokeWidth="2" strokeOpacity={0.8} fill="none" />
+                    <Path d={getPathData(magnetoHistory.y, 0.3, 70)} stroke="#84cc16" strokeWidth="1.5" strokeOpacity={0.85} fill="none" />
+                    <Path d={getPathData(magnetoHistory.z, 0.3, 70)} stroke="#eab308" strokeWidth="1" strokeOpacity={0.9} fill="none" />
+                  </Svg>
+                </View>
               </View>
             </View>
           );
@@ -986,9 +1004,7 @@ function getStyles(colors: any) {
 
     // Sensor Cards
     sensorCard: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
+      flexDirection: 'column',
       backgroundColor: colors.card,
       borderWidth: 1,
       borderColor: colors.border,
@@ -996,8 +1012,20 @@ function getStyles(colors: any) {
       padding: 16,
       marginBottom: 16,
     },
+    sensorCardHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 12,
+    },
+    sensorCardBody: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
     sensorLeftCol: {
-      width: '50%',
+      width: '45%',
+      height: 70,
+      justifyContent: 'space-between',
     },
     sensorIconCircle: {
       width: 32,
@@ -1008,19 +1036,18 @@ function getStyles(colors: any) {
       backgroundColor: colors.accent + '0d',
       alignItems: 'center',
       justifyContent: 'center',
-      marginBottom: 8,
+      marginRight: 10,
     },
     sensorCardTitle: {
       color: colors.textSlate,
       fontSize: 10,
       fontWeight: 'bold',
       letterSpacing: 0.8,
-      marginBottom: 8,
     },
     axisValueRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      marginBottom: 4,
+      height: 18,
     },
     axisDot: {
       width: 6,
@@ -1038,7 +1065,7 @@ function getStyles(colors: any) {
       fontWeight: 'bold',
     },
     sensorChartContainer: {
-      width: '48%',
+      width: '52%',
       height: 70,
       alignItems: 'flex-end',
       justifyContent: 'center',
