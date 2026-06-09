@@ -18,7 +18,7 @@ const MAX_HISTORY = 20;
 export default function LiveAnalyticsScreen() {
   const router = useRouter();
   const { colors, isDark } = useAppTheme();
-  const styles = getStyles(colors);
+  const styles = getStyles(colors, isDark);
   
   // Stores
   const currentSession = useDriveStore((state) => state.currentSession);
@@ -848,7 +848,7 @@ export default function LiveAnalyticsScreen() {
   );
 }
 
-function getStyles(colors: any) {
+function getStyles(colors: any, isDark: boolean) {
   return StyleSheet.create({
     container: {
       flex: 1,
@@ -1215,7 +1215,7 @@ function getStyles(colors: any) {
     },
     mapOverlayLabel: {
       position: 'absolute',
-      backgroundColor: colors.isDark ? 'rgba(12, 22, 38, 0.85)' : 'rgba(255, 255, 255, 0.85)',
+      backgroundColor: isDark ? 'rgba(12, 22, 38, 0.85)' : 'rgba(255, 255, 255, 0.85)',
       borderWidth: 1,
       borderColor: colors.border,
       borderRadius: 10,
