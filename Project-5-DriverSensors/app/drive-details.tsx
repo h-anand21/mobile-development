@@ -266,18 +266,6 @@ export default function DriveDetailsScreen() {
             {activeSubTab === 'overview' && <View style={styles.activeIndicatorLine} />}
           </TouchableOpacity>
 
-          {/* AI Coach Tab */}
-          <TouchableOpacity 
-            style={[styles.subTabItem, activeSubTab === 'coach' && styles.activeSubTabItem]} 
-            onPress={() => setActiveSubTab('coach')}
-          >
-            <View style={styles.tabContent}>
-              <Feather name="shield" size={13} color={activeSubTab === 'coach' ? colors.accent : colors.textSlate} style={{ marginRight: 6 }} />
-              <Text style={[styles.subTabText, activeSubTab === 'coach' && styles.activeSubTabText]}>AI COACH</Text>
-            </View>
-            {activeSubTab === 'coach' && <View style={styles.activeIndicatorLine} />}
-          </TouchableOpacity>
-
           {/* Events Tab */}
           <TouchableOpacity 
             style={[styles.subTabItem, activeSubTab === 'events' && styles.activeSubTabItem]} 
@@ -309,6 +297,18 @@ export default function DriveDetailsScreen() {
               <Feather name="bar-chart-2" size={13} color={colors.textSlate} style={{ marginRight: 6 }} />
               <Text style={styles.subTabText}>ANALYTICS</Text>
             </View>
+          </TouchableOpacity>
+
+          {/* AI Coach Tab */}
+          <TouchableOpacity 
+            style={[styles.subTabItem, activeSubTab === 'coach' && styles.activeSubTabItem]} 
+            onPress={() => setActiveSubTab('coach')}
+          >
+            <View style={styles.tabContent}>
+              <Feather name="shield" size={13} color={activeSubTab === 'coach' ? colors.accent : colors.textSlate} style={{ marginRight: 6 }} />
+              <Text style={[styles.subTabText, activeSubTab === 'coach' && styles.activeSubTabText]}>AI COACH</Text>
+            </View>
+            {activeSubTab === 'coach' && <View style={styles.activeIndicatorLine} />}
           </TouchableOpacity>
         </ScrollView>
 
@@ -520,25 +520,25 @@ export default function DriveDetailsScreen() {
               </LinearGradient>
             </TouchableOpacity>
 
-            {/* Drive Insights Card */}
-            {/* Drive Insights Card */}
+            {/* AI Coach Insights Shortcut Card */}
             <TouchableOpacity 
-              style={styles.insightsCard}
+              style={styles.aiCoachShortcutCard}
               onPress={() => setActiveSubTab('coach')}
+              activeOpacity={0.8}
             >
               <View style={styles.insightsLeft}>
-                <View style={styles.shieldCheckBadge}>
-                  <Feather name="shield" size={24} color={colors.success} />
-                  <Feather name="star" size={10} color={colors.success} style={{ position: 'absolute', top: 7 }} />
+                <View style={styles.aiCoachIconCircle}>
+                  <Feather name="cpu" size={20} color={colors.accent} />
+                  <Feather name="activity" size={10} color={colors.accent} style={{ position: 'absolute', top: 5 }} />
                 </View>
                 <View style={styles.insightsTextWrap}>
-                  <Text style={styles.insightsTitle}>Great job!</Text>
-                  <Text style={styles.insightsDesc}>
-                    You maintained excellent control and focus throughout the drive. Keep it up!
+                  <Text style={styles.aiCoachShortcutTitle}>AI Driving Coach</Text>
+                  <Text style={styles.aiCoachShortcutDesc}>
+                    Your AI Coach has analyzed this drive. Tap here to view personalized tips and safety feedback.
                   </Text>
                 </View>
               </View>
-              <Feather name="chevron-right" size={18} color={colors.textSlate} style={{ marginLeft: 10 }} />
+              <Feather name="chevron-right" size={18} color={colors.accent} style={{ marginLeft: 10 }} />
             </TouchableOpacity>
           </View>
         )}
@@ -1061,7 +1061,7 @@ function getStyles(colors: any, isDark: boolean) {
       marginBottom: 16,
     },
     subTabItem: {
-      flex: 1,
+      paddingHorizontal: 16,
       paddingVertical: 10,
       alignItems: 'center',
       position: 'relative',
@@ -1248,13 +1248,13 @@ function getStyles(colors: any, isDark: boolean) {
       alignItems: 'center',
       justifyContent: 'center',
     },
-    insightsCard: {
+    aiCoachShortcutCard: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      backgroundColor: 'rgba(34, 197, 94, 0.04)',
+      backgroundColor: isDark ? 'rgba(0, 245, 255, 0.04)' : 'rgba(8, 145, 178, 0.04)',
       borderWidth: 1,
-      borderColor: 'rgba(34, 197, 94, 0.15)',
+      borderColor: isDark ? 'rgba(0, 245, 255, 0.15)' : 'rgba(8, 145, 178, 0.15)',
       borderRadius: 20,
       padding: 14,
       marginBottom: 20,
@@ -1264,13 +1264,13 @@ function getStyles(colors: any, isDark: boolean) {
       alignItems: 'center',
       flex: 1,
     },
-    shieldCheckBadge: {
+    aiCoachIconCircle: {
       width: 44,
       height: 44,
       borderRadius: 22,
       borderWidth: 1.5,
-      borderColor: 'rgba(34, 197, 94, 0.3)',
-      backgroundColor: 'rgba(34, 197, 94, 0.1)',
+      borderColor: isDark ? 'rgba(0, 245, 255, 0.3)' : 'rgba(8, 145, 178, 0.3)',
+      backgroundColor: isDark ? 'rgba(0, 245, 255, 0.1)' : 'rgba(8, 145, 178, 0.1)',
       alignItems: 'center',
       justifyContent: 'center',
       marginRight: 14,
@@ -1279,13 +1279,13 @@ function getStyles(colors: any, isDark: boolean) {
     insightsTextWrap: {
       flex: 1,
     },
-    insightsTitle: {
+    aiCoachShortcutTitle: {
       color: colors.text,
       fontSize: 13,
       fontWeight: 'bold',
       marginBottom: 2,
     },
-    insightsDesc: {
+    aiCoachShortcutDesc: {
       color: colors.textMuted,
       fontSize: 10,
       lineHeight: 14,
