@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Share, Alert } from 'react-native';
 import { Feather, MaterialCommunityIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import Svg, { Circle, Line, Path, Defs, LinearGradient as SvgLinearGradient, Stop, Polygon, Text as SvgText, Rect, Ellipse } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -134,6 +134,29 @@ export default function DriveDetailsScreen() {
     }).join(' ');
   };
 
+  const handleShare = async () => {
+    try {
+      const shareMessage = `🚗 SafeDrive Trip Summary Report\n\n` +
+        `Date: ${driveDateStr} at ${driveTimeStr}\n` +
+        `Distance: ${distanceKm} km\n` +
+        `Duration: ${durationText}\n` +
+        `Safe Score: ${score}/100 (${formatRating(rating)})\n\n` +
+        `Safety Violations:\n` +
+        `• Harsh Brakes: ${harshBrakeCount}\n` +
+        `• Harsh Accelerations: ${harshAccelCount}\n` +
+        `• Sharp Turns: ${sharpTurnCount}\n` +
+        `• Phone Usage: ${phoneUsageCount} time(s)\n\n` +
+        `Shared via SafeDrive App 📱`;
+
+      await Share.share({
+        message: shareMessage,
+        title: 'SafeDrive Trip Report',
+      });
+    } catch (error: any) {
+      Alert.alert('Error', 'Unable to share this drive details.');
+    }
+  };
+
   return (
     <View style={styles.container}>
       {/* 1. Header Row */}
@@ -147,7 +170,7 @@ export default function DriveDetailsScreen() {
           <Text style={styles.headerSubtitle}>{driveDateStr}  •  {driveTimeStr}</Text>
         </View>
 
-        <TouchableOpacity style={styles.iconCircle}>
+        <TouchableOpacity onPress={handleShare} style={styles.iconCircle}>
           <Feather name="share" size={20} color={colors.text} />
         </TouchableOpacity>
       </View>
