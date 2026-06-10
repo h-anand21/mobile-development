@@ -15,7 +15,7 @@ const { width } = Dimensions.get('window');
 export default function DashboardScreen() {
   const router = useRouter();
   const { colors, isDark } = useAppTheme();
-  const styles = getStyles(colors);
+  const styles = getStyles(colors, isDark);
   const [activeTab, setActiveTab] = useState<'week' | 'month' | 'year'>('week');
   const [selectedDate, setSelectedDate] = useState(() => dayjs());
 
@@ -190,6 +190,7 @@ export default function DashboardScreen() {
         desc: totalWkDrives > 0 ? 'Your driving profile is generated based on recent trips.' : 'Start driving with SafeDrive tracking to see weekly safety breakdown and insights.',
         topPerformance: topWkDate,
         topScore: topWkScore > 0 ? topWkScore : '--',
+        topDriveId: topWkDrive ? topWkDrive.id : null,
       }
     };
   }, [drives, selectedDate]);
@@ -345,10 +346,22 @@ export default function DashboardScreen() {
     <View style={styles.container}>
       {/* Top Header */}
       <View style={styles.header}>
-        <View style={styles.headerTitleContainer}>
+        {/* Empty left view for balance */}
+        <View style={{ width: 80 }} />
+
+        <View style={[styles.headerTitleContainer, { flex: 1 }]}>
           <Text style={styles.headerTitle}>Drive Dashboard</Text>
           <Text style={styles.headerSubtitle}>Your driving insights at a glance</Text>
         </View>
+
+        <TouchableOpacity 
+          style={styles.reportsIconBtn}
+          onPress={() => router.push('/reports')}
+          activeOpacity={0.8}
+        >
+          <Feather name="file-text" size={13} color={colors.accent} style={{ marginRight: 4 }} />
+          <Text style={styles.reportsBtnText}>Reports</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Tabs Selector Navigation */}
@@ -699,7 +712,15 @@ export default function DashboardScreen() {
             {/* WEEKLY INSIGHTS PANEL CARD */}
             <TouchableOpacity 
               style={styles.insightsPanelCard}
-              onPress={() => router.push('/ai-coach')}
+              onPress={() => {
+                const targetDriveId = WEEKLY_DATA.insight.topDriveId || (drives.length > 0 ? drives[0].id : null);
+                if (targetDriveId) {
+                  router.push({
+                    pathname: '/drive-details',
+                    params: { id: targetDriveId, activeTab: 'coach' }
+                  });
+                }
+              }}
             >
               <View style={styles.insightsLeft}>
                 <View style={styles.trophyIconOuter}>
@@ -1018,9 +1039,25 @@ export default function DashboardScreen() {
   );
 }
 
-function getStyles(colors: any) {
-  const isDark = colors.background === '#050B14';
+function getStyles(colors: any, isDark: boolean) {
   return StyleSheet.create({
+    reportsIconBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: isDark ? 'rgba(0, 245, 255, 0.1)' : 'rgba(0, 245, 255, 0.05)',
+      borderWidth: 1,
+      borderColor: colors.accent + '30',
+      borderRadius: 10,
+      paddingHorizontal: 8,
+      paddingVertical: 6,
+      width: 80,
+      justifyContent: 'center',
+    },
+    reportsBtnText: {
+      color: colors.accent,
+      fontSize: 11,
+      fontWeight: 'bold',
+    },
     container: {
       flex: 1,
       backgroundColor: colors.background,
@@ -1031,7 +1068,7 @@ function getStyles(colors: any) {
     },
     header: {
       flexDirection: 'row',
-      justifyContent: 'center',
+      justifyContent: 'space-between',
       alignItems: 'center',
       paddingHorizontal: 20,
       paddingTop: 50,

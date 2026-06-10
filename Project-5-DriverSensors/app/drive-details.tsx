@@ -15,8 +15,10 @@ export default function DriveDetailsScreen() {
   const router = useRouter();
   const { colors, isDark } = useAppTheme();
   const styles = getStyles(colors, isDark);
-  const { id } = useLocalSearchParams();
-  const [activeSubTab, setActiveSubTab] = useState<'overview' | 'events' | 'route' | 'analytics'>('overview');
+  const { id, activeTab } = useLocalSearchParams();
+  const [activeSubTab, setActiveSubTab] = useState<'overview' | 'coach' | 'events' | 'route' | 'analytics'>(
+    (activeTab as any) || 'overview'
+  );
 
   // Load completed drive session
   const allDrives = driveRepository.getAllDrives();
@@ -52,6 +54,47 @@ export default function DriveDetailsScreen() {
   const phoneUsageCount = events.length > 0 ? events.filter(e => e.type === 'PHONE_USAGE').length : 1;
   const steeringCount = events.length > 0 ? events.filter(e => e.type === 'AGGRESSIVE_STEERING' || e.type === 'EXCESSIVE_MOVEMENT').length : 1;
   const totalEventsCount = harshBrakeCount + sharpTurnCount + phoneUsageCount + steeringCount;
+
+  // AI Coach specific metrics calculations
+  const harshAccelCount = events.length > 0 ? events.filter(e => e.type === 'HARSH_ACCELERATION').length : 0;
+  const overspeedCount = events.length > 0 ? events.filter(e => e.type === 'OVERSPEEDING').length : 0;
+
+  const safetyScore = Math.max(0, 100 - overspeedCount * 6 - phoneUsageCount * 5);
+  const brakingHealth = Math.max(0, 100 - harshBrakeCount * 6);
+  const accelerationHealth = Math.max(0, 100 - harshAccelCount * 6);
+  const corneringHealth = Math.max(0, 100 - sharpTurnCount * 6);
+  const smoothnessScore = Math.round((brakingHealth + accelerationHealth + corneringHealth) / 3);
+  const controlScore = Math.max(0, 100 - steeringCount * 5 - sharpTurnCount * 4);
+  const focusScore = Math.max(0, 100 - phoneUsageCount * 7);
+
+  // Risk levels mapping
+  const getRiskLevel = (count: number) => {
+    if (count >= 2) return { text: 'High', color: '#ef4444', percent: '75%' };
+    if (count === 1) return { text: 'Medium', color: '#eab308', percent: '50%' };
+    return { text: 'Low', color: '#22c55e', percent: '25%' };
+  };
+
+  const risks = {
+    braking: getRiskLevel(harshBrakeCount),
+    speeding: getRiskLevel(overspeedCount),
+    distraction: getRiskLevel(phoneUsageCount),
+    steering: getRiskLevel(steeringCount),
+    cornering: getRiskLevel(sharpTurnCount),
+  };
+
+  const hasHighRisk = Object.values(risks).some(r => r.text === 'High');
+  const hasMediumRisk = Object.values(risks).some(r => r.text === 'Medium');
+  
+  let overallRiskText = 'Low';
+  let overallRiskColor = '#22c55e';
+  
+  if (hasHighRisk) {
+    overallRiskText = 'High';
+    overallRiskColor = '#ef4444';
+  } else if (hasMediumRisk) {
+    overallRiskText = 'Medium';
+    overallRiskColor = '#eab308';
+  }
 
   // Format Seconds to HH:MM:SS
   function formatHHMMSS(sec: number) {
@@ -205,7 +248,13 @@ export default function DriveDetailsScreen() {
         </View>
 
         {/* 4. Sub-Navigation Tabs */}
-        <View style={styles.subTabsRow}>
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false} 
+          style={styles.subTabsScroll} 
+          contentContainerStyle={styles.subTabsContent}
+        >
+          {/* Overview Tab */}
           <TouchableOpacity 
             style={[styles.subTabItem, activeSubTab === 'overview' && styles.activeSubTabItem]} 
             onPress={() => setActiveSubTab('overview')}
@@ -217,9 +266,22 @@ export default function DriveDetailsScreen() {
             {activeSubTab === 'overview' && <View style={styles.activeIndicatorLine} />}
           </TouchableOpacity>
 
+          {/* AI Coach Tab */}
+          <TouchableOpacity 
+            style={[styles.subTabItem, activeSubTab === 'coach' && styles.activeSubTabItem]} 
+            onPress={() => setActiveSubTab('coach')}
+          >
+            <View style={styles.tabContent}>
+              <Feather name="shield" size={13} color={activeSubTab === 'coach' ? colors.accent : colors.textSlate} style={{ marginRight: 6 }} />
+              <Text style={[styles.subTabText, activeSubTab === 'coach' && styles.activeSubTabText]}>AI COACH</Text>
+            </View>
+            {activeSubTab === 'coach' && <View style={styles.activeIndicatorLine} />}
+          </TouchableOpacity>
+
+          {/* Events Tab */}
           <TouchableOpacity 
             style={[styles.subTabItem, activeSubTab === 'events' && styles.activeSubTabItem]} 
-            onPress={() => router.push('/live-events')}
+            onPress={() => router.push({ pathname: '/live-events', params: { id } })}
           >
             <View style={styles.tabContent}>
               <Feather name="alert-triangle" size={13} color={colors.textSlate} style={{ marginRight: 6 }} />
@@ -227,9 +289,10 @@ export default function DriveDetailsScreen() {
             </View>
           </TouchableOpacity>
 
+          {/* Route Tab */}
           <TouchableOpacity 
             style={[styles.subTabItem, activeSubTab === 'route' && styles.activeSubTabItem]} 
-            onPress={() => router.push('/route-replay')}
+            onPress={() => router.push({ pathname: '/route-replay', params: { id } })}
           >
             <View style={styles.tabContent}>
               <Feather name="map" size={13} color={colors.textSlate} style={{ marginRight: 6 }} />
@@ -237,16 +300,17 @@ export default function DriveDetailsScreen() {
             </View>
           </TouchableOpacity>
 
+          {/* Analytics Tab */}
           <TouchableOpacity 
             style={[styles.subTabItem, activeSubTab === 'analytics' && styles.activeSubTabItem]} 
-            onPress={() => router.push('/live-analytics')}
+            onPress={() => router.push({ pathname: '/live-analytics', params: { id } })}
           >
             <View style={styles.tabContent}>
               <Feather name="bar-chart-2" size={13} color={colors.textSlate} style={{ marginRight: 6 }} />
               <Text style={styles.subTabText}>ANALYTICS</Text>
             </View>
           </TouchableOpacity>
-        </View>
+        </ScrollView>
 
         {/* 5. Overview Tab Panels */}
         {activeSubTab === 'overview' && (
@@ -457,9 +521,10 @@ export default function DriveDetailsScreen() {
             </TouchableOpacity>
 
             {/* Drive Insights Card */}
+            {/* Drive Insights Card */}
             <TouchableOpacity 
               style={styles.insightsCard}
-              onPress={() => router.push('/ai-coach')}
+              onPress={() => setActiveSubTab('coach')}
             >
               <View style={styles.insightsLeft}>
                 <View style={styles.shieldCheckBadge}>
@@ -475,6 +540,351 @@ export default function DriveDetailsScreen() {
               </View>
               <Feather name="chevron-right" size={18} color={colors.textSlate} style={{ marginLeft: 10 }} />
             </TouchableOpacity>
+          </View>
+        )}
+
+        {/* 6. AI Coach Tab Panels */}
+        {activeSubTab === 'coach' && (
+          <View>
+            {/* Overall Driving Feedback Panel */}
+            <View style={styles.feedbackSection}>
+              <View style={styles.sectionHeaderRow}>
+                <Feather name="activity" size={16} color="#00f5ff" style={{ marginRight: 8 }} />
+                <Text style={styles.sectionTitle}>Overall Driving Feedback</Text>
+              </View>
+
+              <View style={styles.feedbackRow}>
+                {/* Left circular dial */}
+                <View style={styles.dialContainer}>
+                  <Svg width={120} height={120} viewBox="0 0 160 160">
+                    <Defs>
+                      <SvgLinearGradient id="coachGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <Stop offset="0%" stopColor="#00f5ff" />
+                        <Stop offset="50%" stopColor="#22c55e" />
+                        <Stop offset="100%" stopColor="#a3e635" />
+                      </SvgLinearGradient>
+                    </Defs>
+                    {/* Background track */}
+                    <Circle 
+                      cx="80" cy="80" r="62" 
+                      stroke={colors.border} strokeWidth="8" fill="none" 
+                      strokeDasharray="292 389" 
+                      transform="rotate(135 80 80)"
+                      strokeLinecap="round"
+                    />
+                    {/* Active track */}
+                    <Circle 
+                      cx="80" cy="80" r="62" 
+                      stroke="url(#coachGrad)" strokeWidth="8" fill="none" 
+                      strokeDasharray="292 389" 
+                      strokeDashoffset={292 - (292 * score) / 100} 
+                      transform="rotate(135 80 80)"
+                      strokeLinecap="round"
+                    />
+                  </Svg>
+                  
+                  <View style={styles.dialScoreInner}>
+                    <MaterialCommunityIcons name="shield-check-outline" size={20} color="#22c55e" style={{ marginBottom: 2 }} />
+                    <Text style={styles.dialScoreVal}>{score}</Text>
+                    <Text style={styles.dialStatement}>Great Drive!</Text>
+                    
+                    <View style={[styles.capsuleBadge, { borderColor: 'rgba(34, 197, 94, 0.3)', backgroundColor: 'rgba(34, 197, 94, 0.15)' }]}>
+                      <View style={[styles.badgeDot, { backgroundColor: '#22c55e' }]} />
+                      <Text style={[styles.badgeText, { color: '#22c55e' }]}>{formatRating(rating)}</Text>
+                    </View>
+                  </View>
+                </View>
+
+                {/* Right text & stats */}
+                <View style={styles.feedbackTextCol}>
+                  <Text style={styles.feedbackGreeting}>Great job!</Text>
+                  <Text style={styles.feedbackGreetingSub}>
+                    You drove safely and responsibly. Keep maintaining your good habits.
+                  </Text>
+
+                  {/* 2x2 Mini metrics grid */}
+                  <View style={styles.metricsGridBox}>
+                    <View style={[styles.metricsGridRow, styles.metricsGridRowBorder]}>
+                      {/* Smoothness */}
+                      <View style={[styles.metricGridCell, styles.metricGridCellBorder]}>
+                        <Feather name="activity" size={15} color="#00f5ff" style={styles.metricGridIcon} />
+                        <View>
+                          <Text style={styles.miniLabel}>Smoothness</Text>
+                          <Text style={[styles.miniValue, { color: '#00f5ff' }]}>{smoothnessScore}%</Text>
+                        </View>
+                      </View>
+
+                      {/* Safety */}
+                      <View style={styles.metricGridCell}>
+                        <MaterialCommunityIcons name="shield-check-outline" size={15} color="#22c55e" style={styles.metricGridIcon} />
+                        <View>
+                          <Text style={styles.miniLabel}>Safety</Text>
+                          <Text style={[styles.miniValue, { color: '#22c55e' }]}>{safetyScore}%</Text>
+                        </View>
+                      </View>
+                    </View>
+
+                    <View style={styles.metricsGridRow}>
+                      {/* Control */}
+                      <View style={[styles.metricGridCell, styles.metricGridCellBorder]}>
+                        <MaterialCommunityIcons name="steering" size={15} color="#00f5ff" style={styles.metricGridIcon} />
+                        <View>
+                          <Text style={styles.miniLabel}>Control</Text>
+                          <Text style={[styles.miniValue, { color: '#00f5ff' }]}>{controlScore}%</Text>
+                        </View>
+                      </View>
+
+                      {/* Focus */}
+                      <View style={styles.metricGridCell}>
+                        <MaterialCommunityIcons name="target" size={15} color="#a3e635" style={styles.metricGridIcon} />
+                        <View>
+                          <Text style={styles.miniLabel}>Focus</Text>
+                          <Text style={[styles.miniValue, { color: '#a3e635' }]}>{focusScore}%</Text>
+                        </View>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+              </View>
+            </View>
+
+            {/* Improvement Tips Section */}
+            <View style={styles.tipsSection}>
+              <View style={styles.sectionHeaderRowMain}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Feather name="lightbulb" size={18} color="#00f5ff" style={{ marginRight: 8 }} />
+                  <Text style={styles.sectionTitle}>Improvement Tips</Text>
+                </View>
+              </View>
+
+              {/* Tip Card 1 (Harsh Braking) */}
+              <View style={[styles.tipCardItem, { borderLeftColor: '#00f5ff' }]}>
+                <View style={[styles.tipIconCircle, { backgroundColor: 'rgba(0, 245, 255, 0.05)', borderColor: 'rgba(0, 245, 255, 0.2)' }]}>
+                  <MaterialCommunityIcons name="disc" size={20} color="#00f5ff" />
+                </View>
+                <View style={styles.tipTextCol}>
+                  <Text style={styles.tipCardTitle}>Avoid Harsh Braking</Text>
+                  <Text style={styles.tipCardDesc}>
+                    {harshBrakeCount > 0 
+                      ? `You used harsh brakes ${harshBrakeCount} times.` 
+                      : 'No harsh brakes recorded.'} Try to brake smoothly and in advance.
+                  </Text>
+                </View>
+                <View style={styles.tipCardRight}>
+                  <View style={[styles.impactBadge, { borderColor: 'rgba(239, 68, 68, 0.3)', backgroundColor: 'rgba(239, 68, 68, 0.1)' }]}>
+                    <Text style={[styles.impactText, { color: '#ef4444' }]}>High Impact</Text>
+                  </View>
+                </View>
+              </View>
+
+              {/* Tip Card 2 (Smooth Steering) */}
+              <View style={[styles.tipCardItem, { borderLeftColor: '#a3e635' }]}>
+                <View style={[styles.tipIconCircle, { backgroundColor: 'rgba(163, 230, 53, 0.05)', borderColor: 'rgba(163, 230, 53, 0.2)' }]}>
+                  <MaterialCommunityIcons name="steering" size={20} color="#a3e635" />
+                </View>
+                <View style={styles.tipTextCol}>
+                  <Text style={styles.tipCardTitle}>Smooth Steering</Text>
+                  <Text style={styles.tipCardDesc}>
+                    Reduce aggressive steering on sharp turns for better control.
+                  </Text>
+                </View>
+                <View style={styles.tipCardRight}>
+                  <View style={[styles.impactBadge, { borderColor: 'rgba(234, 179, 8, 0.3)', backgroundColor: 'rgba(234, 179, 8, 0.1)' }]}>
+                    <Text style={[styles.impactText, { color: '#eab308' }]}>Medium Impact</Text>
+                  </View>
+                </View>
+              </View>
+
+              {/* Tip Card 3 (Avoid Phone Usage) */}
+              <View style={[styles.tipCardItem, { borderLeftColor: '#00f5ff' }]}>
+                <View style={[styles.tipIconCircle, { backgroundColor: 'rgba(0, 245, 255, 0.05)', borderColor: 'rgba(0, 245, 255, 0.2)' }]}>
+                  <Feather name="phone" size={18} color="#00f5ff" />
+                </View>
+                <View style={styles.tipTextCol}>
+                  <Text style={styles.tipCardTitle}>Avoid Phone Usage</Text>
+                  <Text style={styles.tipCardDesc}>
+                    {phoneUsageCount > 0 
+                      ? `You used phone ${phoneUsageCount} time${phoneUsageCount > 1 ? 's' : ''} during the drive.` 
+                      : 'No phone usage detected.'} Stay focused for a safer drive.
+                  </Text>
+                </View>
+                <View style={styles.tipCardRight}>
+                  <View style={[styles.impactBadge, { borderColor: 'rgba(234, 179, 8, 0.3)', backgroundColor: 'rgba(234, 179, 8, 0.1)' }]}>
+                    <Text style={[styles.impactText, { color: '#eab308' }]}>Medium Impact</Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+
+            {/* Risk Analysis Section */}
+            <View style={styles.riskSection}>
+              <View style={styles.sectionHeaderRowMain}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <MaterialCommunityIcons name="shield-check-outline" size={18} color="#22c55e" style={{ marginRight: 8 }} />
+                  <Text style={styles.sectionTitle}>Risk Analysis</Text>
+                </View>
+              </View>
+
+              <View style={styles.riskRow}>
+                {/* Dynamic Segmented Risk dial gauge */}
+                <View style={styles.riskGaugeWrap}>
+                  <Svg width={100} height={100} viewBox="0 0 100 100">
+                    {/* Green Segment */}
+                    <Circle 
+                      cx="50" cy="50" r="38" 
+                      stroke="#22c55e" strokeWidth="8" fill="none"
+                      strokeDasharray="59.7 238.7"
+                      transform="rotate(135 50 50)"
+                      strokeLinecap="round"
+                      opacity={overallRiskText === 'Low' ? 1.0 : 0.25}
+                    />
+                    {/* Yellow Segment */}
+                    <Circle 
+                      cx="50" cy="50" r="38" 
+                      stroke="#eab308" strokeWidth="8" fill="none"
+                      strokeDasharray="59.7 238.7"
+                      transform="rotate(225 50 50)"
+                      strokeLinecap="round"
+                      opacity={overallRiskText === 'Medium' ? 1.0 : 0.25}
+                    />
+                    {/* Red Segment */}
+                    <Circle 
+                      cx="50" cy="50" r="38" 
+                      stroke="#ef4444" strokeWidth="8" fill="none"
+                      strokeDasharray="59.7 238.7"
+                      transform="rotate(-45 50 50)"
+                      strokeLinecap="round"
+                      opacity={overallRiskText === 'High' ? 1.0 : 0.25}
+                    />
+                    {/* Blue Segment */}
+                    <Circle 
+                      cx="50" cy="50" r="38" 
+                      stroke="#00f5ff" strokeWidth="8" fill="none"
+                      strokeDasharray="59.7 238.7"
+                      transform="rotate(45 50 50)"
+                      strokeLinecap="round"
+                      opacity={0.25}
+                    />
+                  </Svg>
+                  <View style={styles.riskInnerVal}>
+                    <Text style={[styles.riskLabelNum, { color: overallRiskColor }]}>{overallRiskText}</Text>
+                    <Text style={styles.riskLabelSub}>Overall Risk</Text>
+                  </View>
+                </View>
+
+                {/* Risk bars list */}
+                <View style={styles.riskBarsCol}>
+                  {/* Braking */}
+                  <View style={styles.riskBarItem}>
+                    <View style={styles.riskBarHeader}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Feather name="alert-triangle" size={12} color="#ef4444" style={{ marginRight: 6 }} />
+                        <Text style={styles.riskBarLabel}>Braking</Text>
+                      </View>
+                      <Text style={[styles.riskBarValText, { color: risks.braking.color }]}>{risks.braking.text}</Text>
+                    </View>
+                    <View style={styles.riskBarTrack}>
+                      <View style={[styles.riskBarFill, { width: risks.braking.percent, backgroundColor: risks.braking.color }]} />
+                    </View>
+                  </View>
+
+                  {/* Speeding */}
+                  <View style={styles.riskBarItem}>
+                    <View style={styles.riskBarHeader}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <MaterialCommunityIcons name="speedometer" size={13} color="#eab308" style={{ marginRight: 6 }} />
+                        <Text style={styles.riskBarLabel}>Speeding</Text>
+                      </View>
+                      <Text style={[styles.riskBarValText, { color: risks.speeding.color }]}>{risks.speeding.text}</Text>
+                    </View>
+                    <View style={styles.riskBarTrack}>
+                      <View style={[styles.riskBarFill, { width: risks.speeding.percent, backgroundColor: risks.speeding.color }]} />
+                    </View>
+                  </View>
+
+                  {/* Distraction */}
+                  <View style={styles.riskBarItem}>
+                    <View style={styles.riskBarHeader}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Feather name="phone" size={12} color="#eab308" style={{ marginRight: 6 }} />
+                        <Text style={styles.riskBarLabel}>Distraction</Text>
+                      </View>
+                      <Text style={[styles.riskBarValText, { color: risks.distraction.color }]}>{risks.distraction.text}</Text>
+                    </View>
+                    <View style={styles.riskBarTrack}>
+                      <View style={[styles.riskBarFill, { width: risks.distraction.percent, backgroundColor: risks.distraction.color }]} />
+                    </View>
+                  </View>
+
+                  {/* Steering */}
+                  <View style={styles.riskBarItem}>
+                    <View style={styles.riskBarHeader}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <MaterialCommunityIcons name="steering" size={13} color="#22c55e" style={{ marginRight: 6 }} />
+                        <Text style={styles.riskBarLabel}>Steering</Text>
+                      </View>
+                      <Text style={[styles.riskBarValText, { color: risks.steering.color }]}>{risks.steering.text}</Text>
+                    </View>
+                    <View style={styles.riskBarTrack}>
+                      <View style={[styles.riskBarFill, { width: risks.steering.percent, backgroundColor: risks.steering.color }]} />
+                    </View>
+                  </View>
+
+                  {/* Cornering */}
+                  <View style={styles.riskBarItem}>
+                    <View style={styles.riskBarHeader}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <MaterialCommunityIcons name="car-curve" size={13} color="#22c55e" style={{ marginRight: 6 }} />
+                        <Text style={styles.riskBarLabel}>Cornering</Text>
+                      </View>
+                      <Text style={[styles.riskBarValText, { color: risks.cornering.color }]}>{risks.cornering.text}</Text>
+                    </View>
+                    <View style={styles.riskBarTrack}>
+                      <View style={[styles.riskBarFill, { width: risks.cornering.percent, backgroundColor: risks.cornering.color }]} />
+                    </View>
+                  </View>
+                </View>
+              </View>
+            </View>
+
+            {/* Keep it up Trophy Banner */}
+            <View style={styles.bannerTrophyCard}>
+              <View style={styles.bannerLeftWrap}>
+                <View style={styles.shieldCheckBadge}>
+                  <Feather name="shield" size={24} color="#00f5ff" />
+                  <Feather name="star" size={10} color="#00f5ff" style={{ position: 'absolute', top: 7 }} />
+                </View>
+                <View style={styles.bannerTextCol}>
+                  <Text style={styles.bannerTitle}>Keep it up!</Text>
+                  <Text style={styles.bannerDesc}>
+                    You're a responsible driver. Small improvements can make you even better.
+                  </Text>
+                </View>
+              </View>
+
+              {/* Glowing Vector Trophy SVG */}
+              <View style={styles.trophyIllustrationContainer}>
+                <Svg width={70} height={70} viewBox="0 0 100 100">
+                  <Defs>
+                    <SvgLinearGradient id="trophyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <Stop offset="0%" stopColor="#00f5ff" stopOpacity="0.8" />
+                      <Stop offset="50%" stopColor="#0ea5e9" stopOpacity="0.9" />
+                      <Stop offset="100%" stopColor="#0284c7" stopOpacity="1" />
+                    </SvgLinearGradient>
+                  </Defs>
+                  <Path d="M15,20 L17,23 L20,24 L17,25 L15,28 L13,25 L10,24 L13,23 Z" fill="#38bdf8" opacity="0.8" />
+                  <Path d="M85,30 L86,32 L89,33 L86,34 L85,36 L84,34 L81,33 L84,32 Z" fill="#00f5ff" opacity="0.9" />
+                  <Path d="M75,65 L76,67 L78,68 L76,69 L75,71 L74,69 L72,68 L74,67 Z" fill="#38bdf8" opacity="0.7" />
+                  <Circle cx="50" cy="45" r="25" fill="#00f5ff" opacity="0.12" />
+                  <Path d="M34,34 C24,34 24,48 34,48" stroke="url(#trophyGrad)" strokeWidth="4" fill="none" strokeLinecap="round" />
+                  <Path d="M66,34 C76,34 76,48 66,48" stroke="url(#trophyGrad)" strokeWidth="4" fill="none" strokeLinecap="round" />
+                  <Path d="M34,30 L66,30 C66,48 58,58 50,58 C42,58 34,48 34,30 Z" fill="url(#trophyGrad)" />
+                  <Path d="M47,58 L53,58 L55,70 L45,70 Z" fill="url(#trophyGrad)" />
+                  <Path d="M36,70 L64,70 C64,70 66,74 64,76 L36,76 C34,74 36,70 36,70 Z" fill="url(#trophyGrad)" />
+                  <Ellipse cx="50" cy="76" rx="16" ry="3.5" fill="#0ea5e9" opacity="0.8" />
+                </Svg>
+              </View>
+            </View>
           </View>
         )}
 
@@ -882,6 +1292,300 @@ function getStyles(colors: any, isDark: boolean) {
     },
     bottomSpacer: {
       height: 100,
+    },
+
+    // Horizontal Tabs Scroll Styles
+    subTabsScroll: {
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+      marginBottom: 16,
+    },
+    subTabsContent: {
+      flexDirection: 'row',
+      paddingHorizontal: 10,
+    },
+
+    // AI Coach specific styles ported from ai-coach.tsx
+    feedbackSection: {
+      backgroundColor: colors.card,
+      borderRadius: 24,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: 16,
+      marginBottom: 20,
+    },
+    sectionHeaderRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    sectionTitle: {
+      color: colors.textSlate,
+      fontSize: 10,
+      fontWeight: 'bold',
+      letterSpacing: 1.2,
+    },
+    feedbackRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    dialContainer: {
+      position: 'relative',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: 120,
+      height: 120,
+    },
+    dialScoreInner: {
+      position: 'absolute',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    dialScoreVal: {
+      color: colors.text,
+      fontSize: 32,
+      fontWeight: '900',
+      lineHeight: 34,
+    },
+    dialStatement: {
+      color: '#22c55e',
+      fontSize: 8,
+      fontWeight: 'bold',
+      marginVertical: 1,
+    },
+    capsuleBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 20,
+      borderWidth: 1,
+    },
+    badgeDot: {
+      width: 4,
+      height: 4,
+      borderRadius: 2,
+      marginRight: 4,
+    },
+    badgeText: {
+      fontSize: 8,
+      fontWeight: 'bold',
+    },
+    feedbackTextCol: {
+      width: '60%',
+    },
+    feedbackGreeting: {
+      color: colors.text,
+      fontSize: 15,
+      fontWeight: 'bold',
+      marginBottom: 4,
+    },
+    feedbackGreetingSub: {
+      color: colors.textMuted,
+      fontSize: 10,
+      lineHeight: 14,
+      marginBottom: 8,
+    },
+    metricsGridBox: {
+      backgroundColor: colors.background,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 12,
+      overflow: 'hidden',
+      marginTop: 4,
+    },
+    metricsGridRow: {
+      flexDirection: 'row',
+    },
+    metricsGridRowBorder: {
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    metricGridCell: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 8,
+      paddingHorizontal: 8,
+    },
+    metricGridCellBorder: {
+      borderRightWidth: 1,
+      borderRightColor: colors.border,
+    },
+    metricGridIcon: {
+      marginRight: 6,
+    },
+    miniLabel: {
+      color: colors.textSlate,
+      fontSize: 8,
+      fontWeight: '500',
+    },
+    miniValue: {
+      fontSize: 12,
+      fontWeight: 'bold',
+      marginTop: 1,
+    },
+    tipsSection: {
+      marginBottom: 20,
+    },
+    sectionHeaderRowMain: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 14,
+    },
+    tipCardItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 16,
+      borderLeftWidth: 4,
+      padding: 12,
+      marginBottom: 12,
+    },
+    tipIconCircle: {
+      width: 38,
+      height: 38,
+      borderRadius: 19,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 12,
+      borderWidth: 1,
+    },
+    tipTextCol: {
+      flex: 1,
+      marginRight: 6,
+    },
+    tipCardTitle: {
+      color: colors.text,
+      fontSize: 13,
+      fontWeight: 'bold',
+      marginBottom: 2,
+    },
+    tipCardDesc: {
+      color: colors.textMuted,
+      fontSize: 10,
+      lineHeight: 14,
+    },
+    tipCardRight: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    impactBadge: {
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 10,
+      borderWidth: 1,
+    },
+    impactText: {
+      fontSize: 8,
+      fontWeight: 'bold',
+    },
+    riskSection: {
+      backgroundColor: colors.card,
+      borderRadius: 24,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: 16,
+      marginBottom: 20,
+    },
+    riskRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    riskGaugeWrap: {
+      position: 'relative',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: '32%',
+    },
+    riskInnerVal: {
+      position: 'absolute',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    riskLabelNum: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      lineHeight: 18,
+    },
+    riskLabelSub: {
+      color: colors.textSlate,
+      fontSize: 8,
+      fontWeight: '600',
+      marginTop: 2,
+    },
+    riskBarsCol: {
+      width: '64%',
+    },
+    riskBarItem: {
+      marginBottom: 6,
+    },
+    riskBarHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 3,
+    },
+    riskBarLabel: {
+      color: colors.textMuted,
+      fontSize: 9,
+    },
+    riskBarValText: {
+      fontSize: 9,
+      fontWeight: 'bold',
+    },
+    riskBarTrack: {
+      height: 4,
+      backgroundColor: colors.border,
+      borderRadius: 2,
+      overflow: 'hidden',
+    },
+    riskBarFill: {
+      height: '100%',
+      borderRadius: 2,
+    },
+    bannerTrophyCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: isDark ? 'rgba(0, 245, 255, 0.04)' : 'rgba(8, 145, 178, 0.04)',
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(0, 245, 255, 0.15)' : 'rgba(8, 145, 178, 0.15)',
+      borderRadius: 20,
+      padding: 16,
+      marginBottom: 20,
+      overflow: 'hidden',
+    },
+    bannerLeftWrap: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flex: 1,
+      marginRight: 10,
+    },
+    bannerTextCol: {
+      flex: 1,
+    },
+    bannerTitle: {
+      color: colors.text,
+      fontSize: 13,
+      fontWeight: 'bold',
+      marginBottom: 2,
+    },
+    bannerDesc: {
+      color: colors.textMuted,
+      fontSize: 10,
+      lineHeight: 14,
+    },
+    trophyIllustrationContainer: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: 70,
+      height: 70,
     },
   });
 }

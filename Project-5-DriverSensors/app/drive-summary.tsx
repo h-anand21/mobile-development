@@ -462,8 +462,8 @@ export default function DriveSummaryScreen() {
         <TouchableOpacity 
           style={styles.tipCard}
           onPress={() => router.push({
-            pathname: '/ai-coach',
-            params: { id: displaySession.id }
+            pathname: '/drive-details',
+            params: { id: displaySession.id, activeTab: 'coach' }
           })}
         >
           <View style={styles.tipIconWrap}>

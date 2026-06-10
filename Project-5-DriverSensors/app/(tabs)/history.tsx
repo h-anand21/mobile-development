@@ -4,6 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Dimensions } from 'react-native';
 import { Feather, MaterialCommunityIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import Svg, { Circle, Path, Line } from 'react-native-svg';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useDriveStore } from '../../src/store/driveStore';
 import { driveRepository } from '../../src/database/repositories/driveRepository';
@@ -113,8 +114,8 @@ const formatRating = (str: string) => {
 
 export default function HistoryScreen() {
   const router = useRouter();
-  const { colors } = useAppTheme();
-  const styles = getStyles(colors);
+  const { colors, isDark } = useAppTheme();
+  const styles = getStyles(colors, isDark);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'latest' | 'score-high' | 'score-low' | 'distance'>('latest');
   const [showSortOptions, setShowSortOptions] = useState(false);
@@ -429,6 +430,31 @@ export default function HistoryScreen() {
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
 
+        {/* Reports Shortcut Banner */}
+        <TouchableOpacity
+          style={styles.reportsBannerCard}
+          onPress={() => router.push('/reports')}
+          activeOpacity={0.8}
+        >
+          <LinearGradient
+            colors={isDark ? ['rgba(0, 245, 255, 0.15)', 'rgba(34, 197, 94, 0.15)'] : ['rgba(0, 245, 255, 0.08)', 'rgba(34, 197, 94, 0.08)']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.reportsBannerGradient}
+          >
+            <View style={styles.reportsBannerLeft}>
+              <View style={[styles.reportsIconCircle, { borderColor: colors.accent + '30' }]}>
+                <Feather name="file-text" size={20} color={colors.accent} />
+              </View>
+              <View style={styles.reportsBannerTextWrap}>
+                <Text style={styles.reportsBannerTitle}>Weekly & Monthly Reports</Text>
+                <Text style={styles.reportsBannerDesc}>Analyze driving trends, progress reports & export PDF</Text>
+              </View>
+            </View>
+            <Feather name="chevron-right" size={20} color={colors.accent} />
+          </LinearGradient>
+        </TouchableOpacity>
+
         {/* 3. Horizontal Scroll Summary Cards */}
         <View style={{ marginBottom: 20 }}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.summaryScroll}>
@@ -609,17 +635,60 @@ export default function HistoryScreen() {
   );
 }
 
-function getStyles(colors: any) {
+function getStyles(colors: any, isDark: boolean) {
   return StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  scrollView: {
-    flex: 1,
-    marginBottom: 90, // Ends exactly above the floating tab bar
-  },
-  header: {
+    reportsBannerCard: {
+      marginBottom: 20,
+      borderRadius: 16,
+      overflow: 'hidden',
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
+    },
+    reportsBannerGradient: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingVertical: 14,
+      paddingHorizontal: 16,
+    },
+    reportsBannerLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flex: 1,
+      marginRight: 10,
+    },
+    reportsIconCircle: {
+      width: 42,
+      height: 42,
+      borderRadius: 12,
+      backgroundColor: isDark ? 'rgba(0, 245, 255, 0.1)' : 'rgba(0, 245, 255, 0.05)',
+      borderWidth: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 12,
+    },
+    reportsBannerTextWrap: {
+      flex: 1,
+    },
+    reportsBannerTitle: {
+      color: colors.text,
+      fontSize: 14,
+      fontWeight: 'bold',
+    },
+    reportsBannerDesc: {
+      color: colors.textSlate,
+      fontSize: 10,
+      marginTop: 2,
+    },
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    scrollView: {
+      flex: 1,
+      marginBottom: 90, // Ends exactly above the floating tab bar
+    },
+    header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
