@@ -66,7 +66,7 @@ const ROUTE_POINTS = generateInterpolatedRoute();
 export default function RouteReplayScreen() {
   const router = useRouter();
   const { colors, isDark } = useAppTheme();
-  const styles = getStyles(colors);
+  const styles = getStyles(colors, isDark);
   const { id } = useLocalSearchParams();
   const sliderWidthRef = useRef<number>(0);
 
@@ -892,7 +892,7 @@ export default function RouteReplayScreen() {
   );
 }
 
-function getStyles(colors: any) {
+function getStyles(colors: any, isDark: boolean) {
   return StyleSheet.create({
     container: {
       flex: 1,
@@ -1009,9 +1009,9 @@ function getStyles(colors: any) {
     ratingBadge: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: colors.isDark ? 'rgba(0, 245, 255, 0.08)' : 'rgba(8, 145, 178, 0.08)',
+      backgroundColor: isDark ? 'rgba(0, 245, 255, 0.08)' : 'rgba(8, 145, 178, 0.08)',
       borderWidth: 1,
-      borderColor: colors.isDark ? 'rgba(0, 245, 255, 0.2)' : 'rgba(8, 145, 178, 0.2)',
+      borderColor: isDark ? 'rgba(0, 245, 255, 0.2)' : 'rgba(8, 145, 178, 0.2)',
       borderRadius: 12,
       paddingVertical: 8,
       paddingHorizontal: 10,
@@ -1036,7 +1036,7 @@ function getStyles(colors: any) {
     // Map Container
     mapContainer: {
       height: 380,
-      backgroundColor: colors.isDark ? '#040a12' : '#e2e8f0',
+      backgroundColor: isDark ? '#040a12' : '#e2e8f0',
       borderRadius: 24,
       borderWidth: 1,
       borderColor: colors.border,
@@ -1046,7 +1046,7 @@ function getStyles(colors: any) {
     },
     mapCallout: {
       position: 'absolute',
-      backgroundColor: colors.isDark ? 'rgba(4, 10, 18, 0.9)' : 'rgba(255, 255, 255, 0.9)',
+      backgroundColor: isDark ? 'rgba(4, 10, 18, 0.9)' : 'rgba(255, 255, 255, 0.9)',
       borderWidth: 1,
       borderColor: colors.border,
       borderRadius: 6,
@@ -1072,7 +1072,7 @@ function getStyles(colors: any) {
       position: 'absolute',
       top: 15,
       right: 15,
-      backgroundColor: colors.isDark ? 'rgba(4, 10, 18, 0.85)' : 'rgba(255, 255, 255, 0.85)',
+      backgroundColor: isDark ? 'rgba(4, 10, 18, 0.85)' : 'rgba(255, 255, 255, 0.85)',
       borderWidth: 1,
       borderColor: colors.border,
       borderRadius: 12,
@@ -1090,7 +1090,7 @@ function getStyles(colors: any) {
       position: 'absolute',
       bottom: 15,
       left: 15,
-      backgroundColor: colors.isDark ? 'rgba(4, 10, 18, 0.85)' : 'rgba(255, 255, 255, 0.85)',
+      backgroundColor: isDark ? 'rgba(4, 10, 18, 0.85)' : 'rgba(255, 255, 255, 0.85)',
       borderWidth: 1,
       borderColor: colors.border,
       borderRadius: 10,
@@ -1133,10 +1133,10 @@ function getStyles(colors: any) {
       borderColor: colors.accent,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: colors.isDark ? 'rgba(0, 245, 255, 0.05)' : 'rgba(8, 145, 178, 0.05)',
+      backgroundColor: isDark ? 'rgba(0, 245, 255, 0.05)' : 'rgba(8, 145, 178, 0.05)',
     },
     playingBtn: {
-      backgroundColor: colors.isDark ? 'rgba(0, 245, 255, 0.15)' : 'rgba(8, 145, 178, 0.15)',
+      backgroundColor: isDark ? 'rgba(0, 245, 255, 0.15)' : 'rgba(8, 145, 178, 0.15)',
     },
     sliderContainer: {
       flex: 1,
@@ -1190,7 +1190,7 @@ function getStyles(colors: any) {
       borderRadius: 12,
       borderWidth: 1.5,
       borderColor: colors.accent,
-      backgroundColor: colors.isDark ? 'rgba(0, 245, 255, 0.05)' : 'rgba(8, 145, 178, 0.05)',
+      backgroundColor: isDark ? 'rgba(0, 245, 255, 0.05)' : 'rgba(8, 145, 178, 0.05)',
     },
     speedText: {
       color: colors.accent,

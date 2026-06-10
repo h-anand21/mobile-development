@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, BackHandler } from 'react-native';
 import { Feather, MaterialCommunityIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import Svg, { Circle, Line, Path, Defs, LinearGradient as SvgLinearGradient, Stop, Text as SvgText } from 'react-native-svg';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -38,6 +38,24 @@ export default function DriveSummaryScreen() {
   const { colors, isDark } = useAppTheme();
   const styles = getStyles(colors);
   const { id } = useLocalSearchParams();
+
+  useEffect(() => {
+    const backAction = () => {
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace('/(tabs)');
+      }
+      return true;
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      backAction
+    );
+
+    return () => backHandler.remove();
+  }, [router]);
   
   // Find drive in history or active store
   const allDrives = driveRepository.getAllDrives();
@@ -110,10 +128,12 @@ export default function DriveSummaryScreen() {
     if (points.length === 0) return '';
     const maxVal = 120;
     const padding = 10;
+    const leftOffset = 25;
     const chartHeight = height - padding * 2;
+    const chartWidth = width - leftOffset;
     
     return points.map((val, idx) => {
-      const x = (idx / (points.length - 1)) * width;
+      const x = leftOffset + (idx / (points.length - 1)) * chartWidth;
       const y = height - padding - (val / maxVal) * chartHeight;
       return `${idx === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${y.toFixed(1)}`;
     }).join(' ');
@@ -132,7 +152,16 @@ export default function DriveSummaryScreen() {
     <View style={styles.container}>
       {/* Top Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.replace('/(tabs)/history')} style={styles.iconCircle}>
+        <TouchableOpacity 
+          onPress={() => {
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace('/(tabs)');
+            }
+          }} 
+          style={styles.iconCircle}
+        >
           <Feather name="arrow-left" size={24} color="#F8FAFC" />
         </TouchableOpacity>
         
@@ -279,14 +308,14 @@ export default function DriveSummaryScreen() {
             <View style={styles.speedLineChartContainer}>
               <Svg width={width * 0.44} height={90} viewBox={`0 0 ${width * 0.44} 90`}>
                 {/* Horizontal Guide lines */}
-                <Line x1="0" y1="20" x2={width * 0.44} y2="20" stroke="rgba(255, 255, 255, 0.05)" strokeWidth="0.8" />
-                <Line x1="0" y1="50" x2={width * 0.44} y2="50" stroke="rgba(255, 255, 255, 0.05)" strokeWidth="0.8" />
-                <Line x1="0" y1="80" x2={width * 0.44} y2="80" stroke="rgba(255, 255, 255, 0.05)" strokeWidth="0.8" />
+                <Line x1="25" y1="20" x2={width * 0.44} y2="20" stroke="rgba(255, 255, 255, 0.05)" strokeWidth="0.8" />
+                <Line x1="25" y1="50" x2={width * 0.44} y2="50" stroke="rgba(255, 255, 255, 0.05)" strokeWidth="0.8" />
+                <Line x1="25" y1="80" x2={width * 0.44} y2="80" stroke="rgba(255, 255, 255, 0.05)" strokeWidth="0.8" />
                 
                 {/* Chart Axes */}
-                <SvgText style={styles.yTick} x="5" y="23">120</SvgText>
-                <SvgText style={styles.yTick} x="5" y="53">80</SvgText>
-                <SvgText style={styles.yTick} x="5" y="83">0</SvgText>
+                <SvgText style={styles.yTick} x="6" y="23">120</SvgText>
+                <SvgText style={styles.yTick} x="6" y="53">80</SvgText>
+                <SvgText style={styles.yTick} x="6" y="83">0</SvgText>
                 
                 {/* Draw speed curve path */}
                 <Path 
@@ -543,8 +572,7 @@ export default function DriveSummaryScreen() {
       alignItems: 'center',
       justifyContent: 'center',
       position: 'relative',
-      width: 180,
-      height: 180,
+      width: '100%',
       marginBottom: 15,
     },
     dialLabel: {
@@ -596,8 +624,9 @@ export default function DriveSummaryScreen() {
     catTextContainer: {
       flexDirection: 'row',
       justifyContent: 'space-between',
-      width: '100%',
-      marginBottom: 4,
+      alignItems: 'center',
+      flex: 1,
+      marginLeft: 10,
     },
     catLabel: {
       color: colors.textMuted,
@@ -615,17 +644,19 @@ export default function DriveSummaryScreen() {
     },
     coreStatsRow: {
       flexDirection: 'row',
+      flexWrap: 'wrap',
       justifyContent: 'space-between',
       marginBottom: 20,
     },
     statBox: {
-      width: '31%',
+      width: '48.5%',
       backgroundColor: colors.card,
       borderWidth: 1,
       borderColor: colors.border,
       borderRadius: 20,
       padding: 12,
       alignItems: 'center',
+      marginBottom: 12,
     },
     statIcon: {
       marginBottom: 6,
@@ -676,7 +707,8 @@ export default function DriveSummaryScreen() {
       justifyContent: 'space-between',
       width: '100%',
       marginTop: 6,
-      paddingHorizontal: 4,
+      paddingLeft: 25,
+      paddingRight: 4,
     },
     xTick: {
       color: colors.textSlate,

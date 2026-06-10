@@ -12,7 +12,7 @@ const { width } = Dimensions.get('window');
 // Mock data for Weeks
 const WEEKLY_REPORTS = [
   {
-    dateRange: 'May 14 – May 20, 2025',
+    dateRange: 'Jun 3 – Jun 9, 2026',
     avgScore: 84,
     avgScoreRating: 'Good',
     avgScoreDiff: '↑ 12%',
@@ -23,7 +23,7 @@ const WEEKLY_REPORTS = [
     totalDuration: '6h 42m',
     totalDurationDiff: '↑ 1h 05m',
     trendPoints: [68, 72, 78, 85, 81, 88, 92],
-    trendLabels: ['May 14', 'May 15', 'May 16', 'May 17', 'May 18', 'May 19', 'May 20'],
+    trendLabels: ['Jun 3', 'Jun 4', 'Jun 5', 'Jun 6', 'Jun 7', 'Jun 8', 'Jun 9'],
     events: {
       harshBrakes: 8,
       harshBrakesDiff: '↓ 2',
@@ -48,13 +48,13 @@ const WEEKLY_REPORTS = [
       phone: 72
     },
     topDrives: [
-      { id: 't1', score: 92, rating: 'Excellent', date: 'May 20, 08:15 PM', distance: '28.6', duration: '00:42:16' },
-      { id: 't2', score: 90, rating: 'Excellent', date: 'May 19, 08:30 PM', distance: '27.4', duration: '00:40:12' },
-      { id: 't3', score: 88, rating: 'Good', date: 'May 18, 07:10 PM', distance: '22.1', duration: '00:35:47' }
+      { id: 't1', score: 92, rating: 'Excellent', date: 'Jun 9, 08:15 PM', distance: '28.6', duration: '00:42:16' },
+      { id: 't2', score: 90, rating: 'Excellent', date: 'Jun 8, 08:30 PM', distance: '27.4', duration: '00:40:12' },
+      { id: 't3', score: 88, rating: 'Good', date: 'Jun 7, 07:10 PM', distance: '22.1', duration: '00:35:47' }
     ]
   },
   {
-    dateRange: 'May 7 – May 13, 2025',
+    dateRange: 'May 27 – Jun 2, 2026',
     avgScore: 78,
     avgScoreRating: 'Good',
     avgScoreDiff: '↑ 5%',
@@ -65,7 +65,7 @@ const WEEKLY_REPORTS = [
     totalDuration: '5h 12m',
     totalDurationDiff: '↑ 34m',
     trendPoints: [70, 75, 71, 74, 82, 79, 83],
-    trendLabels: ['May 7', 'May 8', 'May 9', 'May 10', 'May 11', 'May 12', 'May 13'],
+    trendLabels: ['May 27', 'May 28', 'May 29', 'May 30', 'May 31', 'Jun 1', 'Jun 2'],
     events: {
       harshBrakes: 10,
       harshBrakesDiff: '↓ 1',
@@ -90,9 +90,9 @@ const WEEKLY_REPORTS = [
       phone: 65
     },
     topDrives: [
-      { id: 't4', score: 85, rating: 'Good', date: 'May 11, 04:20 PM', distance: '24.2', duration: '00:36:10' },
-      { id: 't5', score: 83, rating: 'Good', date: 'May 13, 08:45 PM', distance: '18.1', duration: '00:26:40' },
-      { id: 't6', score: 82, rating: 'Good', date: 'May 11, 09:15 AM', distance: '21.5', duration: '00:32:05' }
+      { id: 't4', score: 85, rating: 'Good', date: 'Jun 2, 04:20 PM', distance: '24.2', duration: '00:36:10' },
+      { id: 't5', score: 83, rating: 'Good', date: 'Jun 1, 08:45 PM', distance: '18.1', duration: '00:26:40' },
+      { id: 't6', score: 82, rating: 'Good', date: 'May 31, 09:15 AM', distance: '21.5', duration: '00:32:05' }
     ]
   }
 ];
@@ -100,7 +100,7 @@ const WEEKLY_REPORTS = [
 // Mock data for Months
 const MONTHLY_REPORTS = [
   {
-    dateRange: 'May 2025',
+    dateRange: 'May 2026',
     avgScore: 82,
     avgScoreRating: 'Good',
     avgScoreDiff: '↑ 6%',
@@ -136,13 +136,13 @@ const MONTHLY_REPORTS = [
       phone: 78
     },
     topDrives: [
-      { id: 'm1', score: 95, rating: 'Excellent', date: 'May 24, 11:15 AM', distance: '32.4', duration: '00:46:50' },
-      { id: 'm2', score: 92, rating: 'Excellent', date: 'May 20, 08:15 PM', distance: '28.6', duration: '00:42:16' },
-      { id: 'm3', score: 90, rating: 'Excellent', date: 'May 19, 08:30 PM', distance: '27.4', duration: '00:40:12' }
+      { id: 'm1', score: 95, rating: 'Excellent', date: 'May 24, 2026, 11:15 AM', distance: '32.4', duration: '00:46:50' },
+      { id: 'm2', score: 92, rating: 'Excellent', date: 'May 20, 2026, 08:15 PM', distance: '28.6', duration: '00:42:16' },
+      { id: 'm3', score: 90, rating: 'Excellent', date: 'May 19, 2026, 08:30 PM', distance: '27.4', duration: '00:40:12' }
     ]
   },
   {
-    dateRange: 'April 2025',
+    dateRange: 'April 2026',
     avgScore: 76,
     avgScoreRating: 'Good',
     avgScoreDiff: '↑ 3%',
@@ -178,9 +178,9 @@ const MONTHLY_REPORTS = [
       phone: 71
     },
     topDrives: [
-      { id: 'm4', score: 88, rating: 'Good', date: 'Apr 18, 06:10 PM', distance: '25.3', duration: '00:38:22' },
-      { id: 'm5', score: 86, rating: 'Good', date: 'Apr 22, 09:15 AM', distance: '19.4', duration: '00:29:45' },
-      { id: 'm6', score: 85, rating: 'Good', date: 'Apr 12, 08:30 PM', distance: '21.0', duration: '00:31:10' }
+      { id: 'm4', score: 88, rating: 'Good', date: 'Apr 18, 2026, 06:10 PM', distance: '25.3', duration: '00:38:22' },
+      { id: 'm5', score: 86, rating: 'Good', date: 'Apr 22, 2026, 09:15 AM', distance: '19.4', duration: '00:29:45' },
+      { id: 'm6', score: 85, rating: 'Good', date: 'Apr 12, 2026, 08:30 PM', distance: '21.0', duration: '00:31:10' }
     ]
   }
 ];
@@ -188,7 +188,7 @@ const MONTHLY_REPORTS = [
 export default function ReportsScreen() {
   const router = useRouter();
   const { colors, isDark } = useAppTheme();
-  const styles = getStyles(colors);
+  const styles = getStyles(colors, isDark);
   const [reportType, setReportType] = useState<'weekly' | 'monthly'>('weekly');
   const [reportIndex, setReportIndex] = useState(0);
   const [isExporting, setIsExporting] = useState(false);
@@ -279,6 +279,13 @@ export default function ReportsScreen() {
     setTimeout(() => {
       setIsExporting(false);
 
+      const safetyTips = [
+        "Maintain a safe following distance to avoid sudden harsh braking.",
+        "Keep your phone in Do Not Disturb / Car Mode while driving.",
+        "Smooth acceleration and gradual cornering improve overall fuel efficiency.",
+        "Take regular breaks during long journeys to maintain high focus."
+      ];
+
       const reportText = `
 =============================================
 SAFEDRIVE DRIVE REPORT (${reportType.toUpperCase()})
@@ -290,14 +297,14 @@ Total Distance Driven: ${reportData.totalDistance} km
 Total Drives Logged: ${reportData.totalDrives}
 
 DRIVING EVENTS LOGGED:
-- Harsh Braking Events: ${reportData.events.harshBrakes}
-- Speeding Violations: ${reportData.events.speeding}
-- Phone Distractions: ${reportData.events.phoneUsage}
-- Aggressive Steering: ${reportData.events.aggressive}
+- Harsh Braking Events: ${reportData.events?.harshBrakes || 0}
+- Sharp Turns Logged: ${reportData.events?.sharpTurns || 0}
+- Phone Distractions: ${reportData.events?.phoneUsage || 0}
+- Aggressive Steering: ${reportData.events?.steering || 0}
 
 AI COACH SAFETY TIPS:
-1. ${reportData.tips[0]}
-2. ${reportData.tips[1]}
+1. ${safetyTips[0]}
+2. ${safetyTips[1]}
 
 Telemetry data processed locally. SafeDrive v1.0.0.
 =============================================
@@ -457,7 +464,7 @@ Telemetry data processed locally. SafeDrive v1.0.0.
                     <Text style={[styles.diffText, { color: '#22c55e' }]}> {reportData.totalDrivesDiff}</Text>
                   </View>
                 </View>
-                <View style={[styles.cardIconWrap, { borderColor: colors.accent, backgroundColor: colors.isDark ? 'rgba(0, 245, 255, 0.05)' : 'rgba(8, 145, 178, 0.05)' }]}>
+                <View style={[styles.cardIconWrap, { borderColor: colors.accent, backgroundColor: isDark ? 'rgba(0, 245, 255, 0.05)' : 'rgba(8, 145, 178, 0.05)' }]}>
                   <MaterialCommunityIcons name="steering" size={16} color={colors.accent} />
                 </View>
               </View>
@@ -553,7 +560,7 @@ Telemetry data processed locally. SafeDrive v1.0.0.
                 const y = chartHeight - chartPadding - (level / 100) * (chartHeight - chartPadding * 2);
                 return (
                   <React.Fragment key={level}>
-                    <Line x1={chartPadding} y1={y} x2={chartWidth - chartPadding} y2={y} stroke={colors.isDark ? "rgba(255,255,255,0.03)" : "rgba(15, 23, 42, 0.06)"} strokeWidth="1" />
+                    <Line x1={chartPadding} y1={y} x2={chartWidth - chartPadding} y2={y} stroke={isDark ? "rgba(255,255,255,0.03)" : "rgba(15, 23, 42, 0.06)"} strokeWidth="1" />
                     <SvgText x={chartPadding - 6} y={y + 3} fill={colors.textSlate} fontSize="8" fontWeight="bold" textAnchor="end">{level}</SvgText>
                   </React.Fragment>
                 );
@@ -883,7 +890,7 @@ Telemetry data processed locally. SafeDrive v1.0.0.
   );
 }
 
-function getStyles(colors: any) {
+function getStyles(colors: any, isDark: boolean) {
   return StyleSheet.create({
     container: {
       flex: 1,
@@ -960,7 +967,7 @@ function getStyles(colors: any) {
       position: 'relative',
     },
     activeTabBtn: {
-      backgroundColor: colors.isDark ? 'rgba(0, 245, 255, 0.03)' : 'rgba(8, 145, 178, 0.03)',
+      backgroundColor: isDark ? 'rgba(0, 245, 255, 0.03)' : 'rgba(8, 145, 178, 0.03)',
     },
     tabContentRow: {
       flexDirection: 'row',
@@ -1042,7 +1049,7 @@ function getStyles(colors: any) {
     },
     metricCard: {
       width: 140,
-      backgroundColor: colors.isDark ? 'rgba(8, 15, 26, 0.4)' : 'rgba(241, 245, 249, 0.5)',
+      backgroundColor: isDark ? 'rgba(8, 15, 26, 0.4)' : 'rgba(241, 245, 249, 0.5)',
       borderWidth: 1,
       borderColor: colors.border,
       borderRadius: 18,
@@ -1150,7 +1157,7 @@ function getStyles(colors: any) {
     },
     eventGridCard: {
       width: (width - 82) / 2,
-      backgroundColor: colors.isDark ? 'rgba(8, 15, 26, 0.4)' : 'rgba(241, 245, 249, 0.5)',
+      backgroundColor: isDark ? 'rgba(8, 15, 26, 0.4)' : 'rgba(241, 245, 249, 0.5)',
       borderWidth: 1,
       borderColor: colors.border,
       borderRadius: 18,
@@ -1309,7 +1316,7 @@ function getStyles(colors: any) {
     topDriveCard: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: colors.isDark ? 'rgba(8, 15, 26, 0.4)' : 'rgba(241, 245, 249, 0.5)',
+      backgroundColor: isDark ? 'rgba(8, 15, 26, 0.4)' : 'rgba(241, 245, 249, 0.5)',
       borderWidth: 1,
       borderColor: colors.border,
       borderRadius: 16,

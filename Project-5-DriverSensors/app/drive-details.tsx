@@ -187,12 +187,15 @@ export default function DriveDetailsScreen() {
 
         {/* 3. Location & Weather Card */}
         <View style={styles.locationWeatherCard}>
-          <View style={styles.routeHeader}>
-            <View style={[styles.locIndicatorDot, { backgroundColor: colors.accent }]} />
-            <Text style={styles.routeText} numberOfLines={1}>{startLocLabel}</Text>
-            <Feather name="arrow-right" size={12} color={colors.textSlate} style={{ marginHorizontal: 8 }} />
-            <View style={[styles.locIndicatorDot, { backgroundColor: colors.success }]} />
-            <Text style={styles.routeText} numberOfLines={1}>{endLocLabel}</Text>
+          <View style={styles.routeHeaderCol}>
+            <View style={styles.routeRow}>
+              <View style={[styles.locIndicatorDot, { backgroundColor: colors.accent }]} />
+              <Text style={styles.routeText} numberOfLines={1}>{startLocLabel}</Text>
+            </View>
+            <View style={[styles.routeRow, { marginTop: 4 }]}>
+              <View style={[styles.locIndicatorDot, { backgroundColor: colors.success }]} />
+              <Text style={styles.routeText} numberOfLines={1}>{endLocLabel}</Text>
+            </View>
           </View>
           
           <View style={styles.weatherCol}>
@@ -287,8 +290,8 @@ export default function DriveDetailsScreen() {
 
                     {/* Corner labels matching mockup */}
                     {/* Top: Smoothness */}
-                    <SvgText x={cx} y="11" fill={colors.textSlate} fontSize="8" fontWeight="bold" textAnchor="middle">Smoothness</SvgText>
-                    <SvgText x={cx} y="20" fill={colors.success} fontSize="8" textAnchor="middle">91%</SvgText>
+                    <SvgText x={cx} y="15" fill={colors.textSlate} fontSize="8" fontWeight="bold" textAnchor="middle">Smoothness</SvgText>
+                    <SvgText x={cx} y="24" fill={colors.success} fontSize="8" textAnchor="middle">91%</SvgText>
 
                     {/* Right-Top: Safety */}
                     <SvgText x={cx + r + 5} y={cy - 12} fill={colors.textSlate} fontSize="8" fontWeight="bold" textAnchor="start">Safety</SvgText>
@@ -611,11 +614,14 @@ function getStyles(colors: any, isDark: boolean) {
       paddingHorizontal: 14,
       marginBottom: 15,
     },
-    routeHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
+    routeHeaderCol: {
+      flexDirection: 'column',
       flex: 1,
       marginRight: 10,
+    },
+    routeRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
     },
     locIndicatorDot: {
       width: 6,
@@ -696,8 +702,8 @@ function getStyles(colors: any, isDark: boolean) {
     radarWrapper: {
       alignItems: 'center',
       justifyContent: 'center',
-      height: 120,
-      marginTop: -8,
+      height: 155,
+      marginTop: 0,
     },
     countsContainer: {
       marginTop: 2,
