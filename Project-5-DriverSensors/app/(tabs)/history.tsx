@@ -1,6 +1,6 @@
 
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Dimensions } from 'react-native';
 import { Feather, MaterialCommunityIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import Svg, { Circle, Path, Line } from 'react-native-svg';
@@ -8,6 +8,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useDriveStore } from '../../src/store/driveStore';
 import { driveRepository } from '../../src/database/repositories/driveRepository';
+import { storage } from '../../src/database/storage';
+import { useIsFocused } from '@react-navigation/native';
 import dayjs from 'dayjs';
 import { useAppTheme } from '../../src/ui/theme';
 
@@ -124,8 +126,27 @@ export default function HistoryScreen() {
   const [showCalendarFilter, setShowCalendarFilter] = useState(false);
   const [showRatingFilter, setShowRatingFilter] = useState(false);
 
-  // Load drives from DB
-  const dbDrives = driveRepository.getAllDrives();
+  // Load drives dynamically on focus and when storage cache is loaded
+  const isFocused = useIsFocused();
+  const [dbDrives, setDbDrives] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (isFocused) {
+      const loadDrives = () => {
+        const drives = driveRepository.getAllDrives();
+        setDbDrives(drives);
+      };
+
+      loadDrives();
+
+      // Hydrate dynamically once the background AsyncStorage load finishes
+      const unsubscribe = storage.onLoad(() => {
+        loadDrives();
+      });
+
+      return unsubscribe;
+    }
+  }, [isFocused]);
 
   // Show ONLY real database drives (no mock fallback drives)
   const allDrives = useMemo(() => {
@@ -207,19 +228,35 @@ export default function HistoryScreen() {
   }, [allDrives, searchQuery, sortBy, dateFilter, ratingFilter]);
 
   // Compute Total Metrics for summary cards
-  const totalDrivesCount = allDrives.length > 6 ? processedDrives.length : (processedDrives.length > 0 ? processedDrives.length : 48);
-  const avgScore = allDrives.length > 6
-    ? (processedDrives.length > 0 ? Math.round(processedDrives.reduce((acc, d) => acc + d.score, 0) / processedDrives.length) : 0)
-    : (processedDrives.length > 0 ? Math.round(processedDrives.reduce((acc, d) => acc + d.score, 0) / processedDrives.length) : 86);
-  const totalDistanceKm = allDrives.length > 6
-    ? (processedDrives.length > 0 ? (processedDrives.reduce((acc, d) => acc + d.distance, 0) / 1000).toFixed(1) : '0.0')
-    : (processedDrives.length > 0 ? (processedDrives.reduce((acc, d) => acc + d.distance, 0) / 1000).toFixed(1) : '842.6');
-  const totalDurationMin = allDrives.length > 6
-    ? (processedDrives.length > 0 ? Math.round(processedDrives.reduce((acc, d) => acc + d.duration, 0) / 60) : 0)
-    : (processedDrives.length > 0 ? Math.round(processedDrives.reduce((acc, d) => acc + d.duration, 0) / 60) : 1122);
+  const totalDrivesCount = processedDrives.length;
+  const avgScore = processedDrives.length > 0
+    ? Math.round(processedDrives.reduce((acc, d) => acc + d.score, 0) / processedDrives.length)
+    : 0;
+  const totalDistanceKm = processedDrives.length > 0
+    ? (processedDrives.reduce((acc, d) => acc + d.distance, 0) / 1000).toFixed(1)
+    : '0.0';
+  const totalDurationMin = processedDrives.length > 0
+    ? Math.round(processedDrives.reduce((acc, d) => acc + d.duration, 0) / 60)
+    : 0;
 
   const totalDurationHrs = Math.floor(totalDurationMin / 60);
   const totalDurationMins = totalDurationMin % 60;
+
+  const getScoreRating = (score: number) => {
+    if (processedDrives.length === 0) return { label: 'No Data', color: '#64748b' };
+    if (score >= 80) return { label: 'Excellent', color: '#22c55e' };
+    if (score >= 60) return { label: 'Good', color: '#00f5ff' };
+    if (score >= 40) return { label: 'Fair', color: '#eab308' };
+    return { label: 'Poor', color: '#ef4444' };
+  };
+
+  const getFilterLabel = () => {
+    if (dateFilter === 'today') return 'Today';
+    if (dateFilter === 'yesterday') return 'Yesterday';
+    if (dateFilter === 'week') return 'Past 7 Days';
+    if (dateFilter === 'month') return 'This Month';
+    return 'All Time';
+  };
 
   // Format Date Titles
   const getDriveTitle = (timestamp: number) => {
@@ -464,7 +501,7 @@ export default function HistoryScreen() {
                 <View>
                   <Text style={styles.summaryCardLabel}>Total Drives</Text>
                   <Text style={styles.summaryCardValue}>{totalDrivesCount}</Text>
-                  <Text style={styles.summaryCardSub}>This Month</Text>
+                  <Text style={styles.summaryCardSub}>{getFilterLabel()}</Text>
                 </View>
                 <View style={[styles.summaryCardIconWrap, { borderColor: '#00f5ff', backgroundColor: 'rgba(0, 245, 255, 0.05)' }]}>
                   <MaterialCommunityIcons name="steering" size={16} color="#00f5ff" />
@@ -472,7 +509,7 @@ export default function HistoryScreen() {
               </View>
               {/* Wave SVG */}
               <Svg width={116} height={20} style={styles.miniWaveChart}>
-                <Path d="M 0,12 L 15,6 L 30,14 L 45,8 L 60,12 L 75,5 L 90,10 L 105,4 L 116,9" stroke="#00f5ff" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+                <Path d={totalDrivesCount > 0 ? "M 0,12 L 15,6 L 30,14 L 45,8 L 60,12 L 75,5 L 90,10 L 105,4 L 116,9" : "M 0,10 L 116,10"} stroke="#00f5ff" strokeWidth="1.5" fill="none" strokeLinecap="round" />
               </Svg>
             </View>
 
@@ -481,15 +518,17 @@ export default function HistoryScreen() {
               <View style={styles.summaryCardHeader}>
                 <View>
                   <Text style={styles.summaryCardLabel}>Avg Score</Text>
-                  <Text style={styles.summaryCardValue}>{avgScore}</Text>
-                  <Text style={[styles.summaryCardSub, { color: '#22c55e', fontWeight: 'bold' }]}>Excellent</Text>
+                  <Text style={styles.summaryCardValue}>{totalDrivesCount > 0 ? avgScore : '--'}</Text>
+                  <Text style={[styles.summaryCardSub, { color: getScoreRating(avgScore).color, fontWeight: 'bold' }]}>
+                    {getScoreRating(avgScore).label}
+                  </Text>
                 </View>
-                <View style={[styles.summaryCardIconWrap, { borderColor: '#22c55e', backgroundColor: 'rgba(34, 197, 94, 0.05)' }]}>
-                  <MaterialCommunityIcons name="shield-check-outline" size={16} color="#22c55e" />
+                <View style={[styles.summaryCardIconWrap, { borderColor: getScoreRating(avgScore).color, backgroundColor: getScoreRating(avgScore).color + '0c' }]}>
+                  <MaterialCommunityIcons name="shield-check-outline" size={16} color={getScoreRating(avgScore).color} />
                 </View>
               </View>
               <Svg width={116} height={20} style={styles.miniWaveChart}>
-                <Path d="M 0,10 L 15,14 L 30,8 L 45,12 L 60,6 L 75,10 L 90,4 L 105,8 L 116,6" stroke="#22c55e" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+                <Path d={totalDrivesCount > 0 ? "M 0,10 L 15,14 L 30,8 L 45,12 L 60,6 L 75,10 L 90,4 L 105,8 L 116,6" : "M 0,10 L 116,10"} stroke={totalDrivesCount > 0 ? "#22c55e" : "#64748b"} strokeWidth="1.5" fill="none" strokeLinecap="round" />
               </Svg>
             </View>
 
@@ -506,7 +545,7 @@ export default function HistoryScreen() {
                 </View>
               </View>
               <Svg width={116} height={20} style={styles.miniWaveChart}>
-                <Path d="M 0,14 L 15,10 L 30,12 L 45,6 L 60,10 L 75,8 L 90,14 L 105,6 L 116,10" stroke="#eab308" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+                <Path d={totalDrivesCount > 0 ? "M 0,14 L 15,10 L 30,12 L 45,6 L 60,10 L 75,8 L 90,14 L 105,6 L 116,10" : "M 0,10 L 116,10"} stroke={totalDrivesCount > 0 ? "#eab308" : "#64748b"} strokeWidth="1.5" fill="none" strokeLinecap="round" />
               </Svg>
             </View>
 
@@ -518,14 +557,14 @@ export default function HistoryScreen() {
                   <Text style={styles.summaryCardValue}>
                     {totalDurationHrs}<Text style={styles.summaryUnit}>h</Text> {totalDurationMins}<Text style={styles.summaryUnit}>m</Text>
                   </Text>
-                  <Text style={styles.summaryCardSub}>This Month</Text>
+                  <Text style={styles.summaryCardSub}>{getFilterLabel()}</Text>
                 </View>
                 <View style={[styles.summaryCardIconWrap, { borderColor: '#a855f7', backgroundColor: 'rgba(168, 85, 247, 0.05)' }]}>
                   <Feather name="clock" size={14} color="#a855f7" />
                 </View>
               </View>
               <Svg width={116} height={20} style={styles.miniWaveChart}>
-                <Path d="M 0,8 L 15,12 L 30,6 L 45,10 L 60,4 L 75,8 L 90,6 L 105,12 L 116,8" stroke="#a855f7" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+                <Path d={totalDrivesCount > 0 ? "M 0,8 L 15,12 L 30,6 L 45,10 L 60,4 L 75,8 L 90,6 L 105,12 L 116,8" : "M 0,10 L 116,10"} stroke={totalDrivesCount > 0 ? "#a855f7" : "#64748b"} strokeWidth="1.5" fill="none" strokeLinecap="round" />
               </Svg>
             </View>
           </ScrollView>

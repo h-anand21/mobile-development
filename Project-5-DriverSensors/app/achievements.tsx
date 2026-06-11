@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Alert, Modal, Clipboard } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Alert, Modal } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { Feather, MaterialCommunityIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import Svg, { Circle, Path, Polygon, Ellipse } from 'react-native-svg';
 import { useRouter } from 'expo-router';
@@ -526,8 +527,8 @@ export default function AchievementsScreen() {
                     <Text style={styles.couponCodeText}>DRIVESAFE10</Text>
                     <TouchableOpacity 
                       style={styles.copyBtn} 
-                      onPress={() => {
-                        Clipboard.setString('DRIVESAFE10');
+                      onPress={async () => {
+                        await Clipboard.setStringAsync('DRIVESAFE10');
                         Alert.alert('Code Copied', 'Coupon code "DRIVESAFE10" copied to clipboard!');
                       }}
                     >
@@ -556,8 +557,8 @@ export default function AchievementsScreen() {
                     <Text style={styles.couponCodeText}>PREMIUM5SAFE</Text>
                     <TouchableOpacity 
                       style={styles.copyBtn} 
-                      onPress={() => {
-                        Clipboard.setString('PREMIUM5SAFE');
+                      onPress={async () => {
+                        await Clipboard.setStringAsync('PREMIUM5SAFE');
                         Alert.alert('Code Copied', 'Coupon code "PREMIUM5SAFE" copied to clipboard!');
                       }}
                     >
@@ -609,8 +610,8 @@ export default function AchievementsScreen() {
                     <Text style={styles.couponCodeText}>FREEBREWCAFE</Text>
                     <TouchableOpacity 
                       style={styles.copyBtn} 
-                      onPress={() => {
-                        Clipboard.setString('FREEBREWCAFE');
+                      onPress={async () => {
+                        await Clipboard.setStringAsync('FREEBREWCAFE');
                         Alert.alert('Code Copied', 'Coupon code "FREEBREWCAFE" copied to clipboard!');
                       }}
                     >

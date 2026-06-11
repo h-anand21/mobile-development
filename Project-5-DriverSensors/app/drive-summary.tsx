@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, BackHandler } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, BackHandler, Share, Alert } from 'react-native';
 import { Feather, MaterialCommunityIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import Svg, { Circle, Line, Path, Defs, LinearGradient as SvgLinearGradient, Stop, Text as SvgText } from 'react-native-svg';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -144,6 +144,31 @@ export default function DriveSummaryScreen() {
   const midMarkTime = dayjs(displaySession.startTime + durationSec * 500).format('hh:mm A');
   const endMarkTime = dayjs(displaySession.startTime + durationSec * 1000).format('hh:mm A');
 
+  const handleShare = async () => {
+    try {
+      const distanceKm = (displaySession.distance / 1000).toFixed(1);
+      const durationText = formatDuration(durationSec);
+      const shareMessage = `🚗 SafeDrive Trip Summary Report\n\n` +
+        `Date: ${driveDateStr} at ${driveTimeStr}\n` +
+        `Distance: ${distanceKm} km\n` +
+        `Duration: ${durationText}\n` +
+        `Safe Score: ${score}/100 (${rating})\n\n` +
+        `Safety Violations:\n` +
+        `• Harsh Brakes: ${harshBrakeCount}\n` +
+        `• Harsh Accelerations: ${harshAccelCount}\n` +
+        `• Sharp Turns: ${sharpTurnCount}\n` +
+        `• Phone Usage: ${phoneUsageCount} time(s)\n\n` +
+        `Shared via SafeDrive App 📱`;
+
+      await Share.share({
+        message: shareMessage,
+        title: 'SafeDrive Trip Report',
+      });
+    } catch (error: any) {
+      Alert.alert('Error', 'Unable to share this drive details.');
+    }
+  };
+
   const ratingColors = {
     color: score >= 90 ? '#22c55e' : score >= 70 ? '#38bdf8' : score >= 50 ? '#f59e0b' : '#ef4444',
   };
@@ -172,7 +197,7 @@ export default function DriveSummaryScreen() {
           </Text>
         </View>
 
-        <TouchableOpacity style={styles.iconCircle}>
+        <TouchableOpacity onPress={handleShare} style={styles.iconCircle}>
           <Feather name="share-2" size={20} color="#F8FAFC" />
         </TouchableOpacity>
       </View>

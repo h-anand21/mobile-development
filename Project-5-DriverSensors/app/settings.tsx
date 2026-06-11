@@ -136,8 +136,8 @@ export default function SettingsScreen() {
           <Text style={styles.headerTitle}>Settings</Text>
           <Text style={styles.headerSubtitle}>Customize your experience</Text>
         </View>
-
-        <View style={{ width: 44 }} /> {/* Spacer to center the title */}
+        {/* Spacer to center the title */}
+        <View style={{ width: 44 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>

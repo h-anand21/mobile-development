@@ -207,3 +207,25 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     }));
   },
 }));
+
+// Listen to storage loaded event (useful for AsyncStorage fallback on Expo Go)
+storage.onLoad(() => {
+  try {
+    const saved = storage.getString('user_settings');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      useSettingsStore.setState((state) => ({
+        ...state,
+        ...parsed,
+        permissions: {
+          ...state.permissions,
+          ...(parsed.permissions || {})
+        }
+      }));
+      console.log('[SafeDrive] Settings store hydrated from storage.');
+    }
+  } catch (error) {
+    console.error('Failed to hydrate settings from storage onLoad', error);
+  }
+});
+
