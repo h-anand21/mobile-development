@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, BackHandler, Share, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, BackHandler, Share, Alert, Image } from 'react-native';
 import { Feather, MaterialCommunityIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import Svg, { Circle, Line, Path, Defs, LinearGradient as SvgLinearGradient, Stop, Text as SvgText } from 'react-native-svg';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -234,7 +234,10 @@ export default function DriveSummaryScreen() {
                 />
               </Svg>
               <View style={styles.dialScoreInner}>
-                <Feather name="shield" size={20} color="#06b6d4" style={{ marginBottom: 2 }} />
+                <Image 
+                  source={!isDark ? require('../assets/icon/icon-white.png') : require('../assets/icon/image.png')} 
+                  style={{ width: 60, height: 60, resizeMode: 'contain', marginBottom: 2 }} 
+                />
                 <Text style={styles.dialScoreVal}>{score}</Text>
                 <Text style={[styles.dialRatingText, { color: ratingColors.color }]}>{rating}</Text>
               </View>
@@ -492,8 +495,10 @@ export default function DriveSummaryScreen() {
           })}
         >
           <View style={styles.tipIconWrap}>
-            <Feather name="shield" size={24} color="#06b6d4" />
-            <Feather name="check" size={10} color="#06b6d4" style={{ position: 'absolute', top: 7 }} />
+            <Image 
+              source={!isDark ? require('../assets/icon/icon-white.png') : require('../assets/icon/image.png')} 
+              style={{ width: 48, height: 48, resizeMode: 'contain' }} 
+            />
           </View>
           <View style={styles.tipTextWrap}>
             <Text style={styles.tipTitle}>Keep it up!</Text>
@@ -848,9 +853,9 @@ export default function DriveSummaryScreen() {
       marginBottom: 20,
     },
     tipIconWrap: {
-      width: 44,
-      height: 44,
-      borderRadius: 22,
+      width: 56,
+      height: 56,
+      borderRadius: 28,
       borderWidth: 1.5,
       borderColor: 'rgba(6, 182, 212, 0.3)',
       backgroundColor: 'rgba(6, 182, 212, 0.1)',

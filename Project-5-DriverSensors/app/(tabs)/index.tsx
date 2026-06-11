@@ -215,8 +215,10 @@ export default function HomeScreen() {
         
         <View style={styles.scoreInner}>
           <View style={styles.shieldIconContainer}>
-            <Feather name="shield" size={28} color={colors.accent} />
-            <Feather name="check" size={12} color={colors.accent} style={{position: 'absolute', top: 9}} />
+            <Image 
+              source={!isDark ? require('../../assets/icon/icon-white.png') : require('../../assets/icon/image.png')} 
+              style={{ width: 96, height: 96, resizeMode: 'contain' }} 
+            />
           </View>
           <Text style={[styles.scoreNumber, { color: colors.text }]}>{score}</Text>
           <Text style={[styles.scoreLabel, { color: colors.textMuted }]}>SAFE SCORE</Text>

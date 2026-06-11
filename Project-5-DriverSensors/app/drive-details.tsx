@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Share, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Share, Alert, Image } from 'react-native';
 import { Feather, MaterialCommunityIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import Svg, { Circle, Line, Path, Defs, LinearGradient as SvgLinearGradient, Stop, Polygon, Text as SvgText, Rect, Ellipse } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -1007,8 +1007,10 @@ export default function DriveDetailsScreen() {
             <View style={styles.bannerTrophyCard}>
               <View style={styles.bannerLeftWrap}>
                 <View style={styles.shieldCheckBadge}>
-                  <Feather name="shield" size={24} color="#00f5ff" />
-                  <Feather name="star" size={10} color="#00f5ff" style={{ position: 'absolute', top: 7 }} />
+                  <Image 
+                    source={!isDark ? require('../assets/icon/icon-white.png') : require('../assets/icon/image.png')} 
+                    style={{ width: 60, height: 60, resizeMode: 'contain' }} 
+                  />
                 </View>
                 <View style={styles.bannerTextCol}>
                   <Text style={styles.bannerTitle}>Keep it up!</Text>

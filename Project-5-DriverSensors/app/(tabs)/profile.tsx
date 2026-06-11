@@ -64,7 +64,7 @@ function getLevelInfo(totalXp: number) {
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { colors } = useAppTheme();
+  const { colors, isDark } = useAppTheme();
   const styles = getStyles(colors);
 
   // Load drives from DB
@@ -284,8 +284,10 @@ export default function ProfileScreen() {
           </View>
 
           <View style={styles.safeDriverBadge}>
-            <Feather name="shield" size={22} color="#22c55e" />
-            <Feather name="star" size={10} color="#22c55e" style={{ position: 'absolute', top: 12 }} />
+            <Image 
+              source={!isDark ? require('../../assets/icon/icon-white.png') : require('../../assets/icon/image.png')} 
+              style={{ width: 48, height: 48, resizeMode: 'contain', marginBottom: 2 }} 
+            />
             <Text style={styles.safeDriverText}>Safe Driver</Text>
           </View>
         </View>
@@ -857,15 +859,16 @@ function getStyles(colors: any) {
     borderColor: colors.success + '4d',
     backgroundColor: colors.success + '0d',
     borderRadius: 14,
-    width: 76,
-    height: 64,
+    width: 96,
+    height: 86,
     position: 'relative',
+    paddingVertical: 4,
   },
   safeDriverText: {
     color: colors.success,
     fontSize: 8.5,
     fontWeight: 'bold',
-    marginTop: 22,
+    marginTop: 3,
     textAlign: 'center',
   },
 

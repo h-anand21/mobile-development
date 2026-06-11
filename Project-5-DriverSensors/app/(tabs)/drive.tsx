@@ -396,21 +396,10 @@ export default function DriveScreen() {
         <View style={[styles.headerInactive, { paddingTop: Math.max(insets.top, 45) }]}>
           <View style={styles.headerBrand}>
             <View style={styles.headerLogoWrap}>
-              <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-                <Path
-                  d="M12 2L3 7v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-9-5z"
-                  stroke={isDark ? '#00f5ff' : '#0ea5e9'}
-                  strokeWidth="2"
-                  fill={isDark ? 'rgba(0, 245, 255, 0.1)' : 'rgba(14, 165, 233, 0.08)'}
-                />
-                <Path
-                  d="M9 12l2 2 4-4"
-                  stroke="#22c55e"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </Svg>
+              <Image 
+                source={!isDark ? require('../../assets/icon/icon-white.png') : require('../../assets/icon/image.png')} 
+                style={{ width: 36, height: 36, resizeMode: 'contain' }} 
+              />
             </View>
             <View style={styles.headerTitleCol}>
               <Text style={styles.headerLogoText}>
@@ -783,8 +772,10 @@ export default function DriveScreen() {
           
           <View style={styles.scoreInner}>
             <View style={styles.shieldIconContainer}>
-              <Feather name="shield" size={28} color="#06b6d4" />
-              <Feather name="check" size={12} color="#06b6d4" style={{ position: 'absolute', top: 9 }} />
+              <Image 
+                source={!isDark ? require('../../assets/icon/icon-white.png') : require('../../assets/icon/image.png')} 
+                style={{ width: 96, height: 96, resizeMode: 'contain' }} 
+              />
             </View>
             <Text style={styles.scoreNumber}>{score}</Text>
             <Text style={styles.scoreLabel}>CURRENT SCORE</Text>
