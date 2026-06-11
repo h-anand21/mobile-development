@@ -27,6 +27,7 @@ const ProgressDial = ({
   sublabel,
   colors: dialColors,
   icon,
+  isDark,
 }: {
   percent: number;
   value: string;
@@ -34,6 +35,7 @@ const ProgressDial = ({
   sublabel: string;
   colors: string[];
   icon: React.ReactNode;
+  isDark: boolean;
 }) => {
   const size = 100;
   const radius = 40;
@@ -57,7 +59,7 @@ const ProgressDial = ({
           cx={size / 2}
           cy={size / 2}
           r={radius + 4}
-          stroke="rgba(0, 245, 255, 0.05)"
+          stroke={isDark ? "rgba(0, 245, 255, 0.05)" : "rgba(14, 165, 233, 0.06)"}
           strokeWidth="1"
           strokeDasharray="2 4"
           fill="none"
@@ -67,7 +69,7 @@ const ProgressDial = ({
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke="rgba(255, 255, 255, 0.05)"
+          stroke={isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(15, 23, 42, 0.06)"}
           strokeWidth={strokeWidth - 1}
           fill="none"
           strokeDasharray={`${arcLength} ${circumference - arcLength}`}
@@ -102,7 +104,7 @@ const ProgressDial = ({
         <View style={{ marginBottom: 2 }}>{icon}</View>
         <Text style={{
           fontSize: 7.5,
-          color: '#64748b',
+          color: isDark ? '#64748b' : '#475569',
           fontWeight: '700',
           textTransform: 'uppercase',
           letterSpacing: 0.4,
@@ -131,7 +133,7 @@ export default function DriveScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useAppTheme();
-  const styles = getStyles(colors);
+  const styles = getStyles(colors, isDark);
 
   // Store actions & state
   const currentSession = useDriveStore((state) => state.currentSession);
@@ -365,13 +367,15 @@ export default function DriveScreen() {
 
   const scoreRatingText = avgScore >= 90 ? 'Excellent' : avgScore >= 70 ? 'Good' : avgScore >= 50 ? 'Fair' : 'Poor';
 
+  const secondaryNeonColor = isDark ? '#00f5ff' : '#0284c7';
+
   // Dynamic color palette for Avg Score based on the score value
   const avgScoreColors = React.useMemo(() => {
     if (avgScore >= 90) return ['#22c55e', '#84cc16']; // Excellent (Green/Lime)
-    if (avgScore >= 70) return ['#00f5ff', '#0ea5e9']; // Good (Cyan/Blue)
+    if (avgScore >= 70) return isDark ? ['#00f5ff', '#0ea5e9'] : ['#0ea5e9', '#0284c7']; // Good (Cyan/Blue)
     if (avgScore >= 50) return ['#f59e0b', '#eab308']; // Fair (Orange/Yellow)
     return ['#ef4444', '#b91c1c']; // Poor (Red)
-  }, [avgScore]);
+  }, [avgScore, isDark]);
 
   // Determine dynamic greeting message based on local time
   const getGreeting = () => {
@@ -385,19 +389,19 @@ export default function DriveScreen() {
   if (!currentSession) {
     return (
       <LinearGradient
-        colors={['#081325', '#030712']}
+        colors={isDark ? ['#081325', '#030712'] : ['#f8fafc', '#e2e8f0']}
         style={styles.inactiveContainer}
       >
         {/* Header */}
-        <View style={[styles.headerInactive, { paddingTop: Math.max(insets.top, 12) }]}>
+        <View style={[styles.headerInactive, { paddingTop: Math.max(insets.top, 45) }]}>
           <View style={styles.headerBrand}>
             <View style={styles.headerLogoWrap}>
               <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
                 <Path
                   d="M12 2L3 7v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-9-5z"
-                  stroke="#00f5ff"
+                  stroke={isDark ? '#00f5ff' : '#0ea5e9'}
                   strokeWidth="2"
-                  fill="rgba(0, 245, 255, 0.1)"
+                  fill={isDark ? 'rgba(0, 245, 255, 0.1)' : 'rgba(14, 165, 233, 0.08)'}
                 />
                 <Path
                   d="M9 12l2 2 4-4"
@@ -417,7 +421,12 @@ export default function DriveScreen() {
           </View>
         </View>
 
-        <ScrollView style={styles.scrollView} contentContainerStyle={styles.inactiveContent} showsVerticalScrollIndicator={false}>
+        <ScrollView 
+          style={styles.scrollView} 
+          contentContainerStyle={styles.inactiveContent} 
+          showsVerticalScrollIndicator={false}
+          alwaysBounceVertical={true}
+        >
           {/* Greeting and Header */}
           <Text style={styles.greetingText}>{getGreeting()}, Himanshu 👋</Text>
           <Text style={styles.welcomeTitle}>
@@ -526,12 +535,12 @@ export default function DriveScreen() {
 
             <View style={styles.diagCol}>
               <View style={styles.diagIconCircle}>
-                <Feather name="map-pin" size={14} color="#00f5ff" />
+                <Feather name="map-pin" size={14} color={secondaryNeonColor} />
               </View>
               <Text style={styles.diagLabel}>GPS</Text>
               <View style={styles.diagStatusRow}>
-                <Text style={[styles.diagStatusText, { color: '#00f5ff' }]}>Active</Text>
-                <View style={[styles.diagStatusDot, { backgroundColor: '#00f5ff' }]} />
+                <Text style={[styles.diagStatusText, { color: secondaryNeonColor }]}>Active</Text>
+                <View style={[styles.diagStatusDot, { backgroundColor: secondaryNeonColor }]} />
               </View>
             </View>
 
@@ -558,6 +567,7 @@ export default function DriveScreen() {
               label="Avg Score"
               sublabel={scoreRatingText}
               colors={avgScoreColors}
+              isDark={isDark}
               icon={
                 <View style={{ backgroundColor: `${avgScoreColors[0]}1a`, padding: 4, borderRadius: 8 }}>
                   <Feather name="shield" size={12} color={avgScoreColors[0]} />
@@ -571,10 +581,11 @@ export default function DriveScreen() {
               value={String(totalDistanceKm)}
               label="Total Distance"
               sublabel="km"
-              colors={['#00f5ff', '#0ea5e9']}
+              colors={isDark ? ['#00f5ff', '#0ea5e9'] : ['#0ea5e9', '#0284c7']}
+              isDark={isDark}
               icon={
-                <View style={{ backgroundColor: 'rgba(0, 245, 255, 0.1)', padding: 4, borderRadius: 8 }}>
-                  <FontAwesome5 name="road" size={11} color="#00f5ff" />
+                <View style={{ backgroundColor: isDark ? 'rgba(0, 245, 255, 0.1)' : 'rgba(2, 132, 199, 0.1)', padding: 4, borderRadius: 8 }}>
+                  <FontAwesome5 name="road" size={11} color={secondaryNeonColor} />
                 </View>
               }
             />
@@ -586,6 +597,7 @@ export default function DriveScreen() {
               label="Total Drives"
               sublabel="Trips"
               colors={['#a855f7', '#d946ef']}
+              isDark={isDark}
               icon={
                 <View style={{ backgroundColor: 'rgba(168, 85, 247, 0.1)', padding: 4, borderRadius: 8 }}>
                   <Ionicons name="car-outline" size={13} color="#a855f7" />
@@ -613,9 +625,9 @@ export default function DriveScreen() {
             style={styles.liveAnalyticsOutlineBtn} 
             onPress={() => router.push('/live-analytics')}
           >
-            <MaterialCommunityIcons name="waveform" size={18} color="#00f5ff" style={{ marginRight: 8 }} />
+            <MaterialCommunityIcons name="waveform" size={18} color={secondaryNeonColor} style={{ marginRight: 8 }} />
             <Text style={styles.liveAnalyticsOutlineBtnText}>LIVE SENSOR VIEW</Text>
-            <Feather name="chevron-right" size={18} color="#00f5ff" style={{ marginLeft: 'auto' }} />
+            <Feather name="chevron-right" size={18} color={secondaryNeonColor} style={{ marginLeft: 'auto' }} />
           </TouchableOpacity>
 
           {/* Secure Footer */}
@@ -986,7 +998,7 @@ export default function DriveScreen() {
   );
 }
 
-function getStyles(colors: any) {
+function getStyles(colors: any, isDark: boolean) {
   return StyleSheet.create({
   // General
   container: {
@@ -1039,18 +1051,18 @@ function getStyles(colors: any) {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
     borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerBrand: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
     borderWidth: 1.2,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
     borderRadius: 20,
     paddingVertical: 5,
     paddingHorizontal: 16,
@@ -1064,14 +1076,14 @@ function getStyles(colors: any) {
   headerLogoText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#ffffff',
+    color: isDark ? '#ffffff' : colors.text,
   },
   headerLogoTextHighlight: {
     color: '#22c55e',
   },
   headerSubtitle: {
     fontSize: 9,
-    color: '#64748b',
+    color: colors.textMuted,
     fontWeight: '500',
     marginTop: -2,
   },
@@ -1094,7 +1106,7 @@ function getStyles(colors: any) {
   },
   greetingText: {
     fontSize: 13,
-    color: '#e2e8f0',
+    color: isDark ? '#e2e8f0' : colors.textMuted,
     fontWeight: '500',
     marginBottom: 4,
     textAlign: 'left',
@@ -1103,18 +1115,18 @@ function getStyles(colors: any) {
   welcomeTitle: {
     fontSize: 26,
     fontWeight: 'bold',
-    color: '#ffffff',
+    color: isDark ? '#ffffff' : colors.text,
     textAlign: 'left',
     width: '100%',
     lineHeight: 30,
     marginBottom: 4,
   },
   welcomeTitleHighlight: {
-    color: '#00f5ff',
+    color: isDark ? '#00f5ff' : '#0284c7',
   },
   welcomeSubtitle: {
     fontSize: 12,
-    color: '#94a3b8',
+    color: colors.textMuted,
     textAlign: 'left',
     width: '100%',
     lineHeight: 16,
@@ -1128,8 +1140,8 @@ function getStyles(colors: any) {
     position: 'relative',
     marginVertical: 10,
     borderWidth: 1.2,
-    borderColor: 'rgba(0, 245, 255, 0.15)',
-    backgroundColor: '#030712',
+    borderColor: isDark ? 'rgba(0, 245, 255, 0.15)' : 'rgba(14, 165, 233, 0.2)',
+    backgroundColor: isDark ? '#030712' : '#f8fafc',
   },
   backgroundImage: {
     width: '100%',
@@ -1147,7 +1159,7 @@ function getStyles(colors: any) {
   roadLineDash: {
     width: 25,
     height: 3,
-    backgroundColor: 'rgba(255, 255, 255, 0.4)',
+    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.4)' : 'rgba(15, 23, 42, 0.3)',
     marginRight: 35,
   },
   carOverlay: {
@@ -1167,7 +1179,7 @@ function getStyles(colors: any) {
     width: 2.5,
     height: 2.5,
     borderRadius: 1.25,
-    backgroundColor: '#ffffff',
+    backgroundColor: isDark ? '#ffffff' : '#64748b',
   },
   lightTrail: {
     position: 'absolute',
@@ -1178,15 +1190,20 @@ function getStyles(colors: any) {
   diagnosticsCard: {
     width: '100%',
     flexDirection: 'row',
-    backgroundColor: 'rgba(10, 25, 47, 0.45)',
+    backgroundColor: isDark ? 'rgba(10, 25, 47, 0.45)' : 'transparent',
     borderRadius: 16,
     borderWidth: 1.0,
-    borderColor: 'rgba(0, 245, 255, 0.08)',
+    borderColor: isDark ? 'rgba(0, 245, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
     paddingVertical: 10,
     paddingHorizontal: 10,
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 15,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0,
+    shadowRadius: 4,
+    elevation: 0,
   },
   diagCol: {
     flex: 1,
@@ -1196,14 +1213,14 @@ function getStyles(colors: any) {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.03)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 4,
   },
   diagLabel: {
     fontSize: 10.5,
-    color: '#94a3b8',
+    color: colors.textMuted,
     fontWeight: '500',
     marginBottom: 2,
   },
@@ -1224,7 +1241,7 @@ function getStyles(colors: any) {
   diagDivider: {
     width: 1,
     height: 28,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
   },
   dialsRow: {
     width: '100%',
@@ -1238,7 +1255,7 @@ function getStyles(colors: any) {
     overflow: 'hidden',
     shadowColor: '#00f5ff',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
+    shadowOpacity: isDark ? 0.3 : 0.15,
     shadowRadius: 12,
     elevation: 8,
     marginBottom: 10,
@@ -1263,14 +1280,14 @@ function getStyles(colors: any) {
     paddingHorizontal: 25,
     borderRadius: 30,
     borderWidth: 1.5,
-    borderColor: '#00f5ff',
-    backgroundColor: 'rgba(0, 245, 255, 0.02)',
+    borderColor: isDark ? '#00f5ff' : '#0284c7',
+    backgroundColor: isDark ? 'rgba(0, 245, 255, 0.02)' : 'rgba(2, 132, 199, 0.02)',
     marginBottom: 15,
   },
   liveAnalyticsOutlineBtnText: {
     fontSize: 15,
     fontWeight: 'bold',
-    color: '#00f5ff',
+    color: isDark ? '#00f5ff' : '#0284c7',
     letterSpacing: 1,
   },
   secureFooter: {
@@ -1282,7 +1299,7 @@ function getStyles(colors: any) {
   },
   secureFooterText: {
     fontSize: 11,
-    color: '#94a3b8',
+    color: colors.textMuted,
     marginLeft: 6,
     fontWeight: '500',
   },
