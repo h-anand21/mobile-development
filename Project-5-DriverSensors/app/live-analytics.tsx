@@ -45,6 +45,68 @@ export default function LiveAnalyticsScreen() {
   const [gyroHistory, setGyroHistory] = useState<{x: number[], y: number[], z: number[]}>({ x: [], y: [], z: [] });
   const [magnetoHistory, setMagnetoHistory] = useState<{x: number[], y: number[], z: number[]}>({ x: [], y: [], z: [] });
 
+  // Real-time alert state
+  const [activeAlert, setActiveAlert] = useState<{ sensor: string; message: string; timestamp: number } | null>(null);
+
+  // Event listener for real-time safety warning flashes
+  const latestEvent = currentSession && currentSession.events && currentSession.events.length > 0
+    ? currentSession.events[currentSession.events.length - 1]
+    : null;
+
+  useEffect(() => {
+    if (latestEvent) {
+      const now = Date.now();
+      const timeDiff = now - latestEvent.timestamp;
+      
+      // If the safety event occurred in the last 4 seconds, trigger alert
+      if (timeDiff < 4000) {
+        let sensor = '';
+        let message = '';
+        
+        switch (latestEvent.type) {
+          case 'OVERSPEEDING':
+            sensor = 'GPS';
+            message = `OVERSPEED LIMIT EXCEEDED: ${latestEvent.speed} km/h`;
+            break;
+          case 'HARSH_BRAKE':
+            sensor = 'DEVICEMOTION';
+            message = 'HARSH BRAKE DETECTED';
+            break;
+          case 'HARSH_ACCELERATION':
+            sensor = 'DEVICEMOTION';
+            message = 'HARSH ACCELERATION DETECTED';
+            break;
+          case 'EXCESSIVE_MOVEMENT':
+            sensor = 'DEVICEMOTION';
+            message = 'EXCESSIVE PHONE MOVEMENT';
+            break;
+          case 'SHARP_TURN':
+            sensor = 'GYROSCOPE';
+            message = 'SHARP TURN DETECTED';
+            break;
+          case 'PHONE_USAGE':
+            sensor = 'GYROSCOPE';
+            message = 'PHONE PICKUP DETECTED';
+            break;
+          case 'AGGRESSIVE_STEERING':
+            sensor = 'ACCELEROMETER';
+            message = 'AGGRESSIVE WEAVING / STEERING';
+            break;
+        }
+
+        if (sensor && message) {
+          setActiveAlert({ sensor, message, timestamp: latestEvent.timestamp });
+          
+          const delay = Math.max(500, 4000 - timeDiff);
+          const timer = setTimeout(() => {
+            setActiveAlert(prev => prev?.timestamp === latestEvent.timestamp ? null : prev);
+          }, delay);
+          return () => clearTimeout(timer);
+        }
+      }
+    }
+  }, [latestEvent]);
+
   // Update clock every second
   useEffect(() => {
     const timer = setInterval(() => {
@@ -213,10 +275,10 @@ export default function LiveAnalyticsScreen() {
   }, [ax, ay, az, gxDeg, gyDeg, gzDeg, mx, my, mz]);
 
   // Formulating SVG chart path
-  const getPathData = (history: number[], scale: number, height: number) => {
+  const getPathData = (history: number[], scale: number, height: number, width: number = 160) => {
     const pointsCount = history.length;
-    const leftOffset = 25; // Space for the y-axis tick labels
-    const chartWidth = 160 - leftOffset;
+    const leftOffset = 22; // Space for the y-axis tick labels
+    const chartWidth = width - leftOffset;
     
     if (pointsCount === 0) return `M ${leftOffset} ${height / 2}`;
     
@@ -363,85 +425,98 @@ export default function LiveAnalyticsScreen() {
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Speed Stats Section (Gauge & Indicators) */}
-        <View style={styles.speedStatsSection}>
-          <View style={styles.speedLeftCol}>
-            <Text style={styles.speedTextLabel}>CURRENT SPEED</Text>
-            <Text style={styles.speedValue}>{speed}</Text>
-            <Text style={styles.speedUnit}>km/h</Text>
-            
-            <View style={styles.speedLimitCapsule}>
-              <Text style={styles.speedLimitText} numberOfLines={1} adjustsFontSizeToFit={true}>Speed Limit 80 km/h</Text>
+        <View style={[
+          styles.speedStatsSection,
+          activeAlert?.sensor === 'GPS' && styles.sensorCardAlert,
+          { flexDirection: 'column', alignItems: 'stretch' }
+        ]}>
+          {activeAlert?.sensor === 'GPS' && (
+            <View style={styles.alertBanner}>
+              <Feather name="alert-triangle" size={14} color="#ffffff" style={{ marginRight: 6 }} />
+              <Text style={styles.alertBannerText}>{activeAlert.message}</Text>
             </View>
-          </View>
+          )}
 
-          {/* Speedometer Gauge Dial */}
-          <View style={styles.speedGaugeContainer}>
-            <Svg width={125} height={125} viewBox="0 0 200 200">
-              <Defs>
-                <SvgLinearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <Stop offset="0%" stopColor="#06b6d4" />
-                  <Stop offset="50%" stopColor="#22c55e" />
-                  <Stop offset="100%" stopColor="#eab308" />
-                </SvgLinearGradient>
-              </Defs>
-              {/* Outer dial track */}
-              <Circle 
-                cx="100" cy="100" r="75" 
-                stroke="#121e33" 
-                strokeWidth="6" 
-                fill="none" 
-                strokeDasharray={`${353.43} ${471.24 - 353.43}`} 
-                strokeDashoffset="0" 
-                strokeLinecap="round" 
-                transform="rotate(135 100 100)"
-              />
-              {/* Active track */}
-              <Circle 
-                cx="100" cy="100" r="75" 
-                stroke="url(#gaugeGrad)" 
-                strokeWidth="8" 
-                fill="none" 
-                strokeDasharray={`${(targetSpeed / 160) * 353.43} ${471.24 - (targetSpeed / 160) * 353.43}`} 
-                strokeDashoffset="0" 
-                strokeLinecap="round" 
-                transform="rotate(135 100 100)"
-              />
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+            <View style={styles.speedLeftCol}>
+              <Text style={styles.speedTextLabel}>CURRENT SPEED</Text>
+              <Text style={styles.speedValue}>{speed}</Text>
+              <Text style={styles.speedUnit}>km/h</Text>
               
-              {/* Needle pivot */}
-              <Circle cx="100" cy="100" r="10" fill="#050b14" stroke="#06b6d4" strokeWidth="2.5" />
-              
-              {/* Speed Needle */}
-              <Line 
-                x1="100" y1="100" 
-                x2={needleX} y2={needleY} 
-                stroke="#06b6d4" 
-                strokeWidth="3.5" 
-                strokeLinecap="round" 
-              />
-              <Circle cx={needleX} cy={needleY} r="2.5" fill="#00f5ff" />
+              <View style={styles.speedLimitCapsule}>
+                <Text style={styles.speedLimitText} numberOfLines={1} adjustsFontSizeToFit={true}>Speed Limit 80 km/h</Text>
+              </View>
+            </View>
 
-              {/* Speed Dial ticks & markers */}
-              <SvgText style={styles.dialTickLabel} x="58" y="146" textAnchor="middle">0</SvgText>
-              <SvgText style={styles.dialTickLabel} x="44" y="80" textAnchor="middle">40</SvgText>
-              <SvgText style={styles.dialTickLabel} x="100" y="52" textAnchor="middle">80</SvgText>
-              <SvgText style={styles.dialTickLabel} x="156" y="80" textAnchor="middle">120</SvgText>
-              <SvgText style={styles.dialTickLabel} x="142" y="146" textAnchor="middle">160</SvgText>
-            </Svg>
-          </View>
- 
-          {/* Speed Right Col */}
-          <View style={styles.speedRightCol}>
-            <View style={styles.sideSpeedStat}>
-              <Text style={styles.sideLabel}>AVERAGE SPEED</Text>
-              <Text style={styles.sideVal}>{averageSpeedKmH} <Text style={styles.sideValUnit}>km/h</Text></Text>
+            {/* Speedometer Gauge Dial */}
+            <View style={styles.speedGaugeContainer}>
+              <Svg width={125} height={125} viewBox="0 0 200 200">
+                <Defs>
+                  <SvgLinearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <Stop offset="0%" stopColor="#06b6d4" />
+                    <Stop offset="50%" stopColor="#22c55e" />
+                    <Stop offset="100%" stopColor="#eab308" />
+                  </SvgLinearGradient>
+                </Defs>
+                {/* Outer dial track */}
+                <Circle 
+                  cx="100" cy="100" r="75" 
+                  stroke="#121e33" 
+                  strokeWidth="6" 
+                  fill="none" 
+                  strokeDasharray={`${353.43} ${471.24 - 353.43}`} 
+                  strokeDashoffset="0" 
+                  strokeLinecap="round" 
+                  transform="rotate(135 100 100)"
+                />
+                {/* Active track */}
+                <Circle 
+                  cx="100" cy="100" r="75" 
+                  stroke="url(#gaugeGrad)" 
+                  strokeWidth="8" 
+                  fill="none" 
+                  strokeDasharray={`${(targetSpeed / 160) * 353.43} ${471.24 - (targetSpeed / 160) * 353.43}`} 
+                  strokeDashoffset="0" 
+                  strokeLinecap="round" 
+                  transform="rotate(135 100 100)"
+                />
+                
+                {/* Needle pivot */}
+                <Circle cx="100" cy="100" r="10" fill="#050b14" stroke="#06b6d4" strokeWidth="2.5" />
+                
+                {/* Speed Needle */}
+                <Line 
+                  x1="100" y1="100" 
+                  x2={needleX} y2={needleY} 
+                  stroke="#06b6d4" 
+                  strokeWidth="3.5" 
+                  strokeLinecap="round" 
+                />
+                <Circle cx={needleX} cy={needleY} r="2.5" fill="#00f5ff" />
+
+                {/* Speed Dial ticks & markers */}
+                <SvgText style={styles.dialTickLabel} x="58" y="146" textAnchor="middle">0</SvgText>
+                <SvgText style={styles.dialTickLabel} x="44" y="80" textAnchor="middle">40</SvgText>
+                <SvgText style={styles.dialTickLabel} x="100" y="52" textAnchor="middle">80</SvgText>
+                <SvgText style={styles.dialTickLabel} x="156" y="80" textAnchor="middle">120</SvgText>
+                <SvgText style={styles.dialTickLabel} x="142" y="146" textAnchor="middle">160</SvgText>
+              </Svg>
             </View>
-            <View style={styles.sideSpeedStat}>
-              <Text style={styles.sideLabel}>MAX SPEED</Text>
-              <Text style={styles.sideVal}>{maxSpeedKmH} <Text style={styles.sideValUnit}>km/h</Text></Text>
-            </View>
-            <View style={styles.sideSpeedStat}>
-              <Text style={styles.sideLabel}>TOP SPEED</Text>
-              <Text style={styles.sideVal}>{topSpeedKmH || 98} <Text style={styles.sideValUnit}>km/h</Text></Text>
+   
+            {/* Speed Right Col */}
+            <View style={styles.speedRightCol}>
+              <View style={styles.sideSpeedStat}>
+                <Text style={styles.sideLabel}>AVERAGE SPEED</Text>
+                <Text style={styles.sideVal}>{averageSpeedKmH} <Text style={styles.sideValUnit}>km/h</Text></Text>
+              </View>
+              <View style={styles.sideSpeedStat}>
+                <Text style={styles.sideLabel}>MAX SPEED</Text>
+                <Text style={styles.sideVal}>{maxSpeedKmH} <Text style={styles.sideValUnit}>km/h</Text></Text>
+              </View>
+              <View style={styles.sideSpeedStat}>
+                <Text style={styles.sideLabel}>TOP SPEED</Text>
+                <Text style={styles.sideVal}>{topSpeedKmH || 98} <Text style={styles.sideValUnit}>km/h</Text></Text>
+              </View>
             </View>
           </View>
         </View>
@@ -456,88 +531,153 @@ export default function LiveAnalyticsScreen() {
         </View>
 
         {/* Accelerometer Sensor Card */}
-        <View style={styles.sensorCard}>
+        <View style={[
+          styles.sensorCard,
+          activeAlert?.sensor === 'ACCELEROMETER' && styles.sensorCardAlert
+        ]}>
           {/* Card Header */}
           <View style={styles.sensorCardHeader}>
             <View style={styles.sensorIconCircle}>
               <MaterialCommunityIcons name="pulse" size={20} color="#0ea5e9" />
             </View>
-            <Text style={styles.sensorCardTitle}>ACCELEROMETER</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.sensorCardTitle}>ACCELEROMETER</Text>
+              <Text style={styles.sensorCardSubtitle}>Tracks: Aggressive Steering</Text>
+            </View>
+            <View style={styles.sensorStatusBadge}>
+              <View style={[styles.statusDot, { backgroundColor: accel ? '#22c55e' : '#64748b' }]} />
+              <Text style={[styles.sensorStatusText, { color: accel ? '#22c55e' : '#64748b' }]}>
+                {accel ? 'ACTIVE' : 'OFFLINE'}
+              </Text>
+            </View>
           </View>
+
+          {activeAlert?.sensor === 'ACCELEROMETER' && (
+            <View style={styles.alertBanner}>
+              <Feather name="alert-triangle" size={14} color="#ffffff" style={{ marginRight: 6 }} />
+              <Text style={styles.alertBannerText}>{activeAlert.message}</Text>
+            </View>
+          )}
 
           {/* Card Body */}
           <View style={styles.sensorCardBody}>
             <View style={styles.sensorLeftCol}>
               <View style={styles.axisValueRow}>
                 <View style={[styles.axisDot, { backgroundColor: '#06b6d4' }]} />
-                <Text style={styles.axisLabel}>X  <Text style={styles.axisVal}>{ax.toFixed(2)}</Text> m/s²</Text>
+                <Text style={styles.axisLabelText}>X</Text>
+                <Text style={styles.axisValText}>{ax.toFixed(2)}</Text>
+                <Text style={styles.axisUnitText}>m/s²</Text>
               </View>
               <View style={styles.axisValueRow}>
                 <View style={[styles.axisDot, { backgroundColor: '#84cc16' }]} />
-                <Text style={styles.axisLabel}>Y  <Text style={styles.axisVal}>{ay.toFixed(2)}</Text> m/s²</Text>
+                <Text style={styles.axisLabelText}>Y</Text>
+                <Text style={styles.axisValText}>{ay.toFixed(2)}</Text>
+                <Text style={styles.axisUnitText}>m/s²</Text>
               </View>
               <View style={styles.axisValueRow}>
                 <View style={[styles.axisDot, { backgroundColor: '#eab308' }]} />
-                <Text style={styles.axisLabel}>Z  <Text style={styles.axisVal}>{az.toFixed(2)}</Text> m/s²</Text>
+                <Text style={styles.axisLabelText}>Z</Text>
+                <Text style={styles.axisValText}>{az.toFixed(2)}</Text>
+                <Text style={styles.axisUnitText}>m/s²</Text>
               </View>
             </View>
 
             {/* Real-time Rolling Waveform Chart */}
             <View style={styles.sensorChartContainer}>
               <Svg width={160} height={70} viewBox="0 0 160 70">
-                {/* Horizontal grid guide */}
-                <Line x1="25" y1="35" x2="160" y2="35" stroke="rgba(255, 255, 255, 0.05)" strokeWidth="1" strokeDasharray="3 3" />
-                <SvgText style={styles.chartAxisTick} x="6" y="14">2</SvgText>
-                <SvgText style={styles.chartAxisTick} x="6" y="40">0</SvgText>
-                <SvgText style={styles.chartAxisTick} x="6" y="66">-2</SvgText>
+                {/* Vertical axis line */}
+                <Line x1="22" y1="5" x2="22" y2="65" stroke="rgba(255, 255, 255, 0.12)" strokeWidth="1" />
                 
-                {/* Paths representing histories (scale factor 8) */}
-                <Path d={getPathData(accelHistory.x, 8, 70)} stroke="#06b6d4" strokeWidth="2" strokeOpacity={0.8} fill="none" />
-                <Path d={getPathData(accelHistory.y, 8, 70)} stroke="#84cc16" strokeWidth="1.5" strokeOpacity={0.85} fill="none" />
-                <Path d={getPathData(accelHistory.z.length > 0 ? accelHistory.z.map(z => z - 9.81) : [], 8, 70)} stroke="#eab308" strokeWidth="1" strokeOpacity={0.9} fill="none" />
+                {/* Horizontal grid guides - aligned to left X, Y, Z rows */}
+                <Line x1="22" y1="9" x2="160" y2="9" stroke="rgba(255, 255, 255, 0.1)" strokeWidth="1" strokeDasharray="3 3" />
+                <Line x1="22" y1="35" x2="160" y2="35" stroke="rgba(255, 255, 255, 0.15)" strokeWidth="1" strokeDasharray="3 3" />
+                <Line x1="22" y1="61" x2="160" y2="61" stroke="rgba(255, 255, 255, 0.1)" strokeWidth="1" strokeDasharray="3 3" />
+                
+                {/* Y-Axis tick labels right-aligned to axis line (offset for text baseline centering) */}
+                <SvgText style={styles.chartAxisTick} x="16" y="13" textAnchor="end">2</SvgText>
+                <SvgText style={styles.chartAxisTick} x="16" y="39" textAnchor="end">0</SvgText>
+                <SvgText style={styles.chartAxisTick} x="16" y="65" textAnchor="end">-2</SvgText>
+                
+                {/* Paths representing histories (scale factor 13 to map 2 to y=9 and -2 to y=61) */}
+                <Path d={getPathData(accelHistory.x, 13, 70)} stroke="#06b6d4" strokeWidth="2" strokeOpacity={0.8} fill="none" />
+                <Path d={getPathData(accelHistory.y, 13, 70)} stroke="#84cc16" strokeWidth="1.5" strokeOpacity={0.85} fill="none" />
+                <Path d={getPathData(accelHistory.z.length > 0 ? accelHistory.z.map(z => z - 9.81) : [], 13, 70)} stroke="#eab308" strokeWidth="1" strokeOpacity={0.9} fill="none" />
               </Svg>
             </View>
           </View>
         </View>
 
         {/* Gyroscope Sensor Card */}
-        <View style={styles.sensorCard}>
+        <View style={[
+          styles.sensorCard,
+          activeAlert?.sensor === 'GYROSCOPE' && styles.sensorCardAlert
+        ]}>
           {/* Card Header */}
           <View style={styles.sensorCardHeader}>
             <View style={[styles.sensorIconCircle, { borderColor: 'rgba(34, 197, 94, 0.2)' }]}>
               <MaterialCommunityIcons name="orbit" size={20} color="#84cc16" />
             </View>
-            <Text style={styles.sensorCardTitle}>GYROSCOPE</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.sensorCardTitle}>GYROSCOPE</Text>
+              <Text style={styles.sensorCardSubtitle}>Tracks: Sharp Turns & Phone Usage</Text>
+            </View>
+            <View style={styles.sensorStatusBadge}>
+              <View style={[styles.statusDot, { backgroundColor: gyro ? '#22c55e' : '#64748b' }]} />
+              <Text style={[styles.sensorStatusText, { color: gyro ? '#22c55e' : '#64748b' }]}>
+                {gyro ? 'ACTIVE' : 'OFFLINE'}
+              </Text>
+            </View>
           </View>
+
+          {activeAlert?.sensor === 'GYROSCOPE' && (
+            <View style={styles.alertBanner}>
+              <Feather name="alert-triangle" size={14} color="#ffffff" style={{ marginRight: 6 }} />
+              <Text style={styles.alertBannerText}>{activeAlert.message}</Text>
+            </View>
+          )}
 
           {/* Card Body */}
           <View style={styles.sensorCardBody}>
             <View style={styles.sensorLeftCol}>
               <View style={styles.axisValueRow}>
                 <View style={[styles.axisDot, { backgroundColor: '#06b6d4' }]} />
-                <Text style={styles.axisLabel}>X  <Text style={styles.axisVal}>{gxDeg.toFixed(1)}</Text> °/s</Text>
+                <Text style={styles.axisLabelText}>X</Text>
+                <Text style={styles.axisValText}>{gxDeg.toFixed(1)}</Text>
+                <Text style={styles.axisUnitText}>°/s</Text>
               </View>
               <View style={styles.axisValueRow}>
                 <View style={[styles.axisDot, { backgroundColor: '#84cc16' }]} />
-                <Text style={styles.axisLabel}>Y  <Text style={styles.axisVal}>{gyDeg.toFixed(1)}</Text> °/s</Text>
+                <Text style={styles.axisLabelText}>Y</Text>
+                <Text style={styles.axisValText}>{gyDeg.toFixed(1)}</Text>
+                <Text style={styles.axisUnitText}>°/s</Text>
               </View>
               <View style={styles.axisValueRow}>
                 <View style={[styles.axisDot, { backgroundColor: '#eab308' }]} />
-                <Text style={styles.axisLabel}>Z  <Text style={styles.axisVal}>{gzDeg.toFixed(1)}</Text> °/s</Text>
+                <Text style={styles.axisLabelText}>Z</Text>
+                <Text style={styles.axisValText}>{gzDeg.toFixed(1)}</Text>
+                <Text style={styles.axisUnitText}>°/s</Text>
               </View>
             </View>
 
             {/* Gyro rolling chart (scale factor 0.3) */}
             <View style={styles.sensorChartContainer}>
               <Svg width={160} height={70} viewBox="0 0 160 70">
-                <Line x1="25" y1="35" x2="160" y2="35" stroke="rgba(255, 255, 255, 0.05)" strokeWidth="1" strokeDasharray="3 3" />
-                <SvgText style={styles.chartAxisTick} x="6" y="14">2</SvgText>
-                <SvgText style={styles.chartAxisTick} x="6" y="40">0</SvgText>
-                <SvgText style={styles.chartAxisTick} x="6" y="66">-2</SvgText>
+                {/* Vertical axis line */}
+                <Line x1="22" y1="5" x2="22" y2="65" stroke="rgba(255, 255, 255, 0.12)" strokeWidth="1" />
+                
+                {/* Horizontal grid guides */}
+                <Line x1="22" y1="9" x2="160" y2="9" stroke="rgba(255, 255, 255, 0.1)" strokeWidth="1" strokeDasharray="3 3" />
+                <Line x1="22" y1="35" x2="160" y2="35" stroke="rgba(255, 255, 255, 0.15)" strokeWidth="1" strokeDasharray="3 3" />
+                <Line x1="22" y1="61" x2="160" y2="61" stroke="rgba(255, 255, 255, 0.1)" strokeWidth="1" strokeDasharray="3 3" />
+                
+                {/* Y-Axis tick labels right-aligned to axis line (offset for text baseline centering) */}
+                <SvgText style={styles.chartAxisTick} x="16" y="13" textAnchor="end">80</SvgText>
+                <SvgText style={styles.chartAxisTick} x="16" y="39" textAnchor="end">0</SvgText>
+                <SvgText style={styles.chartAxisTick} x="16" y="65" textAnchor="end">-80</SvgText>
 
-                <Path d={getPathData(gyroHistory.x, 0.3, 70)} stroke="#06b6d4" strokeWidth="2" strokeOpacity={0.8} fill="none" />
-                <Path d={getPathData(gyroHistory.y, 0.3, 70)} stroke="#84cc16" strokeWidth="1.5" strokeOpacity={0.85} fill="none" />
-                <Path d={getPathData(gyroHistory.z, 0.3, 70)} stroke="#eab308" strokeWidth="1" strokeOpacity={0.9} fill="none" />
+                <Path d={getPathData(gyroHistory.x, 0.325, 70)} stroke="#06b6d4" strokeWidth="2" strokeOpacity={0.8} fill="none" />
+                <Path d={getPathData(gyroHistory.y, 0.325, 70)} stroke="#84cc16" strokeWidth="1.5" strokeOpacity={0.85} fill="none" />
+                <Path d={getPathData(gyroHistory.z, 0.325, 70)} stroke="#eab308" strokeWidth="1" strokeOpacity={0.9} fill="none" />
               </Svg>
             </View>
           </View>
@@ -558,7 +698,16 @@ export default function LiveAnalyticsScreen() {
                 <View style={[styles.sensorIconCircle, { borderColor: 'rgba(234, 179, 8, 0.2)', backgroundColor: 'rgba(234, 179, 8, 0.05)' }]}>
                   <MaterialCommunityIcons name="compass-outline" size={20} color="#eab308" />
                 </View>
-                <Text style={styles.sensorCardTitle}>MAGNETOMETER</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.sensorCardTitle}>MAGNETOMETER</Text>
+                  <Text style={styles.sensorCardSubtitle}>Tracks: Heading & Heading Fallbacks</Text>
+                </View>
+                <View style={styles.sensorStatusBadge}>
+                  <View style={[styles.statusDot, { backgroundColor: magneto ? '#22c55e' : '#64748b' }]} />
+                  <Text style={[styles.sensorStatusText, { color: magneto ? '#22c55e' : '#64748b' }]}>
+                    {magneto ? 'ACTIVE' : 'OFFLINE'}
+                  </Text>
+                </View>
               </View>
 
               {/* Card Body */}
@@ -566,20 +715,47 @@ export default function LiveAnalyticsScreen() {
                 <View style={[styles.sensorLeftCol, { width: '35%' }]}>
                   <View style={styles.axisValueRow}>
                     <View style={[styles.axisDot, { backgroundColor: '#06b6d4' }]} />
-                    <Text style={styles.axisLabel}>X  <Text style={styles.axisVal}>{mx.toFixed(1)}</Text> µT</Text>
+                    <Text style={styles.axisLabelText}>X</Text>
+                    <Text style={styles.axisValText}>{mx.toFixed(1)}</Text>
+                    <Text style={styles.axisUnitText}>µT</Text>
                   </View>
                   <View style={styles.axisValueRow}>
                     <View style={[styles.axisDot, { backgroundColor: '#84cc16' }]} />
-                    <Text style={styles.axisLabel}>Y  <Text style={styles.axisVal}>{my.toFixed(1)}</Text> µT</Text>
+                    <Text style={styles.axisLabelText}>Y</Text>
+                    <Text style={styles.axisValText}>{my.toFixed(1)}</Text>
+                    <Text style={styles.axisUnitText}>µT</Text>
                   </View>
                   <View style={styles.axisValueRow}>
                     <View style={[styles.axisDot, { backgroundColor: '#eab308' }]} />
-                    <Text style={styles.axisLabel}>Z  <Text style={styles.axisVal}>{mz.toFixed(1)}</Text> µT</Text>
+                    <Text style={styles.axisLabelText}>Z</Text>
+                    <Text style={styles.axisValText}>{mz.toFixed(1)}</Text>
+                    <Text style={styles.axisUnitText}>µT</Text>
                   </View>
                 </View>
 
-                {/* Dynamic SVG Compass Dial */}
-                <View style={{ width: '25%', alignItems: 'center', justifyContent: 'center' }}>
+                {/* Magnetometer rolling chart - placed in middle next to left column for axis tick alignment */}
+                <View style={[styles.sensorChartContainer, { width: '38%', alignItems: 'flex-start' }]}>
+                  <Svg width={120} height={70} viewBox="0 0 120 70">
+                    {/* Vertical axis line */}
+                    <Line x1="22" y1="5" x2="22" y2="65" stroke="rgba(255, 255, 255, 0.12)" strokeWidth="1" />
+                    
+                    {/* Horizontal grid guides */}
+                    <Line x1="22" y1="9" x2="120" y2="9" stroke="rgba(255, 255, 255, 0.1)" strokeWidth="1" strokeDasharray="3 3" />
+                    <Line x1="22" y1="35" x2="120" y2="35" stroke="rgba(255, 255, 255, 0.15)" strokeWidth="1" strokeDasharray="3 3" />
+                    <Line x1="22" y1="61" x2="120" y2="61" stroke="rgba(255, 255, 255, 0.1)" strokeWidth="1" strokeDasharray="3 3" />
+                    
+                    {/* Y-Axis tick labels right-aligned to axis line (offset for text baseline centering) */}
+                    <SvgText style={styles.chartAxisTick} x="16" y="13" textAnchor="end">50</SvgText>
+                    <SvgText style={styles.chartAxisTick} x="16" y="39" textAnchor="end">0</SvgText>
+                    <SvgText style={styles.chartAxisTick} x="16" y="65" textAnchor="end">-50</SvgText>
+                    <Path d={getPathData(magnetoHistory.x, 0.52, 70, 120)} stroke="#06b6d4" strokeWidth="2" strokeOpacity={0.8} fill="none" />
+                    <Path d={getPathData(magnetoHistory.y, 0.52, 70, 120)} stroke="#84cc16" strokeWidth="1.5" strokeOpacity={0.85} fill="none" />
+                    <Path d={getPathData(magnetoHistory.z, 0.52, 70, 120)} stroke="#eab308" strokeWidth="1" strokeOpacity={0.9} fill="none" />
+                  </Svg>
+                </View>
+
+                {/* Dynamic SVG Compass Dial - placed on right side */}
+                <View style={{ width: '25%', alignItems: 'flex-end', justifyContent: 'center' }}>
                   <Svg width={52} height={52} viewBox="0 0 80 80">
                     <Circle cx="40" cy="40" r="32" stroke={colors.border} strokeWidth="2.5" fill={colors.background} />
                     <SvgText x="40" y="16" fill="#64748b" fontSize="9" fontWeight="bold" textAnchor="middle">N</SvgText>
@@ -592,19 +768,9 @@ export default function LiveAnalyticsScreen() {
                       <Circle cx="40" cy="40" r="3.5" fill="#ffffff" />
                     </G>
                   </Svg>
-                  <Text style={{ color: '#eab308', fontSize: 9, fontWeight: 'bold', marginTop: 4 }}>
+                  <Text style={{ color: '#eab308', fontSize: 9, fontWeight: 'bold', marginTop: 4, textAlign: 'center', width: '100%' }}>
                     {normalizedHeading}° {cardinal}
                   </Text>
-                </View>
-
-                {/* Magnetometer rolling chart */}
-                <View style={[styles.sensorChartContainer, { width: '38%' }]}>
-                  <Svg width={120} height={70} viewBox="0 0 160 70">
-                    <Line x1="25" y1="35" x2="160" y2="35" stroke="rgba(255, 255, 255, 0.05)" strokeWidth="1" strokeDasharray="3 3" />
-                    <Path d={getPathData(magnetoHistory.x, 0.3, 70)} stroke="#06b6d4" strokeWidth="2" strokeOpacity={0.8} fill="none" />
-                    <Path d={getPathData(magnetoHistory.y, 0.3, 70)} stroke="#84cc16" strokeWidth="1.5" strokeOpacity={0.85} fill="none" />
-                    <Path d={getPathData(magnetoHistory.z, 0.3, 70)} stroke="#eab308" strokeWidth="1" strokeOpacity={0.9} fill="none" />
-                  </Svg>
                 </View>
               </View>
             </View>
@@ -612,8 +778,29 @@ export default function LiveAnalyticsScreen() {
         })()}
 
         {/* G-FORCE Section */}
-        <View style={styles.gForceCard}>
-          <Text style={styles.gForceHeader}>G-FORCE</Text>
+        <View style={[
+          styles.gForceCard,
+          activeAlert?.sensor === 'DEVICEMOTION' && styles.sensorCardAlert
+        ]}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.gForceHeader}>G-FORCE</Text>
+              <Text style={styles.gForceSubtitle}>Tracks: Lat/Long/Vert Acceleration Gs</Text>
+            </View>
+            <View style={[styles.sensorStatusBadge, { marginTop: -4 }]}>
+              <View style={[styles.statusDot, { backgroundColor: accel ? '#22c55e' : '#64748b' }]} />
+              <Text style={[styles.sensorStatusText, { color: accel ? '#22c55e' : '#64748b' }]}>
+                {accel ? 'ACTIVE' : 'OFFLINE'}
+              </Text>
+            </View>
+          </View>
+
+          {activeAlert?.sensor === 'DEVICEMOTION' && (
+            <View style={[styles.alertBanner, { marginBottom: 14 }]}>
+              <Feather name="alert-triangle" size={14} color="#ffffff" style={{ marginRight: 6 }} />
+              <Text style={styles.alertBannerText}>{activeAlert.message}</Text>
+            </View>
+          )}
           
           <View style={styles.gForceRow}>
             {/* Crosshair radar logo */}
@@ -684,8 +871,29 @@ export default function LiveAnalyticsScreen() {
         </View>
 
         {/* Device Motion Diagnostics Card */}
-        <View style={styles.gForceCard}>
-          <Text style={styles.gForceHeader}>DEVICE MOTION DIAGNOSTICS</Text>
+        <View style={[
+          styles.gForceCard,
+          activeAlert?.sensor === 'DEVICEMOTION' && styles.sensorCardAlert
+        ]}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.gForceHeader}>DEVICE MOTION DIAGNOSTICS</Text>
+              <Text style={styles.gForceSubtitle}>Tracks: Harsh Braking, Acceleration & Shakes</Text>
+            </View>
+            <View style={[styles.sensorStatusBadge, { marginTop: -4 }]}>
+              <View style={[styles.statusDot, { backgroundColor: dm ? '#22c55e' : '#64748b' }]} />
+              <Text style={[styles.sensorStatusText, { color: dm ? '#22c55e' : '#64748b' }]}>
+                {dm ? 'ACTIVE' : 'OFFLINE'}
+              </Text>
+            </View>
+          </View>
+
+          {activeAlert?.sensor === 'DEVICEMOTION' && (
+            <View style={[styles.alertBanner, { marginBottom: 14 }]}>
+              <Feather name="alert-triangle" size={14} color="#ffffff" style={{ marginRight: 6 }} />
+              <Text style={styles.alertBannerText}>{activeAlert.message}</Text>
+            </View>
+          )}
           
           <View style={styles.dmRow}>
             {/* 1. Attitude / Horizon indicator */}
@@ -761,12 +969,20 @@ export default function LiveAnalyticsScreen() {
         </View>
 
         {/* MAP PREVIEW Section */}
-        <View style={styles.mapCard}>
+        <View style={[
+          styles.mapCard,
+          activeAlert?.sensor === 'GPS' && styles.sensorCardAlert
+        ]}>
           <View style={styles.mapHeaderRow}>
-            <Text style={styles.mapTitle}>MAP PREVIEW</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.mapTitle}>MAP PREVIEW</Text>
+              <Text style={styles.mapSubtitle}>Tracks: Speeding & Route Tracking</Text>
+            </View>
             <View style={styles.liveLocationContainer}>
               <View style={styles.blueLocationDot} />
-              <Text style={styles.liveLocationText}>Live Location</Text>
+              <Text style={styles.liveLocationText}>
+                {localLocation || (currentSession && currentSession.route.length > 0) ? 'GPS ACTIVE' : 'GPS SEARCHING'}
+              </Text>
             </View>
           </View>
 
@@ -1047,6 +1263,61 @@ function getStyles(colors: any, isDark: boolean) {
       fontWeight: 'bold',
       letterSpacing: 0.8,
     },
+    sensorCardSubtitle: {
+      color: colors.textMuted,
+      fontSize: 8.5,
+      marginTop: 2,
+    },
+    sensorStatusBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.background,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 12,
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+    },
+    sensorStatusText: {
+      fontSize: 8,
+      fontWeight: 'bold',
+      marginLeft: 4,
+    },
+    gForceSubtitle: {
+      color: colors.textMuted,
+      fontSize: 8.5,
+      marginTop: 2,
+      marginBottom: 10,
+    },
+    mapSubtitle: {
+      color: colors.textMuted,
+      fontSize: 8.5,
+      marginTop: 2,
+    },
+    sensorCardAlert: {
+      borderColor: '#ef4444',
+      borderWidth: 1.5,
+      shadowColor: '#ef4444',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.4,
+      shadowRadius: 8,
+      elevation: 6,
+    },
+    alertBanner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: '#ef4444',
+      borderRadius: 8,
+      paddingVertical: 6,
+      paddingHorizontal: 10,
+      marginBottom: 10,
+    },
+    alertBannerText: {
+      color: '#ffffff',
+      fontSize: 10,
+      fontWeight: 'bold',
+      letterSpacing: 0.5,
+    },
     axisValueRow: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -1067,6 +1338,26 @@ function getStyles(colors: any, isDark: boolean) {
       fontSize: 13,
       fontWeight: 'bold',
     },
+    axisLabelText: {
+      color: colors.textMuted,
+      fontSize: 11,
+      fontWeight: 'bold',
+      width: 14,
+    },
+    axisValText: {
+      color: colors.text,
+      fontSize: 13,
+      fontWeight: 'bold',
+      fontVariant: ['tabular-nums'],
+      width: 48,
+      textAlign: 'right',
+      marginRight: 6,
+    },
+    axisUnitText: {
+      color: colors.textMuted,
+      fontSize: 10,
+      width: 32,
+    },
     sensorChartContainer: {
       width: '52%',
       height: 70,
@@ -1075,7 +1366,7 @@ function getStyles(colors: any, isDark: boolean) {
     },
     chartAxisTick: {
       fill: colors.textSlate,
-      fontSize: 9,
+      fontSize: 11,
       fontWeight: 'bold',
     },
 

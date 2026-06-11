@@ -205,7 +205,7 @@ export default function ReportsScreen() {
 
     // If database has drives, and we are viewing the latest report, we can dynamically override the stats!
     // This connects it beautifully to actual user telemetry.
-    if (dbDrives.length > 5 && activeIdx === 0) {
+    if (dbDrives.length > 0 && activeIdx === 0) {
       const dbScores = dbDrives.map(d => d.score);
       const avgDbScore = Math.round(dbScores.reduce((acc, s) => acc + s, 0) / dbScores.length);
       const rating = avgDbScore >= 90 ? 'Excellent' : avgDbScore >= 70 ? 'Good' : avgDbScore >= 60 ? 'Fair' : 'Poor';
@@ -222,6 +222,12 @@ export default function ReportsScreen() {
         while (trendPoints.length < 7) {
           trendPoints.unshift(70); // fill up to 7 items
         }
+      } else {
+        const last5Drives = [...dbDrives].slice(0, 5).reverse();
+        trendPoints = last5Drives.map(d => d.score);
+        while (trendPoints.length < 5) {
+          trendPoints.unshift(75); // fill up to 5 items
+        }
       }
 
       // Map top drives
@@ -237,14 +243,101 @@ export default function ReportsScreen() {
           duration: formatHHMMSS(d.duration)
         }));
 
+      // Calculate events dynamically from dbDrives
+      let harshBrakesCount = 0;
+      let sharpTurnsCount = 0;
+      let phoneUsageCount = 0;
+      let phoneUsageDurationSec = 0;
+      let steeringCount = 0;
+      let overspeedingCount = 0;
+
+      dbDrives.forEach(d => {
+        if (d.events) {
+          d.events.forEach(e => {
+            if (e.type === 'HARSH_BRAKE') harshBrakesCount++;
+            else if (e.type === 'SHARP_TURN') sharpTurnsCount++;
+            else if (e.type === 'PHONE_USAGE') {
+              phoneUsageCount++;
+              phoneUsageDurationSec += (e.duration || 0);
+            }
+            else if (e.type === 'AGGRESSIVE_STEERING') steeringCount++;
+            else if (e.type === 'OVERSPEEDING') overspeedingCount++;
+          });
+        }
+      });
+
+      // Calculate dynamic distribution
+      let highwayCount = 0;
+      let cityCount = 0;
+      let suburbanCount = 0;
+      let nightCount = 0;
+
+      dbDrives.forEach(d => {
+        const avgSpeed = d.duration > 0 ? (d.distance / d.duration) * 3.6 : 0;
+        const hour = dayjs(d.startTime).hour();
+        const isNight = hour >= 20 || hour < 6;
+
+        if (isNight) {
+          nightCount++;
+        } else if (avgSpeed > 60) {
+          highwayCount++;
+        } else if (avgSpeed > 35) {
+          suburbanCount++;
+        } else {
+          cityCount++;
+        }
+      });
+
+      const totalDrivesCount = dbDrives.length || 1;
+      const highwayPct = Math.round((highwayCount / totalDrivesCount) * 100);
+      const cityPct = Math.round((cityCount / totalDrivesCount) * 100);
+      const suburbanPct = Math.round((suburbanCount / totalDrivesCount) * 100);
+      const nightPct = 100 - (highwayPct + cityPct + suburbanPct); // Ensure sum is exactly 100
+
+      // Calculate dynamic sub-scores
+      const total = dbDrives.length || 1;
+      const brakingScore = Math.max(50, Math.round(100 - (harshBrakesCount / total) * 10));
+      const steeringScore = Math.max(50, Math.round(100 - (steeringCount / total) * 15));
+      const speedScore = Math.max(50, Math.round(100 - (overspeedingCount / total) * 20));
+      const phoneScore = Math.max(50, Math.round(100 - (phoneUsageCount / total) * 15));
+
+      // Dynamic Date Range
+      const dynamicDateRange = reportType === 'weekly'
+        ? `${dayjs().subtract(6, 'day').format('MMM D')} – ${dayjs().format('MMM D, YYYY')}`
+        : dayjs().format('MMMM YYYY');
+
       return {
         ...mockReport,
+        dateRange: dynamicDateRange,
         avgScore: avgDbScore,
         avgScoreRating: rating,
         totalDrives: dbDrives.length,
         totalDistance: totalDistanceVal,
         totalDuration: `${totalDurationHrs}h ${totalDurationMins}m`,
         trendPoints,
+        events: {
+          harshBrakes: harshBrakesCount,
+          harshBrakesDiff: harshBrakesCount > 0 ? '↑' : '↓ 0',
+          sharpTurns: sharpTurnsCount,
+          sharpTurnsDiff: sharpTurnsCount > 0 ? '↑' : '↓ 0',
+          phoneUsage: phoneUsageCount,
+          phoneUsageSec: phoneUsageDurationSec,
+          phoneUsageDiff: phoneUsageCount > 0 ? '↑' : '↓ 0',
+          steering: steeringCount,
+          steeringDiff: steeringCount > 0 ? '↑' : '↓ 0'
+        },
+        distribution: {
+          highway: { count: highwayCount, pct: highwayPct },
+          city: { count: cityCount, pct: cityPct },
+          suburban: { count: suburbanCount, pct: suburbanPct },
+          night: { count: nightCount, pct: Math.max(0, nightPct) }
+        },
+        improvements: {
+          braking: brakingScore,
+          steering: steeringScore,
+          speed: speedScore,
+          phone: phoneScore
+        },
         topDrives: topDrives.length > 0 ? topDrives : mockReport.topDrives
       };
     }

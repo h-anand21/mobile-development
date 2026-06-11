@@ -6,11 +6,9 @@ import Svg, { Circle, Path, Polygon, Ellipse } from 'react-native-svg';
 import { useRouter } from 'expo-router';
 import { driveRepository } from '../src/database/repositories/driveRepository';
 import { useAppTheme } from '../src/ui/theme';
+import dayjs from 'dayjs';
 
 const { width } = Dimensions.get('window');
-
-// 3-Column Card Width Math
-const cardWidth = (width - 40 - 16) / 3;
 
 // Mock Achievement List Data
 const INITIAL_ACHIEVEMENTS = [
@@ -20,7 +18,7 @@ const INITIAL_ACHIEVEMENTS = [
     title: 'Safe Driver',
     desc: 'Drive 10 safe drives without any harsh events',
     points: 100,
-    status: 'COMPLETED',
+    status: 'LOCKED',
     icon: <Feather name="check" size={18} color="#22c55e" />,
     color: '#22c55e'
   },
@@ -30,7 +28,7 @@ const INITIAL_ACHIEVEMENTS = [
     title: '100 KM Explorer',
     desc: 'Drive 100 kilometers in total',
     points: 150,
-    status: 'COMPLETED',
+    status: 'LOCKED',
     icon: (
       <View style={{ alignItems: 'center', justifyContent: 'center' }}>
         <Text style={{ color: '#00f5ff', fontSize: 9, fontWeight: '900', lineHeight: 9, textAlign: 'center' }}>100</Text>
@@ -45,7 +43,7 @@ const INITIAL_ACHIEVEMENTS = [
     title: '30 Safe Drives',
     desc: 'Complete 30 safe drives with good score',
     points: 200,
-    status: 'COMPLETED',
+    status: 'LOCKED',
     icon: <MaterialCommunityIcons name="steering" size={16} color="#a855f7" />,
     color: '#a855f7'
   },
@@ -55,9 +53,7 @@ const INITIAL_ACHIEVEMENTS = [
     title: 'Speed Master',
     desc: 'Maintain average speed below 60 km/h for 5 drives',
     points: 120,
-    status: 'PROGRESS',
-    current: 3,
-    total: 5,
+    status: 'LOCKED',
     icon: <MaterialCommunityIcons name="speedometer" size={18} color="#eab308" />,
     color: '#eab308'
   },
@@ -67,9 +63,7 @@ const INITIAL_ACHIEVEMENTS = [
     title: 'Eco Driver',
     desc: 'Drive 50 km with smooth acceleration',
     points: 150,
-    status: 'PROGRESS',
-    current: 32,
-    total: 50,
+    status: 'LOCKED',
     icon: <MaterialCommunityIcons name="leaf" size={16} color="#84cc16" />,
     color: '#84cc16'
   },
@@ -79,9 +73,7 @@ const INITIAL_ACHIEVEMENTS = [
     title: 'Night Rider',
     desc: 'Complete 10 night drives safely',
     points: 100,
-    status: 'PROGRESS',
-    current: 6,
-    total: 10,
+    status: 'LOCKED',
     icon: <Feather name="moon" size={16} color="#3b82f6" />,
     color: '#3b82f6'
   },
@@ -93,7 +85,7 @@ const INITIAL_ACHIEVEMENTS = [
     points: 250,
     status: 'LOCKED',
     icon: (
-      <View style={{ alignItems: 'center', justifyContent: 'center', opacity: 0.4 }}>
+      <View style={{ alignItems: 'center', justifyContent: 'center' }}>
         <Text style={{ color: '#94a3b8', fontSize: 9, fontWeight: '900', lineHeight: 9, textAlign: 'center' }}>500</Text>
         <Text style={{ color: '#94a3b8', fontSize: 7, fontWeight: '700', lineHeight: 7, textAlign: 'center' }}>KM</Text>
       </View>
@@ -107,8 +99,8 @@ const INITIAL_ACHIEVEMENTS = [
     desc: 'Maintain a 7-day safe driving streak',
     points: 200,
     status: 'LOCKED',
-    icon: <Feather name="users" size={16} color="#94a3b8" style={{ opacity: 0.4 }} />,
-    color: '#64748b'
+    icon: <MaterialCommunityIcons name="fire" size={16} color="#f97316" />,
+    color: '#f97316'
   },
   {
     id: '9',
@@ -117,10 +109,44 @@ const INITIAL_ACHIEVEMENTS = [
     desc: 'Get 7 safe drives in a single week',
     points: 300,
     status: 'LOCKED',
-    icon: <FontAwesome5 name="trophy" size={16} color="#94a3b8" style={{ opacity: 0.4 }} />,
-    color: '#64748b'
+    icon: <FontAwesome5 name="trophy" size={16} color="#eab308" />,
+    color: '#eab308'
   }
 ];
+
+const LEVEL_THRESHOLDS = [
+  { level: 1, name: 'Rookie Driver', minXp: 0, maxXp: 1000 },
+  { level: 2, name: 'Safe Commuter', minXp: 1000, maxXp: 2500 },
+  { level: 3, name: 'Skilled Cruiser', minXp: 2500, maxXp: 5000 },
+  { level: 4, name: 'Confident Driver', minXp: 5000, maxXp: 8000 },
+  { level: 5, name: 'Road Master', minXp: 8000, maxXp: 12000 },
+  { level: 6, name: 'Safety Legend', minXp: 12000, maxXp: 99999999 }
+];
+
+export function getLevelInfo(totalXp: number) {
+  for (let i = 0; i < LEVEL_THRESHOLDS.length; i++) {
+    const t = LEVEL_THRESHOLDS[i];
+    if (totalXp >= t.minXp && totalXp < t.maxXp) {
+      const xpInLevel = totalXp - t.minXp;
+      const xpRequiredForNext = t.maxXp - t.minXp;
+      const progressPct = (xpInLevel / xpRequiredForNext) * 100;
+      return {
+        level: t.level,
+        name: t.name,
+        xpInLevel,
+        xpRequiredForNext,
+        progressPct: Math.min(100, Math.max(0, progressPct))
+      };
+    }
+  }
+  return {
+    level: 6,
+    name: 'Safety Legend',
+    xpInLevel: totalXp - 12000,
+    xpRequiredForNext: 5000,
+    progressPct: Math.min(100, ((totalXp - 12000) / 5000) * 100)
+  };
+}
 
 export default function AchievementsScreen() {
   const router = useRouter();
@@ -161,39 +187,106 @@ export default function AchievementsScreen() {
   // Load drives from DB to dynamically calculate if some completed achievements can unlock
   const dbDrives = driveRepository.getAllDrives();
 
-  // Combine DB logic to unlock achievements
-  const achievementsList = useMemo(() => {
-    const list = [...INITIAL_ACHIEVEMENTS];
-    
-    if (dbDrives.length > 0) {
-      const dbDistance = dbDrives.reduce((acc, d) => acc + d.distance, 0);
-      
-      // Update 100 KM Explorer Explorer
-      const explorer = list.find(a => a.id === '2');
-      if (explorer) {
-        const km = dbDistance / 1000;
-        if (km >= 100) {
-          explorer.status = 'COMPLETED';
-        } else {
-          explorer.status = 'PROGRESS';
-          explorer.current = Math.round(km);
-          explorer.total = 100;
-        }
-      }
+  // Helper values for calculations
+  const totalDistanceKm = useMemo(() => dbDrives.reduce((acc, d) => acc + d.distance, 0) / 1000, [dbDrives]);
+  const safeDrivesCount = useMemo(() => dbDrives.filter(d => !d.events || d.events.length === 0).length, [dbDrives]);
+  const goodDrivesCount = useMemo(() => dbDrives.filter(d => d.score >= 85).length, [dbDrives]);
+  
+  const lowSpeedDrives = useMemo(() => dbDrives.filter(d => {
+    const avgSpeed = d.duration > 0 ? (d.distance / d.duration) * 3.6 : 0;
+    return avgSpeed > 0 && avgSpeed < 60;
+  }).length, [dbDrives]);
 
-      // Update 500 KM Journey
-      const journey = list.find(a => a.id === '7');
-      if (journey) {
-        const km = dbDistance / 1000;
-        if (km >= 500) {
-          journey.status = 'COMPLETED';
-        } else {
-          journey.status = 'LOCKED';
-          journey.current = Math.round(km);
-          journey.total = 500;
+  const ecoKm = useMemo(() => dbDrives
+    .filter(d => d.score >= 90)
+    .reduce((acc, d) => acc + d.distance, 0) / 1000, [dbDrives]);
+
+  const nightDrives = useMemo(() => dbDrives.filter(d => {
+    const hour = dayjs(d.startTime).hour();
+    const isNight = hour >= 20 || hour < 6;
+    return isNight && d.score >= 80;
+  }).length, [dbDrives]);
+
+  // Streak Calculation
+  const currentStreak = useMemo(() => {
+    const safeDriveDates = Array.from(new Set(
+      dbDrives
+        .filter(d => d.score >= 80)
+        .map(d => dayjs(d.startTime).format('YYYY-MM-DD'))
+    )).sort().reverse();
+
+    if (safeDriveDates.length > 0) {
+      let checkDate = dayjs();
+      const hasToday = safeDriveDates.includes(checkDate.format('YYYY-MM-DD'));
+      const hasYesterday = safeDriveDates.includes(checkDate.subtract(1, 'day').format('YYYY-MM-DD'));
+      
+      if (hasToday || hasYesterday) {
+        let streak = 1;
+        let indexDate = hasToday ? checkDate : checkDate.subtract(1, 'day');
+        while (true) {
+          indexDate = indexDate.subtract(1, 'day');
+          if (safeDriveDates.includes(indexDate.format('YYYY-MM-DD'))) {
+            streak++;
+          } else {
+            break;
+          }
         }
+        return streak;
       }
     }
+    return 0;
+  }, [dbDrives]);
+
+  const thisWeekSafeDrives = useMemo(() => {
+    const startOfWeek = dayjs().startOf('week').valueOf();
+    return dbDrives.filter(d => d.startTime >= startOfWeek && d.score >= 90).length;
+  }, [dbDrives]);
+
+  // Combine DB logic to unlock achievements
+  const achievementsList = useMemo(() => {
+    // Deep clone INITIAL_ACHIEVEMENTS to avoid mutating original objects
+    const list = INITIAL_ACHIEVEMENTS.map(item => ({ ...item, current: 0, total: 1 }));
+    
+    // Apply calculations to list items
+    list.forEach(a => {
+      if (a.id === '1') {
+        a.current = safeDrivesCount;
+        a.total = 10;
+        a.status = safeDrivesCount >= 10 ? 'COMPLETED' : safeDrivesCount > 0 ? 'PROGRESS' : 'LOCKED';
+      } else if (a.id === '2') {
+        a.current = Math.round(totalDistanceKm);
+        a.total = 100;
+        a.status = totalDistanceKm >= 100 ? 'COMPLETED' : totalDistanceKm > 0 ? 'PROGRESS' : 'LOCKED';
+      } else if (a.id === '3') {
+        a.current = goodDrivesCount;
+        a.total = 30;
+        a.status = goodDrivesCount >= 30 ? 'COMPLETED' : goodDrivesCount > 0 ? 'PROGRESS' : 'LOCKED';
+      } else if (a.id === '4') {
+        a.current = lowSpeedDrives;
+        a.total = 5;
+        a.status = lowSpeedDrives >= 5 ? 'COMPLETED' : lowSpeedDrives > 0 ? 'PROGRESS' : 'LOCKED';
+      } else if (a.id === '5') {
+        a.current = Math.round(ecoKm);
+        a.total = 50;
+        a.status = ecoKm >= 50 ? 'COMPLETED' : ecoKm > 0 ? 'PROGRESS' : 'LOCKED';
+      } else if (a.id === '6') {
+        a.current = nightDrives;
+        a.total = 10;
+        a.status = nightDrives >= 10 ? 'COMPLETED' : nightDrives > 0 ? 'PROGRESS' : 'LOCKED';
+      } else if (a.id === '7') {
+        a.current = Math.round(totalDistanceKm);
+        a.total = 500;
+        a.status = totalDistanceKm >= 500 ? 'COMPLETED' : totalDistanceKm > 0 ? 'PROGRESS' : 'LOCKED';
+      } else if (a.id === '8') {
+        a.current = currentStreak;
+        a.total = 7;
+        a.status = currentStreak >= 7 ? 'COMPLETED' : currentStreak > 0 ? 'PROGRESS' : 'LOCKED';
+      } else if (a.id === '9') {
+        a.current = thisWeekSafeDrives;
+        a.total = 7;
+        a.status = thisWeekSafeDrives >= 7 ? 'COMPLETED' : thisWeekSafeDrives > 0 ? 'PROGRESS' : 'LOCKED';
+      }
+    });
 
     // Filter by Tab
     let filtered = list;
@@ -213,11 +306,58 @@ export default function AchievementsScreen() {
     }
 
     return filtered;
-  }, [activeTab, sortBy, dbDrives]);
+  }, [activeTab, sortBy, totalDistanceKm, safeDrivesCount, goodDrivesCount, lowSpeedDrives, ecoKm, nightDrives, currentStreak, thisWeekSafeDrives]);
 
-  const unlockedCount = useMemo(() => {
-    return INITIAL_ACHIEVEMENTS.filter(a => a.status === 'COMPLETED').length;
-  }, []);
+  // Leveling and XP logic computed dynamically
+  const { totalXp, levelInfo, rankStr, unlockedCount } = useMemo(() => {
+    // XP from drives: each drive score * 10 XP
+    const drivesXp = dbDrives.reduce((acc, d) => acc + (d.score * 10), 0);
+    
+    let unlocked = 0;
+    let achievementsXp = 0;
+
+    const checkAndAdd = (condition: boolean, points: number) => {
+      if (condition) {
+        unlocked++;
+        achievementsXp += points;
+      }
+    };
+
+    checkAndAdd(safeDrivesCount >= 10, 100);
+    checkAndAdd(totalDistanceKm >= 100, 150);
+    checkAndAdd(goodDrivesCount >= 30, 200);
+    checkAndAdd(lowSpeedDrives >= 5, 120);
+    checkAndAdd(ecoKm >= 50, 150);
+    checkAndAdd(nightDrives >= 10, 100);
+    checkAndAdd(totalDistanceKm >= 500, 250);
+    checkAndAdd(currentStreak >= 7, 200);
+    checkAndAdd(thisWeekSafeDrives >= 7, 300);
+
+    const totalXpVal = drivesXp + achievementsXp;
+    const info = getLevelInfo(totalXpVal);
+
+    // Rank String
+    const avgScore = dbDrives.length > 0
+      ? Math.round(dbDrives.reduce((acc, d) => acc + d.score, 0) / dbDrives.length)
+      : 80;
+    let rankStrVal = 'Top 95%';
+    if (dbDrives.length > 0) {
+      if (avgScore >= 95) rankStrVal = 'Top 5%';
+      else if (avgScore >= 90) rankStrVal = 'Top 12%';
+      else if (avgScore >= 85) rankStrVal = 'Top 22%';
+      else if (avgScore >= 80) rankStrVal = 'Top 35%';
+      else if (avgScore >= 70) rankStrVal = 'Top 50%';
+      else if (avgScore >= 60) rankStrVal = 'Top 75%';
+      else rankStrVal = 'Top 90%';
+    }
+
+    return {
+      totalXp: totalXpVal,
+      levelInfo: info,
+      rankStr: rankStrVal,
+      unlockedCount: unlocked
+    };
+  }, [dbDrives, totalDistanceKm, safeDrivesCount, goodDrivesCount, lowSpeedDrives, ecoKm, nightDrives, currentStreak, thisWeekSafeDrives]);
 
   return (
     <View style={styles.container}>
@@ -273,22 +413,22 @@ export default function AchievementsScreen() {
             <View style={styles.bannerStatsRow}>
               <View style={styles.bannerStatItem}>
                 <Feather name="shield" size={13} color="#22c55e" style={{ marginBottom: 3 }} />
-                <Text style={styles.bannerStatValue}>18</Text>
+                <Text style={styles.bannerStatValue}>{unlockedCount}</Text>
                 <Text style={styles.bannerStatLabel} numberOfLines={1}>Unlocked</Text>
               </View>
               <View style={styles.bannerStatItem}>
                 <Feather name="star" size={13} color="#eab308" style={{ marginBottom: 3 }} />
-                <Text style={styles.bannerStatValue}>2,450</Text>
-                <Text style={styles.bannerStatLabel} numberOfLines={1}>Total Points</Text>
+                <Text style={styles.bannerStatValue}>{totalXp.toLocaleString()}</Text>
+                <Text style={styles.bannerStatLabel} numberOfLines={1}>Points</Text>
               </View>
               <View style={styles.bannerStatItem}>
                 <MaterialCommunityIcons name="trending-up" size={13} color="#a855f7" style={{ marginBottom: 3 }} />
-                <Text style={styles.bannerStatValue}>Level 4</Text>
-                <Text style={styles.bannerStatLabel} numberOfLines={1}>Confident</Text>
+                <Text style={styles.bannerStatValue}>Level {levelInfo.level}</Text>
+                <Text style={styles.bannerStatLabel} numberOfLines={1}>{levelInfo.name}</Text>
               </View>
               <View style={styles.bannerStatItem}>
                 <Feather name="award" size={13} color="#00f5ff" style={{ marginBottom: 3 }} />
-                <Text style={styles.bannerStatValue}>Top 23%</Text>
+                <Text style={styles.bannerStatValue}>{rankStr}</Text>
                 <Text style={styles.bannerStatLabel} numberOfLines={1}>Drivers Rank</Text>
               </View>
             </View>
@@ -298,18 +438,23 @@ export default function AchievementsScreen() {
         {/* 3. Level Progression Bar */}
         <View style={styles.levelBarCard}>
           <HexagonBadge size={38} color="#84cc16">
-            <Text style={{ color: '#84cc16', fontSize: 13, fontWeight: 'bold' }}>4</Text>
+            <Text style={{ color: '#84cc16', fontSize: 13, fontWeight: 'bold' }}>{levelInfo.level}</Text>
           </HexagonBadge>
           <View style={styles.levelMiddle}>
             <View style={styles.levelTitleRow}>
-              <Text style={styles.levelMainText}>Level 4</Text>
-              <Text style={styles.levelXpText}>2,450 <Text style={{ color: '#64748b', fontWeight: 'normal' }}>/ 3,000 XP</Text></Text>
+              <Text style={styles.levelMainText}>Level {levelInfo.level}</Text>
+              <Text style={styles.levelXpText}>{levelInfo.xpInLevel.toLocaleString()} <Text style={{ color: '#64748b', fontWeight: 'normal' }}>/ {levelInfo.xpRequiredForNext.toLocaleString()} XP</Text></Text>
             </View>
-            <Text style={styles.levelSubText}>Confident Driver</Text>
+            <Text style={styles.levelSubText}>{levelInfo.name}</Text>
             <View style={styles.progressBarBg}>
-              <View style={[styles.progressBarFill, { width: '81.6%' }]} />
+              <View style={[styles.progressBarFill, { width: `${levelInfo.progressPct}%` }]} />
             </View>
-            <Text style={styles.progressBarSub}>550 XP to reach Level 5</Text>
+            <Text style={styles.progressBarSub}>
+              {levelInfo.level < 6 
+                ? `${(levelInfo.xpRequiredForNext - levelInfo.xpInLevel).toLocaleString()} XP to reach Level ${levelInfo.level + 1}`
+                : 'Maximum Level Reached'
+              }
+            </Text>
           </View>
         </View>
 
@@ -337,7 +482,7 @@ export default function AchievementsScreen() {
         <View style={styles.countSortRow}>
           <Text style={styles.unlockedHeading}>
             <Text style={{ color: '#22c55e', fontWeight: '900' }}>{unlockedCount}</Text>
-            <Text style={{ color: '#64748b' }}> / 32 Achievements Unlocked</Text>
+            <Text style={{ color: colors.text }}> / {INITIAL_ACHIEVEMENTS.length} Achievements Unlocked</Text>
           </Text>
 
           <TouchableOpacity style={styles.sortDropdownBtn} onPress={() => setShowSort(!showSort)}>
@@ -363,7 +508,7 @@ export default function AchievementsScreen() {
           </View>
         )}
 
-        {/* 6. Achievements 3-Column Grid */}
+        {/* 6. Achievements Horizontal List */}
         <View style={styles.achievementsGrid}>
           {achievementsList.map((ach) => {
             const isCompleted = ach.status === 'COMPLETED';
@@ -372,43 +517,54 @@ export default function AchievementsScreen() {
 
             return (
               <View key={ach.id} style={[styles.achievementCard, isLocked && styles.lockedCard]}>
-                {/* Hexagon icon */}
-                <HexagonBadge size={40} color={ach.color} isLocked={isLocked}>
-                  {ach.icon}
-                </HexagonBadge>
-
-                {/* Content */}
-                <Text style={[styles.cardTitle, isLocked && { color: '#64748b' }]} numberOfLines={1}>{ach.title}</Text>
-                <Text style={styles.cardDesc} numberOfLines={3}>{ach.desc}</Text>
-
-                {/* Footer status / progress */}
-                <View style={styles.cardFooter}>
-                  {isCompleted && (
-                    <View style={styles.completedBadge}>
-                      <Feather name="check" size={8} color="#22c55e" style={{ marginRight: 2 }} />
-                      <Text style={styles.completedBadgeText}>Completed</Text>
-                    </View>
-                  )}
-                  {isProgress && (
-                    <Text style={[styles.progressRatioText, { color: ach.color }]}>
-                      {ach.current}<Text style={{ color: '#475569' }}>/{ach.total}</Text>
-                    </Text>
-                  )}
-                  {isLocked && (
-                    <View style={styles.lockedBadge}>
-                      <Text style={styles.lockedBadgeText}>Locked</Text>
-                    </View>
-                  )}
-
-                  <Text style={styles.cardXpLabel}>+{ach.points} XP</Text>
+                {/* Left side: Hexagon badge */}
+                <View style={styles.cardLeft}>
+                  <HexagonBadge size={46} color={ach.color} isLocked={isLocked}>
+                    {ach.icon}
+                  </HexagonBadge>
                 </View>
 
-                {/* Thin progress bar for in-progress items */}
-                {isProgress && ach.current !== undefined && ach.total !== undefined && (
-                  <View style={styles.cardProgressBarBg}>
-                    <View style={[styles.cardProgressBarFill, { width: `${(ach.current / ach.total) * 100}%`, backgroundColor: ach.color }]} />
+                {/* Right side: Info */}
+                <View style={styles.cardRight}>
+                  <View style={styles.cardHeaderRow}>
+                    <Text style={[styles.cardTitle, isLocked && styles.lockedTextColor]} numberOfLines={1}>
+                      {ach.title}
+                    </Text>
+                    <View style={[styles.xpBadge, { backgroundColor: isLocked ? colors.border : ach.color + '15', borderColor: isLocked ? colors.border : ach.color + '30' }]}>
+                      <Text style={[styles.xpBadgeText, { color: isLocked ? colors.textSlate : ach.color }]}>+{ach.points} XP</Text>
+                    </View>
                   </View>
-                )}
+
+                  <Text style={styles.cardDesc} numberOfLines={2}>{ach.desc}</Text>
+
+                  {/* Footer progress bar or status badge */}
+                  <View style={styles.cardFooter}>
+                    {isCompleted && (
+                      <View style={styles.completedBadge}>
+                        <Feather name="check" size={10} color="#22c55e" style={{ marginRight: 3 }} />
+                        <Text style={styles.completedBadgeText}>Completed</Text>
+                      </View>
+                    )}
+                    {isProgress && (
+                      <View style={styles.progressContainer}>
+                        <View style={styles.progressHeader}>
+                          <Text style={styles.progressLabel}>Progress</Text>
+                          <Text style={[styles.progressRatioText, { color: ach.color }]}>
+                            {ach.current}<Text style={{ color: colors.textSlate }}>/{ach.total}</Text>
+                          </Text>
+                        </View>
+                        <View style={styles.cardProgressBarBg}>
+                          <View style={[styles.cardProgressBarFill, { width: `${(ach.current / ach.total) * 100}%`, backgroundColor: ach.color }]} />
+                        </View>
+                      </View>
+                    )}
+                    {isLocked && (
+                      <View style={styles.lockedBadge}>
+                        <Text style={styles.lockedBadgeText}>Locked</Text>
+                      </View>
+                    )}
+                  </View>
+                </View>
               </View>
             );
           })}
@@ -421,15 +577,22 @@ export default function AchievementsScreen() {
               <Text style={styles.streakLabel}>Current Streak</Text>
               <View style={styles.streakDaysValRow}>
                 <MaterialCommunityIcons name="fire" size={24} color="#f97316" style={{ marginRight: 4 }} />
-                <Text style={styles.streakDaysText}>5 <Text style={{ fontSize: 11, fontWeight: 'normal', color: '#64748b' }}>Days</Text></Text>
+                <Text style={styles.streakDaysText}>{currentStreak} <Text style={{ fontSize: 11, fontWeight: 'normal', color: '#64748b' }}>Days</Text></Text>
               </View>
             </View>
 
             <View style={styles.streakDivider} />
 
             <View style={styles.streakMiddleCol}>
-              <Text style={styles.streakTitle}>Keep it up!</Text>
-              <Text style={styles.streakDesc}>2 more days to unlock Streak Pro badge.</Text>
+              <Text style={styles.streakTitle}>
+                {currentStreak >= 7 ? 'Awesome streak!' : 'Keep it up!'}
+              </Text>
+              <Text style={styles.streakDesc}>
+                {currentStreak >= 7 
+                  ? 'You unlocked the Streak Pro badge.' 
+                  : `${Math.max(0, 7 - currentStreak)} more days to unlock Streak Pro badge.`
+                }
+              </Text>
             </View>
 
             <View style={styles.streakDivider} />
@@ -438,16 +601,16 @@ export default function AchievementsScreen() {
               <Text style={styles.streakLabel}>Best Streak</Text>
               <View style={styles.bestStreakRow}>
                 <FontAwesome5 name="trophy" size={13} color="#eab308" style={{ marginRight: 4 }} />
-                <Text style={styles.bestStreakVal}>12 Days</Text>
+                <Text style={styles.bestStreakVal}>{Math.max(currentStreak, 5)} Days</Text>
               </View>
-              <Text style={styles.bestStreakDate}>Apr 22 – May 3</Text>
+              <Text style={styles.bestStreakDate}>Active</Text>
             </View>
           </View>
 
           {/* Dots row */}
           <View style={styles.streakDotsRow}>
             {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, idx) => {
-              const isChecked = idx < 5;
+              const isChecked = idx < currentStreak;
               return (
                 <View key={day} style={styles.streakDotItem}>
                   <View style={[styles.streakDotRing, isChecked ? styles.checkedDotRing : styles.uncheckedDotRing]}>
@@ -568,26 +731,48 @@ export default function AchievementsScreen() {
                 </View>
 
                 {/* Reward 3 */}
-                <View style={[styles.rewardCard, { opacity: 0.65 }]}>
+                <View style={[styles.rewardCard, { opacity: totalDistanceKm >= 100 ? 1 : 0.65 }]}>
                   <View style={styles.rewardHeader}>
                     <MaterialCommunityIcons name="ev-station" size={24} color="#00f5ff" />
                     <View style={styles.rewardTitleCol}>
                       <Text style={styles.rewardTitleText}>Free 15 kWh EV Charging</Text>
                       <Text style={styles.rewardSource}>ChargeUp Fast EV Network</Text>
                     </View>
-                    <View style={styles.lockedBadge}>
-                      <Text style={styles.lockedText}>LOCKED</Text>
-                    </View>
+                    {totalDistanceKm >= 100 ? (
+                      <View style={styles.unlockedBadge}>
+                        <Text style={styles.unlockedText}>UNLOCKED</Text>
+                      </View>
+                    ) : (
+                      <View style={styles.lockedBadge}>
+                        <Text style={styles.lockedText}>LOCKED</Text>
+                      </View>
+                    )}
                   </View>
                   <Text style={styles.rewardDesc}>
                     Claim free EV charging session. Unlocks after accumulating 100+ km of safety-monitored driving.
                   </Text>
-                  <View style={styles.rewardProgressRow}>
-                    <Text style={styles.progressLabel}>Progress: 28.6 / 100 km</Text>
-                    <View style={styles.progressBarBg}>
-                      <View style={[styles.progressBarFill, { width: '28.6%' }]} />
+                  {totalDistanceKm >= 100 ? (
+                    <View style={styles.couponCodeRow}>
+                      <Text style={styles.couponCodeLabel}>Coupon Code:</Text>
+                      <Text style={styles.couponCodeText}>CHARGEUP15EV</Text>
+                      <TouchableOpacity 
+                        style={styles.copyBtn} 
+                        onPress={async () => {
+                          await Clipboard.setStringAsync('CHARGEUP15EV');
+                          Alert.alert('Code Copied', 'Coupon code "CHARGEUP15EV" copied to clipboard!');
+                        }}
+                      >
+                        <Text style={styles.copyBtnText}>Copy</Text>
+                      </TouchableOpacity>
                     </View>
-                  </View>
+                  ) : (
+                    <View style={styles.rewardProgressRow}>
+                      <Text style={styles.progressLabel}>Progress: {Math.round(totalDistanceKm)} / 100 km</Text>
+                      <View style={styles.progressBarBg}>
+                        <View style={[styles.progressBarFill, { width: `${Math.min(100, (totalDistanceKm / 100) * 100)}%` }]} />
+                      </View>
+                    </View>
+                  )}
                 </View>
 
                 {/* Reward 4 */}
@@ -632,6 +817,7 @@ export default function AchievementsScreen() {
     </View>
   );
 }
+
 function getStyles(colors: any) {
   const isDark = colors.background === '#050B14';
   return StyleSheet.create({
@@ -716,7 +902,7 @@ function getStyles(colors: any) {
     },
     bannerStatValue: {
       color: colors.text,
-      fontSize: 12.5,
+      fontSize: 12,
       fontWeight: 'bold',
     },
     bannerStatLabel: {
@@ -824,146 +1010,189 @@ function getStyles(colors: any) {
     activeTabText: {
       color: colors.accent,
     },
-
-    // Achievements Grid List
-    gridContainer: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      justifyContent: 'space-between',
-      paddingBottom: 10,
+    tabIndicator: {
+      position: 'absolute',
+      bottom: -2,
+      left: 16,
+      right: 16,
+      height: 2,
+      backgroundColor: colors.accent,
+      borderRadius: 1,
     },
-    cardWrapper: {
-      width: cardWidth,
-      marginBottom: 16,
+
+    // Count and Sort Row
+    countSortRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 12,
+    },
+    unlockedHeading: {
+      fontSize: 13,
+      fontWeight: 'bold',
+    },
+    sortDropdownBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 10,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+    },
+    sortBtnLabel: {
+      color: colors.text,
+      fontSize: 10.5,
+      fontWeight: '500',
+    },
+    sortOverlayBox: {
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 12,
+      padding: 6,
+      position: 'absolute',
+      top: 295,
+      right: 20,
+      zIndex: 999,
+      width: 130,
+    },
+    sortOption: {
+      paddingVertical: 6,
+      paddingHorizontal: 10,
+    },
+    sortOptionText: {
+      color: colors.textSlate,
+      fontSize: 11,
+    },
+    activeSortOptionText: {
+      color: colors.accent,
+      fontWeight: 'bold',
+    },
+
+    // Achievements Horizontal Grid List
+    achievementsGrid: {
+      gap: 12,
+      marginBottom: 20,
     },
     achievementCard: {
+      flexDirection: 'row',
       backgroundColor: colors.card,
       borderWidth: 1,
       borderColor: colors.border,
-      borderRadius: 20,
-      padding: 10,
+      borderRadius: 18,
+      padding: 14,
       alignItems: 'center',
-      height: 125,
+    },
+    lockedCard: {
+      opacity: 0.6,
+    },
+    cardLeft: {
+      marginRight: 14,
       justifyContent: 'center',
+      alignItems: 'center',
     },
-    cardLocked: {
-      opacity: 0.65,
+    cardRight: {
+      flex: 1,
     },
-    cardLabel: {
+    cardHeaderRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 4,
+    },
+    cardTitle: {
       color: colors.text,
-      fontSize: 10,
+      fontSize: 14,
       fontWeight: 'bold',
-      marginTop: 8,
-      textAlign: 'center',
-      lineHeight: 12,
-      height: 24, // fits max 2 lines
+      flex: 1,
+      marginRight: 8,
     },
-    cardPoints: {
-      fontSize: 8.5,
-      fontWeight: '800',
-      marginTop: 4,
+    lockedTextColor: {
+      color: colors.textSlate,
     },
-
-    // Details Slider Section (Single selected achievement highlight card)
-    focusAchievementCard: {
-      backgroundColor: colors.card,
+    xpBadge: {
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+      borderRadius: 8,
       borderWidth: 1,
-      borderColor: colors.border,
-      borderRadius: 24,
-      padding: 16,
-      marginBottom: 16,
-      position: 'relative',
-      overflow: 'hidden',
     },
-    focusGradientAccent: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      height: 4,
+    xpBadgeText: {
+      fontSize: 9.5,
+      fontWeight: 'bold',
     },
-    focusHeader: {
+    cardDesc: {
+      color: colors.textMuted,
+      fontSize: 11,
+      lineHeight: 15,
+      marginBottom: 8,
+    },
+    cardFooter: {
       flexDirection: 'row',
       alignItems: 'center',
-      marginBottom: 14,
     },
-    focusHeaderRight: {
-      flex: 1,
-      marginLeft: 12,
-    },
-    focusPointsBadge: {
-      alignSelf: 'flex-start',
+    completedBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: 'rgba(34, 197, 94, 0.08)',
       paddingHorizontal: 8,
       paddingVertical: 3,
       borderRadius: 8,
-      marginTop: 4,
-    },
-    focusPointsText: {
-      fontSize: 9,
-      fontWeight: 'bold',
-    },
-    focusTitle: {
-      color: colors.text,
-      fontSize: 15.5,
-      fontWeight: 'bold',
-    },
-    focusDesc: {
-      color: colors.textMuted,
-      fontSize: 12,
-      lineHeight: 16,
-      marginBottom: 14,
-    },
-
-    // Progression Bar Row
-    progressRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-    },
-    progressBarOuter: {
-      flex: 1,
-      height: 8,
-      backgroundColor: colors.border,
-      borderRadius: 4,
-      marginRight: 12,
-      overflow: 'hidden',
-    },
-    progressBarInner: {
-      height: '100%',
-      borderRadius: 4,
-    },
-    progressPercentText: {
-      color: colors.text,
-      fontSize: 11,
-      fontWeight: 'bold',
-    },
-
-    // Quick Stats Row
-    statBadgeText: {
-      color: colors.text,
-      fontSize: 10,
-      fontWeight: 'bold',
-    },
-    focusStatusBadge: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      alignSelf: 'flex-start',
-      backgroundColor: 'rgba(34, 197, 94, 0.12)',
-      paddingHorizontal: 10,
-      paddingVertical: 4,
-      borderRadius: 10,
       borderWidth: 1,
-      borderColor: 'rgba(34, 197, 94, 0.25)',
+      borderColor: 'rgba(34, 197, 94, 0.2)',
     },
-    focusStatusText: {
+    completedBadgeText: {
       color: '#22c55e',
       fontSize: 10,
       fontWeight: 'bold',
-      marginLeft: 4,
+    },
+    lockedBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: 'rgba(100, 116, 139, 0.08)',
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: 'rgba(100, 116, 139, 0.2)',
+    },
+    lockedBadgeText: {
+      color: colors.textSlate,
+      fontSize: 10,
+      fontWeight: 'bold',
+    },
+    progressContainer: {
+      flex: 1,
+    },
+    progressHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 4,
+    },
+    progressLabel: {
+      color: colors.textSlate,
+      fontSize: 9.5,
+      fontWeight: '500',
+    },
+    progressRatioText: {
+      fontSize: 10,
+      fontWeight: 'bold',
+    },
+    cardProgressBarBg: {
+      height: 5,
+      backgroundColor: colors.border,
+      borderRadius: 2.5,
+      overflow: 'hidden',
+    },
+    cardProgressBarFill: {
+      height: '100%',
+      borderRadius: 2.5,
     },
 
-    // Streak Calendar Panel
-    streakCard: {
+    // Streak Calendar Panel Card
+    streakPanelCard: {
       backgroundColor: colors.card,
       borderWidth: 1,
       borderColor: colors.border,
@@ -971,7 +1200,7 @@ function getStyles(colors: any) {
       padding: 16,
       marginBottom: 16,
     },
-    streakHeader: {
+    streakCardHeader: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
@@ -980,9 +1209,8 @@ function getStyles(colors: any) {
       paddingBottom: 12,
       marginBottom: 14,
     },
-    streakHeaderLeft: {
-      flexDirection: 'row',
-      alignItems: 'center',
+    streakLeftCol: {
+      alignItems: 'flex-start',
     },
     streakLabel: {
       color: colors.textMuted,
@@ -1282,16 +1510,6 @@ function getStyles(colors: any) {
       color: colors.textSlate,
       fontSize: 9,
       marginBottom: 4,
-    },
-    progressBarBg: {
-      height: 4,
-      backgroundColor: colors.border,
-      borderRadius: 2,
-    },
-    progressBarFill: {
-      height: '100%',
-      backgroundColor: colors.accent,
-      borderRadius: 2,
     },
     modalCloseMainBtn: {
       backgroundColor: colors.card,

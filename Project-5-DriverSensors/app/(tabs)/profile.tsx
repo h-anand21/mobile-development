@@ -5,6 +5,7 @@ import Svg, { Circle, Path, Polygon } from 'react-native-svg';
 import { useRouter } from 'expo-router';
 import { driveRepository } from '../../src/database/repositories/driveRepository';
 import { useAppTheme } from '../../src/ui/theme';
+import dayjs from 'dayjs';
 
 const { width } = Dimensions.get('window');
 
@@ -27,6 +28,39 @@ const HexagonBadge = ({ size = 56, color = '#22c55e', children }: { size?: numbe
     </View>
   );
 };
+const LEVEL_THRESHOLDS = [
+  { level: 1, name: 'Rookie Driver', minXp: 0, maxXp: 1000 },
+  { level: 2, name: 'Safe Commuter', minXp: 1000, maxXp: 2500 },
+  { level: 3, name: 'Skilled Cruiser', minXp: 2500, maxXp: 5000 },
+  { level: 4, name: 'Confident Driver', minXp: 5000, maxXp: 8000 },
+  { level: 5, name: 'Road Master', minXp: 8000, maxXp: 12000 },
+  { level: 6, name: 'Safety Legend', minXp: 12000, maxXp: 99999999 }
+];
+
+function getLevelInfo(totalXp: number) {
+  for (let i = 0; i < LEVEL_THRESHOLDS.length; i++) {
+    const t = LEVEL_THRESHOLDS[i];
+    if (totalXp >= t.minXp && totalXp < t.maxXp) {
+      const xpInLevel = totalXp - t.minXp;
+      const xpRequiredForNext = t.maxXp - t.minXp;
+      const progressPct = (xpInLevel / xpRequiredForNext) * 100;
+      return {
+        level: t.level,
+        name: t.name,
+        xpInLevel,
+        xpRequiredForNext,
+        progressPct: Math.min(100, Math.max(0, progressPct))
+      };
+    }
+  }
+  return {
+    level: 6,
+    name: 'Safety Legend',
+    xpInLevel: totalXp - 12000,
+    xpRequiredForNext: 5000,
+    progressPct: Math.min(100, ((totalXp - 12000) / 5000) * 100)
+  };
+}
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -66,63 +100,135 @@ export default function ProfileScreen() {
   const [tempVehicleModel, setTempVehicleModel] = useState('Tesla Model 3');
   const [tempVehiclePlate, setTempVehiclePlate] = useState('DL 3C AB 1234');
 
-  // Stats calculation (adapt dynamically to real drives, fallback to mockup)
-  const totalDrivesCount = dbDrives.length > 5 ? dbDrives.length : 128;
-  const avgScore = dbDrives.length > 5
+  // Stats calculation dynamically from real drives
+  const totalDrivesCount = dbDrives.length;
+  const avgScore = dbDrives.length > 0
     ? Math.round(dbDrives.reduce((acc, d) => acc + d.score, 0) / dbDrives.length)
-    : 84;
-  const totalDistanceKm = dbDrives.length > 5
+    : 0;
+  const totalDistanceKm = dbDrives.length > 0
     ? (dbDrives.reduce((acc, d) => acc + d.distance, 0) / 1000).toFixed(1)
-    : '2,356.8';
-  const totalDurationHrs = dbDrives.length > 5
+    : '0.0';
+  const totalDurationHrs = dbDrives.length > 0
     ? Math.round(dbDrives.reduce((acc, d) => acc + d.duration, 0) / 3600)
-    : 52;
-  const totalDurationMins = dbDrives.length > 5
+    : 0;
+  const totalDurationMins = dbDrives.length > 0
     ? Math.round((dbDrives.reduce((acc, d) => acc + d.duration, 0) % 3600) / 60)
-    : 18;
+    : 0;
 
-  const scoreRating = avgScore >= 90 ? 'Excellent' : avgScore >= 70 ? 'Good' : avgScore >= 60 ? 'Fair' : 'Poor';
-  const ratingColor = avgScore >= 90 ? '#22c55e' : avgScore >= 70 ? '#22c55e' : avgScore >= 60 ? '#eab308' : '#ef4444';
+  const scoreRating = dbDrives.length > 0
+    ? (avgScore >= 90 ? 'Excellent' : avgScore >= 70 ? 'Good' : avgScore >= 60 ? 'Fair' : 'Poor')
+    : 'No Data';
+  const ratingColor = dbDrives.length > 0
+    ? (avgScore >= 90 ? '#22c55e' : avgScore >= 70 ? '#22c55e' : avgScore >= 60 ? '#eab308' : '#ef4444')
+    : '#64748b';
 
-  // Driving summary mockups
-  const summaryItems = [
-    { id: '1', title: 'Smooth Drives', value: '76%', color: '#22c55e', icon: 'check-circle', iconType: 'feather', wave: 'M 0,10 Q 15,4 30,12 T 60,6 T 90,12' },
-    { id: '2', title: 'Safety Score', value: '92%', color: '#22c55e', icon: 'shield-check-outline', iconType: 'material', wave: 'M 0,8 Q 15,14 30,6 T 60,12 T 90,8' },
-    { id: '3', title: 'Consistency', value: '88%', color: '#00f5ff', icon: 'circle-double', iconType: 'material', wave: 'M 0,12 Q 15,8 30,14 T 60,8 T 90,12' },
-    { id: '4', title: 'Improvement', value: '+18%', color: '#a855f7', icon: 'trending-up', iconType: 'feather', wave: 'M 0,6 Q 15,12 30,8 T 60,14 T 90,8' }
-  ];
-
-  // Achievements mockups
-  const achievements = [
-    {
-      id: 'a1',
-      title: 'Consistency Pro',
-      subtitle: '10 consistent drives',
-      color: '#22c55e',
-      icon: <Feather name="star" size={22} color="#22c55e" />
-    },
-    {
-      id: 'a2',
-      title: 'Long Distance',
-      subtitle: 'Drove 500+ km in a week',
-      color: '#00f5ff',
-      icon: <FontAwesome5 name="road" size={18} color="#00f5ff" />
-    },
-    {
-      id: 'a3',
-      title: 'Night Owl',
-      subtitle: 'Completed 10 night drives',
-      color: '#a855f7',
-      icon: <Feather name="moon" size={20} color="#a855f7" />
-    },
-    {
-      id: 'a4',
-      title: 'Speed Master',
-      subtitle: 'Maintained speed control',
-      color: '#eab308',
-      icon: <MaterialCommunityIcons name="speedometer" size={22} color="#eab308" />
+  // Leveling and XP calculation dynamically (synchronized with AchievementsScreen)
+  const { totalXp, levelInfo } = React.useMemo(() => {
+    const drivesXp = dbDrives.reduce((acc, d) => acc + (d.score * 10), 0);
+    
+    const totalDistanceKmVal = dbDrives.reduce((acc, d) => acc + d.distance, 0) / 1000;
+    const safeDrivesCount = dbDrives.filter(d => !d.events || d.events.length === 0).length;
+    const goodDrivesCount = dbDrives.filter(d => d.score >= 85).length;
+    const lowSpeedDrives = dbDrives.filter(d => {
+      const avg = d.duration > 0 ? (d.distance / d.duration) * 3.6 : 0;
+      return avg > 0 && avg < 60;
+    }).length;
+    const ecoKm = dbDrives.filter(d => d.score >= 90).reduce((acc, d) => acc + d.distance, 0) / 1000;
+    const nightDrives = dbDrives.filter(d => {
+      const hour = dayjs(d.startTime).hour();
+      const isNight = hour >= 20 || hour < 6;
+      return isNight && d.score >= 80;
+    }).length;
+    const safeDriveDates = Array.from(new Set(
+      dbDrives.filter(d => d.score >= 80).map(d => dayjs(d.startTime).format('YYYY-MM-DD'))
+    )).sort().reverse();
+    
+    let currentStreak = 0;
+    if (safeDriveDates.length > 0) {
+      let checkDate = dayjs();
+      const hasToday = safeDriveDates.includes(checkDate.format('YYYY-MM-DD'));
+      const hasYesterday = safeDriveDates.includes(checkDate.subtract(1, 'day').format('YYYY-MM-DD'));
+      if (hasToday || hasYesterday) {
+        currentStreak = 1;
+        let indexDate = hasToday ? checkDate : checkDate.subtract(1, 'day');
+        while (true) {
+          indexDate = indexDate.subtract(1, 'day');
+          if (safeDriveDates.includes(indexDate.format('YYYY-MM-DD'))) {
+            currentStreak++;
+          } else {
+            break;
+          }
+        }
+      }
     }
+    const startOfWeek = dayjs().startOf('week').valueOf();
+    const thisWeekSafeDrives = dbDrives.filter(d => d.startTime >= startOfWeek && d.score >= 90).length;
+
+    let unlocked = 0;
+    let achievementsXp = 0;
+
+    const checkAndAdd = (condition: boolean, points: number) => {
+      if (condition) {
+        unlocked++;
+        achievementsXp += points;
+      }
+    };
+
+    checkAndAdd(safeDrivesCount >= 10, 100);
+    checkAndAdd(totalDistanceKmVal >= 100, 150);
+    checkAndAdd(goodDrivesCount >= 30, 200);
+    checkAndAdd(lowSpeedDrives >= 5, 120);
+    checkAndAdd(ecoKm >= 50, 150);
+    checkAndAdd(nightDrives >= 10, 100);
+    checkAndAdd(totalDistanceKmVal >= 500, 250);
+    checkAndAdd(currentStreak >= 7, 200);
+    checkAndAdd(thisWeekSafeDrives >= 7, 300);
+
+    const totalXpVal = drivesXp + achievementsXp;
+    const info = getLevelInfo(totalXpVal);
+
+    return {
+      totalXp: totalXpVal,
+      levelInfo: info
+    };
+  }, [dbDrives]);
+
+  const smoothDrivesPct = dbDrives.length > 0
+    ? Math.round((dbDrives.filter(d => d.score >= 85).length / dbDrives.length) * 100)
+    : 0;
+
+  // Driving summary mockups (Safety score and smooth drives dynamic)
+  const summaryItems = [
+    { id: '1', title: 'Smooth Drives', value: `${smoothDrivesPct}%`, color: '#22c55e', icon: 'check-circle', iconType: 'feather', wave: 'M 0,10 Q 15,4 30,12 T 60,6 T 90,12' },
+    { id: '2', title: 'Safety Score', value: `${avgScore}%`, color: '#22c55e', icon: 'shield-check-outline', iconType: 'material', wave: 'M 0,8 Q 15,14 30,6 T 60,12 T 90,8' },
+    { id: '3', title: 'Consistency', value: dbDrives.length > 0 ? '85%' : '0%', color: '#00f5ff', icon: 'circle-double', iconType: 'material', wave: 'M 0,12 Q 15,8 30,14 T 60,8 T 90,12' },
+    { id: '4', title: 'Improvement', value: dbDrives.length > 0 ? '+18%' : '0%', color: '#a855f7', icon: 'trending-up', iconType: 'feather', wave: 'M 0,6 Q 15,12 30,8 T 60,14 T 90,8' }
   ];
+
+  // Dynamic preview for the first 4 achievements (Completed vs Locked)
+  const achievements = React.useMemo(() => {
+    const list = [
+      { id: '1', title: 'Safe Driver', key: '1', req: 10, count: dbDrives.filter(d => !d.events || d.events.length === 0).length, color: '#22c55e', icon: <Feather name="check" size={20} /> },
+      { id: '2', title: '100 KM Explorer', key: '2', req: 100, count: dbDrives.reduce((acc, d) => acc + d.distance, 0) / 1000, color: '#00f5ff', icon: <FontAwesome5 name="road" size={18} /> },
+      { id: '3', title: '30 Safe Drives', key: '3', req: 30, count: dbDrives.filter(d => d.score >= 85).length, color: '#a855f7', icon: <MaterialCommunityIcons name="steering" size={20} /> },
+      { id: '4', title: 'Speed Master', key: '4', req: 5, count: dbDrives.filter(d => {
+        const avg = d.duration > 0 ? (d.distance / d.duration) * 3.6 : 0;
+        return avg > 0 && avg < 60;
+      }).length, color: '#eab308', icon: <MaterialCommunityIcons name="speedometer" size={20} /> }
+    ];
+
+    return list.map(item => {
+      const isCompleted = item.count >= item.req;
+      return {
+        id: item.id,
+        title: item.title,
+        subtitle: isCompleted ? 'Completed' : `${Math.round(item.count)}/${item.req} ${item.id === '2' ? 'km' : 'drives'}`,
+        color: isCompleted ? item.color : '#64748b',
+        icon: React.cloneElement(item.icon, { color: isCompleted ? item.color : '#64748b' }),
+        isCompleted
+      };
+    });
+  }, [dbDrives]);
 
   // Menu Settings mockups
   const menuSettings = [
@@ -246,24 +352,24 @@ export default function ProfileScreen() {
         {/* 4. Level progression bar card */}
         <View style={styles.levelCard}>
           <HexagonBadge size={44} color="#84cc16">
-            <Feather name="award" size={20} color="#84cc16" />
+            <Text style={{ color: '#84cc16', fontSize: 15, fontWeight: 'bold' }}>{levelInfo.level}</Text>
           </HexagonBadge>
 
           <View style={styles.levelMiddle}>
             <View style={styles.levelRow}>
-              <Text style={styles.levelTitle}>Level 4</Text>
-              <Text style={styles.levelXp}>2,450 <Text style={{ color: '#64748b', fontWeight: '500' }}>/ 3,000 XP</Text></Text>
+              <Text style={styles.levelTitle}>Level {levelInfo.level}</Text>
+              <Text style={styles.levelXp}>{levelInfo.xpInLevel.toLocaleString()} <Text style={{ color: '#64748b', fontWeight: '500' }}>/ {levelInfo.xpRequiredForNext.toLocaleString()} XP</Text></Text>
             </View>
-            <Text style={styles.levelSub}>Confident Driver</Text>
+            <Text style={styles.levelSub}>{levelInfo.name}</Text>
             <View style={styles.progressBarBg}>
-              <View style={[styles.progressBarFill, { width: '81.6%' }]} />
+              <View style={[styles.progressBarFill, { width: `${levelInfo.progressPct}%` }]} />
             </View>
           </View>
 
-          <TouchableOpacity style={styles.nextLevelCol}>
+          <TouchableOpacity style={styles.nextLevelCol} onPress={() => router.push('/achievements')}>
             <Text style={styles.nextLevelLabel}>Next Level</Text>
             <View style={styles.nextLevelValRow}>
-              <Text style={styles.nextLevelVal}>Level 5</Text>
+              <Text style={styles.nextLevelVal}>Level {levelInfo.level + 1}</Text>
               <Feather name="chevron-right" size={12} color="#64748b" style={{ marginLeft: 3 }} />
             </View>
           </TouchableOpacity>
@@ -311,11 +417,13 @@ export default function ProfileScreen() {
         <View style={{ marginBottom: 20 }}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.summaryScroll}>
             {achievements.map((item) => (
-              <View key={item.id} style={styles.achievementCard}>
+              <View key={item.id} style={[styles.achievementCard, !item.isCompleted && { opacity: 0.65 }]}>
                 <HexagonBadge size={54} color={item.color}>
                   {item.icon}
                 </HexagonBadge>
-                <Text style={styles.achievementTitle}>{item.title}</Text>
+                <Text style={[styles.achievementTitle, !item.isCompleted && { color: colors.textMuted }]} numberOfLines={1}>
+                  {item.title}
+                </Text>
                 <Text style={styles.achievementSub}>{item.subtitle}</Text>
               </View>
             ))}
