@@ -44,26 +44,28 @@ export const useDetectionEngine = () => {
   const lastTurnTime = useRef(0);
   const lastPhoneUsageTime = useRef(0);
   const lastSteeringTime = useRef(0);
+  const lastMovementTime = useRef(0);
   const COOLDOWN_MS = 4000; // 4 seconds cooldown per event type
 
-  // 1. Detect Harsh Braking and Acceleration (Y-axis accelerometer changes)
+  // 1. Detect Harsh Braking and Acceleration using DeviceMotion (gravity-excluded acceleration in m/s^2)
   useEffect(() => {
-    if (!isTracking || !accelerometerData) return;
+    if (!isTracking || !deviceMotionData || !deviceMotionData.acceleration) return;
     
-    // Apply low pass filter to smooth out bumps
-    const filteredY = lowPassFilter(accelerometerData.y, prevAccelY.current, 0.2);
+    // Smooth out data using a low pass filter
+    const filteredY = lowPassFilter(deviceMotionData.acceleration.y, prevAccelY.current, 0.2);
     prevAccelY.current = filteredY;
 
     const now = Date.now();
 
-    // Harsh Brake Detection (negative Y acceleration usually implies braking depending on device orientation)
-    if (filteredY < harshBrakeG) {
+    // Harsh Brake Detection (using settings threshold directly in m/s^2, e.g. -3.0 m/s^2)
+    // Note: braking is a negative force on the Y-axis
+    if (filteredY < settings.harshBraking) {
       if (now - lastBrakeTime.current > COOLDOWN_MS) {
         addEvent({
           id: generateId(),
           type: 'HARSH_BRAKE',
           timestamp: now,
-          severity: filteredY < harshBrakeG * 1.5 ? 'HIGH' : 'MEDIUM',
+          severity: filteredY < settings.harshBraking * 1.5 ? 'HIGH' : 'MEDIUM',
           confidence: 90,
           speed: currentSpeedKmH,
         });
@@ -72,14 +74,15 @@ export const useDetectionEngine = () => {
       }
     }
 
-    // Harsh Acceleration Detection
-    if (filteredY > harshAccelG) {
+    // Harsh Acceleration Detection (using threshold directly in m/s^2, e.g. 3.0 m/s^2)
+    const harshAccelThreshold = Math.abs(settings.harshBraking);
+    if (filteredY > harshAccelThreshold) {
       if (now - lastAccelTime.current > COOLDOWN_MS) {
         addEvent({
           id: generateId(),
           type: 'HARSH_ACCELERATION',
           timestamp: now,
-          severity: filteredY > harshAccelG * 1.5 ? 'HIGH' : 'MEDIUM',
+          severity: filteredY > harshAccelThreshold * 1.5 ? 'HIGH' : 'MEDIUM',
           confidence: 90,
           speed: currentSpeedKmH,
         });
@@ -87,7 +90,7 @@ export const useDetectionEngine = () => {
         lastAccelTime.current = now;
       }
     }
-  }, [accelerometerData, isTracking, harshBrakeG, harshAccelG]);
+  }, [deviceMotionData, isTracking, settings.harshBraking]);
 
   // 2. Detect Sharp Turns (Z-axis gyroscope changes)
   useEffect(() => {
@@ -119,7 +122,7 @@ export const useDetectionEngine = () => {
     if (!isTracking) return;
     const now = Date.now();
 
-    // Phone Usage Detection via Gyroscope X/Y rotation (picking up phone) or DeviceMotion
+    // Phone Usage Detection via Gyroscope X/Y rotation (picking up phone)
     if (gyroscopeData) {
       const filteredX = lowPassFilter(gyroscopeData.x, prevGyroX.current, 0.2);
       const filteredY = lowPassFilter(gyroscopeData.y, prevGyroY.current, 0.2);
@@ -167,5 +170,29 @@ export const useDetectionEngine = () => {
         }
       }
     }
-  }, [gyroscopeData, accelerometerData, deviceMotionData, isTracking]);
+  }, [gyroscopeData, accelerometerData, isTracking]);
+
+  // 4. Detect Excessive Device Movement (DeviceMotion acceleration magnitude)
+  useEffect(() => {
+    if (!isTracking || !deviceMotionData || !deviceMotionData.acceleration) return;
+
+    const { x, y, z } = deviceMotionData.acceleration;
+    const accelMagnitude = Math.sqrt(x * x + y * y + z * z);
+    const now = Date.now();
+
+    if (accelMagnitude > THRESHOLDS.EXCESSIVE_MOVEMENT) {
+      if (now - lastMovementTime.current > COOLDOWN_MS) {
+        addEvent({
+          id: generateId(),
+          type: 'EXCESSIVE_MOVEMENT',
+          timestamp: now,
+          severity: accelMagnitude > THRESHOLDS.EXCESSIVE_MOVEMENT * 1.5 ? 'HIGH' : 'MEDIUM',
+          confidence: 85,
+          speed: currentSpeedKmH,
+        });
+        updateScore(PENALTIES.EXCESSIVE_MOVEMENT);
+        lastMovementTime.current = now;
+      }
+    }
+  }, [deviceMotionData, isTracking]);
 };

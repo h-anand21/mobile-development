@@ -110,6 +110,65 @@ export default function DriveDetailsScreen() {
     return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
   };
 
+  // Score History calculations for Trip Trend Chart
+  const durationVal = displaySession ? displaySession.duration : 2536;
+  const getScoreHistory = () => {
+    if (displaySession && displaySession.scoreHistory && displaySession.scoreHistory.length >= 2) {
+      return displaySession.scoreHistory;
+    }
+    // Fallback dynamic mockup history matching final score
+    const finalScore = displaySession ? displaySession.score : 92;
+    if (finalScore === 100) {
+      return [
+        { elapsedSeconds: 0, score: 100 },
+        { elapsedSeconds: Math.floor(durationVal * 0.25), score: 100 },
+        { elapsedSeconds: Math.floor(durationVal * 0.5), score: 100 },
+        { elapsedSeconds: Math.floor(durationVal * 0.75), score: 100 },
+        { elapsedSeconds: durationVal, score: 100 }
+      ];
+    }
+    return [
+      { elapsedSeconds: 0, score: 100 },
+      { elapsedSeconds: Math.floor(durationVal * 0.25), score: Math.min(100, finalScore + 6) },
+      { elapsedSeconds: Math.floor(durationVal * 0.5), score: Math.max(20, finalScore - 8) },
+      { elapsedSeconds: Math.floor(durationVal * 0.75), score: Math.min(100, finalScore + 4) },
+      { elapsedSeconds: durationVal, score: finalScore }
+    ];
+  };
+
+  const scoreHistory = getScoreHistory();
+  const maxDuration = durationVal > 0 ? durationVal : 1;
+
+  // Map history to screen coordinates
+  const leftMargin = 40;
+  const rightMargin = 52;
+  const topMargin = 20;
+  const bottomMargin = 130;
+  const chartWidth = width - 32;
+  const usableWidth = chartWidth - leftMargin - 12; // leave margin on right
+  const drawableHeight = bottomMargin - topMargin; // 110px
+
+  const scorePoints = scoreHistory.map((item) => {
+    const x = leftMargin + (item.elapsedSeconds / maxDuration) * usableWidth;
+    const y = topMargin + drawableHeight - (item.score / 100) * drawableHeight;
+    return { x, y, score: item.score };
+  });
+
+  // Generate paths
+  const scoreLinePath = scorePoints.length > 0 
+    ? scorePoints.map((pt, idx) => `${idx === 0 ? 'M' : 'L'} ${pt.x.toFixed(1)} ${pt.y.toFixed(1)}`).join(' ')
+    : '';
+
+  const scoreAreaPath = scorePoints.length > 0 
+    ? `${scoreLinePath} L ${scorePoints[scorePoints.length - 1].x.toFixed(1)} 130 L ${scorePoints[0].x.toFixed(1)} 130 Z`
+    : '';
+
+  const formatTimeLabel = (sec: number) => {
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
+
   // Math for Radar Pentagon corners
   const cx = 80;
   const cy = 80;
@@ -542,6 +601,80 @@ export default function DriveDetailsScreen() {
                 </View>
               </LinearGradient>
             </TouchableOpacity>
+
+            {/* Trip Score Trend Line Chart Card */}
+            <View style={styles.trendCard}>
+              <View style={styles.trendHeader}>
+                <Feather name="trending-up" size={16} color={colors.accent} style={{ marginRight: 6 }} />
+                <Text style={styles.trendTitle}>Trip Score Trend</Text>
+              </View>
+              
+              <View style={styles.trendBody}>
+                <Svg width={width - 32} height={160}>
+                  <Defs>
+                    <SvgLinearGradient id="scoreTrendGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                      <Stop offset="0%" stopColor={colors.accent} stopOpacity={0.25} />
+                      <Stop offset="100%" stopColor={colors.accent} stopOpacity={0.0} />
+                    </SvgLinearGradient>
+                  </Defs>
+                  
+                  {/* Grid Lines */}
+                  <Line x1="40" y1="20" x2={width - 52} y2="20" stroke="rgba(255,255,255,0.03)" strokeWidth="1" />
+                  <Line x1="40" y1="47.5" x2={width - 52} y2="47.5" stroke="rgba(255,255,255,0.03)" strokeWidth="1" />
+                  <Line x1="40" y1="75" x2={width - 52} y2="75" stroke="rgba(255,255,255,0.03)" strokeWidth="1" />
+                  <Line x1="40" y1="102.5" x2={width - 52} y2="102.5" stroke="rgba(255,255,255,0.03)" strokeWidth="1" />
+                  <Line x1="40" y1="130" x2={width - 52} y2="130" stroke="rgba(255,255,255,0.03)" strokeWidth="1" />
+                  
+                  {/* Y Axis ticks */}
+                  <SvgText x="28" y="23" fill="#64748b" fontSize="8" textAnchor="end">100</SvgText>
+                  <SvgText x="28" y="50.5" fill="#64748b" fontSize="8" textAnchor="end">75</SvgText>
+                  <SvgText x="28" y="78" fill="#64748b" fontSize="8" textAnchor="end">50</SvgText>
+                  <SvgText x="28" y="105.5" fill="#64748b" fontSize="8" textAnchor="end">25</SvgText>
+                  <SvgText x="28" y="133" fill="#64748b" fontSize="8" textAnchor="end">0</SvgText>
+
+                  {/* Draw the Area under the Line */}
+                  <Path 
+                    d={scoreAreaPath} 
+                    fill="url(#scoreTrendGrad)"
+                  />
+                  
+                  {/* Draw the Stroke Line */}
+                  <Path 
+                    d={scoreLinePath} 
+                    stroke={colors.accent} 
+                    strokeWidth="2.5" 
+                    fill="none" 
+                  />
+                  
+                  {/* Draw Circles for key points */}
+                  {scorePoints.map((pt, idx) => {
+                    const isSignificant = idx === 0 || idx === scorePoints.length - 1 || (idx > 0 && pt.score !== scorePoints[idx - 1].score);
+                    if (!isSignificant) return null;
+                    return (
+                      <React.Fragment key={idx}>
+                        <Circle 
+                          cx={pt.x} 
+                          cy={pt.y} 
+                          r="4" 
+                          fill={pt.score >= 80 ? colors.success : pt.score >= 60 ? colors.accent : pt.score >= 40 ? '#eab308' : '#ef4444'} 
+                          stroke={colors.card} 
+                          strokeWidth="1.5" 
+                        />
+                      </React.Fragment>
+                    );
+                  })}
+                  
+                  {/* X Axis labels */}
+                  <SvgText x="40" y="148" fill="#64748b" fontSize="8" textAnchor="start">00:00</SvgText>
+                  <SvgText x={(width - 92) / 2 + 40} y="148" fill="#64748b" fontSize="8" textAnchor="middle">
+                    {formatTimeLabel(Math.floor(maxDuration / 2))}
+                  </SvgText>
+                  <SvgText x={width - 52} y="148" fill="#64748b" fontSize="8" textAnchor="end">
+                    {formatTimeLabel(maxDuration)}
+                  </SvgText>
+                </Svg>
+              </View>
+            </View>
 
             {/* AI Coach Insights Shortcut Card */}
             <TouchableOpacity 
@@ -1609,6 +1742,31 @@ function getStyles(colors: any, isDark: boolean) {
       justifyContent: 'center',
       width: 70,
       height: 70,
+    },
+    // Score Trend Chart Styles
+    trendCard: {
+      backgroundColor: colors.card,
+      borderRadius: 24,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: 16,
+      marginBottom: 20,
+    },
+    trendHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    trendTitle: {
+      color: colors.text,
+      fontSize: 12,
+      fontWeight: 'bold',
+      letterSpacing: 0.5,
+    },
+    trendBody: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingLeft: 8,
     },
   });
 }
