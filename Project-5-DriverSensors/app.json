@@ -5,9 +5,22 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "scheme": "project5driversensors",
+    "icon": "./assets/icon/black -icon.png",
     "userInterfaceStyle": "automatic",
-    "ios": {},
+    "splash": {
+      "image": "./assets/icon/black -icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#000000"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "icon": "./assets/icon/black -icon.png"
+    },
     "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon/black -icon.png",
+        "backgroundColor": "#000000"
+      },
       "predictiveBackGestureEnabled": false
     },
     "web": {

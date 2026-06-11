@@ -235,8 +235,8 @@ export default function DriveSummaryScreen() {
               </Svg>
               <View style={styles.dialScoreInner}>
                 <Image 
-                  source={!isDark ? require('../assets/icon/icon-white.png') : require('../assets/icon/image.png')} 
-                  style={{ width: 60, height: 60, resizeMode: 'contain', marginBottom: 2 }} 
+                  source={!isDark ? require('../assets/icon/icon-white.png') : require('../assets/icon/black -icon.png')} 
+                  style={{ width: !isDark ? 48 : 32, height: !isDark ? 48 : 32, resizeMode: 'contain', marginBottom: 2 }} 
                 />
                 <Text style={styles.dialScoreVal}>{score}</Text>
                 <Text style={[styles.dialRatingText, { color: ratingColors.color }]}>{rating}</Text>
@@ -496,8 +496,8 @@ export default function DriveSummaryScreen() {
         >
           <View style={styles.tipIconWrap}>
             <Image 
-              source={!isDark ? require('../assets/icon/icon-white.png') : require('../assets/icon/image.png')} 
-              style={{ width: 48, height: 48, resizeMode: 'contain' }} 
+              source={!isDark ? require('../assets/icon/icon-white.png') : require('../assets/icon/black -icon.png')} 
+              style={{ width: !isDark ? 44 : 32, height: !isDark ? 44 : 32, resizeMode: 'contain' }} 
             />
           </View>
           <View style={styles.tipTextWrap}>
@@ -623,6 +623,7 @@ export default function DriveSummaryScreen() {
       position: 'absolute',
       alignItems: 'center',
       justifyContent: 'center',
+      top: 36,
     },
     dialScoreVal: {
       color: colors.text,

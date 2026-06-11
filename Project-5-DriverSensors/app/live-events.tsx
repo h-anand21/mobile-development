@@ -256,8 +256,8 @@ export default function LiveEventsScreen() {
           <View style={styles.emptyState}>
             <View style={styles.shieldGlowCircle}>
               <Image 
-                source={!isDark ? require('../assets/icon/icon-white.png') : require('../assets/icon/image.png')} 
-                style={{ width: 84, height: 84, resizeMode: 'contain' }} 
+                source={!isDark ? require('../assets/icon/icon-white.png') : require('../assets/icon/black -icon.png')} 
+                style={{ width: !isDark ? 72 : 50, height: !isDark ? 72 : 50, resizeMode: 'contain' }} 
               />
             </View>
             <Text style={styles.emptyStateTitle}>Perfect Driving!</Text>
@@ -331,8 +331,8 @@ export default function LiveEventsScreen() {
         <View style={styles.tipCard}>
           <View style={styles.tipIconWrap}>
             <Image 
-              source={!isDark ? require('../assets/icon/icon-white.png') : require('../assets/icon/image.png')} 
-              style={{ width: 48, height: 48, resizeMode: 'contain' }} 
+              source={!isDark ? require('../assets/icon/icon-white.png') : require('../assets/icon/black -icon.png')} 
+              style={{ width: !isDark ? 44 : 32, height: !isDark ? 44 : 32, resizeMode: 'contain' }} 
             />
           </View>
           <View style={styles.tipTextWrap}>

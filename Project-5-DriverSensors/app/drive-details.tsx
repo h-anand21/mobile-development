@@ -1008,8 +1008,8 @@ export default function DriveDetailsScreen() {
               <View style={styles.bannerLeftWrap}>
                 <View style={styles.shieldCheckBadge}>
                   <Image 
-                    source={!isDark ? require('../assets/icon/icon-white.png') : require('../assets/icon/image.png')} 
-                    style={{ width: 60, height: 60, resizeMode: 'contain' }} 
+                    source={!isDark ? require('../assets/icon/icon-white.png') : require('../assets/icon/black -icon.png')} 
+                    style={{ width: !isDark ? 64 : 48, height: !isDark ? 64 : 48, resizeMode: 'contain' }} 
                   />
                 </View>
                 <View style={styles.bannerTextCol}>

@@ -397,7 +397,7 @@ export default function DriveScreen() {
           <View style={styles.headerBrand}>
             <View style={styles.headerLogoWrap}>
               <Image 
-                source={!isDark ? require('../../assets/icon/icon-white.png') : require('../../assets/icon/image.png')} 
+                source={!isDark ? require('../../assets/icon/icon-white.png') : require('../../assets/icon/black -icon.png')} 
                 style={{ width: 36, height: 36, resizeMode: 'contain' }} 
               />
             </View>
@@ -773,8 +773,8 @@ export default function DriveScreen() {
           <View style={styles.scoreInner}>
             <View style={styles.shieldIconContainer}>
               <Image 
-                source={!isDark ? require('../../assets/icon/icon-white.png') : require('../../assets/icon/image.png')} 
-                style={{ width: 96, height: 96, resizeMode: 'contain' }} 
+                source={!isDark ? require('../../assets/icon/icon-white.png') : require('../../assets/icon/black -icon.png')} 
+                style={{ width: !isDark ? 54 : 38, height: !isDark ? 54 : 38, resizeMode: 'contain' }} 
               />
             </View>
             <Text style={styles.scoreNumber}>{score}</Text>
@@ -1353,6 +1353,7 @@ function getStyles(colors: any, isDark: boolean) {
   shieldIconContainer: {
     alignItems: 'center',
     justifyContent: 'center',
+    marginTop: 12,
     marginBottom: 2,
   },
   scoreNumber: {

@@ -216,8 +216,8 @@ export default function HomeScreen() {
         <View style={styles.scoreInner}>
           <View style={styles.shieldIconContainer}>
             <Image 
-              source={!isDark ? require('../../assets/icon/icon-white.png') : require('../../assets/icon/image.png')} 
-              style={{ width: 96, height: 96, resizeMode: 'contain' }} 
+              source={!isDark ? require('../../assets/icon/icon-white.png') : require('../../assets/icon/black -icon.png')} 
+              style={{ width: !isDark ? 54 : 38, height: !isDark ? 54 : 38, resizeMode: 'contain' }} 
             />
           </View>
           <Text style={[styles.scoreNumber, { color: colors.text }]}>{score}</Text>
@@ -460,7 +460,8 @@ function getStyles(colors: any) {
     shieldIconContainer: {
       alignItems: 'center',
       justifyContent: 'center',
-      marginBottom: 5,
+      marginTop: 12,
+      marginBottom: 2,
     },
     scoreNumber: {
       color: colors.text,

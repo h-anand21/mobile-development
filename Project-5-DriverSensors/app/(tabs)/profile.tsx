@@ -285,8 +285,8 @@ export default function ProfileScreen() {
 
           <View style={styles.safeDriverBadge}>
             <Image 
-              source={!isDark ? require('../../assets/icon/icon-white.png') : require('../../assets/icon/image.png')} 
-              style={{ width: 48, height: 48, resizeMode: 'contain', marginBottom: 2 }} 
+              source={!isDark ? require('../../assets/icon/icon-white.png') : require('../../assets/icon/black -icon.png')} 
+              style={{ width: !isDark ? 48 : 36, height: !isDark ? 48 : 36, resizeMode: 'contain', marginBottom: 2 }} 
             />
             <Text style={styles.safeDriverText}>Safe Driver</Text>
           </View>
