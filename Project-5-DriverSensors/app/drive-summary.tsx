@@ -187,7 +187,7 @@ export default function DriveSummaryScreen() {
           }} 
           style={styles.iconCircle}
         >
-          <Feather name="arrow-left" size={24} color="#F8FAFC" />
+          <Feather name="arrow-left" size={24} color={colors.text} />
         </TouchableOpacity>
         
         <View style={styles.headerTitleContainer}>
@@ -198,7 +198,7 @@ export default function DriveSummaryScreen() {
         </View>
 
         <TouchableOpacity onPress={handleShare} style={styles.iconCircle}>
-          <Feather name="share-2" size={20} color="#F8FAFC" />
+          <Feather name="share-2" size={20} color={colors.text} />
         </TouchableOpacity>
       </View>
 

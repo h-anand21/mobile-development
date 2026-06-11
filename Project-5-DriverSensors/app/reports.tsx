@@ -452,7 +452,7 @@ Telemetry data processed locally. SafeDrive v1.0.0.
       {/* 1. Top Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Feather name="chevron-left" size={24} color="#F8FAFC" />
+          <Feather name="chevron-left" size={24} color={colors.text} />
         </TouchableOpacity>
 
         <View style={styles.headerTitleContainer}>

@@ -181,7 +181,7 @@ export default function LiveEventsScreen() {
       {/* Top Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.iconCircle}>
-          <Feather name="chevron-left" size={24} color="#F8FAFC" />
+          <Feather name="chevron-left" size={24} color={colors.text} />
         </TouchableOpacity>
         
         <View style={styles.headerTitleContainer}>
@@ -195,7 +195,7 @@ export default function LiveEventsScreen() {
         </View>
 
         <TouchableOpacity style={styles.iconCircle}>
-          <Feather name="filter" size={20} color="#F8FAFC" />
+          <Feather name="filter" size={20} color={colors.text} />
         </TouchableOpacity>
       </View>
 

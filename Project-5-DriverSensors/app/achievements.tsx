@@ -361,10 +361,9 @@ export default function AchievementsScreen() {
 
   return (
     <View style={styles.container}>
-      {/* 1. Header Row */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.iconBtn}>
-          <Feather name="chevron-left" size={24} color="#F8FAFC" />
+          <Feather name="chevron-left" size={24} color={colors.text} />
         </TouchableOpacity>
 
         <View style={styles.headerTitleContainer}>
@@ -373,7 +372,7 @@ export default function AchievementsScreen() {
         </View>
 
         <TouchableOpacity style={styles.iconBtn}>
-          <FontAwesome5 name="trophy" size={20} color="#F8FAFC" />
+          <FontAwesome5 name="trophy" size={20} color={colors.text} />
         </TouchableOpacity>
       </View>
 

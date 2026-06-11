@@ -336,7 +336,7 @@ export default function RouteReplayScreen() {
       {/* 1. Header Row */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.iconCircle}>
-          <Feather name="chevron-left" size={24} color="#F8FAFC" />
+          <Feather name="chevron-left" size={24} color={colors.text} />
         </TouchableOpacity>
         
         <View style={styles.headerTitleContainer}>
@@ -348,7 +348,7 @@ export default function RouteReplayScreen() {
         </View>
 
         <TouchableOpacity style={styles.iconCircle}>
-          <Feather name="share" size={20} color="#F8FAFC" />
+          <Feather name="share" size={20} color={colors.text} />
         </TouchableOpacity>
       </View>
 

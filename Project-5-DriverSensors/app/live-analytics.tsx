@@ -405,7 +405,7 @@ export default function LiveAnalyticsScreen() {
       {/* Top Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.iconCircle}>
-          <Feather name="chevron-left" size={24} color="#F8FAFC" />
+          <Feather name="chevron-left" size={24} color={colors.text} />
         </TouchableOpacity>
         
         <View style={styles.headerTitleContainer}>
@@ -419,7 +419,7 @@ export default function LiveAnalyticsScreen() {
         </View>
 
         <TouchableOpacity style={styles.iconCircle}>
-          <Feather name="info" size={20} color="#F8FAFC" />
+          <Feather name="info" size={20} color={colors.text} />
         </TouchableOpacity>
       </View>
 

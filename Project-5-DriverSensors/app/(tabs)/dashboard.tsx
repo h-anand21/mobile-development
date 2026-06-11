@@ -458,7 +458,7 @@ export default function DashboardScreen() {
                   <FontAwesome5 name="trophy" size={14} color="#eab308" />
                   <Text style={[styles.metricCardLabel, { color: '#eab308', fontWeight: 'bold' }]} numberOfLines={1}>Best Safe Score</Text>
                 </View>
-                <Text style={[styles.metricCardValue, { color: '#ffffff' }]}>{totalDrives > 0 ? bestScore : '--'}</Text>
+                <Text style={[styles.metricCardValue, { color: colors.text }]}>{totalDrives > 0 ? bestScore : '--'}</Text>
                 <Text style={[styles.metricCardSub, { color: '#eab308' }]}>Highest safety rating</Text>
                 <Text style={[styles.metricCardDiff, { color: '#a3e635' }]}>All-time record 🏆</Text>
               </View>
@@ -469,7 +469,7 @@ export default function DashboardScreen() {
                   <Feather name="alert-triangle" size={16} color="#ef4444" />
                   <Text style={[styles.metricCardLabel, { color: '#ef4444', fontWeight: 'bold' }]} numberOfLines={1}>Total Violations</Text>
                 </View>
-                <Text style={[styles.metricCardValue, { color: '#ffffff' }]}>{totalDrives > 0 ? totalEvents : 0}</Text>
+                <Text style={[styles.metricCardValue, { color: colors.text }]}>{totalDrives > 0 ? totalEvents : 0}</Text>
                 <Text style={[styles.metricCardSub, { color: '#ef4444' }]}>Safety events logged</Text>
                 <Text style={[styles.metricCardDiff, { color: '#ef4444' }]}>Safe driving alerts</Text>
               </View>

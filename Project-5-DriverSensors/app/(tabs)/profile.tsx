@@ -251,13 +251,13 @@ export default function ProfileScreen() {
       {/* 1. Header Row */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.push('/(tabs)')} style={styles.iconBtn}>
-          <Feather name="chevron-left" size={24} color="#F8FAFC" />
+          <Feather name="chevron-left" size={24} color={colors.text} />
         </TouchableOpacity>
 
         <Text style={styles.headerTitle}>Driver Profile</Text>
 
         <TouchableOpacity onPress={handleEditProfile} style={styles.iconBtn}>
-          <Feather name="edit-3" size={20} color="#F8FAFC" />
+          <Feather name="edit-3" size={20} color={colors.text} />
         </TouchableOpacity>
       </View>
 
@@ -270,7 +270,7 @@ export default function ProfileScreen() {
               style={styles.avatarImg}
             />
             <View style={styles.cameraIconBadge}>
-              <Feather name="camera" size={10} color="#ffffff" />
+              <Feather name="camera" size={10} color={colors.accent} />
             </View>
           </View>
 

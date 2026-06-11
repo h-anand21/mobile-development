@@ -286,7 +286,7 @@ export default function HistoryScreen() {
       {/* 1. Header Row */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.push('/(tabs)')} style={styles.iconCircle}>
-          <Feather name="chevron-left" size={24} color="#F8FAFC" />
+          <Feather name="chevron-left" size={24} color={colors.text} />
         </TouchableOpacity>
 
         <View style={styles.headerTitleContainer}>
@@ -303,7 +303,7 @@ export default function HistoryScreen() {
               setShowSortOptions(false);
             }}
           >
-            <Feather name="calendar" size={18} color="#F8FAFC" />
+            <Feather name="calendar" size={18} color={colors.text} />
             {dateFilter !== 'all' && <View style={styles.activeFilterDot} />}
           </TouchableOpacity>
           <TouchableOpacity 
@@ -314,7 +314,7 @@ export default function HistoryScreen() {
               setShowSortOptions(false);
             }}
           >
-            <Feather name="filter" size={18} color="#F8FAFC" />
+            <Feather name="filter" size={18} color={colors.text} />
             {ratingFilter !== 'all' && <View style={styles.activeFilterDot} />}
           </TouchableOpacity>
         </View>
@@ -345,7 +345,7 @@ export default function HistoryScreen() {
             setShowSortOptions(false);
           }}
         >
-          <Feather name="sliders" size={14} color="#ffffff" style={{ marginRight: 6 }} />
+          <Feather name="sliders" size={14} color={colors.text} style={{ marginRight: 6 }} />
           <Text style={styles.filterBtnText}>
             {ratingFilter === 'all' ? 'Filter' : ratingFilter.charAt(0).toUpperCase() + ratingFilter.slice(1)}
           </Text>
@@ -358,7 +358,7 @@ export default function HistoryScreen() {
             setShowRatingFilter(false);
           }}
         >
-          <MaterialCommunityIcons name="arrow-up-down" size={14} color="#ffffff" style={{ marginRight: 6 }} />
+          <MaterialCommunityIcons name="arrow-up-down" size={14} color={colors.text} style={{ marginRight: 6 }} />
           <Text style={styles.sortBtnText}>Sort</Text>
         </TouchableOpacity>
       </View>

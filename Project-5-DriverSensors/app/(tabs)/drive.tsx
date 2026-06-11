@@ -89,11 +89,11 @@ export default function DriveScreen() {
         {/* Header */}
         <View style={[styles.header, { paddingTop: Math.max(insets.top, 20) }]}>
           <TouchableOpacity onPress={() => router.push('/(tabs)')} style={styles.iconCircle}>
-            <Feather name="chevron-down" size={24} color="#F8FAFC" />
+            <Feather name="chevron-down" size={24} color={colors.text} />
           </TouchableOpacity>
           <Text style={styles.headerTitleInactive}>SafeDrive Engine</Text>
           <TouchableOpacity style={styles.iconCircle}>
-            <Feather name="settings" size={24} color="#F8FAFC" />
+            <Feather name="settings" size={24} color={colors.text} />
           </TouchableOpacity>
         </View>
 
@@ -276,7 +276,7 @@ export default function DriveScreen() {
       {/* Top Header */}
       <View style={[styles.header, { paddingTop: Math.max(insets.top, 20) }]}>
         <TouchableOpacity onPress={() => router.push('/(tabs)')} style={styles.iconCircle}>
-          <Feather name="chevron-down" size={24} color="#F8FAFC" />
+          <Feather name="chevron-down" size={24} color={colors.text} />
         </TouchableOpacity>
 
         <View style={styles.statusBarContainer}>
@@ -292,7 +292,7 @@ export default function DriveScreen() {
         </View>
 
         <TouchableOpacity style={styles.iconCircle}>
-          <Feather name="settings" size={24} color="#F8FAFC" />
+          <Feather name="settings" size={24} color={colors.text} />
         </TouchableOpacity>
       </View>
 
