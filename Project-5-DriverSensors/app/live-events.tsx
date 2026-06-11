@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
-import { Feather, MaterialCommunityIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
+import { Feather, MaterialCommunityIcons, Ionicons, FontAwesome5, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useDriveStore } from '../src/store/driveStore';
 import { driveRepository } from '../src/database/repositories/driveRepository';
@@ -289,7 +289,7 @@ export default function LiveEventsScreen() {
                         <Feather name={meta.iconName as any} size={18} color={meta.color} />
                       )}
                       {meta.iconType === 'Material' && (
-                        <Ionicons name={meta.iconName as any} size={18} color={meta.color} />
+                        <MaterialIcons name={meta.iconName as any} size={18} color={meta.color} />
                       )}
                       {meta.iconType === 'MaterialCommunity' && (
                         <MaterialCommunityIcons name={meta.iconName as any} size={18} color={meta.color} />
