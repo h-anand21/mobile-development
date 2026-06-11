@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, Dimensions, Modal } from 'react-native';
+import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, Dimensions, Modal, Animated, Easing } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather, MaterialCommunityIcons, Ionicons, FontAwesome5, AntDesign } from '@expo/vector-icons';
 import Svg, { Circle, Defs, LinearGradient as SvgLinearGradient, Stop, Line, Path, Text as SvgText } from 'react-native-svg';
 import { useRouter } from 'expo-router';
+import { useIsFocused } from '@react-navigation/native';
 import { useDriveStore, DriveSession } from '../../src/store/driveStore';
 import { useSensorStore } from '../../src/store/sensorStore';
+import { driveRepository } from '../../src/database/repositories/driveRepository';
+
 
 
 import { generateAIFeedback } from '../../src/services/ai/aiCoach';
@@ -17,6 +20,113 @@ const isSmallDevice = height < 750;
 
 
   
+const ProgressDial = ({
+  percent,
+  value,
+  label,
+  sublabel,
+  colors: dialColors,
+  icon,
+}: {
+  percent: number;
+  value: string;
+  label: string;
+  sublabel: string;
+  colors: string[];
+  icon: React.ReactNode;
+}) => {
+  const size = 100;
+  const radius = 40;
+  const strokeWidth = 4.5;
+  const circumference = 2 * Math.PI * radius; // 251.33
+  const arcLength = circumference * 0.75; // 188.50
+  const progressLength = percent * arcLength;
+  const gapLength = circumference - progressLength;
+
+  return (
+    <View style={{ width: '32%', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+      <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <Defs>
+          <SvgLinearGradient id={`grad-${label.replace(/\s+/g, '')}`} x1="0%" y1="0%" x2="100%" y2="100%">
+            <Stop offset="0%" stopColor={dialColors[0]} />
+            <Stop offset="100%" stopColor={dialColors[1]} />
+          </SvgLinearGradient>
+        </Defs>
+        {/* Outer dashed accent ring */}
+        <Circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius + 4}
+          stroke="rgba(0, 245, 255, 0.05)"
+          strokeWidth="1"
+          strokeDasharray="2 4"
+          fill="none"
+        />
+        {/* Track Circle (always 270 degrees) */}
+        <Circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke="rgba(255, 255, 255, 0.05)"
+          strokeWidth={strokeWidth - 1}
+          fill="none"
+          strokeDasharray={`${arcLength} ${circumference - arcLength}`}
+          strokeLinecap="round"
+          transform={`rotate(135 ${size / 2} ${size / 2})`}
+        />
+        {/* Progress Circle (drawn dynamically from bottom-left clockwise) */}
+        <Circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke={`url(#grad-${label.replace(/\s+/g, '')})`}
+          strokeWidth={strokeWidth}
+          fill="none"
+          strokeDasharray={`${progressLength} ${gapLength}`}
+          strokeDashoffset={0}
+          strokeLinecap="round"
+          transform={`rotate(135 ${size / 2} ${size / 2})`}
+        />
+      </Svg>
+
+      <View style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingTop: 8,
+      }}>
+        <View style={{ marginBottom: 2 }}>{icon}</View>
+        <Text style={{
+          fontSize: 7.5,
+          color: '#64748b',
+          fontWeight: '700',
+          textTransform: 'uppercase',
+          letterSpacing: 0.4,
+          marginBottom: 1,
+          textAlign: 'center',
+        }}>{label}</Text>
+        <Text style={{
+          fontSize: 18,
+          fontWeight: '800',
+          color: dialColors[0],
+          lineHeight: 20,
+          marginBottom: 0,
+        }}>{value}</Text>
+        <Text style={{
+          fontSize: 9,
+          fontWeight: '700',
+          color: dialColors[0],
+          textAlign: 'center',
+        }}>{sublabel}</Text>
+      </View>
+    </View>
+  );
+};
+
 export default function DriveScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -28,6 +138,15 @@ export default function DriveScreen() {
   const startDrive = useDriveStore((state) => state.startDrive);
   const endDrive = useDriveStore((state) => state.endDrive);
   const setTracking = useSensorStore((state) => state.setTracking);
+
+  const isFocused = useIsFocused();
+  const [dbDrives, setDbDrives] = useState<DriveSession[]>([]);
+
+  useEffect(() => {
+    if (isFocused) {
+      setDbDrives(driveRepository.getAllDrives());
+    }
+  }, [isFocused, currentSession]);
   
   // Local states
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -81,115 +200,431 @@ export default function DriveScreen() {
     }
   };
 
+  // Premium animations for the car (float + rumble vibration + sway horizontal + steering tilt)
+  const floatAnim = useRef(new Animated.Value(0)).current;
+  const rumbleAnim = useRef(new Animated.Value(0)).current;
+  const swayAnim = useRef(new Animated.Value(0)).current;
+  const tiltAnim = useRef(new Animated.Value(0)).current;
+
+  // Twinkling stars opacity values
+  const star1Opacity = useRef(new Animated.Value(0.3)).current;
+  const star2Opacity = useRef(new Animated.Value(0.5)).current;
+  const star3Opacity = useRef(new Animated.Value(0.2)).current;
+  const star4Opacity = useRef(new Animated.Value(0.4)).current;
+
+  // Speed light trails
+  const trail1Anim = useRef(new Animated.Value(0)).current;
+  const trail2Anim = useRef(new Animated.Value(0)).current;
+  const trail3Anim = useRef(new Animated.Value(0)).current;
+
+  // Seamless road lines translation
+  const roadLinesTranslateX = useRef(new Animated.Value(0)).current;
+
+  // Combined vertical vibration + suspension float
+  const carTranslateY = Animated.add(floatAnim, rumbleAnim);
+
+  useEffect(() => {
+    if (!currentSession) {
+      // 1. Slow suspension float bounce (vertical)
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(floatAnim, {
+            toValue: -2.0,
+            duration: 1600,
+            useNativeDriver: true,
+          }),
+          Animated.timing(floatAnim, {
+            toValue: 1.5,
+            duration: 1600,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+
+      // 2. High-speed engine vibration (rumble)
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(rumbleAnim, {
+            toValue: 0.5,
+            duration: 65,
+            useNativeDriver: true,
+          }),
+          Animated.timing(rumbleAnim, {
+            toValue: -0.5,
+            duration: 65,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+
+      // 3. Horizontal lane sway (drifting/steering effect)
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(swayAnim, {
+            toValue: -5,
+            duration: 2400,
+            useNativeDriver: true,
+          }),
+          Animated.timing(swayAnim, {
+            toValue: 5,
+            duration: 2400,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+
+      // 4. Steering tilt rotation
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(tiltAnim, {
+            toValue: -1.0,
+            duration: 1300,
+            useNativeDriver: true,
+          }),
+          Animated.timing(tiltAnim, {
+            toValue: 1.0,
+            duration: 1300,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+
+      // 5. Seamless infinite road lines scrolling (constant speed)
+      roadLinesTranslateX.setValue(0);
+      Animated.loop(
+        Animated.timing(roadLinesTranslateX, {
+          toValue: -60, // sum of dash width + spacing
+          duration: 150, // fast speed
+          easing: Easing.linear,
+          useNativeDriver: true,
+        })
+      ).start();
+
+      // 6. Twinkling stars loop animations
+      const twinkle = (anim: Animated.Value, minVal: number, maxVal: number, duration: number) => {
+        Animated.loop(
+          Animated.sequence([
+            Animated.timing(anim, { toValue: maxVal, duration, useNativeDriver: true }),
+            Animated.timing(anim, { toValue: minVal, duration, useNativeDriver: true }),
+          ])
+        ).start();
+      };
+      twinkle(star1Opacity, 0.2, 0.9, 1100);
+      twinkle(star2Opacity, 0.3, 1.0, 1500);
+      twinkle(star3Opacity, 0.1, 0.8, 900);
+      twinkle(star4Opacity, 0.4, 0.95, 1800);
+
+      // 7. Light trails infinite scrolling loops
+      const runTrail = (anim: Animated.Value, duration: number) => {
+        anim.setValue(0);
+        Animated.loop(
+          Animated.timing(anim, {
+            toValue: -(width - 50 + 150),
+            duration,
+            easing: Easing.linear,
+            useNativeDriver: true,
+          })
+        ).start();
+      };
+      runTrail(trail1Anim, 850);
+      runTrail(trail2Anim, 1350);
+      runTrail(trail3Anim, 1850);
+    }
+  }, [currentSession]);
+
+  // Interpolated rotation values
+  const tiltInterpolate = tiltAnim.interpolate({
+    inputRange: [-1, 1],
+    outputRange: ['-1deg', '1deg'],
+  });
+
+  // Calculate dynamic dashboard statistics
+  const { avgScore, totalDistanceKm, totalDrivesCount } = React.useMemo(() => {
+    if (dbDrives.length === 0) {
+      return {
+        avgScore: 92,
+        totalDistanceKm: 1248,
+        totalDrivesCount: 24,
+      };
+    }
+    const totalScore = dbDrives.reduce((sum, d) => sum + d.score, 0);
+    const avg = Math.round(totalScore / dbDrives.length);
+    const totalDistMeters = dbDrives.reduce((sum, d) => sum + d.distance, 0);
+    
+    // Show precision decimal (e.g. 1.4 km) if total is under 10km, otherwise round to whole km
+    const totalDistKm = totalDistMeters < 10000
+      ? Number((totalDistMeters / 1000).toFixed(1))
+      : Math.round(totalDistMeters / 1000);
+
+    return {
+      avgScore: avg,
+      totalDistanceKm: totalDistKm,
+      totalDrivesCount: dbDrives.length,
+    };
+  }, [dbDrives]);
+
+  const scoreRatingText = avgScore >= 90 ? 'Excellent' : avgScore >= 70 ? 'Good' : avgScore >= 50 ? 'Fair' : 'Poor';
+
+  // Dynamic color palette for Avg Score based on the score value
+  const avgScoreColors = React.useMemo(() => {
+    if (avgScore >= 90) return ['#22c55e', '#84cc16']; // Excellent (Green/Lime)
+    if (avgScore >= 70) return ['#00f5ff', '#0ea5e9']; // Good (Cyan/Blue)
+    if (avgScore >= 50) return ['#f59e0b', '#eab308']; // Fair (Orange/Yellow)
+    return ['#ef4444', '#b91c1c']; // Poor (Red)
+  }, [avgScore]);
+
+  // Determine dynamic greeting message based on local time
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good Morning';
+    if (hour < 17) return 'Good Afternoon';
+    return 'Good Evening';
+  };
 
   // If no active drive session, render start screen
   if (!currentSession) {
     return (
-      <View style={styles.inactiveContainer}>
+      <LinearGradient
+        colors={['#081325', '#030712']}
+        style={styles.inactiveContainer}
+      >
         {/* Header */}
-        <View style={[styles.header, { paddingTop: Math.max(insets.top, 20) }]}>
-          <TouchableOpacity onPress={() => router.push('/(tabs)')} style={styles.iconCircle}>
-            <Feather name="chevron-down" size={24} color={colors.text} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitleInactive}>SafeDrive Engine</Text>
-          <TouchableOpacity style={styles.iconCircle}>
-            <Feather name="settings" size={24} color={colors.text} />
-          </TouchableOpacity>
+        <View style={[styles.headerInactive, { paddingTop: Math.max(insets.top, 12) }]}>
+          <View style={styles.headerBrand}>
+            <View style={styles.headerLogoWrap}>
+              <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+                <Path
+                  d="M12 2L3 7v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-9-5z"
+                  stroke="#00f5ff"
+                  strokeWidth="2"
+                  fill="rgba(0, 245, 255, 0.1)"
+                />
+                <Path
+                  d="M9 12l2 2 4-4"
+                  stroke="#22c55e"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </Svg>
+            </View>
+            <View style={styles.headerTitleCol}>
+              <Text style={styles.headerLogoText}>
+                Safe<Text style={styles.headerLogoTextHighlight}>Drive</Text>
+              </Text>
+              <Text style={styles.headerSubtitle}>Engine</Text>
+            </View>
+          </View>
         </View>
 
-        <ScrollView style={styles.scrollView} contentContainerStyle={styles.inactiveContent}>
-          {/* Cyber HUD steering Wheel Emblem */}
-          <View style={styles.hudEmblemContainer}>
-            <Svg width={isSmallDevice ? 150 : 200} height={isSmallDevice ? 150 : 200} viewBox="0 0 200 200" style={styles.hudEmblemSvg}>
-              <Circle cx="100" cy="100" r="92" stroke="rgba(6, 182, 212, 0.15)" strokeWidth="1" strokeDasharray="3 3" fill="none" />
-              <Circle cx="100" cy="100" r="80" stroke="rgba(6, 182, 212, 0.25)" strokeWidth="1.5" fill="none" />
-              {/* Crosshair ticks */}
-              <Line x1="100" y1="10" x2="100" y2="25" stroke="#06b6d4" strokeWidth="2" />
-              <Line x1="100" y1="175" x2="100" y2="190" stroke="#06b6d4" strokeWidth="2" />
-              <Line x1="10" y1="100" x2="25" y2="100" stroke="#06b6d4" strokeWidth="2" />
-              <Line x1="175" y1="100" x2="190" y2="100" stroke="#06b6d4" strokeWidth="2" />
-              {/* Compass letters */}
-              <SvgText x="100" y="38" fill="#06b6d4" fontSize="11" fontWeight="bold" textAnchor="middle">N</SvgText>
-              <SvgText x="100" y="171" fill="rgba(6, 182, 212, 0.5)" fontSize="10" fontWeight="bold" textAnchor="middle">S</SvgText>
-              <SvgText x="38" y="103" fill="rgba(6, 182, 212, 0.5)" fontSize="10" fontWeight="bold" textAnchor="middle">W</SvgText>
-              <SvgText x="162" y="103" fill="rgba(6, 182, 212, 0.5)" fontSize="10" fontWeight="bold" textAnchor="middle">E</SvgText>
-              {/* Ring of micro-dashes */}
-              <Circle cx="100" cy="100" r="62" stroke="rgba(6, 182, 212, 0.15)" strokeWidth="4" strokeDasharray="2 6" fill="none" />
-              <Circle cx="100" cy="100" r="54" stroke="#06b6d4" strokeWidth="1" fill="none" opacity="0.4" />
-            </Svg>
-            <View style={styles.steeringWheelGlowPod}>
-              <MaterialCommunityIcons name="steering" size={isSmallDevice ? 52 : 72} color="#00f5ff" style={styles.glowingEmblem} />
-            </View>
-          </View>
-
-          <Text style={styles.inactiveTitle}>Ready for your drive?</Text>
-          <Text style={styles.inactiveDescription}>
-            Start SafeDrive tracking to log your route, speed limits, and analyze your driving behavior. Get real-time AI safety coaching and maintain your safe score!
+        <ScrollView style={styles.scrollView} contentContainerStyle={styles.inactiveContent} showsVerticalScrollIndicator={false}>
+          {/* Greeting and Header */}
+          <Text style={styles.greetingText}>{getGreeting()}, Himanshu 👋</Text>
+          <Text style={styles.welcomeTitle}>
+            Ready for{"\n"}your <Text style={styles.welcomeTitleHighlight}>drive?</Text>
           </Text>
+          <Text style={styles.welcomeSubtitle}>Let's make every drive a safe one.</Text>
 
-          {/* Cockpit Diagnostics HUD Row */}
-          <View style={styles.diagnosticsRow}>
-            <View style={styles.diagnosticItem}>
-              <View style={styles.diagnosticPulseDot} />
-              <Text style={styles.diagnosticLabel}>SENSORS: </Text>
-              <Text style={styles.diagnosticValue}>ONLINE</Text>
+          {/* Animated Panoramic Driving Landscape Card */}
+          <View style={styles.imageContainer}>
+            {/* The static background scenery */}
+            <Image
+              source={require('../../assets/images/backgroubnd.png')}
+              style={styles.backgroundImage}
+            />
+
+            {/* Twinkling Stars */}
+            <Animated.View style={[styles.star, { top: '10%', left: '22%', opacity: star1Opacity }]} />
+            <Animated.View style={[styles.star, { top: '6%', left: '46%', opacity: star2Opacity }]} />
+            <Animated.View style={[styles.star, { top: '14%', left: '68%', opacity: star3Opacity }]} />
+            <Animated.View style={[styles.star, { top: '8%', left: '85%', opacity: star4Opacity }]} />
+
+            {/* Seamless Horizontally Scrolling Road Lines */}
+            <Animated.View
+              style={[
+                styles.roadLinesRow,
+                { transform: [{ translateX: roadLinesTranslateX }] }
+              ]}
+            >
+              {Array.from({ length: 20 }).map((_, idx) => (
+                <View key={idx} style={styles.roadLineDash} />
+              ))}
+            </Animated.View>
+
+            {/* Passing Light Trails / Streetlights */}
+            <Animated.View
+              style={[
+                styles.lightTrail,
+                {
+                  top: '72%',
+                  left: '100%',
+                  width: 80,
+                  backgroundColor: '#00f5ff',
+                  transform: [{ translateX: trail1Anim }],
+                },
+              ]}
+            />
+            <Animated.View
+              style={[
+                styles.lightTrail,
+                {
+                  top: '80%',
+                  left: '100%',
+                  width: 120,
+                  backgroundColor: '#ffffff',
+                  transform: [{ translateX: trail2Anim }],
+                },
+              ]}
+            />
+            <Animated.View
+              style={[
+                styles.lightTrail,
+                {
+                  top: '86%',
+                  left: '100%',
+                  width: 60,
+                  backgroundColor: '#22c55e',
+                  transform: [{ translateX: trail3Anim }],
+                },
+              ]}
+            />
+
+            {/* The transparent car layer which floats/vibrates/sways/tilts on the road */}
+            <Animated.View
+              style={[
+                styles.carOverlay,
+                {
+                  transform: [
+                    { translateY: carTranslateY },
+                    { translateX: swayAnim },
+                    { rotate: tiltInterpolate }
+                  ]
+                }
+              ]}
+            >
+              <Image
+                source={require('../../assets/images/car_running.png')}
+                style={styles.carImage}
+              />
+            </Animated.View>
+          </View>
+
+          {/* Diagnostics Card */}
+          <View style={styles.diagnosticsCard}>
+            <View style={styles.diagCol}>
+              <View style={styles.diagIconCircle}>
+                <Feather name="target" size={14} color="#22c55e" />
+              </View>
+              <Text style={styles.diagLabel}>Sensors</Text>
+              <View style={styles.diagStatusRow}>
+                <Text style={[styles.diagStatusText, { color: '#22c55e' }]}>Online</Text>
+                <View style={[styles.diagStatusDot, { backgroundColor: '#22c55e' }]} />
+              </View>
             </View>
-            <View style={styles.diagnosticDivider} />
-            <View style={styles.diagnosticItem}>
-              <Feather name="navigation" size={10} color="#22c55e" style={{ marginRight: 4 }} />
-              <Text style={styles.diagnosticLabel}>GPS: </Text>
-              <Text style={styles.diagnosticValue}>ACTIVE</Text>
+
+            <View style={styles.diagDivider} />
+
+            <View style={styles.diagCol}>
+              <View style={styles.diagIconCircle}>
+                <Feather name="map-pin" size={14} color="#00f5ff" />
+              </View>
+              <Text style={styles.diagLabel}>GPS</Text>
+              <View style={styles.diagStatusRow}>
+                <Text style={[styles.diagStatusText, { color: '#00f5ff' }]}>Active</Text>
+                <View style={[styles.diagStatusDot, { backgroundColor: '#00f5ff' }]} />
+              </View>
             </View>
-            <View style={styles.diagnosticDivider} />
-            <View style={styles.diagnosticItem}>
-              <MaterialCommunityIcons name="database-outline" size={11} color="#22c55e" style={{ marginRight: 4 }} />
-              <Text style={styles.diagnosticLabel}>LOGS: </Text>
-              <Text style={styles.diagnosticValue}>NOMINAL</Text>
+
+            <View style={styles.diagDivider} />
+
+            <View style={styles.diagCol}>
+              <View style={styles.diagIconCircle}>
+                <Feather name="smartphone" size={14} color="#22c55e" />
+              </View>
+              <Text style={styles.diagLabel}>Phone</Text>
+              <View style={styles.diagStatusRow}>
+                <Text style={[styles.diagStatusText, { color: '#22c55e' }]}>Mounted</Text>
+                <View style={[styles.diagStatusDot, { backgroundColor: '#22c55e' }]} />
+              </View>
             </View>
           </View>
 
-          {/* Feature highlights */}
-          <View style={styles.featureGrid}>
-            <View style={styles.featureItemCard}>
-              <View style={styles.featureIconContainer}>
-                <Feather name="activity" size={20} color="#0ea5e9" />
-              </View>
-              <Text style={styles.featureTitleText}>Telemetry Tracking</Text>
-              <Text style={styles.featureSubText}>Accelerometer & Gyro sensors monitor road conditions</Text>
-            </View>
-            <View style={styles.featureItemCard}>
-              <View style={styles.featureIconContainer}>
-                <Feather name="navigation" size={20} color="#84cc16" />
-              </View>
-              <Text style={styles.featureTitleText}>GPS Analytics</Text>
-              <Text style={styles.featureSubText}>Track speed limits, distance, and trip mapping</Text>
-            </View>
+          {/* Circular Progress Rings Row */}
+          <View style={styles.dialsRow}>
+            {/* Avg Score Dial */}
+            <ProgressDial
+              percent={avgScore / 100}
+              value={String(avgScore)}
+              label="Avg Score"
+              sublabel={scoreRatingText}
+              colors={avgScoreColors}
+              icon={
+                <View style={{ backgroundColor: `${avgScoreColors[0]}1a`, padding: 4, borderRadius: 8 }}>
+                  <Feather name="shield" size={12} color={avgScoreColors[0]} />
+                </View>
+              }
+            />
+
+            {/* Total Distance Dial */}
+            <ProgressDial
+              percent={Math.min(1.0, totalDistanceKm / 2000)} // scale up to 2000km
+              value={String(totalDistanceKm)}
+              label="Total Distance"
+              sublabel="km"
+              colors={['#00f5ff', '#0ea5e9']}
+              icon={
+                <View style={{ backgroundColor: 'rgba(0, 245, 255, 0.1)', padding: 4, borderRadius: 8 }}>
+                  <FontAwesome5 name="road" size={11} color="#00f5ff" />
+                </View>
+              }
+            />
+
+            {/* Total Trips Dial */}
+            <ProgressDial
+              percent={Math.min(1.0, totalDrivesCount / 50)} // scale up to 50 trips
+              value={String(totalDrivesCount)}
+              label="Total Drives"
+              sublabel="Trips"
+              colors={['#a855f7', '#d946ef']}
+              icon={
+                <View style={{ backgroundColor: 'rgba(168, 85, 247, 0.1)', padding: 4, borderRadius: 8 }}>
+                  <Ionicons name="car-outline" size={13} color="#a855f7" />
+                </View>
+              }
+            />
           </View>
 
-          {/* Start Drive CTA */}
-          <Text style={styles.startButtonSubtitle}>SYSTEM STATUS // READY TO DEPLOY</Text>
+          {/* START DRIVE CTA */}
           <TouchableOpacity style={styles.hugeStartButton} onPress={handleStart}>
             <LinearGradient
-              colors={['#06b6d4', '#0ea5e9']}
+              colors={['#00f5ff', '#22c55e']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.hugeStartGradient}
             >
-              <Feather name="play" size={24} color="#050B14" style={{ marginRight: 10 }} />
-              <Text style={styles.hugeStartText}>START NEW TRIP</Text>
+              <MaterialCommunityIcons name="steering" size={22} color="#050B14" style={{ marginRight: 10 }} />
+              <Text style={styles.hugeStartText}>START DRIVE</Text>
+              <Feather name="chevron-right" size={22} color="#050B14" style={{ marginLeft: 'auto' }} />
             </LinearGradient>
           </TouchableOpacity>
 
-          {/* Live Sensor Analytics Shortcut */}
+          {/* LIVE SENSOR VIEW CTA */}
           <TouchableOpacity 
             style={styles.liveAnalyticsOutlineBtn} 
             onPress={() => router.push('/live-analytics')}
           >
-            <MaterialCommunityIcons name="waveform" size={18} color="#06b6d4" style={{ marginRight: 8 }} />
-            <Text style={styles.liveAnalyticsOutlineBtnText}>VIEW LIVE SENSOR TELEMETRY</Text>
+            <MaterialCommunityIcons name="waveform" size={18} color="#00f5ff" style={{ marginRight: 8 }} />
+            <Text style={styles.liveAnalyticsOutlineBtnText}>LIVE SENSOR VIEW</Text>
+            <Feather name="chevron-right" size={18} color="#00f5ff" style={{ marginLeft: 'auto' }} />
           </TouchableOpacity>
+
+          {/* Secure Footer */}
+          <View style={styles.secureFooter}>
+            <Feather name="lock" size={12} color="#94a3b8" />
+            <Text style={styles.secureFooterText}>Your data is secure & private</Text>
+          </View>
         </ScrollView>
-      </View>
+      </LinearGradient>
     );
   }
 
@@ -589,176 +1024,267 @@ function getStyles(colors: any) {
     justifyContent: 'center',
   },
 
-  // Inactive Drive screen
+  // Inactive Drive screen (Neon theme)
   inactiveContainer: {
     flex: 1,
-    backgroundColor: colors.background,
   },
-  headerTitleInactive: {
-    color: colors.text,
-    fontSize: 18,
+  headerInactive: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingBottom: 6,
+  },
+  iconCircleInactive: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerBrand: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderWidth: 1.2,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 20,
+    paddingVertical: 5,
+    paddingHorizontal: 16,
+  },
+  headerLogoWrap: {
+    marginRight: 8,
+  },
+  headerTitleCol: {
+    justifyContent: 'center',
+  },
+  headerLogoText: {
+    fontSize: 16,
     fontWeight: 'bold',
+    color: '#ffffff',
+  },
+  headerLogoTextHighlight: {
+    color: '#22c55e',
+  },
+  headerSubtitle: {
+    fontSize: 9,
+    color: '#64748b',
+    fontWeight: '500',
+    marginTop: -2,
+  },
+  gearDot: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#22c55e',
+    borderWidth: 1.5,
+    borderColor: '#050B14',
   },
   inactiveContent: {
     alignItems: 'center',
-    paddingHorizontal: 30,
-    paddingTop: isSmallDevice ? 20 : 40,
-    paddingBottom: isSmallDevice ? 20 : 40,
+    paddingHorizontal: 25,
+    paddingTop: 10,
+    paddingBottom: 20,
   },
-  hudEmblemContainer: {
-    width: isSmallDevice ? 150 : 200,
-    height: isSmallDevice ? 150 : 200,
-    alignItems: 'center',
-    justifyContent: 'center',
+  greetingText: {
+    fontSize: 13,
+    color: '#e2e8f0',
+    fontWeight: '500',
+    marginBottom: 4,
+    textAlign: 'left',
+    width: '100%',
+  },
+  welcomeTitle: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    textAlign: 'left',
+    width: '100%',
+    lineHeight: 30,
+    marginBottom: 4,
+  },
+  welcomeTitleHighlight: {
+    color: '#00f5ff',
+  },
+  welcomeSubtitle: {
+    fontSize: 12,
+    color: '#94a3b8',
+    textAlign: 'left',
+    width: '100%',
+    lineHeight: 16,
+    marginBottom: 6,
+  },
+  imageContainer: {
+    width: '100%',
+    aspectRatio: 1844 / 853,
+    borderRadius: 16,
+    overflow: 'hidden',
     position: 'relative',
-    marginBottom: isSmallDevice ? 15 : 25,
+    marginVertical: 10,
+    borderWidth: 1.2,
+    borderColor: 'rgba(0, 245, 255, 0.15)',
+    backgroundColor: '#030712',
   },
-  hudEmblemSvg: {
+  backgroundImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  roadLinesRow: {
     position: 'absolute',
+    left: 0,
+    bottom: '12%',
+    flexDirection: 'row',
+    width: '200%',
+    alignItems: 'center',
   },
-  steeringWheelGlowPod: {
-    width: isSmallDevice ? 80 : 110,
-    height: isSmallDevice ? 80 : 110,
-    borderRadius: isSmallDevice ? 40 : 55,
-    backgroundColor: 'rgba(6, 182, 212, 0.08)',
-    borderWidth: 1.5,
-    borderColor: 'rgba(6, 182, 212, 0.4)',
+  roadLineDash: {
+    width: 25,
+    height: 3,
+    backgroundColor: 'rgba(255, 255, 255, 0.4)',
+    marginRight: 35,
+  },
+  carOverlay: {
+    position: 'absolute',
+    left: '12%',
+    top: '32%',
+    width: '76%',
+    aspectRatio: 1.5,
+  },
+  carImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'contain',
+  },
+  star: {
+    position: 'absolute',
+    width: 2.5,
+    height: 2.5,
+    borderRadius: 1.25,
+    backgroundColor: '#ffffff',
+  },
+  lightTrail: {
+    position: 'absolute',
+    height: 1.2,
+    borderRadius: 1,
+    opacity: 0.6,
+  },
+  diagnosticsCard: {
+    width: '100%',
+    flexDirection: 'row',
+    backgroundColor: 'rgba(10, 25, 47, 0.45)',
+    borderRadius: 16,
+    borderWidth: 1.0,
+    borderColor: 'rgba(0, 245, 255, 0.08)',
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  diagCol: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  diagIconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.02)',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#00f5ff',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.4,
-    shadowRadius: 10,
+    marginBottom: 4,
   },
-  glowingEmblem: {
-    shadowColor: '#06b6d4',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 10,
+  diagLabel: {
+    fontSize: 10.5,
+    color: '#94a3b8',
+    fontWeight: '500',
+    marginBottom: 2,
   },
-  inactiveTitle: {
-    color: colors.text,
-    fontSize: isSmallDevice ? 22 : 26,
-    fontWeight: 'bold',
-    marginBottom: isSmallDevice ? 10 : 15,
-    textAlign: 'center',
-  },
-  inactiveDescription: {
-    color: colors.textMuted,
-    fontSize: isSmallDevice ? 12 : 14,
-    lineHeight: isSmallDevice ? 18 : 22,
-    textAlign: 'center',
-    marginBottom: isSmallDevice ? 20 : 30,
-  },
-  diagnosticsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 12,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    marginBottom: 25,
-  },
-  diagnosticItem: {
+  diagStatusRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  diagnosticPulseDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#22c55e',
-    marginRight: 6,
-  },
-  diagnosticLabel: {
-    color: colors.textSlate,
-    fontSize: 9,
+  diagStatusText: {
+    fontSize: 10,
     fontWeight: 'bold',
+    marginRight: 4,
   },
-  diagnosticValue: {
-    color: '#22c55e',
-    fontSize: 9,
-    fontWeight: 'bold',
+  diagStatusDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
   },
-  diagnosticDivider: {
+  diagDivider: {
     width: 1,
-    height: 12,
-    backgroundColor: colors.border,
-    marginHorizontal: 12,
+    height: 28,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
   },
-  featureGrid: {
+  dialsRow: {
     width: '100%',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: isSmallDevice ? 25 : 40,
-  },
-  featureItemCard: {
-    width: '48%',
-    backgroundColor: colors.card,
-    borderRadius: 16,
-    padding: isSmallDevice ? 12 : 15,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderLeftColor: '#06b6d4',
-    borderTopColor: '#06b6d4',
-    borderLeftWidth: 2,
-    borderTopWidth: 2,
-  },
-  featureIconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(6, 182, 212, 0.08)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(6, 182, 212, 0.15)',
-  },
-  featureTitleText: {
-    color: colors.text,
-    fontSize: 13,
-    fontWeight: 'bold',
-    marginTop: 8,
-    marginBottom: 4,
-  },
-  featureSubText: {
-    color: colors.textSlate,
-    fontSize: 10,
-    lineHeight: 14,
-  },
-  startButtonSubtitle: {
-    color: colors.textSlate,
-    fontSize: 8,
-    fontWeight: 'bold',
-    letterSpacing: 1.5,
-    marginBottom: 8,
-    textAlign: 'center',
+    marginBottom: 15,
   },
   hugeStartButton: {
     width: '100%',
-    borderRadius: 20,
+    borderRadius: 30,
     overflow: 'hidden',
-    shadowColor: '#06b6d4',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 15,
-    marginBottom: isSmallDevice ? 20 : 0,
+    shadowColor: '#00f5ff',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
+    marginBottom: 10,
   },
   hugeStartGradient: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: isSmallDevice ? 14 : 18,
+    paddingVertical: 18,
+    paddingHorizontal: 25,
   },
   hugeStartText: {
-    color: colors.powerBg,
     fontSize: 18,
     fontWeight: 'bold',
+    color: '#050B14',
+    letterSpacing: 1.5,
+  },
+  liveAnalyticsOutlineBtn: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 25,
+    borderRadius: 30,
+    borderWidth: 1.5,
+    borderColor: '#00f5ff',
+    backgroundColor: 'rgba(0, 245, 255, 0.02)',
+    marginBottom: 15,
+  },
+  liveAnalyticsOutlineBtnText: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#00f5ff',
     letterSpacing: 1,
+  },
+  secureFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 5,
+    opacity: 0.6,
+  },
+  secureFooterText: {
+    fontSize: 11,
+    color: '#94a3b8',
+    marginLeft: 6,
+    fontWeight: '500',
   },
 
   // Active Title / GPS Row
@@ -1280,24 +1806,6 @@ function getStyles(colors: any) {
     color: colors.powerBg,
     fontSize: 16,
     fontWeight: 'bold',
-  },
-  liveAnalyticsOutlineBtn: {
-    width: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: '#06b6d4',
-    borderRadius: 20,
-    paddingVertical: isSmallDevice ? 12 : 16,
-    marginTop: 15,
-    backgroundColor: 'rgba(6, 182, 212, 0.03)',
-  },
-  liveAnalyticsOutlineBtnText: {
-    color: '#06b6d4',
-    fontSize: 14,
-    fontWeight: 'bold',
-    letterSpacing: 1,
   },
   liveTelemetryActiveBanner: {
     flexDirection: 'row',
