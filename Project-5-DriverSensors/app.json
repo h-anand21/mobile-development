@@ -7,16 +7,15 @@
     "scheme": "project5driversensors",
     "icon": "./assets/icon/black -icon.png",
     "userInterfaceStyle": "automatic",
-    "splash": {
-      "image": "./assets/icon/black -icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#000000"
-    },
     "ios": {
       "supportsTablet": true,
+      "bundleIdentifier": "com.driversensors.app",
+      "buildNumber": "1",
       "icon": "./assets/icon/black -icon.png"
     },
     "android": {
+      "package": "com.driversensors.app",
+      "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon/black -icon.png",
         "backgroundColor": "#000000"
@@ -27,7 +26,28 @@
       "output": "static"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/icon/black -icon.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#000000"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos to let you set a profile avatar.",
+          "cameraPermission": "The app accesses your camera to let you take a profile photo."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow SafeDrive to access your location to track driving safety."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": false,

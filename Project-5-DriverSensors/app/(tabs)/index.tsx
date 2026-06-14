@@ -2,17 +2,62 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, Dimensions, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather, MaterialCommunityIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
-import Svg, { Circle, Defs, LinearGradient as SvgLinearGradient, Stop, Line, Path, Text as SvgText } from 'react-native-svg';
+import Svg, { Circle, Defs, LinearGradient as SvgLinearGradient, Stop, Line, Path, Rect, Text as SvgText } from 'react-native-svg';
 import { useRouter } from 'expo-router';
 import { useDriveStore } from '../../src/store/driveStore';
 import { useSensorStore } from '../../src/store/sensorStore';
 import { useAppTheme } from '../../src/ui/theme';
+import { storage } from '../../src/database/storage';
+import { useIsFocused } from '@react-navigation/native';
 
 const { width } = Dimensions.get('window');
+
+const DefaultAvatar = ({ size = 36 }: { size?: number }) => (
+  <View style={{ width: size, height: size, borderRadius: size / 2, overflow: 'hidden', backgroundColor: '#0a122c', justifyContent: 'center', alignItems: 'center' }}>
+    <Svg width={size} height={size} viewBox="0 0 84 84">
+      <Defs>
+        <SvgLinearGradient id="cyberAvatarGradHome" x1="0%" y1="0%" x2="100%" y2="100%">
+          <Stop offset="0%" stopColor="#0ea5e9" />
+          <Stop offset="100%" stopColor="#22c55e" />
+        </SvgLinearGradient>
+        <SvgLinearGradient id="bgGradHome" x1="0%" y1="0%" x2="0%" y2="100%">
+          <Stop offset="0%" stopColor="#0f172a" />
+          <Stop offset="100%" stopColor="#020617" />
+        </SvgLinearGradient>
+      </Defs>
+      <Rect width={84} height={84} fill="url(#bgGradHome)" />
+      <Line x1="10" y1="42" x2="74" y2="42" stroke="rgba(0, 245, 255, 0.08)" strokeWidth="1" />
+      <Line x1="42" y1="10" x2="42" y2="74" stroke="rgba(0, 245, 255, 0.08)" strokeWidth="1" />
+      <Circle cx="42" cy="42" r="34" stroke="rgba(34, 197, 94, 0.15)" strokeWidth="1" strokeDasharray="3 4" />
+      <Circle cx="42" cy="32" r="13" fill="url(#cyberAvatarGradHome)" />
+      <Path d="M 20 62 C 20 50, 30 46, 42 46 C 54 46, 64 50, 64 62 C 64 63, 64 65, 64 65 L 20 65 Z" fill="url(#cyberAvatarGradHome)" />
+      <Path d="M 28 65 L 56 65" stroke="#00f5ff" strokeWidth="2" strokeLinecap="round" />
+      <Circle cx="42" cy="32" r="16" stroke="#00f5ff" strokeWidth="1.2" strokeDasharray="2 3" opacity={0.6} />
+    </Svg>
+  </View>
+);
 
 // Main Component
 export default function HomeScreen() {
   const router = useRouter();
+  const isFocused = useIsFocused();
+  const [userName, setUserName] = useState('Himanshu');
+  const [userAvatar, setUserAvatar] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isFocused) {
+      const storedName = storage.getString('user_full_name');
+      const storedAvatar = storage.getString('user_avatar_uri');
+      if (storedName) {
+        const firstName = storedName.trim().split(' ')[0];
+        setUserName(firstName);
+      } else {
+        setUserName('Himanshu');
+      }
+      setUserAvatar(storedAvatar || null);
+    }
+  }, [isFocused]);
+
   const startDrive = useDriveStore((state) => state.startDrive);
   const setTracking = useSensorStore((state) => state.setTracking);
   const currentSession = useDriveStore((state) => state.currentSession);
@@ -161,9 +206,9 @@ export default function HomeScreen() {
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <View style={styles.greetingContainer}>
-            <Text style={[styles.greetingSub, { color: colors.textMuted }]}>Good Evening,</Text>
+            <Text style={[styles.greetingSub, { color: colors.textMuted }]}>Welcome back,</Text>
             <View style={styles.nameRow}>
-              <Text style={[styles.greetingName, { color: colors.text }]}>Himanshu</Text>
+              <Text style={[styles.greetingName, { color: colors.text }]}>{userName}</Text>
               <Text style={styles.waveEmoji}>👋</Text>
             </View>
             <Text style={[styles.tagline, { color: colors.success }]}>Drive safe. Live safe.</Text>
@@ -178,13 +223,17 @@ export default function HomeScreen() {
             <View style={styles.notificationDot} />
           </TouchableOpacity>
           <TouchableOpacity 
-            style={[styles.profilePicContainer, { borderColor: colors.accent }]}
+            style={[styles.profilePicContainer, { borderColor: colors.accent, padding: userAvatar ? 2 : 0 }]}
             onPress={() => router.push('/profile')}
           >
-            <Image 
-              source={{ uri: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?q=80&w=250&auto=format&fit=crop' }} 
-              style={styles.profilePic} 
-            />
+            {userAvatar ? (
+              <Image 
+                source={{ uri: userAvatar }} 
+                style={styles.profilePic} 
+              />
+            ) : (
+              <DefaultAvatar size={36} />
+            )}
           </TouchableOpacity>
         </View>
       </View>

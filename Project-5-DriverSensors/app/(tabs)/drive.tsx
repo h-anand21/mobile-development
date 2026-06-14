@@ -8,6 +8,7 @@ import { useIsFocused } from '@react-navigation/native';
 import { useDriveStore, DriveSession } from '../../src/store/driveStore';
 import { useSensorStore } from '../../src/store/sensorStore';
 import { driveRepository } from '../../src/database/repositories/driveRepository';
+import { storage } from '../../src/database/storage';
 
 
 
@@ -143,10 +144,19 @@ export default function DriveScreen() {
 
   const isFocused = useIsFocused();
   const [dbDrives, setDbDrives] = useState<DriveSession[]>([]);
+  const [userName, setUserName] = useState('Himanshu');
 
   useEffect(() => {
     if (isFocused) {
       setDbDrives(driveRepository.getAllDrives());
+      
+      const storedName = storage.getString('user_full_name');
+      if (storedName) {
+        const firstName = storedName.trim().split(' ')[0];
+        setUserName(firstName);
+      } else {
+        setUserName('Himanshu');
+      }
     }
   }, [isFocused, currentSession]);
   
@@ -560,14 +570,6 @@ export default function DriveScreen() {
     return ['#ef4444', '#b91c1c']; // Poor (Red)
   }, [avgScore, isDark]);
 
-  // Determine dynamic greeting message based on local time
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good Morning';
-    if (hour < 17) return 'Good Afternoon';
-    return 'Good Evening';
-  };
-
   // If no active drive session, render start screen
   if (!currentSession) {
     return (
@@ -600,7 +602,7 @@ export default function DriveScreen() {
           alwaysBounceVertical={true}
         >
           {/* Greeting and Header */}
-          <Text style={styles.greetingText}>{getGreeting()}, Himanshu 👋</Text>
+          <Text style={styles.greetingText}>Welcome back, {userName} 👋</Text>
           <Text style={styles.welcomeTitle}>
             Ready for{"\n"}your <Text style={styles.welcomeTitleHighlight}>drive?</Text>
           </Text>
@@ -1878,9 +1880,9 @@ function getStyles(colors: any, isDark: boolean) {
   },
   carOverlay: {
     position: 'absolute',
-    left: '12%',
-    top: '32%',
-    width: '76%',
+    left: '15%',
+    top: '24%',
+    width: '70%',
     aspectRatio: 1.5,
   },
   carImage: {

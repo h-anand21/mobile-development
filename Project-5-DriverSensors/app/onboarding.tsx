@@ -189,7 +189,7 @@ export default function OnboardingScreen() {
 
   const handleFinish = () => {
     storage.set('has_completed_onboarding', 'true');
-    router.replace('/(tabs)');
+    router.replace('/profile-creation');
   };
 
   const onScroll = (event: any) => {

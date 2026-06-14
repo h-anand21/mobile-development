@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Dimensions, Alert, Modal, TextInput, Switch } from 'react-native';
 import { Feather, MaterialCommunityIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
-import Svg, { Circle, Path, Polygon } from 'react-native-svg';
+import Svg, { Circle, Path, Polygon, Line, Defs, Stop, Rect, LinearGradient as SvgLinearGradient } from 'react-native-svg';
 import { useRouter } from 'expo-router';
 import { driveRepository } from '../../src/database/repositories/driveRepository';
 import { useAppTheme } from '../../src/ui/theme';
 import dayjs from 'dayjs';
+import { storage } from '../../src/database/storage';
+import * as ImagePicker from 'expo-image-picker';
 
 const { width } = Dimensions.get('window');
 
@@ -62,6 +64,31 @@ function getLevelInfo(totalXp: number) {
   };
 }
 
+const DefaultAvatar = ({ size = 76 }: { size?: number }) => (
+  <View style={{ width: size, height: size, borderRadius: size / 2, overflow: 'hidden', backgroundColor: '#0a122c', justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#00f5ff' }}>
+    <Svg width={size} height={size} viewBox="0 0 84 84">
+      <Defs>
+        <SvgLinearGradient id="cyberAvatarGradProfile" x1="0%" y1="0%" x2="100%" y2="100%">
+          <Stop offset="0%" stopColor="#0ea5e9" />
+          <Stop offset="100%" stopColor="#22c55e" />
+        </SvgLinearGradient>
+        <SvgLinearGradient id="bgGradProfile" x1="0%" y1="0%" x2="0%" y2="100%">
+          <Stop offset="0%" stopColor="#0f172a" />
+          <Stop offset="100%" stopColor="#020617" />
+        </SvgLinearGradient>
+      </Defs>
+      <Rect width={84} height={84} fill="url(#bgGradProfile)" />
+      <Line x1="10" y1="42" x2="74" y2="42" stroke="rgba(0, 245, 255, 0.08)" strokeWidth="1" />
+      <Line x1="42" y1="10" x2="42" y2="74" stroke="rgba(0, 245, 255, 0.08)" strokeWidth="1" />
+      <Circle cx="42" cy="42" r="34" stroke="rgba(34, 197, 94, 0.15)" strokeWidth="1" strokeDasharray="3 4" />
+      <Circle cx="42" cy="32" r="13" fill="url(#cyberAvatarGradProfile)" />
+      <Path d="M 20 62 C 20 50, 30 46, 42 46 C 54 46, 64 50, 64 62 C 64 63, 64 65, 64 65 L 20 65 Z" fill="url(#cyberAvatarGradProfile)" />
+      <Path d="M 28 65 L 56 65" stroke="#00f5ff" strokeWidth="2" strokeLinecap="round" />
+      <Circle cx="42" cy="32" r="16" stroke="#00f5ff" strokeWidth="1.2" strokeDasharray="2 3" opacity={0.6} />
+    </Svg>
+  </View>
+);
+
 export default function ProfileScreen() {
   const router = useRouter();
   const { colors, isDark } = useAppTheme();
@@ -71,20 +98,23 @@ export default function ProfileScreen() {
   const dbDrives = driveRepository.getAllDrives();
 
   // Profile Editable States
-  const [name, setName] = useState('Arjun Sharma');
-  const [email, setEmail] = useState('arjun.sharma@email.com');
-  const [experience, setExperience] = useState('5 Years');
+  const [name, setName] = useState(storage.getString('user_full_name') || 'Himanshu Anand');
+  const [email, setEmail] = useState(storage.getString('user_email') || 'himanshu@driversensors.com');
+  const [experience, setExperience] = useState(storage.getString('user_experience') || '1-3 Years');
 
   // Vehicle States
-  const [vehicleType, setVehicleType] = useState('EV'); // Sedan, SUV, EV, Truck
-  const [vehicleModel, setVehicleModel] = useState('Tesla Model 3');
-  const [vehiclePlate, setVehiclePlate] = useState('DL 3C AB 1234');
+  const [vehicleType, setVehicleType] = useState(storage.getString('user_vehicle_type') || 'Car'); // Sedan, SUV, EV, Truck, Car
+  const [vehicleModel, setVehicleModel] = useState(storage.getString('user_vehicle_model') || 'Tesla Model 3');
+  const [vehiclePlate, setVehiclePlate] = useState(storage.getString('user_vehicle_plate') || 'DL 3C AB 1234');
 
   // Privacy States
-  const [shareTelemetry, setShareTelemetry] = useState(true);
+  const [shareTelemetry, setShareTelemetry] = useState(storage.getString('user_enable_ai_coach') !== 'false');
   const [encryption, setEncryption] = useState(true);
   const [anonymousAnalytics, setAnonymousAnalytics] = useState(false);
   const [saveHistory, setSaveHistory] = useState(true);
+
+  // Avatar State
+  const [avatarUri, setAvatarUri] = useState<string | null>(storage.getString('user_avatar_uri') || null);
 
   // Modal Control States
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -92,13 +122,106 @@ export default function ProfileScreen() {
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
 
   // Temp editing states (to allow Cancel without saving)
-  const [tempName, setTempName] = useState('Arjun Sharma');
-  const [tempEmail, setTempEmail] = useState('arjun.sharma@email.com');
-  const [tempExperience, setTempExperience] = useState('5 Years');
+  const [tempName, setTempName] = useState(name);
+  const [tempEmail, setTempEmail] = useState(email);
+  const [tempExperience, setTempExperience] = useState(experience);
 
-  const [tempVehicleType, setTempVehicleType] = useState('EV');
-  const [tempVehicleModel, setTempVehicleModel] = useState('Tesla Model 3');
-  const [tempVehiclePlate, setTempVehiclePlate] = useState('DL 3C AB 1234');
+  const [tempVehicleType, setTempVehicleType] = useState(vehicleType);
+  const [tempVehicleModel, setTempVehicleModel] = useState(vehicleModel);
+  const [tempVehiclePlate, setTempVehiclePlate] = useState(vehiclePlate);
+
+  // Monitor external updates to storage (like from profile creation onboarding)
+  useEffect(() => {
+    const checkStorageUpdates = () => {
+      const storedName = storage.getString('user_full_name');
+      const storedExp = storage.getString('user_experience');
+      const storedVehicle = storage.getString('user_vehicle_type');
+      const storedAvatar = storage.getString('user_avatar_uri');
+      
+      if (storedName && storedName !== name) {
+        setName(storedName);
+        setTempName(storedName);
+      }
+      if (storedExp && storedExp !== experience) {
+        setExperience(storedExp);
+        setTempExperience(storedExp);
+      }
+      if (storedVehicle && storedVehicle !== vehicleType) {
+        setVehicleType(storedVehicle);
+        setTempVehicleType(storedVehicle);
+      }
+      if (storedAvatar !== avatarUri) {
+        setAvatarUri(storedAvatar || null);
+      }
+    };
+
+    // Run check once on focus
+    checkStorageUpdates();
+  }, [name, experience, vehicleType, avatarUri]);
+
+  const changeAvatar = async (type: 'camera' | 'library') => {
+    try {
+      if (type === 'camera') {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert('Permission Required', 'Camera permission is required to take a photo.');
+          return;
+        }
+        const result = await ImagePicker.launchCameraAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          allowsEditing: true,
+          aspect: [1, 1],
+          quality: 0.8,
+        });
+        if (!result.canceled && result.assets && result.assets.length > 0) {
+          const uri = result.assets[0].uri;
+          setAvatarUri(uri);
+          storage.set('user_avatar_uri', uri);
+          Alert.alert('Success', 'Profile photo updated!');
+        }
+      } else {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert('Permission Required', 'Photo library permission is required to choose a photo.');
+          return;
+        }
+        const result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          allowsEditing: true,
+          aspect: [1, 1],
+          quality: 0.8,
+        });
+        if (!result.canceled && result.assets && result.assets.length > 0) {
+          const uri = result.assets[0].uri;
+          setAvatarUri(uri);
+          storage.set('user_avatar_uri', uri);
+          Alert.alert('Success', 'Profile photo updated!');
+        }
+      }
+    } catch (error) {
+      console.log('Error selecting image:', error);
+      Alert.alert('Error', 'Something went wrong while selecting image.');
+    }
+  };
+
+  const resetAvatar = () => {
+    setAvatarUri(null);
+    storage.delete('user_avatar_uri');
+    Alert.alert('Success', 'Profile photo reset to default.');
+  };
+
+  const handleAvatarPress = () => {
+    Alert.alert(
+      'Profile Photo',
+      'Choose an option to update your photo:',
+      [
+        { text: 'Take Photo', onPress: () => changeAvatar('camera') },
+        { text: 'Choose from Gallery', onPress: () => changeAvatar('library') },
+        { text: 'Reset to Default', onPress: resetAvatar },
+        { text: 'Cancel', style: 'cancel' }
+      ]
+    );
+  };
 
   // Stats calculation dynamically from real drives
   const totalDrivesCount = dbDrives.length;
@@ -264,15 +387,19 @@ export default function ProfileScreen() {
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* 2. Profile Details Panel */}
         <View style={styles.profileCard}>
-          <View style={styles.avatarWrap}>
-            <Image
-              source={{ uri: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=250&auto=format&fit=crop' }}
-              style={styles.avatarImg}
-            />
+          <TouchableOpacity style={styles.avatarWrap} onPress={handleAvatarPress}>
+            {avatarUri ? (
+              <Image
+                source={{ uri: avatarUri }}
+                style={styles.avatarImg}
+              />
+            ) : (
+              <DefaultAvatar size={76} />
+            )}
             <View style={styles.cameraIconBadge}>
               <Feather name="camera" size={10} color={colors.accent} />
             </View>
-          </View>
+          </TouchableOpacity>
 
           <View style={styles.profileInfoCol}>
             <Text style={styles.profileName}>{name}</Text>
@@ -552,6 +679,9 @@ export default function ProfileScreen() {
                   setName(tempName);
                   setEmail(tempEmail);
                   setExperience(tempExperience);
+                  storage.set('user_full_name', tempName);
+                  storage.set('user_email', tempEmail);
+                  storage.set('user_experience', tempExperience);
                   setShowProfileModal(false);
                   Alert.alert('Success', 'Profile details updated successfully!');
                 }}
@@ -645,6 +775,9 @@ export default function ProfileScreen() {
                   setVehicleType(tempVehicleType);
                   setVehicleModel(tempVehicleModel);
                   setVehiclePlate(tempVehiclePlate);
+                  storage.set('user_vehicle_type', tempVehicleType);
+                  storage.set('user_vehicle_model', tempVehicleModel);
+                  storage.set('user_vehicle_plate', tempVehiclePlate);
                   setShowVehicleModal(false);
                   Alert.alert('Success', 'Vehicle info updated successfully!');
                 }}
@@ -738,6 +871,7 @@ export default function ProfileScreen() {
             <TouchableOpacity
               style={styles.modalCloseMainBtn}
               onPress={() => {
+                storage.set('user_enable_ai_coach', shareTelemetry ? 'true' : 'false');
                 setShowPrivacyModal(false);
                 Alert.alert('Success', 'Privacy preferences saved successfully!');
               }}
