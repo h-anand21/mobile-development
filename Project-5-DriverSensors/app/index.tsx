@@ -9,8 +9,7 @@ export default function AppIndex() {
 
   useEffect(() => {
     const checkOnboarding = () => {
-      // Temporarily set to false to force onboarding screen for testing
-      const completed = false; // storage.getString('has_completed_onboarding') === 'true';
+      const completed = storage.getString('has_completed_onboarding') === 'true';
       setHasCompleted(completed);
       setLoading(false);
     };

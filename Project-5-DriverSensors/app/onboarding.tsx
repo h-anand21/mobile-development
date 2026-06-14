@@ -9,10 +9,15 @@ import { storage } from '../src/database/storage';
 const { width, height } = Dimensions.get('window');
 const isSmallDevice = height < 750;
 
+const AnimatedLine = Animated.createAnimatedComponent(Line);
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+
 export default function OnboardingScreen() {
   const router = useRouter();
   const scrollViewRef = useRef<ScrollView>(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const roadHeight = isSmallDevice ? 250 : 300;
+  const containerWidth = width - 50;
 
   // Animations
   const radarRotateAnim = useRef(new Animated.Value(0)).current;
@@ -20,6 +25,22 @@ export default function OnboardingScreen() {
   const pulseRing2 = useRef(new Animated.Value(0)).current;
   const carBounce = useRef(new Animated.Value(0)).current;
   const logoFadeIn = useRef(new Animated.Value(0)).current;
+  const roadOffset = useRef(new Animated.Value(0)).current;
+  const carSway = useRef(new Animated.Value(0)).current;
+  const lightOffset = useRef(new Animated.Value(0)).current;
+
+  // Staggered light progress values (derived from lightOffset)
+  const lightProgress0 = Animated.divide(lightOffset, 20);
+
+  const lightProgress1 = lightProgress0.interpolate({
+    inputRange: [0, 0.6667, 0.6668, 1],
+    outputRange: [0.3333, 1, 0, 0.3333],
+  });
+
+  const lightProgress2 = lightProgress0.interpolate({
+    inputRange: [0, 0.3333, 0.3334, 1],
+    outputRange: [0.6667, 1, 0, 0.6667],
+  });
 
   useEffect(() => {
     // 1. Radar Sweep animation
@@ -93,10 +114,60 @@ export default function OnboardingScreen() {
       useNativeDriver: true,
     }).start();
 
+    // 5. Road center lane movement (infinite loop of dash offset)
+    const roadScroll = Animated.loop(
+      Animated.timing(roadOffset, {
+        toValue: 20,
+        duration: 400, // Faster scroll speed to make car feel fast
+        easing: Easing.linear,
+        useNativeDriver: false,
+      })
+    );
+    roadScroll.start();
+
+    // 5b. Street lights slow movement (independent loop)
+    const lightScroll = Animated.loop(
+      Animated.timing(lightOffset, {
+        toValue: 20,
+        duration: 3500, // Even slower duration to avoid crowd effect and feel realistic
+        easing: Easing.linear,
+        useNativeDriver: false,
+      })
+    );
+    lightScroll.start();
+
+    // 6. Car steering gentle sway left/right
+    const carSwayLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(carSway, {
+          toValue: -6,
+          duration: 2500,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(carSway, {
+          toValue: 6,
+          duration: 3000,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(carSway, {
+          toValue: 0,
+          duration: 2200,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        })
+      ])
+    );
+    carSwayLoop.start();
+
     return () => {
       radarLoop.stop();
       pulseLoop.stop();
       carFloat.stop();
+      roadScroll.stop();
+      lightScroll.stop();
+      carSwayLoop.stop();
     };
   }, []);
 
@@ -152,24 +223,46 @@ export default function OnboardingScreen() {
     outputRange: [0.7, 0],
   });
 
+  const page2PulseScale1 = pulseRing1.interpolate({
+    inputRange: [0, 1],
+    outputRange: [40, 115],
+  });
+
+  const page2PulseOpacity1 = pulseRing1.interpolate({
+    inputRange: [0, 0.8, 1],
+    outputRange: [0.7, 0.3, 0],
+  });
+
+  const page2PulseScale2 = pulseRing2.interpolate({
+    inputRange: [0, 1],
+    outputRange: [40, 115],
+  });
+
+  const page2PulseOpacity2 = pulseRing2.interpolate({
+    inputRange: [0, 0.8, 1],
+    outputRange: [0.7, 0.3, 0],
+  });
+
   return (
     <LinearGradient colors={['#040814', '#02040a']} style={styles.container}>
-      {/* Top Header Logo */}
-      <Animated.View style={[styles.header, { opacity: logoFadeIn }]}>
-        <Image 
-          source={require('../assets/icon/black -icon.png')} 
-          style={styles.logoIcon} 
-        />
-        <Text style={styles.logoText}>
-          Safe<Text style={styles.logoTextHighlight}>Drive</Text>
-        </Text>
+      {/* Top Header Logo (Only on Screen 2 and 3) */}
+      {activeIndex > 0 && (
+        <Animated.View style={[styles.header, { opacity: logoFadeIn }]}>
+          <Image 
+            source={require('../assets/icon/black -icon.png')} 
+            style={styles.logoIcon} 
+          />
+          <Text style={styles.logoText}>
+            Safe<Text style={styles.logoTextHighlight}>Drive</Text>
+          </Text>
 
-        {activeIndex > 0 && activeIndex < 2 && (
-          <TouchableOpacity style={styles.skipBtn} onPress={handleFinish}>
-            <Text style={styles.skipText}>Skip</Text>
-          </TouchableOpacity>
-        )}
-      </Animated.View>
+          {activeIndex < 2 && (
+            <TouchableOpacity style={styles.skipBtn} onPress={handleFinish}>
+              <Text style={styles.skipText}>Skip</Text>
+            </TouchableOpacity>
+          )}
+        </Animated.View>
+      )}
 
       <ScrollView
         ref={scrollViewRef}
@@ -182,90 +275,44 @@ export default function OnboardingScreen() {
       >
         {/* ================= PAGE 1 ================= */}
         <View style={styles.page}>
-          {/* Speedometer Gauge/Shield Illustration */}
-          <View style={styles.page1IllustrationContainer}>
-            <Svg width={200} height={200} viewBox="0 0 200 200">
-              <Defs>
-                <SvgLinearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <Stop offset="0%" stopColor="#00f5ff" />
-                  <Stop offset="100%" stopColor="#84cc16" />
-                </SvgLinearGradient>
-              </Defs>
-              
-              {/* Outer dashed accent ring */}
-              <Circle cx="100" cy="100" r="90" stroke="rgba(0, 245, 255, 0.08)" strokeWidth="1" strokeDasharray="3 6" fill="none" />
-              <Circle cx="100" cy="100" r="82" stroke="rgba(132, 204, 22, 0.05)" strokeWidth="1" fill="none" />
-              
-              {/* Main Shield outline */}
-              <Path 
-                d="M100 25 L165 48 C165 110, 100 158, 100 170 C100 158, 35 110, 35 48 Z" 
-                stroke="url(#shieldGrad)" 
-                strokeWidth="2.5" 
-                fill="rgba(0, 245, 255, 0.03)" 
-              />
-              
-              {/* Speedometer Arc */}
-              <Circle 
-                cx="100" 
-                cy="95" 
-                r="48" 
-                stroke="rgba(0, 245, 255, 0.15)" 
-                strokeWidth="4" 
-                strokeDasharray="210" 
-                strokeDashoffset="70"
-                fill="none" 
-                transform="rotate(135 100 95)"
-                strokeLinecap="round"
-              />
-              
-              <Circle 
-                cx="100" 
-                cy="95" 
-                r="48" 
-                stroke="#00f5ff" 
-                strokeWidth="5" 
-                strokeDasharray="210" 
-                strokeDashoffset="110"
-                fill="none" 
-                transform="rotate(135 100 95)"
-                strokeLinecap="round"
-              />
+          {/* Spacer to replace header height */}
+          <View style={{ height: isSmallDevice ? 30 : 50 }} />
 
-              {/* Dial ticks */}
-              {Array.from({ length: 9 }).map((_, idx) => {
-                const angle = 135 + idx * 33.75;
-                const rad = (angle * Math.PI) / 180;
-                const x1 = 100 + 42 * Math.cos(rad);
-                const y1 = 95 + 42 * Math.sin(rad);
-                const x2 = 100 + 38 * Math.cos(rad);
-                const y2 = 95 + 38 * Math.sin(rad);
-                return (
-                  <Line key={idx} x1={x1} y1={y1} x2={x2} y2={y2} stroke="rgba(255, 255, 255, 0.4)" strokeWidth="1.2" />
-                );
-              })}
-
-              {/* Speedometer Needle */}
-              <Line 
-                x1="100" 
-                y1="95" 
-                x2="128" 
-                y2="68" 
-                stroke="#84cc16" 
-                strokeWidth="3.5" 
-                strokeLinecap="round" 
+          {/* Speedometer Gauge/Shield Illustration using high-fidelity logo image with tech backing rings */}
+          <View style={styles.page1LogoContainer}>
+            <View style={styles.logoOuterWrapper}>
+              <View style={styles.logoBackdropCircles}>
+                <Svg width={170} height={170} viewBox="0 0 170 170">
+                  <Circle cx="85" cy="85" r="80" stroke="rgba(0, 245, 255, 0.12)" strokeWidth="1" strokeDasharray="3 6" />
+                  <Circle cx="85" cy="85" r="70" stroke="rgba(34, 197, 94, 0.18)" strokeWidth="1.5" strokeDasharray="40 10 10 10" />
+                  <Circle cx="85" cy="85" r="58" stroke="rgba(0, 245, 255, 0.22)" strokeWidth="1" />
+                  <Circle cx="85" cy="85" r="46" stroke="rgba(34, 197, 94, 0.08)" strokeWidth="2" strokeDasharray="5 5" />
+                  <Circle cx="85" cy="5" r="2" fill="#00f5ff" />
+                  <Circle cx="5" cy="85" r="2" fill="#22c55e" />
+                  <Circle cx="165" cy="85" r="2" fill="#22c55e" />
+                  <Circle cx="85" cy="165" r="2" fill="#00f5ff" />
+                </Svg>
+              </View>
+              <Image 
+                source={require('../assets/icon/black -icon.png')} 
+                style={styles.page1CenterLogo} 
               />
-              <Circle cx="100" cy="95" r="5" fill="#84cc16" />
-
-              {/* Checkmark in shield */}
-              <Path 
-                d="M86 130 L95 139 L120 114" 
-                stroke="#84cc16" 
-                strokeWidth="3.5" 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
-                fill="none" 
+            </View>
+            
+            <Text style={styles.page1BrandText}>
+              Safe<Text style={styles.page1BrandTextHighlight}>Drive</Text>
+            </Text>
+            
+            {/* Fading gradient line underneath with glowing center dot */}
+            <View style={styles.brandLineContainer}>
+              <LinearGradient
+                colors={['transparent', '#00f5ff', '#22c55e', 'transparent']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.brandLine}
               />
-            </Svg>
+              <View style={styles.brandLineDot} />
+            </View>
           </View>
 
           {/* Heading Text */}
@@ -281,61 +328,368 @@ export default function OnboardingScreen() {
 
           {/* Road scenery & Car floating animation */}
           <View style={styles.page1RoadContainer}>
-            <Svg width={width - 50} height={130} viewBox={`0 0 ${width - 50} 130`} style={styles.perspectiveRoadSvg}>
+            <Svg width={width} height={roadHeight} viewBox={`0 0 ${width} ${roadHeight}`} style={styles.perspectiveRoadSvg}>
               <Defs>
-                <SvgLinearGradient id="page1Asphalt" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <Stop offset="0%" stopColor="#050a14" stopOpacity="0.8" />
-                  <Stop offset="100%" stopColor="#1e293b" stopOpacity="1" />
+                <SvgLinearGradient id="skyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <Stop offset="0%" stopColor="#040814" stopOpacity="0.9" />
+                  <Stop offset="60%" stopColor="#0a122c" stopOpacity="0.9" />
+                  <Stop offset="100%" stopColor="#02040a" stopOpacity="0.9" />
                 </SvgLinearGradient>
-                <SvgLinearGradient id="neonGreenBorder" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <Stop offset="0%" stopColor="rgba(34, 197, 94, 0.1)" />
-                  <Stop offset="100%" stopColor="#22c55e" />
+                <SvgLinearGradient id="roadAsphalt" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <Stop offset="0%" stopColor="#050a18" stopOpacity="0.8" />
+                  <Stop offset="55%" stopColor="#0a1329" stopOpacity="1" />
+                  <Stop offset="72%" stopColor="#02040a" stopOpacity="1" />
+                  <Stop offset="82%" stopColor="#02040a" stopOpacity="0" />
+                  <Stop offset="100%" stopColor="#02040a" stopOpacity="0" />
                 </SvgLinearGradient>
-                <SvgLinearGradient id="neonCyanBorder" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <Stop offset="0%" stopColor="rgba(0, 245, 255, 0.1)" />
-                  <Stop offset="100%" stopColor="#00f5ff" />
+                <SvgLinearGradient id="leftBorderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <Stop offset="0%" stopColor="#84cc16" stopOpacity="0.1" />
+                  <Stop offset="50%" stopColor="#84cc16" stopOpacity="0.6" />
+                  <Stop offset="100%" stopColor="#84cc16" stopOpacity="1" />
+                </SvgLinearGradient>
+                <SvgLinearGradient id="rightBorderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <Stop offset="0%" stopColor="#00f5ff" stopOpacity="0.1" />
+                  <Stop offset="50%" stopColor="#00f5ff" stopOpacity="0.6" />
+                  <Stop offset="100%" stopColor="#00f5ff" stopOpacity="1" />
+                </SvgLinearGradient>
+                <SvgLinearGradient id="centerLineGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <Stop offset="0%" stopColor="#ffffff" stopOpacity="0.65" />
+                  <Stop offset="60%" stopColor="#ffffff" stopOpacity="0.65" />
+                  <Stop offset="75%" stopColor="#ffffff" stopOpacity="0" />
+                  <Stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
                 </SvgLinearGradient>
               </Defs>
               
-              {/* Skyline background lines */}
-              <Line x1="0" y1="20" x2={width - 50} y2="20" stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
-              <Line x1="0" y1="10" x2={width - 50} y2="10" stroke="rgba(255,255,255,0.02)" strokeWidth="1" />
+              {/* Sky Background */}
+              <Rect x="0" y="0" width={width} height={roadHeight} fill="url(#skyGrad)" />
+              
+              {/* City Skyline Silhouette */}
+              {/* Left buildings */}
+              <Path d="M 0 90 L 10 90 L 10 60 L 25 60 L 25 70 L 35 70 L 35 50 L 50 50 L 50 80 L 65 80 L 65 65 L 75 65 L 75 85 L 85 85 L 85 70 L 95 70 L 95 90 Z" fill="#060d21" opacity="0.9" />
+              <Path d="M 30 90 L 45 90 L 45 70 L 58 70 L 58 60 L 70 60 L 70 75 L 85 75 L 85 90 Z" fill="#030611" opacity="0.95" />
+              
+              {/* Right buildings */}
+              <Path d={`M ${width} 90 L ${width - 15} 90 L ${width - 15} 60 L ${width - 30} 60 L ${width - 30} 70 L ${width - 45} 70 L ${width - 45} 45 L ${width - 60} 45 L ${width - 60} 75 L ${width - 75} 75 L ${width - 75} 60 L ${width - 90} 60 L ${width - 90} 80 L ${width - 110} 80 L ${width - 110} 65 L ${width - 125} 65 L ${width - 125} 90 Z`} fill="#060d21" opacity="0.9" />
+              <Path d={`M ${width - 25} 90 L ${width - 40} 90 L ${width - 40} 65 L ${width - 55} 65 L ${width - 55} 55 L ${width - 70} 55 L ${width - 70} 80 L ${width - 85} 80 L ${width - 85} 90 Z`} fill="#030611" opacity="0.95" />
+              
+              {/* Windows in left buildings */}
+              <Circle cx="18" cy="68" r="1" fill="#eab308" opacity="0.8" />
+              <Circle cx="18" cy="76" r="1" fill="#eab308" opacity="0.8" />
+              <Circle cx="42" cy="62" r="1" fill="#22c55e" opacity="0.8" />
+              <Circle cx="42" cy="72" r="1" fill="#00f5ff" opacity="0.8" />
+              <Circle cx="42" cy="80" r="1" fill="#ffffff" opacity="0.8" />
+              <Circle cx="70" cy="70" r="1" fill="#eab308" opacity="0.8" />
+              <Circle cx="70" cy="78" r="1" fill="#00f5ff" opacity="0.8" />
+              <Circle cx="90" cy="74" r="1" fill="#22c55e" opacity="0.8" />
+              <Circle cx="90" cy="82" r="1" fill="#ffffff" opacity="0.8" />
 
-              {/* Road shape */}
+              {/* Windows in right buildings */}
+              <Circle cx={width - 22} cy="65" r="1" fill="#eab308" opacity="0.8" />
+              <Circle cx={width - 22} cy="75" r="1" fill="#ffffff" opacity="0.8" />
+              <Circle cx={width - 52} cy="55" r="1" fill="#00f5ff" opacity="0.8" />
+              <Circle cx={width - 52} cy="65" r="1" fill="#22c55e" opacity="0.8" />
+              <Circle cx={width - 52} cy="75" r="1" fill="#eab308" opacity="0.8" />
+              <Circle cx={width - 80} cy="68" r="1" fill="#ffffff" opacity="0.8" />
+              <Circle cx={width - 80} cy="78" r="1" fill="#00f5ff" opacity="0.8" />
+              <Circle cx={width - 100} cy="70" r="1" fill="#22c55e" opacity="0.8" />
+              <Circle cx={width - 100} cy="80" r="1" fill="#ffffff" opacity="0.8" />
+
+              {/* Horizon glowing light line */}
+              <Line x1="0" y1="90" x2={width} y2="90" stroke="rgba(0, 245, 255, 0.15)" strokeWidth="1" />
+              <Line x1={width / 2 - 40} y1="90" x2={width / 2 + 40} y2="90" stroke="#00f5ff" strokeWidth="1.5" opacity="0.7" />
+
+              {/* Road Asphalt Shape (goes all the way to bottom of road container) */}
               <Path 
-                d={`M ${(width - 50) / 2 - 30} 20 L ${(width - 50) / 2 + 30} 20 L ${width - 50} 130 L 0 130 Z`}
-                fill="url(#page1Asphalt)"
+                d={`M ${width / 2 - 20} 90 L ${width / 2 + 20} 90 L ${width + 120} ${roadHeight} L -120 ${roadHeight} Z`}
+                fill="url(#roadAsphalt)"
               />
               
-              {/* Left & Right border neon stripes */}
-              <Line x1={(width - 50) / 2 - 30} y1="20" x2="0" y2="130" stroke="url(#neonGreenBorder)" strokeWidth="3" />
-              <Line x1={(width - 50) / 2 + 30} y1="20" x2={width - 50} y2="130" stroke="url(#neonCyanBorder)" strokeWidth="3" />
+              {/* Left & Right neon borders (Perspective lines matching mockup colors) */}
+              <Line x1={width / 2 - 20} y1="90" x2="-120" y2={roadHeight} stroke="url(#leftBorderGrad)" strokeWidth="3" />
+              <Line x1={width / 2 + 20} y1="90" x2={width + 120} y2={roadHeight} stroke="url(#rightBorderGrad)" strokeWidth="3" strokeLinecap="round" />
 
-              {/* Grid landscape lines */}
-              {Array.from({ length: 4 }).map((_, idx) => {
-                const yVal = 20 + idx * 30;
-                const leftX = ((width - 50) / 2 - 30) - (yVal - 20) * 1.5;
-                const rightX = ((width - 50) / 2 + 30) + (yVal - 20) * 1.5;
-                return (
-                  <Line key={idx} x1={leftX} y1={yVal} x2={rightX} y2={yVal} stroke="rgba(0, 245, 255, 0.1)" strokeWidth="1" />
-                );
-              })}
+              {/* Road center dashed lines - ANIMATED for forward movement */}
+              <AnimatedLine 
+                x1={width / 2} 
+                y1="90" 
+                x2={width / 2} 
+                y2={roadHeight} 
+                stroke="url(#centerLineGrad)" 
+                strokeWidth="2" 
+                strokeDasharray="8 12" 
+                strokeDashoffset={roadOffset}
+              />
+
+              {/* Extra perspective light lines/glow elements on the side lanes (mockup side trails) */}
+              <Line x1={width / 2 - 30} y1="105" x2="-80" y2={roadHeight} stroke="rgba(132, 204, 22, 0.2)" strokeWidth="1" />
+              <Line x1={width / 2 + 30} y1="105" x2={width + 80} y2={roadHeight} stroke="rgba(0, 245, 255, 0.2)" strokeWidth="1" />
+
+              {/* Horizontal helper perspective marks */}
+              <Line x1={width / 2 - 35} y1="105" x2={width / 2 + 35} y2="105" stroke="rgba(255, 255, 255, 0.05)" strokeWidth="1" />
+              <Line x1={width / 2 - 55} y1="120" x2={width / 2 + 55} y2="120" stroke="rgba(255, 255, 255, 0.08)" strokeWidth="1" />
+              <Line x1={width / 2 - 80} y1="140" x2={width / 2 + 80} y2="140" stroke="rgba(255, 255, 255, 0.1)" strokeWidth="1" />
+              <Line x1={width / 2 - 110} y1="170" x2={width / 2 + 110} y2="170" stroke="rgba(255, 255, 255, 0.08)" strokeWidth="1" />
+              <Line x1={width / 2 - 150} y1="200" x2={width / 2 + 150} y2="200" stroke="rgba(255, 255, 255, 0.04)" strokeWidth="1" />
             </Svg>
 
-            {/* Floating Black Sports Car */}
+            {/* Animated Street Lights / Scenery - Left Side (3 staggered objects) */}
+            {[lightProgress0, lightProgress1, lightProgress2].map((prog, idx) => {
+              // idx 0 is Street Lamp, idx 1 is Billboard, idx 2 is Skyscraper
+              const type = idx === 0 ? 'lamp' : idx === 1 ? 'billboard' : 'building';
+
+              // Left base target calculations with dynamic perspective slopes matching border
+              const leftSlope = (-120 - (width / 2 - 20)) / (roadHeight - 90);
+              const leftLampEndX = (width / 2 - 54.25) + leftSlope * (roadHeight - 136);
+              const leftBillboardEndX = (width / 2 - 55) + leftSlope * (roadHeight - 136) - 85.5;
+              const leftBuildingEndX = (width / 2 - 55) + leftSlope * (roadHeight - 159) - 85.5;
+
+              const leftX = prog.interpolate({
+                inputRange: [0, 1],
+                outputRange: type === 'lamp' ? [width / 2 - 54.25, leftLampEndX] : type === 'billboard' ? [width / 2 - 55, leftBillboardEndX] : [width / 2 - 55, leftBuildingEndX]
+              });
+              const y = prog.interpolate({
+                inputRange: [0, 1],
+                outputRange: type === 'building' ? [21, roadHeight - 138] : [44, roadHeight - 92]
+              });
+              const scale = prog.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0.15, 1.1]
+              });
+              const opacity = prog.interpolate({
+                inputRange: [0, 0.15, 0.85, 1],
+                outputRange: [0, 1, 1, 0]
+              });
+
+              return (
+                <Animated.View
+                  key={`left-obj-${idx}`}
+                  style={{
+                    position: 'absolute',
+                    left: 0,
+                    top: 0,
+                    transform: [
+                      { translateX: leftX },
+                      { translateY: y },
+                      { scale: scale }
+                    ],
+                    opacity: opacity,
+                    zIndex: 4,
+                    pointerEvents: 'none',
+                  }}
+                >
+                  {type === 'lamp' && (
+                    <Svg width={40} height={80} viewBox="0 0 40 80">
+                      <Defs>
+                        <SvgLinearGradient id={`beamGradLeft-${idx}`} x1="0%" y1="0%" x2="0%" y2="100%">
+                          <Stop offset="0%" stopColor="#eab308" stopOpacity="0.45" />
+                          <Stop offset="100%" stopColor="transparent" />
+                        </SvgLinearGradient>
+                      </Defs>
+                      {/* Light cone beam pointing right/down towards the road */}
+                      <Path d="M 30 12 L 10 80 L 50 80 Z" fill={`url(#beamGradLeft-${idx})`} />
+                      {/* Pole at x=15 */}
+                      <Line x1="15" y1="80" x2="15" y2="15" stroke="#475569" strokeWidth="2.5" />
+                      {/* Arm curves right from x=15 to x=30 */}
+                      <Path d="M 15 15 C 15 10, 30 10, 30 12" fill="none" stroke="#e2e8f0" strokeWidth="1.5" />
+                      {/* Glowing lamp head at x=30 */}
+                      <Circle cx="30" cy="12" r="3" fill="#eab308" />
+                    </Svg>
+                  )}
+                  {type === 'billboard' && (
+                    <Svg width={40} height={80} viewBox="0 0 40 80">
+                      <Defs>
+                        <SvgLinearGradient id={`boardGradLeft-${idx}`} x1="0%" y1="0%" x2="0%" y2="100%">
+                          <Stop offset="0%" stopColor="#22c55e" stopOpacity="0.3" />
+                          <Stop offset="100%" stopColor="transparent" />
+                        </SvgLinearGradient>
+                      </Defs>
+                      {/* Subtle green glow under the billboard */}
+                      <Path d="M 20 20 L 5 80 L 35 80 Z" fill={`url(#boardGradLeft-${idx})`} opacity="0.4" />
+                      {/* Pole at center x=20 */}
+                      <Line x1="20" y1="80" x2="20" y2="30" stroke="#475569" strokeWidth="2.5" />
+                      {/* Billboard board frame */}
+                      <Rect x="2" y="6" width="36" height="24" rx="2" fill="#030712" stroke="#22c55e" strokeWidth="1.5" />
+                      {/* Glowing cyan checkmark content inside billboard */}
+                      <Path d="M 14 18 L 18 22 L 26 13" stroke="#00f5ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                      {/* Small lights on top of billboard */}
+                      <Circle cx="8" cy="3" r="1.5" fill="#eab308" />
+                      <Circle cx="20" cy="3" r="1.5" fill="#eab308" />
+                      <Circle cx="32" cy="3" r="1.5" fill="#eab308" />
+                    </Svg>
+                  )}
+                  {type === 'building' && (
+                    <Svg width={60} height={120} viewBox="0 0 60 120">
+                      {/* Building body */}
+                      <Rect x="10" y="20" width="40" height="100" fill="#060d21" opacity="0.95" stroke="rgba(0, 245, 255, 0.15)" strokeWidth="1" />
+                      {/* Glowing windows */}
+                      <Circle cx="20" cy="40" r="1.5" fill="#eab308" opacity="0.8" />
+                      <Circle cx="30" cy="40" r="1.5" fill="#00f5ff" opacity="0.8" />
+                      <Circle cx="40" cy="40" r="1.5" fill="#22c55e" opacity="0.8" />
+                      <Circle cx="20" cy="60" r="1.5" fill="#ffffff" opacity="0.8" />
+                      <Circle cx="30" cy="60" r="1.5" fill="#eab308" opacity="0.8" />
+                      <Circle cx="40" cy="60" r="1.5" fill="#00f5ff" opacity="0.8" />
+                      <Circle cx="20" cy="80" r="1.5" fill="#22c55e" opacity="0.8" />
+                      <Circle cx="30" cy="80" r="1.5" fill="#ffffff" opacity="0.8" />
+                      <Circle cx="40" cy="80" r="1.5" fill="#eab308" opacity="0.8" />
+                    </Svg>
+                  )}
+                </Animated.View>
+              );
+            })}
+
+            {/* Animated Street Lights / Scenery - Right Side (3 staggered objects) */}
+            {[lightProgress0, lightProgress1, lightProgress2].map((prog, idx) => {
+              // idx 0 is Street Lamp, idx 1 is Skyscraper, idx 2 is Billboard
+              const type = idx === 0 ? 'lamp' : idx === 1 ? 'building' : 'billboard';
+
+              // Right base target calculations with dynamic perspective slopes matching border
+              const rightSlope = ((width + 120) - (width / 2 + 20)) / (roadHeight - 90);
+              const rightLampEndX = (width / 2 + 14.25) + rightSlope * (roadHeight - 136);
+              const rightBillboardEndX = (width / 2 + 15) + rightSlope * (roadHeight - 136) + 85.5;
+              const rightBuildingEndX = (width / 2 + 15) + rightSlope * (roadHeight - 159) + 85.5;
+
+              const rightX = prog.interpolate({
+                inputRange: [0, 1],
+                outputRange: type === 'lamp' ? [width / 2 + 14.25, rightLampEndX] : type === 'billboard' ? [width / 2 + 15, rightBillboardEndX] : [width / 2 + 15, rightBuildingEndX]
+              });
+              const y = prog.interpolate({
+                inputRange: [0, 1],
+                outputRange: type === 'building' ? [21, roadHeight - 138] : [44, roadHeight - 92]
+              });
+              const scale = prog.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0.15, 1.1]
+              });
+              const opacity = prog.interpolate({
+                inputRange: [0, 0.15, 0.85, 1],
+                outputRange: [0, 1, 1, 0]
+              });
+
+              return (
+                <Animated.View
+                  key={`right-obj-${idx}`}
+                  style={{
+                    position: 'absolute',
+                    left: 0,
+                    top: 0,
+                    transform: [
+                      { translateX: rightX },
+                      { translateY: y },
+                      { scale: scale }
+                    ],
+                    opacity: opacity,
+                    zIndex: 4,
+                    pointerEvents: 'none',
+                  }}
+                >
+                  {type === 'lamp' && (
+                    <Svg width={40} height={80} viewBox="0 0 40 80">
+                      <Defs>
+                        <SvgLinearGradient id={`beamGradRight-${idx}`} x1="0%" y1="0%" x2="0%" y2="100%">
+                          <Stop offset="0%" stopColor="#eab308" stopOpacity="0.45" />
+                          <Stop offset="100%" stopColor="transparent" />
+                        </SvgLinearGradient>
+                      </Defs>
+                      {/* Light cone beam pointing left/down towards the road */}
+                      <Path d="M 10 12 L -10 80 L 30 80 Z" fill={`url(#beamGradRight-${idx})`} />
+                      {/* Pole at x=25 */}
+                      <Line x1="25" y1="80" x2="25" y2="15" stroke="#475569" strokeWidth="2.5" />
+                      {/* Arm curves left from x=25 to x=10 */}
+                      <Path d="M 25 15 C 25 10, 10 10, 10 12" fill="none" stroke="#e2e8f0" strokeWidth="1.5" />
+                      {/* Glowing lamp head at x=10 */}
+                      <Circle cx="10" cy="12" r="3" fill="#eab308" />
+                    </Svg>
+                  )}
+                  {type === 'billboard' && (
+                    <Svg width={40} height={80} viewBox="0 0 40 80">
+                      <Defs>
+                        <SvgLinearGradient id={`boardGradRight-${idx}`} x1="0%" y1="0%" x2="0%" y2="100%">
+                          <Stop offset="0%" stopColor="#00f5ff" stopOpacity="0.3" />
+                          <Stop offset="100%" stopColor="transparent" />
+                        </SvgLinearGradient>
+                      </Defs>
+                      {/* Subtle cyan glow under the billboard */}
+                      <Path d="M 20 20 L 5 80 L 35 80 Z" fill={`url(#boardGradRight-${idx})`} opacity="0.4" />
+                      {/* Pole at center x=20 */}
+                      <Line x1="20" y1="80" x2="20" y2="30" stroke="#475569" strokeWidth="2.5" />
+                      {/* Billboard board frame */}
+                      <Rect x="2" y="6" width="36" height="24" rx="2" fill="#030712" stroke="#00f5ff" strokeWidth="1.5" />
+                      {/* Glowing green checkmark/arrow content inside billboard */}
+                      <Path d="M 14 18 L 18 22 L 26 13" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                      {/* Small lights on top of billboard */}
+                      <Circle cx="8" cy="3" r="1.5" fill="#eab308" />
+                      <Circle cx="20" cy="3" r="1.5" fill="#eab308" />
+                      <Circle cx="32" cy="3" r="1.5" fill="#eab308" />
+                    </Svg>
+                  )}
+                  {type === 'building' && (
+                    <Svg width={60} height={120} viewBox="0 0 60 120">
+                      {/* Building body */}
+                      <Rect x="10" y="20" width="40" height="100" fill="#060d21" opacity="0.95" stroke="rgba(0, 245, 255, 0.15)" strokeWidth="1" />
+                      {/* Glowing windows */}
+                      <Circle cx="20" cy="40" r="1.5" fill="#eab308" opacity="0.8" />
+                      <Circle cx="30" cy="40" r="1.5" fill="#00f5ff" opacity="0.8" />
+                      <Circle cx="40" cy="40" r="1.5" fill="#22c55e" opacity="0.8" />
+                      <Circle cx="20" cy="60" r="1.5" fill="#ffffff" opacity="0.8" />
+                      <Circle cx="30" cy="60" r="1.5" fill="#eab308" opacity="0.8" />
+                      <Circle cx="40" cy="60" r="1.5" fill="#00f5ff" opacity="0.8" />
+                      <Circle cx="20" cy="80" r="1.5" fill="#22c55e" opacity="0.8" />
+                      <Circle cx="30" cy="80" r="1.5" fill="#ffffff" opacity="0.8" />
+                      <Circle cx="40" cy="80" r="1.5" fill="#eab308" opacity="0.8" />
+                    </Svg>
+                  )}
+                </Animated.View>
+              );
+            })}
+
+            {/* Floating Black Sports Car with suspension & sway animation */}
             <Animated.Image 
               source={require('../assets/images/drive_car.png')} 
               style={[
                 styles.page1Car,
-                { transform: [{ translateY: carBounce }] }
+                { bottom: isSmallDevice ? 95 : 125, transform: [{ translateY: carBounce }, { translateX: carSway }] }
               ]} 
               resizeMode="contain"
             />
+
+            {/* Features Row: Transparent Row Layout matching screenshot perfectly */}
+            <View style={styles.featuresTransparentRow}>
+              <View style={styles.featureCol}>
+                <View style={[styles.featureIconCircle, { borderColor: 'rgba(34, 197, 94, 0.15)', backgroundColor: 'rgba(10, 25, 47, 0.6)' }]}>
+                  <Feather name="shield" size={16} color="#22c55e" />
+                </View>
+                <Text style={styles.featureTitle}>Safety Score</Text>
+                <Text style={styles.featureDesc}>Track your{"\n"}driving safety</Text>
+              </View>
+              
+              <View style={styles.featureVerticalDivider} />
+              
+              <View style={styles.featureCol}>
+                <View style={[styles.featureIconCircle, { borderColor: 'rgba(14, 165, 233, 0.15)', backgroundColor: 'rgba(10, 25, 47, 0.6)' }]}>
+                  <Feather name="map-pin" size={16} color="#0ea5e9" />
+                </View>
+                <Text style={styles.featureTitle}>Route Tracking</Text>
+                <Text style={styles.featureDesc}>View your trips{"\n"}and routes</Text>
+              </View>
+              
+              <View style={styles.featureVerticalDivider} />
+              
+              <View style={styles.featureCol}>
+                <View style={[styles.featureIconCircle, { borderColor: 'rgba(34, 197, 94, 0.15)', backgroundColor: 'rgba(10, 25, 47, 0.6)' }]}>
+                  <MaterialCommunityIcons name="robot-outline" size={16} color="#22c55e" />
+                </View>
+                <Text style={styles.featureTitle}>AI Coach</Text>
+                <Text style={styles.featureDesc}>Get smart tips{"\n"}to improve</Text>
+              </View>
+            </View>
           </View>
         </View>
 
         {/* ================= PAGE 2 ================= */}
         <View style={styles.page}>
+          {/* Spacer to push content down to center it vertically */}
+          <View style={{ height: isSmallDevice ? 30 : 60 }} />
+          
           <View style={styles.page2HeaderWrap}>
             <Text style={styles.page2Heading}>Smart <Text style={styles.cyanText}>Monitoring</Text></Text>
             <Text style={styles.page2Subtitle}>
@@ -345,82 +699,172 @@ export default function OnboardingScreen() {
 
           {/* Top-down Car and connecting indicators */}
           <View style={styles.page2IllustrationContainer}>
-            <Svg width={width - 60} height={isSmallDevice ? 210 : 250} viewBox={`0 0 ${width - 60} 250`}>
+            <Svg width={containerWidth} height={250} viewBox={`0 0 ${containerWidth} 250`}>
               <Defs>
                 <SvgLinearGradient id="carLineGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                   <Stop offset="0%" stopColor="#00f5ff" />
                   <Stop offset="100%" stopColor="#22c55e" />
                 </SvgLinearGradient>
                 <SvgLinearGradient id="carBodyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <Stop offset="0%" stopColor="#0f172a" />
-                  <Stop offset="100%" stopColor="#020617" />
+                  <Stop offset="0%" stopColor="#0c1938" />
+                  <Stop offset="100%" stopColor="#040814" />
                 </SvgLinearGradient>
               </Defs>
               
-              {/* Outer radar concentric rings */}
-              <Circle cx={(width - 60) / 2} cy="125" r="105" stroke="rgba(0, 245, 255, 0.03)" strokeWidth="1.5" fill="none" />
-              <Circle cx={(width - 60) / 2} cy="125" r="85" stroke="rgba(34, 197, 94, 0.05)" strokeWidth="1" strokeDasharray="3 6" fill="none" />
-              <Circle cx={(width - 60) / 2} cy="125" r="65" stroke="rgba(0, 245, 255, 0.06)" strokeWidth="1" fill="none" />
+              {/* Pulsing radar concentric rings */}
+              <AnimatedCircle 
+                cx={containerWidth / 2} 
+                cy="115" 
+                r={page2PulseScale1} 
+                stroke="rgba(0, 245, 255, 0.12)" 
+                strokeWidth="1.2" 
+                fill="none" 
+                opacity={page2PulseOpacity1}
+              />
+              <AnimatedCircle 
+                cx={containerWidth / 2} 
+                cy="115" 
+                r={page2PulseScale2} 
+                stroke="rgba(34, 197, 94, 0.12)" 
+                strokeWidth="1.2" 
+                fill="none" 
+                opacity={page2PulseOpacity2}
+              />
+              <Circle 
+                cx={containerWidth / 2} 
+                cy="115" 
+                r="38" 
+                stroke="rgba(255, 255, 255, 0.04)" 
+                strokeWidth="1" 
+                fill="none" 
+              />
 
               {/* Connecting lines from Car wheels/sides to the UI cards */}
               {/* Harsh Brake Line (Top Left) */}
-              <Path d={`M ${(width - 60) / 2 - 25} 70 L 60 50`} stroke="#eab308" strokeWidth="1.2" strokeDasharray="2 3" opacity={0.8} />
-              <Circle cx={(width - 60) / 2 - 25} cy="70" r="3" fill="#eab308" />
-              <Circle cx="60" cy="50" r="3.5" fill="#eab308" />
+              <Path d={`M ${containerWidth / 2 - 22} 85 L 128 55`} stroke="#eab308" strokeWidth="1.2" strokeDasharray="2 3" opacity={0.8} />
+              <Circle cx={containerWidth / 2 - 22} cy="85" r="3" fill="#eab308" />
+              <Circle cx="128" cy="55" r="3.5" fill="#eab308" />
 
               {/* Sharp Turn Line (Top Right) */}
-              <Path d={`M ${(width - 60) / 2 + 25} 70 L ${width - 120} 50`} stroke="#22c55e" strokeWidth="1.2" strokeDasharray="2 3" opacity={0.8} />
-              <Circle cx={(width - 60) / 2 + 25} cy="70" r="3" fill="#22c55e" />
-              <Circle cx={width - 120} cy="50" r="3.5" fill="#22c55e" />
+              <Path d={`M ${containerWidth / 2 + 22} 85 L ${containerWidth - 128} 55`} stroke="#22c55e" strokeWidth="1.2" strokeDasharray="2 3" opacity={0.8} />
+              <Circle cx={containerWidth / 2 + 22} cy="85" r="3" fill="#22c55e" />
+              <Circle cx={containerWidth - 128} cy="55" r="3.5" fill="#22c55e" />
 
               {/* Phone Usage Line (Bottom Left) */}
-              <Path d={`M ${(width - 60) / 2 - 25} 170 L 60 190`} stroke="#06b6d4" strokeWidth="1.2" strokeDasharray="2 3" opacity={0.8} />
-              <Circle cx={(width - 60) / 2 - 25} cy="170" r="3" fill="#06b6d4" />
-              <Circle cx="60" cy="190" r="3.5" fill="#06b6d4" />
+              <Path d={`M ${containerWidth / 2 - 22} 145 L 128 185`} stroke="#06b6d4" strokeWidth="1.2" strokeDasharray="2 3" opacity={0.8} />
+              <Circle cx={containerWidth / 2 - 22} cy="145" r="3" fill="#06b6d4" />
+              <Circle cx="128" cy="185" r="3.5" fill="#06b6d4" />
 
               {/* Speed Line (Bottom Right) */}
-              <Path d={`M ${(width - 60) / 2 + 25} 170 L ${width - 120} 190`} stroke="#00f5ff" strokeWidth="1.2" strokeDasharray="2 3" opacity={0.8} />
-              <Circle cx={(width - 60) / 2 + 25} cy="170" r="3" fill="#00f5ff" />
-              <Circle cx={width - 120} cy="190" r="3.5" fill="#00f5ff" />
+              <Path d={`M ${containerWidth / 2 + 22} 145 L ${containerWidth - 128} 185`} stroke="#00f5ff" strokeWidth="1.2" strokeDasharray="2 3" opacity={0.8} />
+              <Circle cx={containerWidth / 2 + 22} cy="145" r="3" fill="#00f5ff" />
+              <Circle cx={containerWidth - 128} cy="185" r="3.5" fill="#00f5ff" />
 
-              {/* Custom top-down vector car body */}
-              {/* Outer glowing border */}
-              <Path 
-                d={`M ${(width - 60) / 2 - 28} 75 C ${(width - 60) / 2 - 28} 50, ${(width - 60) / 2 - 15} 40, ${(width - 60) / 2} 40 C ${(width - 60) / 2 + 15} 40, ${(width - 60) / 2 + 28} 50, ${(width - 60) / 2 + 28} 75 L ${(width - 60) / 2 + 30} 165 C ${(width - 60) / 2 + 30} 195, ${(width - 60) / 2 - 30} 195, ${(width - 60) / 2 - 30} 165 Z`} 
-                stroke="url(#carLineGrad)" 
-                strokeWidth="2.5" 
-                fill="url(#carBodyGrad)" 
+              {/* Detailed High-Fidelity Cyber Sports Car */}
+              {/* Outer glow shadow */}
+              <Rect 
+                x={containerWidth / 2 - 28} 
+                y="52" 
+                width="56" 
+                height="124" 
+                rx="18" 
+                fill="none" 
+                stroke="#00f5ff" 
+                strokeWidth="5" 
+                opacity="0.1" 
               />
               
+              {/* Main Silhouette body */}
+              <Path 
+                d={`
+                  M ${containerWidth / 2 - 18} 52 
+                  C ${containerWidth / 2 - 10} 50, ${containerWidth / 2 + 10} 50, ${containerWidth / 2 + 18} 52 
+                  C ${containerWidth / 2 + 25} 55, ${containerWidth / 2 + 27} 75, ${containerWidth / 2 + 27} 85 
+                  C ${containerWidth / 2 + 29} 95, ${containerWidth / 2 + 27} 110, ${containerWidth / 2 + 27} 130
+                  C ${containerWidth / 2 + 27} 150, ${containerWidth / 2 + 25} 170, ${containerWidth / 2 + 22} 176
+                  L ${containerWidth / 2 - 22} 176
+                  C ${containerWidth / 2 - 25} 170, ${containerWidth / 2 - 27} 150, ${containerWidth / 2 - 27} 130
+                  C ${containerWidth / 2 - 27} 110, ${containerWidth / 2 - 29} 95, ${containerWidth / 2 - 27} 85
+                  C ${containerWidth / 2 - 27} 75, ${containerWidth / 2 - 25} 55, ${containerWidth / 2 - 18} 52 Z
+                `}
+                fill="url(#carBodyGrad)"
+                stroke="url(#carLineGrad)"
+                strokeWidth="2.2"
+              />
+
+              {/* Wheels */}
+              <Rect x={containerWidth / 2 - 29} y="62" width="5" height="15" rx="1.5" fill="#1e293b" />
+              <Rect x={containerWidth / 2 + 24} y="62" width="5" height="15" rx="1.5" fill="#1e293b" />
+              <Rect x={containerWidth / 2 - 29} y="145" width="5" height="17" rx="1.5" fill="#1e293b" />
+              <Rect x={containerWidth / 2 + 24} y="145" width="5" height="17" rx="1.5" fill="#1e293b" />
+
+              {/* Headlights (Cyan glowing beams) */}
+              <Line x1={containerWidth / 2 - 15} y1="52" x2={containerWidth / 2 - 15} y2="44" stroke="#00f5ff" strokeWidth="2.5" strokeLinecap="round" />
+              <Line x1={containerWidth / 2 + 15} y1="52" x2={containerWidth / 2 + 15} y2="44" stroke="#00f5ff" strokeWidth="2.5" strokeLinecap="round" />
+              
+              {/* Taillights (Red glowing lines) */}
+              <Line x1={containerWidth / 2 - 18} y1="176" x2={containerWidth / 2 - 8} y2="176" stroke="#ef4444" strokeWidth="2" />
+              <Line x1={containerWidth / 2 + 18} y1="176" x2={containerWidth / 2 + 8} y2="176" stroke="#ef4444" strokeWidth="2" />
+
               {/* Windshield */}
               <Path 
-                d={`M ${(width - 60) / 2 - 20} 78 C ${(width - 60) / 2 - 20} 65, ${(width - 60) / 2 + 20} 65, ${(width - 60) / 2 + 20} 78 Z`} 
-                fill="#0f172a" 
-                stroke="#00f5ff" 
-                strokeWidth="1" 
-                opacity="0.9" 
+                d={`
+                  M ${containerWidth / 2 - 18} 82 
+                  C ${containerWidth / 2 - 16} 70, ${containerWidth / 2 + 16} 70, ${containerWidth / 2 + 18} 82
+                  C ${containerWidth / 2 + 15} 84, ${containerWidth / 2 - 15} 84, ${containerWidth / 2 - 18} 82 Z
+                `}
+                fill="#0a1329"
+                stroke="#00f5ff"
+                strokeWidth="1.5"
+                opacity="0.95"
               />
               
-              {/* Rear Window */}
+              {/* Roof Cabin shape */}
               <Path 
-                d={`M ${(width - 60) / 2 - 18} 145 C ${(width - 60) / 2 - 18} 155, ${(width - 60) / 2 + 18} 155, ${(width - 60) / 2 + 18} 145 Z`} 
-                fill="#0f172a" 
-                stroke="#00f5ff" 
-                strokeWidth="1" 
-                opacity="0.8" 
+                d={`
+                  M ${containerWidth / 2 - 16} 85 
+                  L ${containerWidth / 2 + 16} 85
+                  C ${containerWidth / 2 + 18} 100, ${containerWidth / 2 + 18} 125, ${containerWidth / 2 + 16} 135
+                  L ${containerWidth / 2 - 16} 135
+                  C ${containerWidth / 2 - 18} 125, ${containerWidth / 2 - 18} 100, ${containerWidth / 2 - 16} 85 Z
+                `}
+                fill="none"
+                stroke="rgba(0, 245, 255, 0.3)"
+                strokeWidth="1"
               />
 
-              {/* Headlights (Cyan glowing lines) */}
-              <Line x1={(width - 60) / 2 - 24} y1="42" x2={(width - 60) / 2 - 15} y2="40" stroke="#00f5ff" strokeWidth="2.5" />
-              <Line x1={(width - 60) / 2 + 24} y1="42" x2={(width - 60) / 2 + 15} y2="40" stroke="#00f5ff" strokeWidth="2.5" />
+              {/* Rear window */}
+              <Path 
+                d={`
+                  M ${containerWidth / 2 - 14} 138
+                  C ${containerWidth / 2 - 10} 145, ${containerWidth / 2 + 10} 145, ${containerWidth / 2 + 14} 138
+                  C ${containerWidth / 2 + 11} 136, ${containerWidth / 2 - 11} 136, ${containerWidth / 2 - 14} 138 Z
+                `}
+                fill="#0a1329"
+                stroke="#00f5ff"
+                strokeWidth="1.2"
+                opacity="0.8"
+              />
 
-              {/* Taillights (Red glowing lines) */}
-              <Line x1={(width - 60) / 2 - 22} y1="184" x2={(width - 60) / 2 - 12} y2="184" stroke="#ef4444" strokeWidth="2" />
-              <Line x1={(width - 60) / 2 + 22} y1="184" x2={(width - 60) / 2 + 12} y2="184" stroke="#ef4444" strokeWidth="2" />
+              {/* Side Mirrors */}
+              <Rect x={containerWidth / 2 - 32} y="77" width="5" height="10" rx="2" fill="#1e293b" stroke="#00f5ff" strokeWidth="1" />
+              <Rect x={containerWidth / 2 + 27} y="77" width="5" height="10" rx="2" fill="#1e293b" stroke="#00f5ff" strokeWidth="1" />
 
-              {/* Car Side Mirrors */}
-              <Rect x={(width - 60) / 2 - 34} y="72" width="6" height="10" rx="3" fill="#1e293b" stroke="#00f5ff" strokeWidth="1" />
-              <Rect x={(width - 60) / 2 + 28} y="72" width="6" height="10" rx="3" fill="#1e293b" stroke="#00f5ff" strokeWidth="1" />
+              {/* Hood detail lines */}
+              <Path 
+                d={`M ${containerWidth / 2 - 10} 58 L ${containerWidth / 2} 70 L ${containerWidth / 2 + 10} 58`} 
+                fill="none" 
+                stroke="rgba(34, 197, 94, 0.45)" 
+                strokeWidth="1.2" 
+              />
+              
+              {/* Side accent stripes */}
+              <Path d={`M ${containerWidth / 2 - 23} 98 L ${containerWidth / 2 - 23} 124`} fill="none" stroke="#22c55e" strokeWidth="1.5" />
+              <Path d={`M ${containerWidth / 2 + 23} 98 L ${containerWidth / 2 + 23} 124`} fill="none" stroke="#22c55e" strokeWidth="1.5" />
+              
+              {/* Spoiler wings (Bottom) */}
+              <Path d={`M ${containerWidth / 2 - 24} 176 L ${containerWidth / 2 - 28} 182 L ${containerWidth / 2 - 15} 182`} fill="none" stroke="#22c55e" strokeWidth="1.5" />
+              <Path d={`M ${containerWidth / 2 + 24} 176 L ${containerWidth / 2 + 28} 182 L ${containerWidth / 2 + 15} 182`} fill="none" stroke="#22c55e" strokeWidth="1.5" />
             </Svg>
 
             {/* Left & Right Badges overlayed floating on sides */}
@@ -534,6 +978,9 @@ export default function OnboardingScreen() {
 
         {/* ================= PAGE 3 ================= */}
         <View style={styles.page}>
+          {/* Spacer to push content down to center it vertically */}
+          <View style={{ height: isSmallDevice ? 30 : 60 }} />
+          
           <View style={styles.page2HeaderWrap}>
             <Text style={styles.page2Heading}>Route <Text style={styles.greenText}>Replay</Text>{"\n"}& <Text style={styles.cyanText}>AI Coach</Text></Text>
             <Text style={styles.page2Subtitle}>
@@ -707,37 +1154,38 @@ export default function OnboardingScreen() {
         </View>
       </ScrollView>
 
-      {/* Bottom Controls Row */}
-      <View style={styles.bottomControls}>
-        {/* Left Arrow (Previous) */}
-        <View style={styles.prevBtnWrapper}>
-          {activeIndex > 0 ? (
-            <TouchableOpacity style={styles.navTextBtn} onPress={handlePrev}>
-              <Feather name="arrow-left" size={16} color="#ffffff" style={{ marginRight: 6 }} />
-              <Text style={styles.navText}>Previous</Text>
-            </TouchableOpacity>
-          ) : (
-            <View style={{ width: 80 }} />
-          )}
-        </View>
-
-        {/* Page Dots in Center */}
-        <View style={styles.dotsContainer}>
-          {[0, 1, 2].map((idx) => (
-            <View 
-              key={idx} 
-              style={[
-                styles.dot, 
-                idx === activeIndex ? styles.activeDot : styles.inactiveDot
-              ]} 
-            />
-          ))}
-        </View>
-
-        {/* Right Action Button (Next / Get Started) */}
-        <View style={styles.nextBtnWrapper}>
-          {activeIndex < 2 ? (
-            <TouchableOpacity style={styles.circularNextBtn} onPress={handleNext}>
+      {/* Bottom Navigation and Actions */}
+      <View style={styles.bottomSection}>
+        <View style={styles.page2BottomContainer}>
+          {/* Left Wrapper (Symmetric with Right circular next button) */}
+          <View style={{ width: 80, alignItems: 'flex-start' }}>
+            {activeIndex > 0 && (
+              <TouchableOpacity style={styles.navTextBtn} onPress={handlePrev}>
+                <Feather name="arrow-left" size={16} color="#ffffff" style={{ marginRight: 6 }} />
+                <Text style={styles.navText}>Previous</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+          
+          {/* Center: Dots Indicators */}
+          <View style={styles.dotsRow}>
+            {[0, 1, 2].map((idx) => (
+              <View 
+                key={idx} 
+                style={[
+                  styles.dot, 
+                  idx === activeIndex ? styles.activeDot : styles.inactiveDot
+                ]} 
+              />
+            ))}
+          </View>
+          
+          {/* Right Wrapper (Symmetric with Left previous button) */}
+          <View style={{ width: 80, alignItems: 'flex-end' }}>
+            <TouchableOpacity 
+              style={styles.circularNextBtn} 
+              onPress={activeIndex === 2 ? handleFinish : handleNext}
+            >
               <LinearGradient
                 colors={['#84cc16', '#22c55e']}
                 style={styles.circularGradient}
@@ -745,19 +1193,7 @@ export default function OnboardingScreen() {
                 <Feather name="chevron-right" size={24} color="#040814" />
               </LinearGradient>
             </TouchableOpacity>
-          ) : (
-            <TouchableOpacity style={styles.getStartedButton} onPress={handleFinish}>
-              <LinearGradient
-                colors={['#00f5ff', '#22c55e']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.getStartedGradient}
-              >
-                <Text style={styles.getStartedText}>Get Started</Text>
-                <Feather name="arrow-right" size={16} color="#040814" style={{ marginLeft: 6 }} />
-              </LinearGradient>
-            </TouchableOpacity>
-          )}
+          </View>
         </View>
       </View>
     </LinearGradient>
@@ -817,15 +1253,70 @@ const styles = StyleSheet.create({
   },
   
   // ================= PAGE 1 =================
-  page1IllustrationContainer: {
-    height: height * 0.28,
+  page1LogoContainer: {
+    alignItems: 'center',
+    marginTop: isSmallDevice ? 8 : 15,
+  },
+  logoOuterWrapper: {
+    width: 170,
+    height: 170,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: isSmallDevice ? 15 : 25,
+    position: 'relative',
+  },
+  logoBackdropCircles: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: 170,
+    height: 170,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  page1CenterLogo: {
+    width: 100,
+    height: 100,
+    resizeMode: 'contain',
+    zIndex: 2,
+  },
+  page1BrandText: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    marginTop: -8,
+    letterSpacing: 0.5,
+  },
+  page1BrandTextHighlight: {
+    color: '#22c55e',
+  },
+  brandLineContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 120,
+    height: 6,
+    marginTop: 8,
+    position: 'relative',
+  },
+  brandLine: {
+    width: '100%',
+    height: 1.5,
+  },
+  brandLineDot: {
+    position: 'absolute',
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: '#00f5ff',
+    shadowColor: '#00f5ff',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 4,
+    elevation: 4,
   },
   textContainer: {
     alignItems: 'center',
-    marginTop: isSmallDevice ? 10 : 20,
+    marginTop: isSmallDevice ? 5 : 10,
     width: '100%',
   },
   title: {
@@ -837,7 +1328,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
   },
   titleHighlight: {
-    color: '#84cc16',
+    color: '#22c55e',
   },
   subtitle: {
     fontSize: isSmallDevice ? 12.5 : 14,
@@ -849,22 +1340,23 @@ const styles = StyleSheet.create({
     fontWeight: '400',
   },
   page1RoadContainer: {
-    width: '100%',
-    height: 130,
+    width: width, // Full screen width to match street lights coordinates
+    height: isSmallDevice ? 250 : 300,
     position: 'relative',
-    marginTop: 'auto',
-    marginBottom: isSmallDevice ? 65 : 85,
+    marginTop: isSmallDevice ? 10 : 20,
+    marginBottom: isSmallDevice ? 55 : 75, // Bottom margin adjusted to balance taller container height
     alignItems: 'center',
+    overflow: 'hidden', // Prevent spilling into next horizontal screen page
   },
   perspectiveRoadSvg: {
     position: 'absolute',
     bottom: 0,
+    left: 0, // Align to left edge of container
   },
   page1Car: {
     width: width * 0.46,
     height: 90,
     position: 'absolute',
-    bottom: 10,
     zIndex: 5,
   },
 
@@ -913,23 +1405,23 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(0, 245, 255, 0.1)',
     paddingVertical: 6,
     paddingHorizontal: 12,
-    minWidth: 120,
+    width: 125, // Fixed width for perfect mathematical alignment!
   },
   badgeTopLeft: {
     top: 25,
-    left: 0,
+    left: 8,
   },
   badgeTopRight: {
     top: 25,
-    right: 0,
+    right: 8,
   },
   badgeBottomLeft: {
     bottom: 35,
-    left: 0,
+    left: 8,
   },
   badgeBottomRight: {
     bottom: 35,
-    right: 0,
+    right: 8,
   },
   badgeIconCircle: {
     width: 24,
@@ -1171,15 +1663,81 @@ const styles = StyleSheet.create({
   },
 
   // ================= BOTTOM CONTROLS =================
-  bottomControls: {
+  bottomSection: {
+    position: 'absolute',
+    bottom: isSmallDevice ? 15 : 30,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 25,
+    zIndex: 10,
+  },
+  page1BottomContainer: {
+    alignItems: 'center',
+    width: '100%',
+  },
+  page2BottomContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     width: '100%',
-    paddingHorizontal: 25,
-    position: 'absolute',
-    bottom: isSmallDevice ? 20 : 35,
     height: 54,
+  },
+  page3BottomContainer: {
+    alignItems: 'center',
+    width: '100%',
+  },
+  page3NavRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    height: 44,
+    marginTop: 10,
+  },
+  dotsRowCenter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 15,
+  },
+  dotsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flex: 1,
+  },
+  wideActionButton: {
+    width: '100%',
+    borderRadius: 24,
+    overflow: 'hidden',
+    shadowColor: '#22c55e',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  wideButtonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    position: 'relative',
+  },
+  wideButtonText: {
+    color: '#040814',
+    fontSize: 16,
+    fontWeight: 'bold',
+    letterSpacing: 0.5,
+  },
+  arrowCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#0EA5E9', // vibrant sky blue background
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'absolute',
+    right: 14,
   },
   prevBtnWrapper: {
     width: 80,
@@ -1195,12 +1753,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
   },
-  dotsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-  },
   dot: {
     height: 6,
     borderRadius: 3,
@@ -1208,11 +1760,11 @@ const styles = StyleSheet.create({
   },
   inactiveDot: {
     width: 6,
-    backgroundColor: '#1e293b',
+    backgroundColor: '#334155', // darker slate grey
   },
   activeDot: {
     width: 14,
-    backgroundColor: '#84cc16',
+    backgroundColor: '#22c55e', // neon green active dot
   },
   nextBtnWrapper: {
     width: 120,
@@ -1235,24 +1787,46 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  getStartedButton: {
-    borderRadius: 22,
-    overflow: 'hidden',
-    shadowColor: '#22c55e',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  getStartedGradient: {
+  featuresTransparentRow: {
+    position: 'absolute',
+    bottom: 12,
+    left: 20,
+    right: 20,
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 10,
-    paddingHorizontal: 16,
   },
-  getStartedText: {
-    fontSize: 13,
+  featureCol: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  featureIconCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.2,
+    marginBottom: 8,
+  },
+  featureTitle: {
+    fontSize: 12,
     fontWeight: 'bold',
-    color: '#040814',
+    color: '#ffffff',
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  featureDesc: {
+    fontSize: 10,
+    color: '#94a3b8',
+    textAlign: 'center',
+    lineHeight: 13,
+  },
+  featureVerticalDivider: {
+    width: 1,
+    height: 35,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    alignSelf: 'center',
   },
 });

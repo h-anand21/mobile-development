@@ -1,9 +1,10 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Animated, StyleSheet } from 'react-native';
-import { Tabs } from 'expo-router';
+import { Tabs, useRouter } from 'expo-router';
 import { MaterialCommunityIcons, Feather, AntDesign, Octicons } from '@expo/vector-icons';
 import { COLORS } from '../../src/ui/colors';
 import { useAppTheme } from '../../src/ui/theme';
+import { storage } from '../../src/database/storage';
 import { useAccelerometer } from '../../src/hooks/useAccelerometer';
 import { useGyroscope } from '../../src/hooks/useGyroscope';
 import { useMagnetometer } from '../../src/hooks/useMagnetometer';
@@ -77,6 +78,33 @@ export default function TabLayout() {
   useDetectionEngine();
 
   const { colors } = useAppTheme();
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const checkOnboarding = () => {
+      const completed = storage.getString('has_completed_onboarding') === 'true';
+      if (!completed) {
+        router.replace('/onboarding');
+      }
+      setLoading(false);
+    };
+
+    if (storage.isLoaded()) {
+      checkOnboarding();
+    } else {
+      const unsubscribe = storage.onLoad(checkOnboarding);
+      const timer = setTimeout(checkOnboarding, 600);
+      return () => {
+        unsubscribe();
+        clearTimeout(timer);
+      };
+    }
+  }, []);
+
+  if (loading) {
+    return <View style={{ flex: 1, backgroundColor: colors.background }} />;
+  }
 
   return (
     <Tabs
