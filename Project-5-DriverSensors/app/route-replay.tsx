@@ -324,11 +324,11 @@ export default function RouteReplayScreen() {
   const mapStyleViewBox = `${viewBoxX} ${viewBoxY} ${viewBoxWidth} ${viewBoxHeight}`;
 
   const startLocLabel = hasRealRoute && startPoint && 'latitude' in startPoint
-    ? `Start: Lat ${startPoint.latitude.toFixed(4)}, Lon ${startPoint.longitude.toFixed(4)}`
+    ? `Start: Lat ${(startPoint as any).latitude.toFixed(4)}, Lon ${(startPoint as any).longitude.toFixed(4)}`
     : 'MG Road, Delhi';
 
   const endLocLabel = hasRealRoute && endPoint && 'latitude' in endPoint
-    ? `End: Lat ${endPoint.latitude.toFixed(4)}, Lon ${endPoint.longitude.toFixed(4)}`
+    ? `End: Lat ${(endPoint as any).latitude.toFixed(4)}, Lon ${(endPoint as any).longitude.toFixed(4)}`
     : 'Connaught Place, Delhi';
 
   return (

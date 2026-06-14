@@ -808,7 +808,7 @@ export default function DriveDetailsScreen() {
             <View style={styles.tipsSection}>
               <View style={styles.sectionHeaderRowMain}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <Feather name="lightbulb" size={18} color="#00f5ff" style={{ marginRight: 8 }} />
+                  <MaterialCommunityIcons name="lightbulb-outline" size={18} color="#00f5ff" style={{ marginRight: 8 }} />
                   <Text style={styles.sectionTitle}>Improvement Tips</Text>
                 </View>
               </View>
@@ -940,7 +940,7 @@ export default function DriveDetailsScreen() {
                       <Text style={[styles.riskBarValText, { color: risks.braking.color }]}>{risks.braking.text}</Text>
                     </View>
                     <View style={styles.riskBarTrack}>
-                      <View style={[styles.riskBarFill, { width: risks.braking.percent, backgroundColor: risks.braking.color }]} />
+                      <View style={[styles.riskBarFill, { width: risks.braking.percent as any, backgroundColor: risks.braking.color }]} />
                     </View>
                   </View>
 
@@ -954,7 +954,7 @@ export default function DriveDetailsScreen() {
                       <Text style={[styles.riskBarValText, { color: risks.speeding.color }]}>{risks.speeding.text}</Text>
                     </View>
                     <View style={styles.riskBarTrack}>
-                      <View style={[styles.riskBarFill, { width: risks.speeding.percent, backgroundColor: risks.speeding.color }]} />
+                      <View style={[styles.riskBarFill, { width: risks.speeding.percent as any, backgroundColor: risks.speeding.color }]} />
                     </View>
                   </View>
 
@@ -968,7 +968,7 @@ export default function DriveDetailsScreen() {
                       <Text style={[styles.riskBarValText, { color: risks.distraction.color }]}>{risks.distraction.text}</Text>
                     </View>
                     <View style={styles.riskBarTrack}>
-                      <View style={[styles.riskBarFill, { width: risks.distraction.percent, backgroundColor: risks.distraction.color }]} />
+                      <View style={[styles.riskBarFill, { width: risks.distraction.percent as any, backgroundColor: risks.distraction.color }]} />
                     </View>
                   </View>
 
@@ -982,7 +982,7 @@ export default function DriveDetailsScreen() {
                       <Text style={[styles.riskBarValText, { color: risks.steering.color }]}>{risks.steering.text}</Text>
                     </View>
                     <View style={styles.riskBarTrack}>
-                      <View style={[styles.riskBarFill, { width: risks.steering.percent, backgroundColor: risks.steering.color }]} />
+                      <View style={[styles.riskBarFill, { width: risks.steering.percent as any, backgroundColor: risks.steering.color }]} />
                     </View>
                   </View>
 
@@ -990,13 +990,13 @@ export default function DriveDetailsScreen() {
                   <View style={styles.riskBarItem}>
                     <View style={styles.riskBarHeader}>
                       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                        <MaterialCommunityIcons name="car-curve" size={13} color="#22c55e" style={{ marginRight: 6 }} />
+                        <MaterialCommunityIcons name="compass-outline" size={13} color="#22c55e" style={{ marginRight: 6 }} />
                         <Text style={styles.riskBarLabel}>Cornering</Text>
                       </View>
                       <Text style={[styles.riskBarValText, { color: risks.cornering.color }]}>{risks.cornering.text}</Text>
                     </View>
                     <View style={styles.riskBarTrack}>
-                      <View style={[styles.riskBarFill, { width: risks.cornering.percent, backgroundColor: risks.cornering.color }]} />
+                      <View style={[styles.riskBarFill, { width: risks.cornering.percent as any, backgroundColor: risks.cornering.color }]} />
                     </View>
                   </View>
                 </View>
@@ -1744,6 +1744,14 @@ function getStyles(colors: any, isDark: boolean) {
       justifyContent: 'center',
       width: 70,
       height: 70,
+    },
+    shieldCheckBadge: {
+      width: 60,
+      height: 60,
+      borderRadius: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 12,
     },
     // Score Trend Chart Styles
     trendCard: {

@@ -28,7 +28,7 @@ export const useDetectionEngine = () => {
   // Speed calculation from route
   const currentSession = useDriveStore((state) => state.currentSession);
   const route = currentSession?.route || [];
-  const currentSpeedMs = route.length > 0 ? route[route.length - 1].speed : 0;
+  const currentSpeedMs = route.length > 0 ? (route[route.length - 1].speed ?? 0) : 0;
   const currentSpeedKmH = Math.round(currentSpeedMs * 3.6);
 
   // State refs for filtering

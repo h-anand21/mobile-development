@@ -702,7 +702,7 @@ export default function AchievementsScreen() {
                 {/* Reward 2 */}
                 <View style={styles.rewardCard}>
                   <View style={styles.rewardHeader}>
-                    <MaterialCommunityIcons name="car-shield" size={24} color="#22c55e" />
+                    <MaterialCommunityIcons name="shield-check-outline" size={24} color="#22c55e" />
                     <View style={styles.rewardTitleCol}>
                       <Text style={styles.rewardTitleText}>5% Auto Insurance Rebate</Text>
                       <Text style={styles.rewardSource}>SafeGuard Insurance Corp</Text>
@@ -742,7 +742,7 @@ export default function AchievementsScreen() {
                         <Text style={styles.unlockedText}>UNLOCKED</Text>
                       </View>
                     ) : (
-                      <View style={styles.lockedBadge}>
+                      <View style={styles.lockedRewardBadge}>
                         <Text style={styles.lockedText}>LOCKED</Text>
                       </View>
                     )}
@@ -766,7 +766,7 @@ export default function AchievementsScreen() {
                     </View>
                   ) : (
                     <View style={styles.rewardProgressRow}>
-                      <Text style={styles.progressLabel}>Progress: {Math.round(totalDistanceKm)} / 100 km</Text>
+                      <Text style={styles.rewardProgressLabel}>Progress: {Math.round(totalDistanceKm)} / 100 km</Text>
                       <View style={styles.progressBarBg}>
                         <View style={[styles.progressBarFill, { width: `${Math.min(100, (totalDistanceKm / 100) * 100)}%` }]} />
                       </View>
@@ -1447,7 +1447,7 @@ function getStyles(colors: any) {
       fontSize: 8,
       fontWeight: 'bold',
     },
-    lockedBadge: {
+    lockedRewardBadge: {
       backgroundColor: 'rgba(71, 85, 105, 0.12)',
       borderWidth: 1,
       borderColor: '#47556940',
@@ -1505,7 +1505,7 @@ function getStyles(colors: any) {
     rewardProgressRow: {
       marginTop: 6,
     },
-    progressLabel: {
+    rewardProgressLabel: {
       color: colors.textSlate,
       fontSize: 9,
       marginBottom: 4,

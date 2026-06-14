@@ -302,7 +302,7 @@ export default function LiveEventsScreen() {
                     {/* Card Content */}
                     <View style={styles.cardContent}>
                       <Text style={styles.cardTitle}>{meta.title}</Text>
-                      <Text style={styles.cardDesc}>{event.description || meta.desc}</Text>
+                      <Text style={styles.cardDesc}>{(event as any).description || meta.desc}</Text>
                       {event.speed !== undefined && (
                         <Text style={styles.cardExtra}>Speed: {event.speed} km/h</Text>
                       )}

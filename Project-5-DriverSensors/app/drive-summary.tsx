@@ -109,7 +109,7 @@ export default function DriveSummaryScreen() {
   // Average speed
   let avgSpeed = 52;
   if (displaySession.route && displaySession.route.length > 0) {
-    avgSpeed = Math.round((displaySession.route.reduce((acc, p) => acc + p.speed, 0) / displaySession.route.length) * 3.6);
+    avgSpeed = Math.round((displaySession.route.reduce((acc, p) => acc + (p.speed ?? 0), 0) / displaySession.route.length) * 3.6);
   }
 
   // Formatting date/time
@@ -121,7 +121,7 @@ export default function DriveSummaryScreen() {
 
   // Chart plotting
   const speedHistory = displaySession.route && displaySession.route.length > 5
-    ? displaySession.route.map(p => Math.round(p.speed * 3.6))
+    ? displaySession.route.map(p => Math.round((p.speed ?? 0) * 3.6))
     : MOCK_SPEED_POINTS;
 
   const getChartPath = (points: number[], width: number, height: number) => {
@@ -341,9 +341,9 @@ export default function DriveSummaryScreen() {
                 <Line x1="25" y1="80" x2={width * 0.44} y2="80" stroke="rgba(255, 255, 255, 0.05)" strokeWidth="0.8" />
                 
                 {/* Chart Axes */}
-                <SvgText style={styles.yTick} x="6" y="23">120</SvgText>
-                <SvgText style={styles.yTick} x="6" y="53">80</SvgText>
-                <SvgText style={styles.yTick} x="6" y="83">0</SvgText>
+                <SvgText fill={colors.textSlate} fontSize="8" fontWeight="500" x="6" y="23">120</SvgText>
+                <SvgText fill={colors.textSlate} fontSize="8" fontWeight="500" x="6" y="53">80</SvgText>
+                <SvgText fill={colors.textSlate} fontSize="8" fontWeight="500" x="6" y="83">0</SvgText>
                 
                 {/* Draw speed curve path */}
                 <Path 
@@ -728,11 +728,7 @@ export default function DriveSummaryScreen() {
       height: 90,
       justifyContent: 'center',
     },
-    yTick: {
-      fill: colors.textSlate,
-      fontSize: 8,
-      fontWeight: '500',
-    },
+    yTick: {},
     chartTimeLabels: {
       flexDirection: 'row',
       justifyContent: 'space-between',

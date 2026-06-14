@@ -11,8 +11,15 @@ import { useDeviceMotion } from '../../src/hooks/useDeviceMotion';
 import { useLocation } from '../../src/hooks/useLocation';
 import { useDetectionEngine } from '../../src/services/detection/useDetectionEngine';
 
+interface TabIconProps {
+  icon: React.ReactNode;
+  focused: boolean;
+  color: string;
+  colors: any;
+}
+
 // Custom Tab Bar Icon Component with Spring Pop Scale and Floating Active Pod Animations
-function TabIcon({ icon, focused, color, colors }) {
+function TabIcon({ icon, focused, color, colors }: TabIconProps) {
   const scaleAnim = useRef(new Animated.Value(focused ? 1.15 : 1.0)).current;
   const translateAnim = useRef(new Animated.Value(focused ? -6 : 0)).current;
   const borderOpacityAnim = useRef(new Animated.Value(focused ? 1 : 0)).current;
@@ -162,6 +169,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
+          href: null,
           title: 'Profile',
           tabBarIcon: ({ color, focused }) => (
             <TabIcon 

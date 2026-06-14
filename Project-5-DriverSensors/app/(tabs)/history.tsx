@@ -163,7 +163,7 @@ export default function HistoryScreen() {
       endLocation: d.route && d.route.length > 0 && d.route[d.route.length - 1].latitude
         ? `End: Lat ${d.route[d.route.length - 1].latitude.toFixed(4)}, Lon ${d.route[d.route.length - 1].longitude.toFixed(4)}`
         : 'GPS Location',
-      avgSpeed: d.route && d.route.length > 0 ? Math.round((d.route.reduce((acc, p) => acc + p.speed, 0) / d.route.length) * 3.6) : 0,
+      avgSpeed: d.route && d.route.length > 0 ? Math.round((d.route.reduce((acc: number, p: any) => acc + (p.speed ?? 0), 0) / d.route.length) * 3.6) : 0,
       weather: '28°C',
       weatherIcon: 'moon',
     }));

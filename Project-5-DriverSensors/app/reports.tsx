@@ -985,6 +985,12 @@ Telemetry data processed locally. SafeDrive v1.0.0.
 
 function getStyles(colors: any, isDark: boolean) {
   return StyleSheet.create({
+    sectionHeaderRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 16,
+    },
     container: {
       flex: 1,
       backgroundColor: colors.background,

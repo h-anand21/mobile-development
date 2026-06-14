@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, Dimensions, Modal, Animated, Easing } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather, MaterialCommunityIcons, Ionicons, FontAwesome5, AntDesign } from '@expo/vector-icons';
-import Svg, { Circle, Defs, LinearGradient as SvgLinearGradient, Stop, Line, Path, Text as SvgText } from 'react-native-svg';
+import Svg, { Circle, Defs, LinearGradient as SvgLinearGradient, Stop, Line, Path, Text as SvgText, Rect, Ellipse } from 'react-native-svg';
 import { useRouter } from 'expo-router';
 import { useIsFocused } from '@react-navigation/native';
 import { useDriveStore, DriveSession } from '../../src/store/driveStore';
@@ -149,6 +149,189 @@ export default function DriveScreen() {
       setDbDrives(driveRepository.getAllDrives());
     }
   }, [isFocused, currentSession]);
+  
+  // Calculate dynamic speed from last GPS point in route
+  const currentSpeedMs = currentSession && currentSession.route.length > 0 
+    ? (currentSession.route[currentSession.route.length - 1].speed ?? 0) 
+    : 0;
+  const currentSpeedKmH = Math.round(currentSpeedMs * 3.6);
+
+  // Theme-aware road styling colors
+  const asphaltColors = isDark 
+    ? {
+        stop0: '#0f172a',  // Dark horizon slate
+        stop50: '#1e293b', // Rich dark slate road surface
+        stop100: '#334155', // Lighter foreground asphalt
+      }
+    : {
+        stop0: '#f1f5f9',  // Light horizon concrete
+        stop50: '#cbd5e1', // Light slate concrete surface
+        stop100: '#94a3b8', // Darker foreground concrete
+      };
+
+  const borderColors = isDark
+    ? {
+        stop0: 'rgba(0, 245, 255, 0.1)',
+        stop100: '#00f5ff',
+        paintLine: '#e2e8f0',
+      }
+    : {
+        stop0: 'rgba(2, 132, 199, 0.1)',
+        stop100: '#0284c7',
+        paintLine: '#475569',
+      };
+
+  const dashColor = isDark ? '#ffffff' : '#334155';
+
+  // Math helpers for perspective road slopes
+  const x_top_l = width / 2 - 35;
+  const x_bottom_l = -80;
+  const m_l = (x_bottom_l - x_top_l) / 100;
+  const getXLeft = (y: number) => x_top_l + m_l * (y - 20);
+
+  const x_top_r = width / 2 + 35;
+  const x_bottom_r = width + 80;
+  const m_r = (x_bottom_r - x_top_r) / 100;
+  const getXRight = (y: number) => x_top_r + m_r * (y - 20);
+
+  // Math helpers for perspective lane dividers (left & right of car)
+  const m_div_l = (-90 - (-12)) / 100; // -0.78 slope
+  const getXDivLeft = (y: number) => (width / 2 - 12) + m_div_l * (y - 20);
+
+  const m_div_r = (90 - 12) / 100; // 0.78 slope
+  const getXDivRight = (y: number) => (width / 2 + 12) + m_div_r * (y - 20);
+
+  // Math helpers for guardrail support posts
+  const m_post_l = m_l * 1.05;
+  const getXPostLeft = (y: number) => (width / 2 - 38) + m_post_l * (y - 20);
+
+  const m_post_r = m_r * 1.05;
+  const getXPostRight = (y: number) => (width / 2 + 38) + m_post_r * (y - 20);
+
+  // Math helpers for street lights
+  const m_light_l = m_l * 1.15;
+  const getXLightLeft = (y: number) => (width / 2 - 42) + m_light_l * (y - 20);
+
+  const m_light_r = m_r * 1.15;
+  const getXLightRight = (y: number) => (width / 2 + 42) + m_light_r * (y - 20);
+
+  // Active session animations
+  const activeGridAnim = useRef(new Animated.Value(0)).current;
+  const activeCarVibe = useRef(new Animated.Value(0)).current;
+  const activeCarPitch = useRef(new Animated.Value(0)).current;
+  const activeCarRollAnim = useRef(new Animated.Value(0)).current;
+  const prevActiveSpeed = useRef(0);
+
+  useEffect(() => {
+    if (!currentSession) {
+      activeGridAnim.setValue(0);
+      return;
+    }
+
+    activeGridAnim.stopAnimation();
+
+    if (currentSpeedKmH <= 0) {
+      return;
+    }
+
+    // Calculate loop duration based on speed. Max speed 120 km/h.
+    // At 1 km/h -> 4000ms. At 100 km/h -> 200ms.
+    const duration = Math.max(150, 4000 - currentSpeedKmH * 38);
+
+    const gridLoop = Animated.loop(
+      Animated.timing(activeGridAnim, {
+        toValue: 1,
+        duration: duration,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    );
+
+    gridLoop.start();
+
+    return () => {
+      gridLoop.stop();
+    };
+  }, [currentSession, currentSpeedKmH]);
+
+  useEffect(() => {
+    if (!currentSession) {
+      activeCarVibe.setValue(0);
+      activeCarPitch.setValue(0);
+      prevActiveSpeed.current = 0;
+      return;
+    }
+
+    // 1. High-frequency vibration loop based on speed
+    activeCarVibe.stopAnimation();
+    
+    let vibeLoop: Animated.CompositeAnimation | null = null;
+    if (currentSpeedKmH <= 0) {
+      // Gentle idle float bounce
+      vibeLoop = Animated.loop(
+        Animated.sequence([
+          Animated.timing(activeCarVibe, { toValue: 1.5, duration: 1000, useNativeDriver: true, easing: Easing.inOut(Easing.ease) }),
+          Animated.timing(activeCarVibe, { toValue: 0, duration: 1000, useNativeDriver: true, easing: Easing.inOut(Easing.ease) })
+        ])
+      );
+    } else {
+      // Active rumble. Amplitude increases and duration decreases with speed.
+      const speedFactor = Math.min(100, currentSpeedKmH) / 100;
+      const amplitude = 0.5 + speedFactor * 1.2;
+      const duration = Math.max(45, 140 - speedFactor * 90);
+      
+      vibeLoop = Animated.loop(
+        Animated.sequence([
+          Animated.timing(activeCarVibe, { toValue: amplitude, duration: duration, useNativeDriver: true }),
+          Animated.timing(activeCarVibe, { toValue: -amplitude, duration: duration, useNativeDriver: true })
+        ])
+      );
+    }
+    vibeLoop.start();
+
+    // 2. Pitch transition (Accelerate vs Brake)
+    const speedDiff = currentSpeedKmH - prevActiveSpeed.current;
+    prevActiveSpeed.current = currentSpeedKmH;
+
+    if (speedDiff < 0) {
+      // Braking: Dip forward (translate Y positive, i.e. down; scale down)
+      Animated.sequence([
+        Animated.timing(activeCarPitch, { toValue: 6, duration: 300, useNativeDriver: true, easing: Easing.out(Easing.ease) }),
+        Animated.spring(activeCarPitch, { toValue: 0, useNativeDriver: true, friction: 6, tension: 40 })
+      ]).start();
+    } else if (speedDiff > 0) {
+      // Accelerating: Squat backward (translate Y negative, i.e. up; scale up)
+      Animated.sequence([
+        Animated.timing(activeCarPitch, { toValue: -4, duration: 300, useNativeDriver: true, easing: Easing.out(Easing.ease) }),
+        Animated.spring(activeCarPitch, { toValue: 0, useNativeDriver: true, friction: 6, tension: 40 })
+      ]).start();
+    }
+
+    // 3. Persistent floating steering/roll rotation loop
+    activeCarRollAnim.setValue(0);
+    const rollLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(activeCarRollAnim, {
+          toValue: 1,
+          duration: 1800,
+          useNativeDriver: true,
+          easing: Easing.inOut(Easing.ease),
+        }),
+        Animated.timing(activeCarRollAnim, {
+          toValue: -1,
+          duration: 1800,
+          useNativeDriver: true,
+          easing: Easing.inOut(Easing.ease),
+        }),
+      ])
+    );
+    rollLoop.start();
+
+    return () => {
+      if (vibeLoop) vibeLoop.stop();
+      rollLoop.stop();
+    };
+  }, [currentSession, currentSpeedKmH]);
   
   // Local states
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -632,16 +815,10 @@ export default function DriveScreen() {
   // Active Drive Session Data Calculations
   const score = currentSession.score;
   const rating = currentSession.rating;
-  
-  // Calculate dynamic speed from last GPS point in route
-  const currentSpeedMs = currentSession.route.length > 0 
-    ? currentSession.route[currentSession.route.length - 1].speed 
-    : 0;
-  const currentSpeedKmH = Math.round(currentSpeedMs * 3.6);
 
   // Average speed calculation
   const averageSpeedKmH = currentSession.route.length > 0
-    ? Math.round((currentSession.route.reduce((acc, p) => acc + p.speed, 0) / currentSession.route.length) * 3.6)
+    ? Math.round((currentSession.route.reduce((acc, p) => acc + (p.speed ?? 0), 0) / currentSession.route.length) * 3.6)
     : 0;
 
   // Event Counts
@@ -662,6 +839,11 @@ export default function DriveScreen() {
   // Arc stroke offset for 270 degree gauge dial
   // Circumference of R=80 is 502.6. 270 deg is 377.
   const strokeDashoffset = 377 - (377 * score) / 100;
+
+  const carRollRotate = activeCarRollAnim.interpolate({
+    inputRange: [-1, 1],
+    outputRange: ['-1.2deg', '1.2deg'],
+  });
 
   // Score Rating style colors
   const ratingColors = {
@@ -786,37 +968,578 @@ export default function DriveScreen() {
             <Text style={styles.gaugeSubtext}>Keep driving safe!</Text>
           </View>
         </View>
- 
-         {/* Perspective Car Grid Area */}
-         <View style={styles.carGridSection}>
-           <Svg width={width} height={isSmallDevice ? 90 : 120} viewBox={`0 0 ${width} 120`} style={styles.perspectiveRoadGrid}>
-             <Defs>
-               <SvgLinearGradient id="roadGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                <Stop offset="0%" stopColor="#06b6d4" stopOpacity="0.1" />
-                <Stop offset="100%" stopColor="#06b6d4" stopOpacity="0.7" />
-              </SvgLinearGradient>
-            </Defs>
-            {/* Horizontal Grid lines */}
-            <Line x1="0" y1="40" x2={width} y2="40" stroke="rgba(6, 182, 212, 0.1)" strokeWidth="1" />
-            <Line x1="0" y1="65" x2={width} y2="65" stroke="rgba(6, 182, 212, 0.2)" strokeWidth="1" />
-            <Line x1="0" y1="90" x2={width} y2="90" stroke="rgba(6, 182, 212, 0.4)" strokeWidth="1" />
-            <Line x1="0" y1="118" x2={width} y2="118" stroke="url(#roadGrad)" strokeWidth="2.5" />
+
+          {/* Perspective Road Area */}
+          <View style={styles.carGridSection}>
+            <Svg width={width} height={isSmallDevice ? 90 : 120} viewBox={`0 0 ${width} 120`} style={styles.perspectiveRoadGrid}>
+              <Defs>
+                {/* Asphalt Gradient (Futuristic deep wet road surface) */}
+                <SvgLinearGradient id="asphaltGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <Stop offset="0%" stopColor={isDark ? "#090d16" : asphaltColors.stop0} stopOpacity="1" />
+                  <Stop offset="50%" stopColor={isDark ? "#111827" : asphaltColors.stop50} stopOpacity="1" />
+                  <Stop offset="100%" stopColor={isDark ? "#1e293b" : asphaltColors.stop100} stopOpacity="1" />
+                </SvgLinearGradient>
+                {/* Glowing Left Border Gradient (Neon Green) */}
+                <SvgLinearGradient id="leftBorderGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <Stop offset="0%" stopColor={isDark ? "rgba(34, 197, 94, 0.1)" : "rgba(34, 197, 94, 0.2)"} />
+                  <Stop offset="100%" stopColor="#22c55e" />
+                </SvgLinearGradient>
+                {/* Glowing Right Border Gradient (Neon Blue) */}
+                <SvgLinearGradient id="rightBorderGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <Stop offset="0%" stopColor={isDark ? "rgba(0, 245, 255, 0.1)" : "rgba(2, 132, 199, 0.2)"} />
+                  <Stop offset="100%" stopColor={isDark ? "#00f5ff" : "#0284c7"} />
+                </SvgLinearGradient>
+                {/* Glowing Left Reflection on Asphalt */}
+                <SvgLinearGradient id="leftReflectionGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <Stop offset="0%" stopColor="#22c55e" stopOpacity={isDark ? 0.22 : 0.12} />
+                  <Stop offset="100%" stopColor="#22c55e" stopOpacity="0.0" />
+                </SvgLinearGradient>
+                {/* Glowing Right Reflection on Asphalt */}
+                <SvgLinearGradient id="rightReflectionGrad" x1="100%" y1="0%" x2="0%" y2="0%">
+                  <Stop offset="0%" stopColor={isDark ? "#00f5ff" : "#0284c7"} stopOpacity={isDark ? 0.22 : 0.12} />
+                  <Stop offset="100%" stopColor={isDark ? "#00f5ff" : "#0284c7"} stopOpacity="0.0" />
+                </SvgLinearGradient>
+              </Defs>
+
+              {/* Background Skyline Buildings at the horizon (Only in dark mode for premium feel) */}
+              {isDark && (
+                <>
+                  <Rect x={width / 2 - 120} y="5" width="15" height="15" fill="#0b1329" opacity="0.6" />
+                  <Rect x={width / 2 - 100} y="2" width="22" height="18" fill="#131e36" opacity="0.75" />
+                  <Rect x={width / 2 - 75} y="8" width="18" height="12" fill="#0b1329" opacity="0.6" />
+                  <Rect x={width / 2 - 55} y="4" width="25" height="16" fill="#182645" opacity="0.8" />
+                  <Rect x={width / 2 + 30} y="3" width="20" height="17" fill="#182645" opacity="0.8" />
+                  <Rect x={width / 2 + 55} y="7" width="16" height="13" fill="#0b1329" opacity="0.6" />
+                  <Rect x={width / 2 + 75} y="1" width="24" height="19" fill="#131e36" opacity="0.75" />
+                  <Rect x={width / 2 + 105} y="6" width="15" height="14" fill="#0b1329" opacity="0.6" />
+
+                  {/* Blinking City lights */}
+                  <Circle cx={width / 2 - 92} cy="6" r="0.9" fill="#eab308" opacity="0.95" />
+                  <Circle cx={width / 2 - 45} cy="8" r="1.1" fill="#00f5ff" opacity="0.9" />
+                  <Circle cx={width / 2 + 40} cy="7" r="0.9" fill="#22c55e" opacity="0.95" />
+                  <Circle cx={width / 2 + 85} cy="5" r="1.1" fill="#00f5ff" opacity="0.85" />
+                </>
+              )}
+              
+              {/* Road Asphalt Shape */}
+              <Path 
+                d={`M ${width / 2 - 35} 20 L ${width / 2 + 35} 20 L ${width + 80} 120 L -80 120 Z`}
+                fill="url(#asphaltGrad)"
+              />
+
+              {/* Glowing Left Reflection on Asphalt */}
+              <Path 
+                d={`M ${width / 2 - 35} 20 L ${width / 2} 20 L ${width / 2 - 40} 120 L -80 120 Z`}
+                fill="url(#leftReflectionGrad)"
+              />
+
+              {/* Glowing Right Reflection on Asphalt */}
+              <Path 
+                d={`M ${width / 2} 20 L ${width / 2 + 35} 20 L ${width + 80} 120 L ${width / 2 + 40} 120 Z`}
+                fill="url(#rightReflectionGrad)"
+              />
+              
+              {/* Left Road Edge (Solid Glowing Neon Green) */}
+              <Line x1={width / 2 - 35} y1="20" x2="-80" y2="120" stroke="url(#leftBorderGrad)" strokeWidth="4" opacity={0.9} />
+              
+              {/* Right Road Edge (Solid Glowing Neon Blue) */}
+              <Line x1={width / 2 + 35} y1="20" x2={width + 80} y2="120" stroke="url(#rightBorderGrad)" strokeWidth="4" opacity={0.9} />
+
+              {/* Left Painted Shoulder Stripe (Solid Thin White/Slate) */}
+              <Line x1={width / 2 - 33} y1="20" x2="-70" y2="120" stroke={borderColors.paintLine} strokeWidth="1.5" opacity={0.65} />
+
+              {/* Right Painted Shoulder Stripe (Solid Thin White/Slate) */}
+              <Line x1={width / 2 + 33} y1="20" x2={width + 70} y2="120" stroke={borderColors.paintLine} strokeWidth="1.5" opacity={0.65} />
+
+              {/* Left Steel Guardrail */}
+              <Line x1={width / 2 - 38} y1="20" x2="-95" y2="120" stroke="#475569" strokeWidth="2.5" />
+              <Line x1={width / 2 - 38} y1="22" x2="-95" y2="122" stroke="#334155" strokeWidth="1.2" />
+
+              {/* Right Steel Guardrail */}
+              <Line x1={width / 2 + 38} y1="20" x2={width + 95} y2="120" stroke="#475569" strokeWidth="2.5" />
+              <Line x1={width / 2 + 38} y1="22" x2={width + 95} y2="122" stroke="#334155" strokeWidth="1.2" />
+             </Svg>
+
+            {/* Scrolling Road Texture Lines (Horizontal Perspective Stripes) */}
+            {currentSession && currentSpeedKmH > 0 && Array.from({ length: 4 }).map((_, idx) => {
+              const startTop = idx === 0 ? 20 : idx === 1 ? 40 : idx === 2 ? 70 : 100;
+              const deltaY = idx === 0 ? 20 : idx === 1 ? 30 : idx === 2 ? 30 : 35;
+
+              const translateY = activeGridAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, deltaY],
+              });
+
+              const opacity = activeGridAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [
+                  idx === 0 ? 0.0 : idx === 1 ? 0.08 : idx === 2 ? 0.15 : 0.22,
+                  idx === 0 ? 0.08 : idx === 1 ? 0.15 : idx === 2 ? 0.22 : 0.0
+                ]
+              });
+
+              const scaleY = activeGridAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [
+                  idx === 0 ? 0.5 : idx === 1 ? 1.0 : idx === 2 ? 1.8 : 2.5,
+                  idx === 0 ? 1.0 : idx === 1 ? 1.8 : idx === 2 ? 2.5 : 3.0
+                ]
+              });
+
+              const yVal = startTop; 
+              const roadWidthAtY = getXRight(yVal) - getXLeft(yVal);
+              const leftPos = getXLeft(yVal);
+
+              return (
+                <Animated.View
+                  key={`road-texture-${idx}`}
+                  style={{
+                    position: 'absolute',
+                    top: startTop,
+                    left: leftPos,
+                    width: roadWidthAtY,
+                    height: 1.5,
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(0, 0, 0, 0.08)',
+                    transform: [{ translateY }, { scaleY }],
+                    opacity,
+                  }}
+                />
+              );
+            })}
+
+            {/* Scrolling Left Guardrail Posts */}
+            {currentSession && currentSpeedKmH > 0 && Array.from({ length: 4 }).map((_, idx) => {
+              const startTop = idx === 0 ? 20 : idx === 1 ? 40 : idx === 2 ? 70 : 100;
+              const deltaY = idx === 0 ? 20 : idx === 1 ? 30 : idx === 2 ? 30 : 35;
+
+              const translateY = activeGridAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, deltaY],
+              });
+
+              const translateX = activeGridAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, m_post_l * deltaY],
+              });
+
+              const opacity = activeGridAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [
+                  idx === 0 ? 0.0 : idx === 1 ? 0.4 : idx === 2 ? 0.8 : 0.95,
+                  idx === 0 ? 0.4 : idx === 1 ? 0.8 : idx === 2 ? 0.95 : 0.0
+                ]
+              });
+
+              const scaleY = activeGridAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [
+                  idx === 0 ? 0.3 : idx === 1 ? 0.6 : idx === 2 ? 1.2 : 1.8,
+                  idx === 0 ? 0.6 : idx === 1 ? 1.2 : idx === 2 ? 1.8 : 2.4
+                ]
+              });
+
+              const startLeft = getXPostLeft(startTop);
+
+              return (
+                <Animated.View
+                  key={`left-post-${idx}`}
+                  style={{
+                    position: 'absolute',
+                    top: startTop,
+                    left: startLeft,
+                    width: 2.2,
+                    height: 8,
+                    backgroundColor: '#475569',
+                    transform: [{ translateY }, { translateX }, { scaleY }],
+                    opacity,
+                  }}
+                />
+              );
+            })}
+
+            {/* Scrolling Right Guardrail Posts */}
+            {currentSession && currentSpeedKmH > 0 && Array.from({ length: 4 }).map((_, idx) => {
+              const startTop = idx === 0 ? 20 : idx === 1 ? 40 : idx === 2 ? 70 : 100;
+              const deltaY = idx === 0 ? 20 : idx === 1 ? 30 : idx === 2 ? 30 : 35;
+
+              const translateY = activeGridAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, deltaY],
+              });
+
+              const translateX = activeGridAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, m_post_r * deltaY],
+              });
+
+              const opacity = activeGridAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [
+                  idx === 0 ? 0.0 : idx === 1 ? 0.4 : idx === 2 ? 0.8 : 0.95,
+                  idx === 0 ? 0.4 : idx === 1 ? 0.8 : idx === 2 ? 0.95 : 0.0
+                ]
+              });
+
+              const scaleY = activeGridAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [
+                  idx === 0 ? 0.3 : idx === 1 ? 0.6 : idx === 2 ? 1.2 : 1.8,
+                  idx === 0 ? 0.6 : idx === 1 ? 1.2 : idx === 2 ? 1.8 : 2.4
+                ]
+              });
+
+              const startLeft = getXPostRight(startTop);
+
+              return (
+                <Animated.View
+                  key={`right-post-${idx}`}
+                  style={{
+                    position: 'absolute',
+                    top: startTop,
+                    left: startLeft,
+                    width: 2.2,
+                    height: 8,
+                    backgroundColor: '#475569',
+                    transform: [{ translateY }, { translateX }, { scaleY }],
+                    opacity,
+                  }}
+                />
+              );
+            })}
+
+            {/* Scrolling Left Street Lights */}
+            {currentSession && currentSpeedKmH > 0 && Array.from({ length: 4 }).map((_, idx) => {
+              const startTop = idx === 0 ? 20 : idx === 1 ? 40 : idx === 2 ? 70 : 100;
+              const deltaY = idx === 0 ? 20 : idx === 1 ? 30 : idx === 2 ? 30 : 35;
+
+              const translateY = activeGridAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, deltaY],
+              });
+
+              const translateX = activeGridAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, m_light_l * deltaY],
+              });
+
+              const opacity = activeGridAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [
+                  idx === 0 ? 0.0 : idx === 1 ? 0.4 : idx === 2 ? 0.8 : 0.95,
+                  idx === 0 ? 0.4 : idx === 1 ? 0.8 : idx === 2 ? 0.95 : 0.0
+                ]
+              });
+
+              const scale = activeGridAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [
+                  idx === 0 ? 0.3 : idx === 1 ? 0.6 : idx === 2 ? 1.2 : 2.0,
+                  idx === 0 ? 0.6 : idx === 1 ? 1.2 : idx === 2 ? 2.0 : 2.8
+                ]
+              });
+
+              const startLeft = getXLightLeft(startTop);
+
+              return (
+                <Animated.View
+                  key={`left-light-${idx}`}
+                  style={{
+                    position: 'absolute',
+                    top: startTop,
+                    left: startLeft,
+                    transform: [{ translateY }, { translateX }, { scale }],
+                    opacity,
+                    alignItems: 'center',
+                    pointerEvents: 'none',
+                  }}
+                >
+                  <View style={{ width: 1.5, height: 32, backgroundColor: '#334155' }} />
+                  <View style={{
+                    width: 8,
+                    height: 1.5,
+                    backgroundColor: '#475569',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                  }} />
+                  <View style={{
+                    width: 5,
+                    height: 5,
+                    borderRadius: 2.5,
+                    backgroundColor: '#ffb703',
+                    position: 'absolute',
+                    top: -2,
+                    left: 6,
+                    shadowColor: '#ffb703',
+                    shadowOffset: { width: 0, height: 0 },
+                    shadowOpacity: 0.9,
+                    shadowRadius: 3,
+                    elevation: 2,
+                  }} />
+                </Animated.View>
+              );
+            })}
+
+            {/* Scrolling Right Street Lights */}
+            {currentSession && currentSpeedKmH > 0 && Array.from({ length: 4 }).map((_, idx) => {
+              const startTop = idx === 0 ? 20 : idx === 1 ? 40 : idx === 2 ? 70 : 100;
+              const deltaY = idx === 0 ? 20 : idx === 1 ? 30 : idx === 2 ? 30 : 35;
+
+              const translateY = activeGridAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, deltaY],
+              });
+
+              const translateX = activeGridAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, m_light_r * deltaY],
+              });
+
+              const opacity = activeGridAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [
+                  idx === 0 ? 0.0 : idx === 1 ? 0.4 : idx === 2 ? 0.8 : 0.95,
+                  idx === 0 ? 0.4 : idx === 1 ? 0.8 : idx === 2 ? 0.95 : 0.0
+                ]
+              });
+
+              const scale = activeGridAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [
+                  idx === 0 ? 0.3 : idx === 1 ? 0.6 : idx === 2 ? 1.2 : 2.0,
+                  idx === 0 ? 0.6 : idx === 1 ? 1.2 : idx === 2 ? 2.0 : 2.8
+                ]
+              });
+
+              const startLeft = getXLightRight(startTop);
+
+              return (
+                <Animated.View
+                  key={`right-light-${idx}`}
+                  style={{
+                    position: 'absolute',
+                    top: startTop,
+                    left: startLeft,
+                    transform: [{ translateY }, { translateX }, { scale }],
+                    opacity,
+                    alignItems: 'center',
+                    pointerEvents: 'none',
+                  }}
+                >
+                  <View style={{ width: 1.5, height: 32, backgroundColor: '#334155' }} />
+                  <View style={{
+                    width: 8,
+                    height: 1.5,
+                    backgroundColor: '#475569',
+                    position: 'absolute',
+                    top: 0,
+                    right: 0,
+                  }} />
+                  <View style={{
+                    width: 5,
+                    height: 5,
+                    borderRadius: 2.5,
+                    backgroundColor: '#ffb703',
+                    position: 'absolute',
+                    top: -2,
+                    right: 6,
+                    shadowColor: '#ffb703',
+                    shadowOffset: { width: 0, height: 0 },
+                    shadowOpacity: 0.9,
+                    shadowRadius: 3,
+                    elevation: 2,
+                  }} />
+                </Animated.View>
+              );
+            })}
+
+
+
+            {/* Scrolling Left Side Reflectors (Neon Green) */}
+            {currentSession && currentSpeedKmH > 0 && Array.from({ length: 4 }).map((_, idx) => {
+              const startTop = idx === 0 ? 20 : idx === 1 ? 40 : idx === 2 ? 70 : 100;
+              const deltaY = idx === 0 ? 20 : idx === 1 ? 30 : idx === 2 ? 30 : 35;
+
+              const translateY = activeGridAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, deltaY],
+              });
+
+              const translateX = activeGridAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, m_l * deltaY],
+              });
+
+              const opacity = activeGridAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [
+                  idx === 0 ? 0.0 : idx === 1 ? 0.3 : idx === 2 ? 0.6 : 0.9,
+                  idx === 0 ? 0.3 : idx === 1 ? 0.6 : idx === 2 ? 0.9 : 0.0
+                ]
+              });
+
+              const scale = activeGridAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [
+                  idx === 0 ? 0.4 : idx === 1 ? 0.8 : idx === 2 ? 1.4 : 2.2,
+                  idx === 0 ? 0.8 : idx === 1 ? 1.4 : idx === 2 ? 2.2 : 3.0
+                ]
+              });
+
+              const startLeft = getXLeft(startTop);
+
+              return (
+                <Animated.View
+                  key={`left-reflector-${idx}`}
+                  style={[
+                    styles.roadSideReflector,
+                    {
+                      top: startTop,
+                      left: startLeft,
+                      transform: [{ translateY }, { translateX }, { scale }],
+                      opacity,
+                      backgroundColor: '#22c55e',
+                      shadowColor: '#22c55e',
+                    }
+                  ]}
+                />
+              );
+            })}
+
+            {/* Scrolling Right Side Reflectors (Neon Blue) */}
+            {currentSession && currentSpeedKmH > 0 && Array.from({ length: 4 }).map((_, idx) => {
+              const startTop = idx === 0 ? 20 : idx === 1 ? 40 : idx === 2 ? 70 : 100;
+              const deltaY = idx === 0 ? 20 : idx === 1 ? 30 : idx === 2 ? 30 : 35;
+
+              const translateY = activeGridAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, deltaY],
+              });
+
+              const translateX = activeGridAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, m_r * deltaY],
+              });
+
+              const opacity = activeGridAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [
+                  idx === 0 ? 0.0 : idx === 1 ? 0.3 : idx === 2 ? 0.6 : 0.9,
+                  idx === 0 ? 0.3 : idx === 1 ? 0.6 : idx === 2 ? 0.9 : 0.0
+                ]
+              });
+
+              const scale = activeGridAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [
+                  idx === 0 ? 0.4 : idx === 1 ? 0.8 : idx === 2 ? 1.4 : 2.2,
+                  idx === 0 ? 0.8 : idx === 1 ? 1.4 : idx === 2 ? 2.2 : 3.0
+                ]
+              });
+
+              const startLeft = getXRight(startTop);
+
+              return (
+                <Animated.View
+                  key={`right-reflector-${idx}`}
+                  style={[
+                    styles.roadSideReflector,
+                    {
+                      top: startTop,
+                      left: startLeft,
+                      transform: [{ translateY }, { translateX }, { scale }],
+                      opacity,
+                      backgroundColor: isDark ? '#00f5ff' : '#0284c7',
+                      shadowColor: isDark ? '#00f5ff' : '#0284c7',
+                    }
+                  ]}
+                />
+              );
+            })}
+
+            {/* Ambient Speed Particles (Green on left, Blue on right) */}
+            {currentSession && currentSpeedKmH > 0 && Array.from({ length: 6 }).map((_, idx) => {
+              const isLeft = idx < 3;
+              const particleColor = isLeft ? '#22c55e' : (isDark ? '#00f5ff' : '#0284c7');
+              
+              const startTop = idx === 0 ? 30 : idx === 1 ? 60 : idx === 2 ? 80 : idx === 3 ? 40 : idx === 4 ? 70 : 90;
+              const deltaY = idx % 2 === 0 ? 40 : 50;
+              
+              const translateY = activeGridAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, deltaY],
+              });
+
+              const m_particle = isLeft ? m_l * 0.8 : m_r * 0.8;
+              const translateX = activeGridAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, m_particle * deltaY],
+              });
+
+              const opacity = activeGridAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0.1, 0.6],
+              });
+
+              const scale = idx % 2 === 0 ? 0.6 : 0.4;
+              const startLeft = isLeft 
+                ? (width / 2 - 40) + m_l * (startTop - 20)
+                : (width / 2 + 40) + m_r * (startTop - 20);
+
+              return (
+                <Animated.View
+                  key={`particle-${idx}`}
+                  style={[
+                    styles.roadParticle,
+                    {
+                      top: startTop,
+                      left: startLeft,
+                      transform: [{ translateY }, { translateX }, { scale }],
+                      opacity,
+                      backgroundColor: particleColor,
+                    }
+                  ]}
+                />
+              );
+            })}
+
+            {/* Static dashes/reflectors/particles if stopped */}
+            {(!currentSession || currentSpeedKmH <= 0) && (
+              <>
+
+
+                {/* Left reflectors */}
+                <View style={[styles.roadSideReflector, { top: 30, left: getXLeft(30), backgroundColor: '#22c55e', opacity: 0.3, transform: [{ scale: 0.6 }] }]} />
+                <View style={[styles.roadSideReflector, { top: 55, left: getXLeft(55), backgroundColor: '#22c55e', opacity: 0.6, transform: [{ scale: 1.1 }] }]} />
+                <View style={[styles.roadSideReflector, { top: 85, left: getXLeft(85), backgroundColor: '#22c55e', opacity: 0.9, transform: [{ scale: 1.8 }] }]} />
+
+                {/* Right reflectors */}
+                <View style={[styles.roadSideReflector, { top: 30, left: getXRight(30), backgroundColor: isDark ? '#00f5ff' : '#0284c7', opacity: 0.3, transform: [{ scale: 0.6 }] }]} />
+                <View style={[styles.roadSideReflector, { top: 55, left: getXRight(55), backgroundColor: isDark ? '#00f5ff' : '#0284c7', opacity: 0.6, transform: [{ scale: 1.1 }] }]} />
+                <View style={[styles.roadSideReflector, { top: 85, left: getXRight(85), backgroundColor: isDark ? '#00f5ff' : '#0284c7', opacity: 0.9, transform: [{ scale: 1.8 }] }]} />
+              </>
+            )}
             
-            {/* Horizon meeting lines */}
-            <Line x1={width / 2} y1="20" x2="-50" y2="120" stroke="rgba(6, 182, 212, 0.4)" strokeWidth="1.5" />
-            <Line x1={width / 2} y1="20" x2={width / 6} y2="120" stroke="rgba(6, 182, 212, 0.4)" strokeWidth="1.5" />
-            <Line x1={width / 2} y1="20" x2={width / 3} y2="120" stroke="rgba(6, 182, 212, 0.4)" strokeWidth="1.5" />
-            <Line x1={width / 2} y1="20" x2={(2 * width) / 3} y2="120" stroke="rgba(6, 182, 212, 0.4)" strokeWidth="1.5" />
-            <Line x1={width / 2} y1="20" x2={(5 * width) / 6} y2="120" stroke="rgba(6, 182, 212, 0.4)" strokeWidth="1.5" />
-            <Line x1={width / 2} y1="20" x2={width + 50} y2="120" stroke="rgba(6, 182, 212, 0.4)" strokeWidth="1.5" />
-          </Svg>
-          
-          <Image 
-            source={require('../../assets/images/drive_car.png')} 
-            style={styles.carImage} 
-            resizeMode="contain"
-          />
-        </View>
+            <Animated.Image 
+              source={require('../../assets/images/drive_car.png')} 
+              style={[
+                styles.activeCarImage,
+                {
+                  transform: [
+                    { translateY: Animated.add(activeCarVibe, activeCarPitch) },
+                    { rotate: carRollRotate },
+                    {
+                      scale: activeCarPitch.interpolate({
+                        inputRange: [-4, 0, 6],
+                        outputRange: [1.02, 1, 0.96],
+                      })
+                    }
+                  ]
+                }
+              ]} 
+              resizeMode="contain"
+            />
+          </View>
 
         {/* Speed Stats Row */}
         <View style={styles.speedStatsRow}>
@@ -1411,7 +2134,31 @@ function getStyles(colors: any, isDark: boolean) {
     position: 'absolute',
     bottom: 0,
   },
-  carImage: {
+  roadCenterDash: {
+    position: 'absolute',
+    width: 4,
+    height: 12,
+    backgroundColor: '#ffffff',
+    borderRadius: 2,
+  },
+  roadSideReflector: {
+    position: 'absolute',
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    shadowColor: '#00f5ff',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  roadParticle: {
+    position: 'absolute',
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  activeCarImage: {
     width: width * 0.58,
     height: isSmallDevice ? 90 : 120,
     zIndex: 2,

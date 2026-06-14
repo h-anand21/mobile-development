@@ -292,7 +292,7 @@ export default function LiveAnalyticsScreen() {
 
   // Speed data and calculations
   const route = currentSession?.route || [];
-  const currentSpeedKmH = route.length > 0 ? Math.round(route[route.length - 1].speed * 3.6) : 0;
+  const currentSpeedKmH = route.length > 0 ? Math.round((route[route.length - 1].speed ?? 0) * 3.6) : 0;
   
   // Resolved dynamic speed
   const speed = currentSession 
@@ -312,7 +312,7 @@ export default function LiveAnalyticsScreen() {
       let maxSpeed = 0;
       drives.forEach(d => {
         if (d.route && d.route.length > 0) {
-          const driveMax = Math.max(...d.route.map(p => p.speed));
+          const driveMax = Math.max(...d.route.map(p => p.speed ?? 0));
           const driveMaxKmH = Math.round(driveMax * 3.6);
           if (driveMaxKmH > maxSpeed) maxSpeed = driveMaxKmH;
         }
@@ -326,11 +326,11 @@ export default function LiveAnalyticsScreen() {
 
   // Speed statistics
   const averageSpeedKmH = currentSession 
-    ? (route.length > 0 ? Math.round((route.reduce((acc, p) => acc + p.speed, 0) / route.length) * 3.6) : 0)
+    ? (route.length > 0 ? Math.round((route.reduce((acc, p) => acc + (p.speed ?? 0), 0) / route.length) * 3.6) : 0)
     : (localSpeedPoints.length > 0 ? Math.round(localSpeedPoints.reduce((a, b) => a + b, 0) / localSpeedPoints.length) : 0);
 
   const maxSpeedKmH = currentSession 
-    ? (route.length > 0 ? Math.round(Math.max(...route.map(p => p.speed)) * 3.6) : 0)
+    ? (route.length > 0 ? Math.round(Math.max(...route.map(p => p.speed ?? 0)) * 3.6) : 0)
     : (localSpeedPoints.length > 0 ? Math.max(...localSpeedPoints) : 0);
 
   const topSpeedKmH = Math.max(allTimeTopSpeed, maxSpeedKmH);
@@ -495,11 +495,11 @@ export default function LiveAnalyticsScreen() {
                 <Circle cx={needleX} cy={needleY} r="2.5" fill="#00f5ff" />
 
                 {/* Speed Dial ticks & markers */}
-                <SvgText style={styles.dialTickLabel} x="58" y="146" textAnchor="middle">0</SvgText>
-                <SvgText style={styles.dialTickLabel} x="44" y="80" textAnchor="middle">40</SvgText>
-                <SvgText style={styles.dialTickLabel} x="100" y="52" textAnchor="middle">80</SvgText>
-                <SvgText style={styles.dialTickLabel} x="156" y="80" textAnchor="middle">120</SvgText>
-                <SvgText style={styles.dialTickLabel} x="142" y="146" textAnchor="middle">160</SvgText>
+                <SvgText fill={colors.textMuted} fontSize="10" fontWeight="600" x="58" y="146" textAnchor="middle">0</SvgText>
+                <SvgText fill={colors.textMuted} fontSize="10" fontWeight="600" x="44" y="80" textAnchor="middle">40</SvgText>
+                <SvgText fill={colors.textMuted} fontSize="10" fontWeight="600" x="100" y="52" textAnchor="middle">80</SvgText>
+                <SvgText fill={colors.textMuted} fontSize="10" fontWeight="600" x="156" y="80" textAnchor="middle">120</SvgText>
+                <SvgText fill={colors.textMuted} fontSize="10" fontWeight="600" x="142" y="146" textAnchor="middle">160</SvgText>
               </Svg>
             </View>
    
@@ -594,9 +594,9 @@ export default function LiveAnalyticsScreen() {
                 <Line x1="22" y1="61" x2="160" y2="61" stroke="rgba(255, 255, 255, 0.1)" strokeWidth="1" strokeDasharray="3 3" />
                 
                 {/* Y-Axis tick labels right-aligned to axis line (offset for text baseline centering) */}
-                <SvgText style={styles.chartAxisTick} x="16" y="13" textAnchor="end">2</SvgText>
-                <SvgText style={styles.chartAxisTick} x="16" y="39" textAnchor="end">0</SvgText>
-                <SvgText style={styles.chartAxisTick} x="16" y="65" textAnchor="end">-2</SvgText>
+                <SvgText fill={colors.textSlate} fontSize="11" fontWeight="bold" x="16" y="13" textAnchor="end">2</SvgText>
+                <SvgText fill={colors.textSlate} fontSize="11" fontWeight="bold" x="16" y="39" textAnchor="end">0</SvgText>
+                <SvgText fill={colors.textSlate} fontSize="11" fontWeight="bold" x="16" y="65" textAnchor="end">-2</SvgText>
                 
                 {/* Paths representing histories (scale factor 13 to map 2 to y=9 and -2 to y=61) */}
                 <Path d={getPathData(accelHistory.x, 13, 70)} stroke="#06b6d4" strokeWidth="2" strokeOpacity={0.8} fill="none" />
@@ -671,9 +671,9 @@ export default function LiveAnalyticsScreen() {
                 <Line x1="22" y1="61" x2="160" y2="61" stroke="rgba(255, 255, 255, 0.1)" strokeWidth="1" strokeDasharray="3 3" />
                 
                 {/* Y-Axis tick labels right-aligned to axis line (offset for text baseline centering) */}
-                <SvgText style={styles.chartAxisTick} x="16" y="13" textAnchor="end">80</SvgText>
-                <SvgText style={styles.chartAxisTick} x="16" y="39" textAnchor="end">0</SvgText>
-                <SvgText style={styles.chartAxisTick} x="16" y="65" textAnchor="end">-80</SvgText>
+                <SvgText fill={colors.textSlate} fontSize="11" fontWeight="bold" x="16" y="13" textAnchor="end">80</SvgText>
+                <SvgText fill={colors.textSlate} fontSize="11" fontWeight="bold" x="16" y="39" textAnchor="end">0</SvgText>
+                <SvgText fill={colors.textSlate} fontSize="11" fontWeight="bold" x="16" y="65" textAnchor="end">-80</SvgText>
 
                 <Path d={getPathData(gyroHistory.x, 0.325, 70)} stroke="#06b6d4" strokeWidth="2" strokeOpacity={0.8} fill="none" />
                 <Path d={getPathData(gyroHistory.y, 0.325, 70)} stroke="#84cc16" strokeWidth="1.5" strokeOpacity={0.85} fill="none" />
@@ -745,9 +745,9 @@ export default function LiveAnalyticsScreen() {
                     <Line x1="22" y1="61" x2="120" y2="61" stroke="rgba(255, 255, 255, 0.1)" strokeWidth="1" strokeDasharray="3 3" />
                     
                     {/* Y-Axis tick labels right-aligned to axis line (offset for text baseline centering) */}
-                    <SvgText style={styles.chartAxisTick} x="16" y="13" textAnchor="end">50</SvgText>
-                    <SvgText style={styles.chartAxisTick} x="16" y="39" textAnchor="end">0</SvgText>
-                    <SvgText style={styles.chartAxisTick} x="16" y="65" textAnchor="end">-50</SvgText>
+                    <SvgText fill={colors.textSlate} fontSize="11" fontWeight="bold" x="16" y="13" textAnchor="end">50</SvgText>
+                    <SvgText fill={colors.textSlate} fontSize="11" fontWeight="bold" x="16" y="39" textAnchor="end">0</SvgText>
+                    <SvgText fill={colors.textSlate} fontSize="11" fontWeight="bold" x="16" y="65" textAnchor="end">-50</SvgText>
                     <Path d={getPathData(magnetoHistory.x, 0.52, 70, 120)} stroke="#06b6d4" strokeWidth="2" strokeOpacity={0.8} fill="none" />
                     <Path d={getPathData(magnetoHistory.y, 0.52, 70, 120)} stroke="#84cc16" strokeWidth="1.5" strokeOpacity={0.85} fill="none" />
                     <Path d={getPathData(magnetoHistory.z, 0.52, 70, 120)} stroke="#eab308" strokeWidth="1" strokeOpacity={0.9} fill="none" />
@@ -859,11 +859,15 @@ export default function LiveAnalyticsScreen() {
                 <Circle 
                   cx={clampedRx} 
                   cy={clampedRy} 
+                  r="10" 
+                  fill="#06b6d4"
+                  opacity={0.3}
+                />
+                <Circle 
+                  cx={clampedRx} 
+                  cy={clampedRy} 
                   r="5" 
                   fill="#06b6d4"
-                  shadowColor="#06b6d4"
-                  shadowOpacity="0.8"
-                  shadowRadius="5"
                 />
               </Svg>
             </View>
@@ -1169,11 +1173,7 @@ function getStyles(colors: any, isDark: boolean) {
       alignItems: 'center',
       justifyContent: 'center',
     },
-    dialTickLabel: {
-      fill: colors.textMuted,
-      fontSize: 10,
-      fontWeight: '600',
-    },
+    dialTickLabel: {},
     speedRightCol: {
       width: '28%',
       justifyContent: 'center',
@@ -1364,11 +1364,7 @@ function getStyles(colors: any, isDark: boolean) {
       alignItems: 'flex-end',
       justifyContent: 'center',
     },
-    chartAxisTick: {
-      fill: colors.textSlate,
-      fontSize: 11,
-      fontWeight: 'bold',
-    },
+    chartAxisTick: {},
 
     // G-Force Card
     gForceCard: {
@@ -1602,6 +1598,9 @@ function getStyles(colors: any, isDark: boolean) {
       color: colors.textSlate,
       fontSize: 9.5,
       marginBottom: 2,
+    },
+    bottomSpacer: {
+      height: 40,
     },
   });
 }

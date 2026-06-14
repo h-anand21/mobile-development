@@ -46,7 +46,7 @@ try {
   const loadListeners = new Set<() => void>();
   
   // Prefetch keys from AsyncStorage on startup
-  const initKeys = ['user_settings', 'safedrive_history_drives'];
+  const initKeys = ['user_settings', 'safedrive_history_drives', 'has_completed_onboarding'];
   AsyncStorage.multiGet(initKeys)
     .then((result) => {
       result.forEach(([key, val]) => {

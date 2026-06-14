@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, Dimensions, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather, MaterialCommunityIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import Svg, { Circle, Defs, LinearGradient as SvgLinearGradient, Stop, Line, Path, Text as SvgText } from 'react-native-svg';
@@ -75,7 +75,7 @@ export default function HomeScreen() {
     : (score >= 90 ? 'Excellent' : score >= 70 ? 'Good' : score >= 50 ? 'Fair' : 'Poor');
   
   const currentSpeedMs = currentSession && currentSession.route.length > 0 
-    ? currentSession.route[currentSession.route.length - 1].speed 
+    ? (currentSession.route[currentSession.route.length - 1].speed ?? 0) 
     : 0;
   const displaySpeed = currentSession ? Math.round(currentSpeedMs * 3.6) : mockSpeed;
   
@@ -160,9 +160,6 @@ export default function HomeScreen() {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <TouchableOpacity style={styles.menuBtn}>
-            <Feather name="menu" size={28} color={colors.accent} />
-          </TouchableOpacity>
           <View style={styles.greetingContainer}>
             <Text style={[styles.greetingSub, { color: colors.textMuted }]}>Good Evening,</Text>
             <View style={styles.nameRow}>
@@ -173,16 +170,22 @@ export default function HomeScreen() {
           </View>
         </View>
         <View style={styles.headerRight}>
-          <TouchableOpacity style={styles.bellIcon}>
+          <TouchableOpacity 
+            style={styles.bellIcon} 
+            onPress={() => Alert.alert('Notifications', 'You have no new notifications.')}
+          >
             <Feather name="bell" size={24} color={colors.text} />
             <View style={styles.notificationDot} />
           </TouchableOpacity>
-          <View style={[styles.profilePicContainer, { borderColor: colors.accent }]}>
+          <TouchableOpacity 
+            style={[styles.profilePicContainer, { borderColor: colors.accent }]}
+            onPress={() => router.push('/profile')}
+          >
             <Image 
               source={{ uri: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?q=80&w=250&auto=format&fit=crop' }} 
               style={styles.profilePic} 
             />
-          </View>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -391,7 +394,7 @@ function getStyles(colors: any) {
       alignItems: 'flex-start',
     },
     greetingContainer: {
-      marginLeft: 15,
+      marginLeft: 0,
     },
     greetingSub: {
       color: colors.textMuted,
