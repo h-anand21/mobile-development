@@ -38,9 +38,9 @@ const EXTRA_COLORS = [
 
 const BRUSH_SIZES = [2, 4, 8, 12, 16];
 
-export default function DrawingCanvas({ visible, onClose, onSave, theme }) {
+export default function DrawingCanvas({ visible, onClose, onSave, theme, initialLines }) {
   const insets = useSafeAreaInsets();
-  const [lines, setLines] = useState([]);
+  const [lines, setLines] = useState(initialLines || []);
   const [currentLine, setCurrentLine] = useState([]);
   const [strokeColor, setStrokeColor] = useState('#000000');
   const [strokeWidth, setStrokeWidth] = useState(4);

@@ -43,10 +43,18 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit }) 
   const [audio, setAudio] = useState(noteToEdit ? (noteToEdit.audio || []) : []);
   const [isBottomSheetVisible, setIsBottomSheetVisible] = useState(false);
   const [isDrawingCanvasVisible, setIsDrawingCanvasVisible] = useState(false);
+  const [editingDrawingIndex, setEditingDrawingIndex] = useState(null);
   const [viewerImageUri, setViewerImageUri] = useState(null);
 
   const handleSaveDrawing = (newDrawingLines) => {
-    setDrawings(prev => [...prev, { lines: newDrawingLines }]);
+    if (editingDrawingIndex !== null) {
+      setDrawings((prev) =>
+        prev.map((d, i) => (i === editingDrawingIndex ? { lines: newDrawingLines } : d))
+      );
+      setEditingDrawingIndex(null);
+    } else {
+      setDrawings((prev) => [...prev, { lines: newDrawingLines }]);
+    }
     setIsDrawingCanvasVisible(false);
   };
 
@@ -417,6 +425,7 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit }) 
           borderRadius: 10,
           elevation: 3,
         },
+
         audioRow: {
           flexDirection: 'row',
           alignItems: 'center',
@@ -703,63 +712,71 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit }) 
             >
               {drawings.map((drawing, idx) => (
                 <View key={idx} style={[styles.imagePreviewWrapper, { backgroundColor: '#FFFFFF', padding: 4 }]}>
-                  <Svg width={90} height={90} viewBox="0 0 350 450" style={styles.imagePreview}>
-                    {drawing.lines.map((line, lIdx) => {
-                      const path = line.reduce((acc, point, idx) => {
-                        if (idx === 0) return `M ${point.x} ${point.y}`;
-                        return `${acc} L ${point.x} ${point.y}`;
-                      }, '');
-                      
-                      const first = line[0];
-                      const last = line[line.length - 1];
-                      let pathData = path;
-                      if (first && last && line.length > 2) {
-                        const dist = Math.sqrt((first.x - last.x) ** 2 + (first.y - last.y) ** 2);
-                        if (dist < 8) {
-                          pathData += ' Z';
+                  <Pressable
+                    onPress={() => {
+                      setEditingDrawingIndex(idx);
+                      setIsDrawingCanvasVisible(true);
+                    }}
+                    style={{ width: '100%', height: '100%' }}
+                  >
+                    <Svg width={90} height={90} viewBox="0 0 350 450" style={styles.imagePreview}>
+                      {drawing.lines.map((line, lIdx) => {
+                        const path = line.reduce((acc, point, idx) => {
+                          if (idx === 0) return `M ${point.x} ${point.y}`;
+                          return `${acc} L ${point.x} ${point.y}`;
+                        }, '');
+                        
+                        const first = line[0];
+                        const last = line[line.length - 1];
+                        let pathData = path;
+                        if (first && last && line.length > 2) {
+                          const dist = Math.sqrt((first.x - last.x) ** 2 + (first.y - last.y) ** 2);
+                          if (dist < 8) {
+                            pathData += ' Z';
+                          }
                         }
-                      }
-                      
-                      return (
-                        <React.Fragment key={lIdx}>
-                          <Path
-                            d={pathData}
-                            stroke={line[0]?.color || '#000000'}
-                            strokeWidth={line[0]?.width || 4}
-                            strokeOpacity={line[0]?.opacity !== undefined ? line[0].opacity : 1}
-                            fill="none"
-                          />
-                          {line[0]?.text && (() => {
-                            let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-                            line.forEach(p => {
-                              if (p.x < minX) minX = p.x;
-                              if (p.x > maxX) maxX = p.x;
-                              if (p.y < minY) minY = p.y;
-                              if (p.y > maxY) maxY = p.y;
-                            });
-                            const cx = (minX + maxX) / 2;
-                            const cy = (minY + maxY) / 2;
-                            return (
-                              <SvgText
-                                x={cx}
-                                y={cy + 4}
-                                fill={line[0].color || '#000000'}
-                                fontSize={14}
-                                fontWeight="bold"
-                                textAnchor="middle"
-                                alignmentBaseline="middle"
-                                {...(line[0].rotation !== undefined && {
-                                  transform: `rotate(${(line[0].rotation * 180) / Math.PI}, ${cx}, ${cy})`
-                                })}
-                              >
-                                {line[0].text}
-                              </SvgText>
-                            );
-                          })()}
-                        </React.Fragment>
-                      );
-                    })}
-                  </Svg>
+                        
+                        return (
+                          <React.Fragment key={lIdx}>
+                            <Path
+                              d={pathData}
+                              stroke={line[0]?.color || '#000000'}
+                              strokeWidth={line[0]?.width || 4}
+                              strokeOpacity={line[0]?.opacity !== undefined ? line[0].opacity : 1}
+                              fill="none"
+                            />
+                            {line[0]?.text && (() => {
+                              let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+                              line.forEach(p => {
+                                if (p.x < minX) minX = p.x;
+                                if (p.x > maxX) maxX = p.x;
+                                if (p.y < minY) minY = p.y;
+                                if (p.y > maxY) maxY = p.y;
+                              });
+                              const cx = (minX + maxX) / 2;
+                              const cy = (minY + maxY) / 2;
+                              return (
+                                <SvgText
+                                  x={cx}
+                                  y={cy + 4}
+                                  fill={line[0].color || '#000000'}
+                                  fontSize={14}
+                                  fontWeight="bold"
+                                  textAnchor="middle"
+                                  alignmentBaseline="middle"
+                                  {...(line[0].rotation !== undefined && {
+                                    transform: `rotate(${(line[0].rotation * 180) / Math.PI}, ${cx}, ${cy})`
+                                  })}
+                                >
+                                  {line[0].text}
+                                </SvgText>
+                              );
+                            })()}
+                          </React.Fragment>
+                        );
+                      })}
+                    </Svg>
+                  </Pressable>
                   <Pressable 
                     onPress={() => setDrawings(prev => prev.filter((_, i) => i !== idx))}
                     style={styles.imageDeleteBtn}
@@ -831,7 +848,12 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit }) 
               </Pressable>
             </View>
           ) : (
-            <View style={{ height: 200, marginTop: 8 }}>
+            <View 
+              style={{ 
+                height: (images.length > 0 || drawings.length > 0 || audio.length > 0) ? 200 : 380, 
+                marginTop: 8 
+              }}
+            >
               <ScrollView 
                 ref={descriptionScrollViewRef}
                 nestedScrollEnabled={true}
@@ -843,7 +865,10 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit }) 
                   onChangeText={setBody}
                   placeholder="Write down your thoughts here..."
                   placeholderTextColor={theme.placeholder}
-                  style={styles.bodyInput}
+                  style={[
+                    styles.bodyInput, 
+                    { minHeight: (images.length > 0 || drawings.length > 0 || audio.length > 0) ? 180 : 360 }
+                  ]}
                   multiline
                   scrollEnabled={false}
                   textAlignVertical="top"
@@ -994,10 +1019,15 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit }) 
       </Modal>
 
       <DrawingCanvas
+        key={editingDrawingIndex !== null ? `edit-drawing-${editingDrawingIndex}` : 'new-drawing'}
         visible={isDrawingCanvasVisible}
-        onClose={() => setIsDrawingCanvasVisible(false)}
+        onClose={() => {
+          setIsDrawingCanvasVisible(false);
+          setEditingDrawingIndex(null);
+        }}
         onSave={handleSaveDrawing}
         theme={theme}
+        initialLines={editingDrawingIndex !== null ? drawings[editingDrawingIndex]?.lines : []}
       />
 
       {/* Audio Recorder Modal */}
