@@ -212,6 +212,11 @@ export default function NotesListScreen({
       const assetsDone = (data.assets || []).filter(a => a.checked).length;
       return `Investment Goal: ${data.investmentGoal || '-'}\nDaily Invested: ${data.dailyAmount || '-'} | Assets checked: ${assetsDone}/${data.assets?.length || 0}`;
     }
+    if (type === 'medical') {
+      const shift = data.shiftInfo || {};
+      const patientsDone = (data.patients || []).filter(p => p.roundsDone).length;
+      return `Clinical Rounds - ${shift.role || 'Doctor'} | Patients: ${patientsDone}/${data.patients?.length || 0} rounds done`;
+    }
     return '';
   };
 
@@ -298,6 +303,45 @@ export default function NotesListScreen({
     onUpdateNote(updatedNote);
   };
 
+  const handleTogglePatientCheckbox = (patientId, field) => {
+    if (!selectedNote || !onUpdateNote) return;
+    const updatedPatients = selectedNote.templateData.patients.map(p => {
+      if (p.id === patientId) {
+        return { ...p, [field]: !p[field] };
+      }
+      return p;
+    });
+    const updatedData = {
+      ...selectedNote.templateData,
+      patients: updatedPatients
+    };
+    const updatedNote = {
+      ...selectedNote,
+      templateData: updatedData,
+      content: generateTemplateSummary(selectedNote.templateType, updatedData)
+    };
+    setSelectedNote(updatedNote);
+    onUpdateNote(updatedNote);
+  };
+
+  const handleUpdateMedicalCare = (key, value) => {
+    if (!selectedNote || !onUpdateNote) return;
+    const updatedData = {
+      ...selectedNote.templateData,
+      clinicianCare: {
+        ...selectedNote.templateData.clinicianCare,
+        [key]: value
+      }
+    };
+    const updatedNote = {
+      ...selectedNote,
+      templateData: updatedData,
+      content: generateTemplateSummary(selectedNote.templateType, updatedData)
+    };
+    setSelectedNote(updatedNote);
+    onUpdateNote(updatedNote);
+  };
+
   const renderSpiralSpine = () => {
     const loops = Array.from({ length: 12 });
     return (
@@ -340,6 +384,8 @@ export default function NotesListScreen({
           return [styles.modalPaper, { backgroundColor: '#E8F5E9', borderRadius: 16, transform: [{ rotate: '0deg' }] }];
         case 'investment':
           return [styles.modalPaper, { backgroundColor: '#FFFDF0', borderRadius: 16, transform: [{ rotate: '0deg' }] }];
+        case 'medical':
+          return [styles.modalPaper, { backgroundColor: '#E0F2F1', borderRadius: 20, transform: [{ rotate: '0.8deg' }] }];
         default:
           return styles.modalPaper;
       }
@@ -1272,9 +1318,182 @@ export default function NotesListScreen({
             </View>
           </View>
 
+        </View>
+      );
+    }
+
+    if (type === 'medical') {
+      const shift = data.shiftInfo || {};
+      const patientsList = data.patients || [];
+      const care = data.clinicianCare || {};
+      return (
+        <View style={styles.fitnessDetailContainer}>
+          {/* Shift Details Banner */}
+          <View style={[styles.fitnessWorkoutCard, { borderColor: '#80CBC4', backgroundColor: '#E0F2F1' }]}>
+            <Text style={[styles.fitnessWorkoutLabel, { color: '#004D40' }]}>🩺 Clinical Shift Duty</Text>
+            <Text selectable={true} style={[styles.fitnessWorkoutText, { color: '#1C1C1C' }]}>
+              {shift.role || 'Doctor'} {shift.shiftTime ? `(${shift.shiftTime})` : ''}
+            </Text>
+            {shift.onCall ? (
+              <View style={{ backgroundColor: '#EF5350', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4, marginTop: 6 }}>
+                <Text style={{ fontSize: 11, color: '#FFFFFF', fontWeight: '900' }}>🔴 ON-CALL ACTIVE</Text>
+              </View>
+            ) : null}
+          </View>
+
+          {/* Patient Round Cards */}
+          <View style={styles.detailSection}>
+            <Text style={[styles.notebookSectionTitle, { color: '#004D40', marginBottom: 8 }]}>👥 Patients Ward Rounds</Text>
+            {patientsList.map((patient, pIdx) => {
+              return (
+                <View 
+                  key={patient.id || pIdx} 
+                  style={{
+                    backgroundColor: '#FFFFFF',
+                    borderRadius: 16,
+                    padding: 12,
+                    borderWidth: 1.5,
+                    borderColor: '#80CBC4',
+                    marginBottom: 12,
+                  }}
+                >
+                  <Text style={{ fontSize: 14, fontWeight: '900', color: '#004D40', marginBottom: 4 }}>
+                    🛏️ Bed: {patient.bedNumber || '—'}
+                  </Text>
+                  {patient.diagnosis ? (
+                    <Text selectable={true} style={{ fontSize: 13, color: '#555', fontStyle: 'italic', marginBottom: 8 }}>
+                      Diagnosis: {patient.diagnosis}
+                    </Text>
+                  ) : null}
+
+                  {/* Actions inside Patient Card */}
+                  <View style={{ flexDirection: 'row', gap: 15, borderTopWidth: 1, borderTopColor: '#E0F2F1', paddingTop: 8 }}>
+                    <Pressable 
+                      onPress={() => handleTogglePatientCheckbox(patient.id, 'vitalsChecked')}
+                      style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}
+                    >
+                      <Ionicons 
+                        name={patient.vitalsChecked ? "checkbox" : "square-outline"} 
+                        size={18} 
+                        color="#004D40" 
+                      />
+                      <Text style={{ fontSize: 12, fontWeight: '700', color: patient.vitalsChecked ? '#9E9E9E' : '#004D40', textDecorationLine: patient.vitalsChecked ? 'line-through' : 'none' }}>
+                        Vitals Checked
+                      </Text>
+                    </Pressable>
+                    <Pressable 
+                      onPress={() => handleTogglePatientCheckbox(patient.id, 'roundsDone')}
+                      style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}
+                    >
+                      <Ionicons 
+                        name={patient.roundsDone ? "checkbox" : "square-outline"} 
+                        size={18} 
+                        color="#004D40" 
+                      />
+                      <Text style={{ fontSize: 12, fontWeight: '700', color: patient.roundsDone ? '#9E9E9E' : '#004D40', textDecorationLine: patient.roundsDone ? 'line-through' : 'none' }}>
+                        Rounds Done
+                      </Text>
+                    </Pressable>
+                  </View>
+                </View>
+              );
+            })}
+            {patientsList.length === 0 ? (
+              <Text style={styles.habitEmptyText}>No patients listed.</Text>
+            ) : null}
+          </View>
+
+          {/* Clinical Tasks Checklist */}
+          <View style={styles.detailSection}>
+            <Text style={[styles.notebookSectionTitle, { color: '#004D40' }]}>📋 On-Duty Clinical Tasks</Text>
+            {(data.clinicalTasks || []).map(item => (
+              <Pressable
+                key={item.id}
+                onPress={() => handleToggleTemplateCheckbox('clinicalTasks', item.id)}
+                style={styles.wellnessHabitRow}
+              >
+                <Ionicons
+                  name={item.checked ? "checkbox" : "square-outline"}
+                  size={20}
+                  color="#004D40"
+                />
+                <Text style={[
+                  styles.wellnessHabitText,
+                  { color: '#1C1C1C' },
+                  item.checked && { textDecorationLine: 'line-through', opacity: 0.5 }
+                ]}>
+                  {item.text}
+                </Text>
+              </Pressable>
+            ))}
+            {(!data.clinicalTasks || data.clinicalTasks.length === 0) && (
+              <Text style={styles.habitEmptyText}>No clinical tasks listed.</Text>
+            )}
+          </View>
+
+          {/* Hydration Tracker */}
+          <View style={styles.detailSection}>
+            <Text style={[styles.notebookSectionTitle, { color: '#004D40' }]}>💧 Hydration intake</Text>
+            <Text style={{ fontSize: 13, fontWeight: '700', color: '#00796B', marginBottom: 6 }}>
+              {care.hydrationGlasses || 0} / 8 Glasses
+            </Text>
+            <View style={[styles.detailStarsRow, { flexWrap: 'wrap', gap: 12 }]}>
+              {Array.from({ length: 8 }).map((_, i) => {
+                const isActive = (care.hydrationGlasses || 0) > i;
+                return (
+                  <Pressable 
+                    key={i} 
+                    onPress={() => handleUpdateMedicalCare('hydrationGlasses', i + 1)} 
+                    style={{ padding: 4 }}
+                  >
+                    <Ionicons 
+                      name={isActive ? "water" : "water-outline"} 
+                      size={28} 
+                      color={isActive ? "#00BCD4" : "#80CBC4"} 
+                    />
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+
+          {/* Self care & Stress */}
+          <View style={styles.wellnessGridRow}>
+            <View style={styles.wellnessGridCol}>
+              <View style={[styles.sleepCounter, { borderColor: '#80CBC4', padding: 8, marginTop: 0, flexDirection: 'column', alignItems: 'flex-start' }]}>
+                <Text style={[styles.mealBoxTitle, { color: '#004D40', marginBottom: 4 }]}>❤️ Stress level</Text>
+                <View style={styles.detailStarsRow}>
+                  {[1, 2, 3, 4, 5].map(star => (
+                    <Pressable 
+                      key={star} 
+                      onPress={() => handleUpdateMedicalCare('stressLevel', star)}
+                      style={{ padding: 1 }}
+                    >
+                      <Ionicons 
+                        name={star <= (care.stressLevel || 0) ? "heart" : "heart-outline"} 
+                        size={16} 
+                        color="#EF5350" 
+                      />
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+            </View>
+            <View style={styles.wellnessGridCol}>
+              <Pressable 
+                onPress={() => handleUpdateMedicalCare('lunchBreak', !care.lunchBreak)}
+                style={[styles.sleepCounter, { borderColor: '#80CBC4', padding: 8, marginTop: 0, justifyContent: 'center', gap: 8 }]}
+              >
+                <Ionicons name={care.lunchBreak ? "checkbox" : "square-outline"} size={18} color="#004D40" />
+                <Text style={{ fontSize: 13, fontWeight: '700', color: '#1C1C1C' }}>Lunch Taken</Text>
+              </Pressable>
+            </View>
+          </View>
+
+          {/* Clinical notes */}
           {data.notes ? (
             <View style={styles.detailSection}>
-              <Text style={[styles.notebookSectionTitle, { color: '#6F5200' }]}>📝 Investment Notes & Insights</Text>
+              <Text style={[styles.notebookSectionTitle, { color: '#004D40' }]}>📝 Clinical Notes & Handover</Text>
               <Text selectable={true} style={styles.handwrittenText}>{data.notes}</Text>
             </View>
           ) : null}
@@ -2049,9 +2268,11 @@ export default function NotesListScreen({
         },
         detailStarsRow: {
           flexDirection: 'row',
+          flexWrap: 'wrap',
           gap: 6,
           marginVertical: 4,
         },
+
         wellnessDetailContainer: {
           flex: 1,
           paddingHorizontal: 6,
@@ -2626,6 +2847,23 @@ export default function NotesListScreen({
             totalChecklistItems++;
             if (item.checked) completedChecklistItems++;
           });
+        } else if (note.templateType === 'medical') {
+          if (data.clinicalTasks) {
+            data.clinicalTasks.forEach(item => {
+              totalChecklistItems++;
+              if (item.checked) completedChecklistItems++;
+            });
+          }
+          if (data.patients) {
+            data.patients.forEach(item => {
+              totalChecklistItems++;
+              if (item.roundsDone) completedChecklistItems++;
+            });
+          }
+          if (data.clinicianCare) {
+            totalChecklistItems++;
+            if (data.clinicianCare.lunchBreak) completedChecklistItems++;
+          }
         }
       }
     });

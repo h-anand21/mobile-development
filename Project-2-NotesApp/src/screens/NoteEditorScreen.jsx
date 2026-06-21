@@ -51,6 +51,16 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
   const [editingDrawingIndex, setEditingDrawingIndex] = useState(null);
   const [viewerImageUri, setViewerImageUri] = useState(null);
 
+  // Time Picker States
+  const [isTimePickerVisible, setIsTimePickerVisible] = useState(false);
+  const [timePickerTarget, setTimePickerTarget] = useState(null); // { type, index }
+  const [selectedHour, setSelectedHour] = useState("08");
+  const [selectedMinute, setSelectedMinute] = useState("00");
+
+  const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
+  const MINUTES = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
+
+
   const DEFAULT_TEMPLATE_DATA = {
     nutrition: {
       schedule: [
@@ -200,6 +210,32 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
         { id: "in2", text: "Mutual Funds - $30", checked: false }
       ],
       productivity: 3,
+      notes: ""
+    },
+    medical: {
+      shiftInfo: {
+        role: "Resident",
+        shiftTime: "08:00 - 16:00",
+        onCall: false
+      },
+      patients: [
+        {
+          id: "p1",
+          bedNumber: "Bed 10A",
+          diagnosis: "Post-op Recovery",
+          vitalsChecked: false,
+          roundsDone: false
+        }
+      ],
+      clinicalTasks: [
+        { id: "ct1", text: "Review blood reports", checked: false },
+        { id: "ct2", text: "Prepare discharge summaries", checked: false }
+      ],
+      clinicianCare: {
+        hydrationGlasses: 4,
+        stressLevel: 3,
+        lunchBreak: false
+      },
       notes: ""
     }
   };
@@ -368,6 +404,104 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
       return updated;
     });
   };
+
+  // Medical Helpers
+  const addMedicalPatient = () => {
+    setTemplateData(prev => {
+      const updated = { ...prev };
+      const newPatient = {
+        id: `p_${Date.now()}`,
+        bedNumber: "",
+        diagnosis: "",
+        vitalsChecked: false,
+        roundsDone: false
+      };
+      updated.patients = [...(updated.patients || []), newPatient];
+      return updated;
+    });
+  };
+
+  const removeMedicalPatient = (patientId) => {
+    setTemplateData(prev => {
+      const updated = { ...prev };
+      updated.patients = (updated.patients || []).filter(p => p.id !== patientId);
+      return updated;
+    });
+  };
+
+  const updatePatientField = (patientId, key, value) => {
+    setTemplateData(prev => {
+      const updated = { ...prev };
+      updated.patients = (updated.patients || []).map(p => 
+        p.id === patientId ? { ...p, [key]: value } : p
+      );
+      return updated;
+    });
+  };
+
+  // Time Picker Helpers
+  const openTimePicker = (type, index) => {
+    setTimePickerTarget({ type, index });
+    let currentTime = "08:00";
+    
+    if (type === 'schedule') {
+      currentTime = templateData.schedule[index]?.time || "08:00";
+    } else if (type === 'classes') {
+      currentTime = templateData.classes[index]?.time || "09:00";
+    } else if (type === 'medicalStart') {
+      const shiftTime = templateData.shiftInfo?.shiftTime || "08:00 - 16:00";
+      currentTime = shiftTime.split(" - ")[0] || "08:00";
+    } else if (type === 'medicalEnd') {
+      const shiftTime = templateData.shiftInfo?.shiftTime || "08:00 - 16:00";
+      currentTime = shiftTime.split(" - ")[1] || "16:00";
+    }
+    
+    // Parse HH:MM
+    const parts = currentTime.split(":");
+    const hr = parts[0] ? parts[0].trim() : "08";
+    const min = parts[1] ? parts[1].trim() : "00";
+    
+    setSelectedHour(hr.padStart(2, '0'));
+    setSelectedMinute(min.padStart(2, '0'));
+    setIsTimePickerVisible(true);
+  };
+
+  const confirmTimeSelection = () => {
+    if (!timePickerTarget) return;
+    const formattedTime = `${selectedHour}:${selectedMinute}`;
+    const { type, index } = timePickerTarget;
+    
+    if (type === 'schedule') {
+      const updatedSchedule = [...(templateData.schedule || [])];
+      if (updatedSchedule[index]) {
+        updatedSchedule[index].time = formattedTime;
+        updateTemplateField('schedule', null, updatedSchedule);
+      }
+    } else if (type === 'classes') {
+      const updatedClasses = [...(templateData.classes || [])];
+      if (updatedClasses[index]) {
+        updatedClasses[index].time = formattedTime;
+        updateTemplateField('classes', null, updatedClasses);
+      }
+    } else if (type === 'medicalStart' || type === 'medicalEnd') {
+      const shift = templateData.shiftInfo || { role: "Resident", shiftTime: "08:00 - 16:00", onCall: false };
+      const times = (shift.shiftTime || "08:00 - 16:00").split(" - ");
+      let start = times[0] ? times[0].trim() : "08:00";
+      let end = times[1] ? times[1].trim() : "16:00";
+      
+      if (type === 'medicalStart') {
+        start = formattedTime;
+      } else {
+        end = formattedTime;
+      }
+      
+      updateTemplateField('shiftInfo', 'shiftTime', `${start} - ${end}`);
+    }
+    
+    setIsTimePickerVisible(false);
+    setTimePickerTarget(null);
+  };
+
 
   const handleSaveDrawing = (newDrawingLines) => {
     if (editingDrawingIndex !== null) {
@@ -1021,9 +1155,11 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
         },
         templateStarsRow: {
           flexDirection: 'row',
+          flexWrap: 'wrap',
           gap: 6,
           marginVertical: 8,
         },
+
         templateMoodRow: {
           flexDirection: 'row',
           justifyContent: 'space-between',
@@ -1100,6 +1236,108 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
           fontWeight: '500',
           lineHeight: 15,
         },
+        timePickerOverlay: {
+          flex: 1,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          justifyContent: 'center',
+          alignItems: 'center',
+        },
+        timePickerContainer: {
+          width: 280,
+          backgroundColor: '#FFFFFF',
+          borderRadius: 20,
+          padding: 20,
+          alignItems: 'center',
+          elevation: 5,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.25,
+          shadowRadius: 4,
+        },
+        timePickerTitle: {
+          fontSize: 16,
+          fontWeight: '800',
+          color: '#1C1C1C',
+          marginBottom: 15,
+        },
+        timePickerColumnsRow: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: 180,
+          width: '100%',
+        },
+        timePickerColumnWrapper: {
+          flex: 1,
+          alignItems: 'center',
+        },
+        timePickerColumnLabel: {
+          fontSize: 12,
+          fontWeight: '700',
+          color: '#78909C',
+          marginBottom: 6,
+        },
+        timePickerColumnScroll: {
+          width: '100%',
+          backgroundColor: '#F5F7F8',
+          borderRadius: 12,
+        },
+        timePickerItem: {
+          paddingVertical: 10,
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderRadius: 8,
+          marginHorizontal: 6,
+          marginVertical: 2,
+        },
+        timePickerItemActive: {
+          backgroundColor: '#37474F',
+        },
+        timePickerItemText: {
+          fontSize: 16,
+          fontWeight: '700',
+          color: '#455A64',
+        },
+        timePickerItemTextActive: {
+          color: '#FFFFFF',
+        },
+        timePickerColon: {
+          fontSize: 28,
+          fontWeight: '900',
+          color: '#37474F',
+          marginHorizontal: 10,
+          paddingBottom: 20,
+        },
+        timePickerActionsRow: {
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          width: '100%',
+          marginTop: 20,
+          gap: 10,
+        },
+        timePickerBtn: {
+          flex: 1,
+          paddingVertical: 12,
+          borderRadius: 12,
+          alignItems: 'center',
+          justifyContent: 'center',
+        },
+        timePickerBtnCancel: {
+          backgroundColor: '#ECEFF1',
+        },
+        timePickerBtnConfirm: {
+          backgroundColor: '#37474F',
+        },
+        timePickerBtnTextCancel: {
+          color: '#546E7A',
+          fontSize: 14,
+          fontWeight: '700',
+        },
+        timePickerBtnTextConfirm: {
+          color: '#FFFFFF',
+          fontSize: 14,
+          fontWeight: '800',
+        },
       }),
     [theme, height, insets]
   );
@@ -1154,6 +1392,11 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
     if (type === 'investment') {
       const assetsDone = (data.assets || []).filter(a => a.checked).length;
       return `Investment Goal: ${data.investmentGoal || '-'}\nDaily Invested: ${data.dailyAmount || '-'} | Assets checked: ${assetsDone}/${data.assets?.length || 0}`;
+    }
+    if (type === 'medical') {
+      const shift = data.shiftInfo || {};
+      const patientsDone = (data.patients || []).filter(p => p.roundsDone).length;
+      return `Clinical Rounds - ${shift.role || 'Doctor'} | Patients: ${patientsDone}/${data.patients?.length || 0} rounds done`;
     }
     return '';
   };
@@ -1223,17 +1466,34 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
           <Text style={[styles.templateSectionHeader, { color: '#0D47A1' }]}>Schedule Timeline</Text>
           {(templateData.schedule || []).map((item, idx) => (
             <View key={idx} style={styles.templateTimelineRow}>
-              <TextInput
-                value={item.time}
-                onChangeText={(val) => {
-                  const updatedSchedule = [...templateData.schedule];
-                  updatedSchedule[idx].time = val;
-                  updateTemplateField('schedule', null, updatedSchedule);
+              <View 
+                style={{
+                  width: 80,
+                  borderBottomWidth: 1.5,
+                  borderBottomColor: '#90CAF9',
+                  paddingVertical: 2,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 2
                 }}
-                placeholder="08:00"
-                placeholderTextColor="#90A4AE"
-                style={{ fontSize: 14, fontWeight: '800', width: 60, color: '#1A237E', borderBottomWidth: 1, borderBottomColor: '#90CAF9', paddingVertical: 4 }}
-              />
+              >
+                <TextInput
+                  value={item.time}
+                  onChangeText={(val) => {
+                    const updatedSchedule = [...templateData.schedule];
+                    updatedSchedule[idx].time = val;
+                    updateTemplateField('schedule', null, updatedSchedule);
+                  }}
+                  placeholder="08:00"
+                  placeholderTextColor="#90A4AE"
+                  style={{ fontSize: 13, fontWeight: '800', flex: 1, color: '#1A237E', padding: 0 }}
+                />
+                <Pressable onPress={() => openTimePicker('schedule', idx)} style={{ padding: 2 }}>
+                  <Ionicons name="time-outline" size={14} color="#1A237E" />
+                </Pressable>
+              </View>
+
+
               <TextInput
                 value={item.task}
                 onChangeText={(txt) => {
@@ -1503,17 +1763,34 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
           <Text style={[styles.templateSectionHeader, { color: '#3E2723', marginTop: 15 }]}>Timeline</Text>
           {(templateData.schedule || []).map((item, idx) => (
             <View key={idx} style={styles.templateTimelineRow}>
-              <TextInput
-                value={item.time}
-                onChangeText={(val) => {
-                  const updatedSchedule = [...templateData.schedule];
-                  updatedSchedule[idx].time = val;
-                  updateTemplateField('schedule', null, updatedSchedule);
+              <View 
+                style={{
+                  width: 80,
+                  borderBottomWidth: 1.5,
+                  borderBottomColor: '#D7CCC8',
+                  paddingVertical: 2,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 2
                 }}
-                placeholder="09:00"
-                placeholderTextColor="#8D6E63"
-                style={{ fontSize: 14, fontWeight: '800', width: 60, color: '#5D4037', borderBottomWidth: 1, borderBottomColor: '#D7CCC8', paddingVertical: 4 }}
-              />
+              >
+                <TextInput
+                  value={item.time}
+                  onChangeText={(val) => {
+                    const updatedSchedule = [...templateData.schedule];
+                    updatedSchedule[idx].time = val;
+                    updateTemplateField('schedule', null, updatedSchedule);
+                  }}
+                  placeholder="09:00"
+                  placeholderTextColor="#8D6E63"
+                  style={{ fontSize: 13, fontWeight: '800', flex: 1, color: '#5D4037', padding: 0 }}
+                />
+                <Pressable onPress={() => openTimePicker('schedule', idx)} style={{ padding: 2 }}>
+                  <Ionicons name="time-outline" size={14} color="#5D4037" />
+                </Pressable>
+              </View>
+
+
               <TextInput
                 value={item.task}
                 onChangeText={(txt) => {
@@ -1839,17 +2116,34 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
           <Text style={[styles.templateSectionHeader, { color: '#6A1B9A', marginTop: 15 }]}>📚 Classes & Lectures</Text>
           {(templateData.classes || []).map((item, idx) => (
             <View key={idx} style={styles.templateTimelineRow}>
-              <TextInput
-                value={item.time}
-                onChangeText={(val) => {
-                  const updatedClasses = [...templateData.classes];
-                  updatedClasses[idx].time = val;
-                  updateTemplateField('classes', null, updatedClasses);
+              <View 
+                style={{
+                  width: 80,
+                  borderBottomWidth: 1.5,
+                  borderBottomColor: '#BA68C8',
+                  paddingVertical: 2,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 2
                 }}
-                placeholder="09:00"
-                placeholderTextColor="#BA68C8"
-                style={{ fontSize: 14, fontWeight: '800', width: 60, color: '#6A1B9A', borderBottomWidth: 1, borderBottomColor: '#BA68C8', paddingVertical: 4 }}
-              />
+              >
+                <TextInput
+                  value={item.time}
+                  onChangeText={(val) => {
+                    const updatedClasses = [...templateData.classes];
+                    updatedClasses[idx].time = val;
+                    updateTemplateField('classes', null, updatedClasses);
+                  }}
+                  placeholder="09:00"
+                  placeholderTextColor="#BA68C8"
+                  style={{ fontSize: 13, fontWeight: '800', flex: 1, color: '#6A1B9A', padding: 0 }}
+                />
+                <Pressable onPress={() => openTimePicker('classes', idx)} style={{ padding: 2 }}>
+                  <Ionicons name="time-outline" size={14} color="#6A1B9A" />
+                </Pressable>
+              </View>
+
+
               <TextInput
                 value={item.text}
                 onChangeText={(txt) => {
@@ -2559,6 +2853,270 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
             placeholder="Market insights, allocation breakdown..."
             placeholderTextColor="#D4AF37"
             style={[styles.templateInputBoxMultiline, { borderColor: '#FFD700', color: '#1C1C1C' }]}
+            multiline
+            numberOfLines={3}
+          />
+        </View>
+      );
+    }
+
+    if (templateType === 'medical') {
+      const shift = templateData.shiftInfo || {};
+      const patientsList = templateData.patients || [];
+      const care = templateData.clinicianCare || {};
+      return (
+        <View style={[styles.templateContainer, { backgroundColor: '#E0F2F1', borderColor: '#80CBC4' }]}>
+          {/* Duty Shift Details */}
+          <Text style={[styles.templateSectionHeader, { color: '#004D40', fontSize: 16, fontWeight: '900', marginBottom: 12 }]}>
+            🩺 On-Duty Shift Details
+          </Text>
+          <View style={styles.templateGridTwoColumn}>
+            <View style={styles.templateGridCell}>
+              <Text style={[styles.templateGridLabel, { color: '#004D40' }]}>Clinician Role</Text>
+              <TextInput
+                value={shift.role}
+                onChangeText={(val) => updateTemplateField('shiftInfo', 'role', val)}
+                placeholder="e.g. Resident / Student"
+                placeholderTextColor="#80CBC4"
+                style={[styles.templateInputBox, { borderColor: '#80CBC4', color: '#1C1C1C' }]}
+              />
+            </View>
+            <View style={styles.templateGridCell}>
+              <Text style={[styles.templateGridLabel, { color: '#004D40' }]}>Shift Timings</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                <Pressable
+                  onPress={() => openTimePicker('medicalStart')}
+                  style={[styles.templateInputBox, { flex: 1, borderColor: '#80CBC4', backgroundColor: '#FFFFFF', paddingVertical: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4 }]}
+                >
+                  <Ionicons name="time-outline" size={16} color="#004D40" />
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: '#1C1C1C' }}>
+                    {(shift.shiftTime || "08:00 - 16:00").split(" - ")[0] || "08:00"}
+                  </Text>
+                </Pressable>
+                <Text style={{ color: '#004D40', fontWeight: '800' }}>to</Text>
+                <Pressable
+                  onPress={() => openTimePicker('medicalEnd')}
+                  style={[styles.templateInputBox, { flex: 1, borderColor: '#80CBC4', backgroundColor: '#FFFFFF', paddingVertical: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4 }]}
+                >
+                  <Ionicons name="time-outline" size={16} color="#004D40" />
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: '#1C1C1C' }}>
+                    {(shift.shiftTime || "08:00 - 16:00").split(" - ")[1] || "16:00"}
+                  </Text>
+                </Pressable>
+              </View>
+
+            </View>
+          </View>
+
+          {/* On Call status toggle */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginVertical: 12, paddingHorizontal: 4 }}>
+            <Text style={{ fontSize: 14, fontWeight: '700', color: '#004D40' }}>On-Call Duty Active</Text>
+            <Pressable 
+              onPress={() => updateTemplateField('shiftInfo', 'onCall', !shift.onCall)}
+              style={{
+                width: 50,
+                height: 28,
+                borderRadius: 14,
+                backgroundColor: shift.onCall ? '#00796B' : '#B2DFDB',
+                justifyContent: 'center',
+                paddingHorizontal: 4,
+              }}
+            >
+              <View style={{
+                width: 20,
+                height: 20,
+                borderRadius: 10,
+                backgroundColor: '#FFFFFF',
+                alignSelf: shift.onCall ? 'flex-end' : 'flex-start',
+                elevation: 2,
+              }} />
+            </Pressable>
+          </View>
+
+          {/* Patient Rounds Cards */}
+          <Text style={[styles.templateSectionHeader, { color: '#004D40', marginTop: 15, marginBottom: 8 }]}>
+            👥 Ward Patient Rounds ({patientsList.length})
+          </Text>
+
+          {patientsList.map((patient, pIdx) => (
+            <View 
+              key={patient.id} 
+              style={{
+                backgroundColor: '#FFFFFF',
+                borderRadius: 18,
+                padding: 14,
+                borderWidth: 1.5,
+                borderColor: '#80CBC4',
+                marginBottom: 16,
+              }}
+            >
+              {/* Header inside Card */}
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                <Text style={{ fontSize: 14, fontWeight: '800', color: '#004D40' }}>
+                  Patient #{pIdx + 1}
+                </Text>
+                {patientsList.length > 1 && (
+                  <Pressable onPress={() => removeMedicalPatient(patient.id)} style={{ padding: 4 }}>
+                    <Ionicons name="trash-outline" size={18} color="#EF5350" />
+                  </Pressable>
+                )}
+              </View>
+
+              {/* Patient details */}
+              <View style={{ marginBottom: 10 }}>
+                <Text style={[styles.templateGridLabel, { color: '#004D40', marginBottom: 4 }]}>Ward / Bed No.</Text>
+                <TextInput
+                  value={patient.bedNumber}
+                  onChangeText={(txt) => updatePatientField(patient.id, 'bedNumber', txt)}
+                  placeholder="e.g. Bed 10A"
+                  placeholderTextColor="#80CBC4"
+                  style={[styles.templateInputBox, { borderColor: '#80CBC4', color: '#1C1C1C' }]}
+                />
+              </View>
+              <View style={{ marginBottom: 10 }}>
+                <Text style={[styles.templateGridLabel, { color: '#004D40', marginBottom: 4 }]}>Diagnosis / Concern</Text>
+                <TextInput
+                  value={patient.diagnosis}
+                  onChangeText={(txt) => updatePatientField(patient.id, 'diagnosis', txt)}
+                  placeholder="e.g. Post-op check"
+                  placeholderTextColor="#80CBC4"
+                  style={[styles.templateInputBox, { borderColor: '#80CBC4', color: '#1C1C1C' }]}
+                />
+              </View>
+
+
+              {/* Interactive checkboxes inside Patient Card */}
+              <View style={{ flexDirection: 'row', gap: 15, marginTop: 12, borderTopWidth: 1, borderTopColor: '#E0F2F1', paddingTop: 8 }}>
+                <Pressable 
+                  onPress={() => updatePatientField(patient.id, 'vitalsChecked', !patient.vitalsChecked)}
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}
+                >
+                  <Ionicons 
+                    name={patient.vitalsChecked ? "checkbox" : "square-outline"} 
+                    size={18} 
+                    color="#004D40" 
+                  />
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: '#004D40' }}>Vitals Checked</Text>
+                </Pressable>
+                <Pressable 
+                  onPress={() => updatePatientField(patient.id, 'roundsDone', !patient.roundsDone)}
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}
+                >
+                  <Ionicons 
+                    name={patient.roundsDone ? "checkbox" : "square-outline"} 
+                    size={18} 
+                    color="#004D40" 
+                  />
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: '#004D40' }}>Rounds Done</Text>
+                </Pressable>
+              </View>
+            </View>
+          ))}
+
+          {/* Add Patient Button */}
+          <Pressable 
+            onPress={addMedicalPatient}
+            style={[styles.templateAddListItemBtn, { borderColor: '#004D40', backgroundColor: '#FFFFFF', borderStyle: 'solid', paddingVertical: 12, marginBottom: 15 }]}
+          >
+            <Ionicons name="add-circle" size={18} color="#004D40" />
+            <Text style={{ color: '#004D40', fontSize: 14, fontWeight: '800' }}>Add Patient Bed</Text>
+          </Pressable>
+
+          {/* Clinical Duties Checklist */}
+          <Text style={[styles.templateSectionHeader, { color: '#004D40' }]}>📋 Clinical Duties Checklist</Text>
+          {(templateData.clinicalTasks || []).map(item => (
+            <View key={item.id} style={styles.templateListItemRow}>
+              <Pressable onPress={() => toggleTemplateListItem('clinicalTasks', item.id)} style={{ padding: 4 }}>
+                <Ionicons 
+                  name={item.checked ? "checkbox" : "square-outline"} 
+                  size={20} 
+                  color="#004D40" 
+                />
+              </Pressable>
+              <TextInput
+                value={item.text}
+                onChangeText={(txt) => updateTemplateListItemText('clinicalTasks', item.id, txt)}
+                placeholder="Duty task..."
+                placeholderTextColor="#80CBC4"
+                style={[styles.templateListItemInput, { color: '#1C1C1C' }, item.checked && { textDecorationLine: 'line-through', opacity: 0.6 }]}
+              />
+              <Pressable onPress={() => removeTemplateListItem('clinicalTasks', item.id)} style={{ padding: 4 }}>
+                <Ionicons name="close" size={16} color="#80CBC4" />
+              </Pressable>
+            </View>
+          ))}
+          <Pressable 
+            onPress={() => addTemplateListItem('clinicalTasks', "New Clinical Task")}
+            style={[styles.templateAddListItemBtn, { borderColor: '#80CBC4' }]}
+          >
+            <Ionicons name="add" size={16} color="#004D40" />
+            <Text style={{ color: '#004D40', fontSize: 13, fontWeight: '700' }}>Add Task</Text>
+          </Pressable>
+
+          {/* Hydration Water intake */}
+          <Text style={[styles.templateSectionHeader, { color: '#004D40', marginTop: 15 }]}>💧 Hydration Tracker</Text>
+          <View style={styles.templateStarsRow}>
+            {Array.from({ length: 8 }).map((_, i) => {
+              const isActive = (care.hydrationGlasses || 0) > i;
+              return (
+                <Pressable 
+                  key={i} 
+                  onPress={() => updateTemplateField('clinicianCare', 'hydrationGlasses', i + 1)} 
+                  style={{ padding: 4 }}
+                >
+                  <Ionicons 
+                    name={isActive ? "water" : "water-outline"} 
+                    size={26} 
+                    color={isActive ? "#00BCD4" : "#80CBC4"} 
+                  />
+                </Pressable>
+              );
+            })}
+          </View>
+
+          {/* Clinician self care: stress rating & lunch break */}
+          <View style={{ marginVertical: 8 }}>
+            <Text style={[styles.templateSectionHeader, { color: '#004D40', marginBottom: 4 }]}>Shift Stress Score</Text>
+            <View style={styles.templateStarsRow}>
+              {[1, 2, 3, 4, 5].map(star => (
+                <Pressable 
+                  key={star} 
+                  onPress={() => updateTemplateField('clinicianCare', 'stressLevel', star)}
+                  style={{ padding: 2 }}
+                >
+                  <Ionicons 
+                    name={star <= (care.stressLevel || 0) ? "heart" : "heart-outline"} 
+                    size={24} 
+                    color="#EF5350" 
+                  />
+                </Pressable>
+              ))}
+            </View>
+          </View>
+          <View style={{ marginVertical: 8 }}>
+            <Text style={[styles.templateSectionHeader, { color: '#004D40', marginBottom: 4 }]}>Lunch Taken</Text>
+            <Pressable 
+              onPress={() => updateTemplateField('clinicianCare', 'lunchBreak', !care.lunchBreak)}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}
+            >
+              <Ionicons 
+                name={care.lunchBreak ? "checkbox" : "square-outline"} 
+                size={20} 
+                color="#004D40" 
+              />
+              <Text style={{ fontSize: 14, fontWeight: '700', color: '#1C1C1C' }}>Yes, had lunch</Text>
+            </Pressable>
+          </View>
+
+
+          {/* General clinical notes */}
+          <Text style={[styles.templateSectionHeader, { color: '#004D40', marginTop: 15 }]}>📝 Clinical Pearls & Handover Notes</Text>
+          <TextInput
+            value={templateData.notes}
+            onChangeText={(txt) => updateTemplateField('notes', null, txt)}
+            placeholder="Jot down interesting clinical cases, dosages, or shift handover summary..."
+            placeholderTextColor="#80CBC4"
+            style={[styles.templateInputBoxMultiline, { borderColor: '#80CBC4', color: '#1C1C1C' }]}
             multiline
             numberOfLines={3}
           />
@@ -3418,9 +3976,126 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
                 </View>
               </Pressable>
 
+              {/* Template 13: Medical */}
+              <Pressable 
+                onPress={() => handleSelectTemplate('medical')}
+                style={({ pressed }) => [
+                  styles.templateCardOption,
+                  { borderColor: '#80CBC4', backgroundColor: '#E0F2F1' },
+                  pressed && { opacity: 0.8 }
+                ]}
+              >
+                <View style={styles.templateCardIconCircle}>
+                  <Ionicons name="medical-outline" size={24} color="#004D40" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.templateCardTitle, { color: '#004D40' }]}>Clinical Rounds & Duty Planner</Text>
+                  <Text style={[styles.templateCardDesc, { color: '#00796B' }]}>
+                    Duty shifts details, dynamic patient lists, vital checks, clinical tasks & stress/water trackers.
+                  </Text>
+                </View>
+              </Pressable>
+
             </ScrollView>
           </Pressable>
         </Pressable>
+      </Modal>
+
+      {/* Time Picker Modal */}
+      <Modal
+        visible={isTimePickerVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setIsTimePickerVisible(false)}
+      >
+        <View style={styles.timePickerOverlay}>
+          <View style={styles.timePickerContainer}>
+            <Text style={styles.timePickerTitle}>Select Time (24h)</Text>
+            
+            <View style={styles.timePickerColumnsRow}>
+              {/* Hours Column */}
+              <View style={styles.timePickerColumnWrapper}>
+                <Text style={styles.timePickerColumnLabel}>Hour</Text>
+                <ScrollView 
+                  style={styles.timePickerColumnScroll} 
+                  showsVerticalScrollIndicator={false}
+                  contentContainerStyle={{ paddingVertical: 10 }}
+                >
+                  {HOURS.map(hr => {
+                    const isSelected = hr === selectedHour;
+                    return (
+                      <Pressable 
+                        key={hr} 
+                        onPress={() => setSelectedHour(hr)}
+                        style={[
+                          styles.timePickerItem,
+                          isSelected && styles.timePickerItemActive
+                        ]}
+                      >
+                        <Text style={[
+                          styles.timePickerItemText,
+                          isSelected && styles.timePickerItemTextActive
+                        ]}>
+                          {hr}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+
+              {/* Colon */}
+              <Text style={styles.timePickerColon}>:</Text>
+
+              {/* Minutes Column */}
+              <View style={styles.timePickerColumnWrapper}>
+                <Text style={styles.timePickerColumnLabel}>Minute</Text>
+                <ScrollView 
+                  style={styles.timePickerColumnScroll} 
+                  showsVerticalScrollIndicator={false}
+                  contentContainerStyle={{ paddingVertical: 10 }}
+                >
+                  {MINUTES.map(min => {
+                    const isSelected = min === selectedMinute;
+                    return (
+                      <Pressable 
+                        key={min} 
+                        onPress={() => setSelectedMinute(min)}
+                        style={[
+                          styles.timePickerItem,
+                          isSelected && styles.timePickerItemActive
+                        ]}
+                      >
+                        <Text style={[
+                          styles.timePickerItemText,
+                          isSelected && styles.timePickerItemTextActive
+                        ]}>
+                          {min}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+            </View>
+
+            {/* Modal Actions */}
+            <View style={styles.timePickerActionsRow}>
+              <Pressable 
+                onPress={() => setIsTimePickerVisible(false)}
+                style={[styles.timePickerBtn, styles.timePickerBtnCancel]}
+              >
+                <Text style={styles.timePickerBtnTextCancel}>Cancel</Text>
+              </Pressable>
+              <Pressable 
+                onPress={confirmTimeSelection}
+                style={[styles.timePickerBtn, styles.timePickerBtnConfirm]}
+              >
+                <Text style={styles.timePickerBtnTextConfirm}>Confirm</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
       </Modal>
     </KeyboardAvoidingView>
   );

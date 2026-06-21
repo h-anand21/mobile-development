@@ -67,6 +67,11 @@ const localGenerateTemplateSummary = (type, data) => {
     const assetsDone = (data.assets || []).filter(a => a.checked).length;
     return `Investment Goal: ${data.investmentGoal || '-'}\nDaily Invested: ${data.dailyAmount || '-'} | Assets checked: ${assetsDone}/${data.assets?.length || 0}`;
   }
+  if (type === 'medical') {
+    const shift = data.shiftInfo || {};
+    const patientsDone = (data.patients || []).filter(p => p.roundsDone).length;
+    return `Clinical Rounds - ${shift.role || 'Doctor'} | Patients: ${patientsDone}/${data.patients?.length || 0} rounds done`;
+  }
   return '';
 };
 
@@ -160,11 +165,11 @@ export default function App() {
               } else if (note.noteType === 'template' && note.templateData) {
                 const updatedData = { ...note.templateData };
                 let dataChanged = false;
-                const checkboxSections = [
+                 const checkboxSections = [
                   'morningHabits', 'todo', 'goals', 'afternoonSchedule', 
                   'eveningSchedule', 'nightSchedule',
                   'health', 'work', 'selfcare', 'studyTasks', 
-                  'packingList', 'items', 'expenses', 'assets'
+                  'packingList', 'items', 'expenses', 'assets', 'clinicalTasks'
                 ];
                 checkboxSections.forEach(section => {
                   if (updatedData[section] && Array.isArray(updatedData[section])) {
@@ -184,6 +189,25 @@ export default function App() {
                     }
                     return sub;
                   });
+                  dataChanged = true;
+                }
+
+                // Reset medical patient rounds & vitals
+                if (updatedData.patients && Array.isArray(updatedData.patients)) {
+                  updatedData.patients = updatedData.patients.map(p => ({
+                    ...p,
+                    vitalsChecked: false,
+                    roundsDone: false
+                  }));
+                  dataChanged = true;
+                }
+
+                // Reset clinician self-care checklist items
+                if (updatedData.clinicianCare) {
+                  updatedData.clinicianCare = {
+                    ...updatedData.clinicianCare,
+                    lunchBreak: false
+                  };
                   dataChanged = true;
                 }
 
