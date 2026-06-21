@@ -162,6 +162,9 @@ export default function NoteCard({ note, index, onPress, onPinToggle }) {
           
           <View style={[styles.footer, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
             <View style={{ flexDirection: 'row', gap: 4, alignItems: 'center' }}>
+              {note.noteType === 'template' && (
+                <Ionicons name="calendar-outline" size={12} color="rgba(0,0,0,0.4)" />
+              )}
               {note.images && note.images.length > 0 && (
                 <Ionicons name="image-outline" size={12} color="rgba(0,0,0,0.4)" />
               )}

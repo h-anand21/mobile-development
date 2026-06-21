@@ -12,6 +12,8 @@ import { lightTheme, darkTheme } from '../constants/theme';
 const STORAGE_KEYS = {
   NOTES: 'wordsy_notes',
   USER_PROFILE: 'wordsy_user_profile',
+  FOLDERS: 'wordsy_folders',
+  LAST_RESET_DATE: 'wordsy_last_reset_date',
 };
 
 export default function App() {
@@ -19,6 +21,7 @@ export default function App() {
   const [isDark, setIsDark] = useState(systemScheme === 'dark');
   const [screen, setScreen] = useState('welcome');
   const [notes, setNotes] = useState([]);
+  const [folders, setFolders] = useState([]);
   const [userProfile, setUserProfile] = useState(null);
   const [editingNote, setEditingNote] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -51,12 +54,67 @@ export default function App() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [savedNotes, savedProfile] = await Promise.all([
+        const [savedNotes, savedProfile, savedFolders, savedLastReset] = await Promise.all([
           AsyncStorage.getItem(STORAGE_KEYS.NOTES),
           AsyncStorage.getItem(STORAGE_KEYS.USER_PROFILE),
+          AsyncStorage.getItem(STORAGE_KEYS.FOLDERS),
+          AsyncStorage.getItem(STORAGE_KEYS.LAST_RESET_DATE),
         ]);
 
-        if (savedNotes) setNotes(JSON.parse(savedNotes));
+        let parsedFolders = [];
+        if (savedFolders) {
+          parsedFolders = JSON.parse(savedFolders);
+        } else {
+          // Pre-create default folders on first launch
+          parsedFolders = [
+            { id: 'folder_routine', name: 'Daily Routine', color: '#FF8C00', icon: 'checkbox-outline', isRoutine: true },
+            { id: 'folder_personal', name: 'Personal', color: '#4CAF50', icon: 'person-outline', isRoutine: false },
+            { id: 'folder_work', name: 'Work', color: '#2196F3', icon: 'briefcase-outline', isRoutine: false },
+          ];
+          await AsyncStorage.setItem(STORAGE_KEYS.FOLDERS, JSON.stringify(parsedFolders));
+        }
+        setFolders(parsedFolders);
+
+        let parsedNotes = [];
+        if (savedNotes) {
+          parsedNotes = JSON.parse(savedNotes);
+        }
+
+        // Daily Routine Auto-Reset Logic
+        const todayStr = new Date().toDateString(); // e.g. "Sun Jun 21 2026"
+        if (savedLastReset !== todayStr) {
+          // Identify routine folder IDs
+          const routineFolderIds = parsedFolders
+            .filter(f => f.isRoutine)
+            .map(f => f.id);
+
+          let resetDone = false;
+          parsedNotes = parsedNotes.map(note => {
+            if (note.folderId && routineFolderIds.includes(note.folderId)) {
+              // It's a note in a routine folder, reset checklist if it has one
+              if (note.noteType === 'checklist' && note.checklist && note.checklist.length > 0) {
+                const updatedChecklist = note.checklist.map(item => ({ ...item, checked: false }));
+                const updatedContent = updatedChecklist
+                  .map(item => `[ ] ${item.text}`)
+                  .join('\n');
+                resetDone = true;
+                return {
+                  ...note,
+                  checklist: updatedChecklist,
+                  content: updatedContent,
+                };
+              }
+            }
+            return note;
+          });
+
+          if (resetDone) {
+            await AsyncStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify(parsedNotes));
+          }
+          await AsyncStorage.setItem(STORAGE_KEYS.LAST_RESET_DATE, todayStr);
+        }
+
+        setNotes(parsedNotes);
         
         if (savedProfile) {
           const profile = JSON.parse(savedProfile);
@@ -81,6 +139,15 @@ export default function App() {
       );
     }
   }, [notes, isLoading]);
+
+  // Save Folders whenever they change
+  useEffect(() => {
+    if (!isLoading) {
+      AsyncStorage.setItem(STORAGE_KEYS.FOLDERS, JSON.stringify(folders)).catch(err => 
+        console.error('Failed to save folders:', err)
+      );
+    }
+  }, [folders, isLoading]);
 
   const handleSaveNote = (updatedNote) => {
     if (editingNote) {
@@ -144,8 +211,18 @@ export default function App() {
   const handleLogout = async (clearAllData) => {
     try {
       if (clearAllData) {
-        await AsyncStorage.multiRemove([STORAGE_KEYS.NOTES, STORAGE_KEYS.USER_PROFILE]);
+        await AsyncStorage.multiRemove([
+          STORAGE_KEYS.NOTES, 
+          STORAGE_KEYS.USER_PROFILE,
+          STORAGE_KEYS.FOLDERS,
+          STORAGE_KEYS.LAST_RESET_DATE
+        ]);
         setNotes([]);
+        setFolders([
+          { id: 'folder_routine', name: 'Daily Routine', color: '#FF8C00', icon: 'checkbox-outline', isRoutine: true },
+          { id: 'folder_personal', name: 'Personal', color: '#4CAF50', icon: 'person-outline', isRoutine: false },
+          { id: 'folder_work', name: 'Work', color: '#2196F3', icon: 'briefcase-outline', isRoutine: false },
+        ]);
       } else {
         await AsyncStorage.removeItem(STORAGE_KEYS.USER_PROFILE);
       }
@@ -178,6 +255,8 @@ export default function App() {
         ) : screen === 'list' ? (
           <NotesListScreen
             notes={notes}
+            folders={folders}
+            onUpdateFolders={setFolders}
             userProfile={userProfile}
             isDark={isDark}
             setIsDark={setIsDark}
@@ -202,6 +281,7 @@ export default function App() {
         ) : (
           <NoteEditorScreen
             theme={theme}
+            folders={folders}
             noteToEdit={editingNote}
             onSave={handleSaveNote}
             onBack={() => {
