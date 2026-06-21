@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -18,6 +18,7 @@ export default function NoteEditorScreen({ onSave, onBack, theme }) {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [status, setStatus] = useState('');
+  const scrollViewRef = useRef(null);
 
   const styles = useMemo(
     () =>
@@ -133,6 +134,7 @@ export default function NoteEditorScreen({ onSave, onBack, theme }) {
           flex: 1,
         },
         bodyInput: {
+          flex: 1,
           fontSize: 16,
           color: theme.text,
           paddingHorizontal: 4,
@@ -198,7 +200,7 @@ export default function NoteEditorScreen({ onSave, onBack, theme }) {
   return (
     <KeyboardAvoidingView
       style={styles.screen}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       {/* Fixed Header */}
       <LinearGradient
@@ -254,7 +256,12 @@ export default function NoteEditorScreen({ onSave, onBack, theme }) {
             <Text style={styles.label}>Description</Text>
           </View>
           
-          <ScrollView style={styles.bodyScroll} showsVerticalScrollIndicator={false}>
+          <ScrollView 
+            ref={scrollViewRef}
+            style={styles.bodyScroll}
+            showsVerticalScrollIndicator={true}
+            contentContainerStyle={{ flexGrow: 1 }}
+          >
             <TextInput
               value={body}
               onChangeText={setBody}
@@ -262,7 +269,11 @@ export default function NoteEditorScreen({ onSave, onBack, theme }) {
               placeholderTextColor={theme.placeholder}
               style={styles.bodyInput}
               multiline
-              scrollEnabled={false} // Managed by outer ScrollView
+              scrollEnabled={false}
+              textAlignVertical="top"
+              onContentSizeChange={() => {
+                scrollViewRef.current?.scrollToEnd({ animated: true });
+              }}
             />
           </ScrollView>
         </View>
