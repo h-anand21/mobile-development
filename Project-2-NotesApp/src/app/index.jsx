@@ -20,6 +20,7 @@ export default function App() {
   const [screen, setScreen] = useState('welcome');
   const [notes, setNotes] = useState([]);
   const [userProfile, setUserProfile] = useState(null);
+  const [editingNote, setEditingNote] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const theme = useMemo(() => (isDark ? darkTheme : lightTheme), [isDark]);
@@ -81,24 +82,53 @@ export default function App() {
     }
   }, [notes, isLoading]);
 
-  const handleSaveNote = (newNote) => {
-    const noteWithId = {
-      ...newNote,
-      id: Date.now().toString(),
-      date: new Date().toLocaleString('en-IN', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      }),
-    };
-    setNotes((prev) => [noteWithId, ...prev]);
+  const handleSaveNote = (updatedNote) => {
+    if (editingNote) {
+      setNotes((prev) =>
+        prev.map((note) =>
+          note.id === editingNote.id
+            ? {
+                ...note,
+                ...updatedNote,
+                date: new Date().toLocaleString('en-IN', {
+                  day: '2-digit',
+                  month: 'short',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                }),
+              }
+            : note
+        )
+      );
+      setEditingNote(null);
+    } else {
+      const noteWithId = {
+        ...updatedNote,
+        id: Date.now().toString(),
+        date: new Date().toLocaleString('en-IN', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        }),
+      };
+      setNotes((prev) => [noteWithId, ...prev]);
+    }
     setScreen('list');
   };
 
   const handleDeleteNote = (id) => {
     setNotes((prev) => prev.filter((note) => note.id !== id));
+  };
+
+  const handlePinToggle = (id) => {
+    setNotes((prev) =>
+      prev.map((note) =>
+        note.id === id ? { ...note, isPinned: !note.isPinned } : note
+      )
+    );
   };
 
   const handleProfileComplete = async (profile) => {
@@ -152,15 +182,32 @@ export default function App() {
             isDark={isDark}
             setIsDark={setIsDark}
             theme={theme}
-            onCreateNew={() => setScreen('editor')}
+            onCreateNew={() => {
+              setEditingNote(null);
+              setScreen('editor');
+            }}
             onDelete={handleDeleteNote}
             onLogout={handleLogout}
+            onEdit={(note) => {
+              setEditingNote(note);
+              setScreen('editor');
+            }}
+            onUpdateNote={(updatedNote) => {
+              setNotes((prev) =>
+                prev.map((n) => (n.id === updatedNote.id ? updatedNote : n))
+              );
+            }}
+            onPinToggle={handlePinToggle}
           />
         ) : (
           <NoteEditorScreen
             theme={theme}
+            noteToEdit={editingNote}
             onSave={handleSaveNote}
-            onBack={() => setScreen('list')}
+            onBack={() => {
+              setEditingNote(null);
+              setScreen('list');
+            }}
           />
         )}
       </SafeAreaView>

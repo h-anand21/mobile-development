@@ -33,13 +33,34 @@ export default function NotesListScreen({
   isDark, 
   setIsDark,
   userProfile,
-  onLogout
+  onLogout,
+  onEdit,
+  onUpdateNote,
+  onPinToggle
 }) {
   const { width, height } = useWindowDimensions();
   const isTablet = width >= 768;
   const [query, setQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [selectedNote, setSelectedNote] = useState(null);
+  const [viewerImageUri, setViewerImageUri] = useState(null);
+
+  const handleToggleChecklistItem = (itemId) => {
+    if (!selectedNote || !onUpdateNote) return;
+    const updatedChecklist = selectedNote.checklist.map((item) =>
+      item.id === itemId ? { ...item, checked: !item.checked } : item
+    );
+    const updatedContent = updatedChecklist
+      .map((item) => `${item.checked ? '[x]' : '[ ]'} ${item.text}`)
+      .join('\n');
+    const updatedNote = {
+      ...selectedNote,
+      checklist: updatedChecklist,
+      content: updatedContent,
+    };
+    setSelectedNote(updatedNote);
+    onUpdateNote(updatedNote);
+  };
 
   // Audio Player Row Component (defined locally to access stylesheet and hooks easily)
   const AudioPlayerRow = ({ uri, duration }) => {
@@ -364,6 +385,14 @@ export default function NotesListScreen({
           marginTop: 10,
           alignSelf: 'center',
         },
+        modalActionBtn: {
+          width: 38,
+          height: 38,
+          borderRadius: 19,
+          backgroundColor: 'rgba(0,0,0,0.05)',
+          alignItems: 'center',
+          justifyContent: 'center',
+        },
         closeBtnGradient: {
           width: 50,
           height: 50,
@@ -404,12 +433,18 @@ export default function NotesListScreen({
 
   const filteredNotes = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return notes;
-    return notes.filter(
-      (note) =>
-        note.title.toLowerCase().includes(q) ||
-        note.content.toLowerCase().includes(q),
-    );
+    const baseNotes = !q 
+      ? notes 
+      : notes.filter(
+          (note) =>
+            note.title.toLowerCase().includes(q) ||
+            note.content.toLowerCase().includes(q)
+        );
+    return [...baseNotes].sort((a, b) => {
+      const aPinned = a.isPinned ? 1 : 0;
+      const bPinned = b.isPinned ? 1 : 0;
+      return bPinned - aPinned;
+    });
   }, [query, notes]);
 
   const toggleSearch = () => {
@@ -504,7 +539,7 @@ export default function NotesListScreen({
             note={item}
             index={index}
             onPress={() => setSelectedNote(item)}
-            onDelete={() => onDelete(item.id)}
+            onPinToggle={() => onPinToggle(item.id)}
           />
         )}
         numColumns={2}
@@ -521,23 +556,64 @@ export default function NotesListScreen({
         animationType="slide"
         onRequestClose={() => setSelectedNote(null)}
       >
-        <Pressable 
-          style={styles.modalOverlay} 
-          onPress={() => setSelectedNote(null)}
-        >
-          <Pressable style={styles.modalPaper} onPress={() => {}}>
+        <View style={styles.modalOverlay}>
+          {/* Backdrop to close modal when clicking outside */}
+          <Pressable 
+            style={StyleSheet.absoluteFill} 
+            onPress={() => setSelectedNote(null)} 
+          />
+
+          <View style={styles.modalPaper}>
             {/* Decorative Tape & Pin */}
             <View style={styles.modalTape} />
             <View style={styles.modalPin} />
 
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{selectedNote?.title}</Text>
-              <Text style={styles.modalDate}>{selectedNote?.date}</Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <View style={{ flex: 1 }}>
+                  <Text selectable={true} style={styles.modalTitle}>{selectedNote?.title}</Text>
+                  <Text style={styles.modalDate}>{selectedNote?.date}</Text>
+                </View>
+                <View style={{ flexDirection: 'row', gap: 12, paddingLeft: 10, marginRight: 25 }}>
+                  <Pressable 
+                    onPress={() => {
+                      const note = selectedNote;
+                      setSelectedNote(null);
+                      onEdit(note);
+                    }}
+                    style={styles.modalActionBtn}
+                  >
+                    <Ionicons name="pencil-outline" size={20} color="#1E88E5" />
+                  </Pressable>
+                  <Pressable 
+                    onPress={() => {
+                      Alert.alert(
+                        "Delete Note",
+                        "Are you sure you want to delete this note?",
+                        [
+                          { text: "Cancel", style: "cancel" },
+                          { 
+                            text: "Delete", 
+                            style: "destructive", 
+                            onPress: () => {
+                              onDelete(selectedNote.id);
+                              setSelectedNote(null);
+                            }
+                          }
+                        ]
+                      );
+                    }}
+                    style={styles.modalActionBtn}
+                  >
+                    <Ionicons name="trash-outline" size={20} color="#E53935" />
+                  </Pressable>
+                </View>
+              </View>
             </View>
 
             <ScrollView 
               style={styles.modalBody} 
-              showsVerticalScrollIndicator={false}
+              showsVerticalScrollIndicator={true}
               contentContainerStyle={{ paddingBottom: 20 }}
             >
               {selectedNote?.images && selectedNote.images.length > 0 && (
@@ -548,18 +624,19 @@ export default function NotesListScreen({
                   contentContainerStyle={{ gap: 10 }}
                 >
                   {selectedNote.images.map((img, idx) => (
-                    <Image 
-                      key={idx} 
-                      source={{ uri: img.uri }} 
-                      style={{ 
-                        width: 220, 
-                        height: 160, 
-                        borderRadius: 10, 
-                        backgroundColor: 'rgba(0,0,0,0.05)',
-                        borderWidth: 1,
-                        borderColor: 'rgba(0,0,0,0.05)',
-                      }} 
-                    />
+                    <Pressable key={idx} onPress={() => setViewerImageUri(img.uri)}>
+                      <Image 
+                        source={{ uri: img.uri }} 
+                        style={{ 
+                          width: 220, 
+                          height: 160, 
+                          borderRadius: 10, 
+                          backgroundColor: 'rgba(0,0,0,0.05)',
+                          borderWidth: 1,
+                          borderColor: 'rgba(0,0,0,0.05)',
+                        }} 
+                      />
+                    </Pressable>
                   ))}
                 </ScrollView>
               )}
@@ -661,27 +738,32 @@ export default function NotesListScreen({
               {selectedNote?.noteType === 'checklist' && selectedNote.checklist && selectedNote.checklist.length > 0 ? (
                 <View style={{ gap: 8, marginVertical: 8 }}>
                   {selectedNote.checklist.map((item) => (
-                    <View key={item.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                    <Pressable 
+                      key={item.id} 
+                      onPress={() => handleToggleChecklistItem(item.id)}
+                      style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 4 }}
+                    >
                       <Ionicons 
                         name={item.checked ? "checkbox" : "square-outline"} 
                         size={20} 
                         color={item.checked ? '#757575' : '#333333'} 
                       />
                       <Text 
+                        selectable={true}
                         style={{
                           fontSize: 18,
-                          color: '#444444',
+                          color: item.checked ? '#757575' : '#333333',
                           textDecorationLine: item.checked ? 'line-through' : 'none',
                           opacity: item.checked ? 0.6 : 1,
                         }}
                       >
                         {item.text}
                       </Text>
-                    </View>
+                    </Pressable>
                   ))}
                 </View>
               ) : (
-                <Text style={styles.modalContent}>{selectedNote?.content}</Text>
+                <Text selectable={true} style={styles.modalContent}>{selectedNote?.content}</Text>
               )}
             </ScrollView>
 
@@ -696,7 +778,51 @@ export default function NotesListScreen({
                 <Ionicons name="checkmark" size={28} color="#FFFFFF" />
               </LinearGradient>
             </Pressable>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Full Screen Image Viewer Modal */}
+      <Modal
+        visible={!!viewerImageUri}
+        transparent={true}
+        onRequestClose={() => setViewerImageUri(null)}
+        animationType="fade"
+      >
+        <Pressable 
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.95)',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+          onPress={() => setViewerImageUri(null)}
+        >
+          <Pressable 
+            onPress={() => setViewerImageUri(null)} 
+            style={{
+              position: 'absolute',
+              top: Platform.OS === 'ios' ? 60 : 30,
+              right: 20,
+              zIndex: 10,
+              padding: 10,
+              backgroundColor: 'rgba(255,255,255,0.2)',
+              borderRadius: 20,
+            }}
+          >
+            <Ionicons name="close" size={24} color="#FFFFFF" />
           </Pressable>
+
+          {viewerImageUri && (
+            <Image 
+              source={{ uri: viewerImageUri }} 
+              style={{
+                width: '95%',
+                height: '80%',
+                resizeMode: 'contain',
+              }}
+            />
+          )}
         </Pressable>
       </Modal>
     </View>

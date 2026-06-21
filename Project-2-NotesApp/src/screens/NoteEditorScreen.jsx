@@ -26,23 +26,24 @@ try {
   console.warn('Audio module not loaded:', error);
 }
 
-export default function NoteEditorScreen({ onSave, onBack, theme }) {
+export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit }) {
   const { height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const [title, setTitle] = useState('');
-  const [body, setBody] = useState('');
+  const [title, setTitle] = useState(noteToEdit ? noteToEdit.title : '');
+  const [body, setBody] = useState(noteToEdit ? (noteToEdit.noteType === 'text' ? noteToEdit.content : '') : '');
   const [status, setStatus] = useState('');
   const scrollViewRef = useRef(null);
   const descriptionScrollViewRef = useRef(null);
 
   // New Media & Checklist states
-  const [noteType, setNoteType] = useState('text'); // 'text' or 'checklist'
-  const [checklist, setChecklist] = useState([]);
-  const [images, setImages] = useState([]);
-  const [drawings, setDrawings] = useState([]);
-  const [audio, setAudio] = useState([]);
+  const [noteType, setNoteType] = useState(noteToEdit ? noteToEdit.noteType : 'text'); // 'text' or 'checklist'
+  const [checklist, setChecklist] = useState(noteToEdit ? (noteToEdit.checklist || []) : []);
+  const [images, setImages] = useState(noteToEdit ? (noteToEdit.images || []) : []);
+  const [drawings, setDrawings] = useState(noteToEdit ? (noteToEdit.drawings || []) : []);
+  const [audio, setAudio] = useState(noteToEdit ? (noteToEdit.audio || []) : []);
   const [isBottomSheetVisible, setIsBottomSheetVisible] = useState(false);
   const [isDrawingCanvasVisible, setIsDrawingCanvasVisible] = useState(false);
+  const [viewerImageUri, setViewerImageUri] = useState(null);
 
   const handleSaveDrawing = (newDrawingLines) => {
     setDrawings(prev => [...prev, { lines: newDrawingLines }]);
@@ -678,7 +679,9 @@ export default function NoteEditorScreen({ onSave, onBack, theme }) {
             >
               {images.map((img, idx) => (
                 <View key={idx} style={styles.imagePreviewWrapper}>
-                  <Image source={{ uri: img.uri }} style={styles.imagePreview} />
+                  <Pressable onPress={() => setViewerImageUri(img.uri)} style={{ width: '100%', height: '100%' }}>
+                    <Image source={{ uri: img.uri }} style={styles.imagePreview} />
+                  </Pressable>
                   <Pressable 
                     onPress={() => setImages(prev => prev.filter((_, i) => i !== idx))}
                     style={styles.imageDeleteBtn}
@@ -1043,6 +1046,50 @@ export default function NoteEditorScreen({ onSave, onBack, theme }) {
               <View style={{ width: 50 }} />
             </View>
           </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Full Screen Image Viewer Modal */}
+      <Modal
+        visible={!!viewerImageUri}
+        transparent={true}
+        onRequestClose={() => setViewerImageUri(null)}
+        animationType="fade"
+      >
+        <Pressable 
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.95)',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+          onPress={() => setViewerImageUri(null)}
+        >
+          <Pressable 
+            onPress={() => setViewerImageUri(null)} 
+            style={{
+              position: 'absolute',
+              top: Platform.OS === 'ios' ? 60 : 30,
+              right: 20,
+              zIndex: 10,
+              padding: 10,
+              backgroundColor: 'rgba(255,255,255,0.2)',
+              borderRadius: 20,
+            }}
+          >
+            <Ionicons name="close" size={24} color="#FFFFFF" />
+          </Pressable>
+
+          {viewerImageUri && (
+            <Image 
+              source={{ uri: viewerImageUri }} 
+              style={{
+                width: '95%',
+                height: '80%',
+                resizeMode: 'contain',
+              }}
+            />
+          )}
         </Pressable>
       </Modal>
     </KeyboardAvoidingView>

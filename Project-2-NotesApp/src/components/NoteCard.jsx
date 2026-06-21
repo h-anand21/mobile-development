@@ -12,7 +12,7 @@ const STICKY_COLORS = [
   '#FFFD96', // Pale Yellow
 ];
 
-export default function NoteCard({ note, index, onPress, onDelete }) {
+export default function NoteCard({ note, index, onPress, onPinToggle }) {
   const backgroundColor = STICKY_COLORS[index % STICKY_COLORS.length];
   
   const rotation = useMemo(() => {
@@ -41,10 +41,14 @@ export default function NoteCard({ note, index, onPress, onDelete }) {
         )}
 
         <Pressable 
-          onPress={onDelete}
-          style={styles.deleteButton}
+          onPress={onPinToggle}
+          style={styles.pinButton}
         >
-          <Ionicons name="close-circle" size={20} color="rgba(0,0,0,0.2)" />
+          <Ionicons 
+            name={note.isPinned ? "bookmark" : "bookmark-outline"} 
+            size={18} 
+            color={note.isPinned ? "#FF8C00" : "rgba(0,0,0,0.35)"} 
+          />
         </Pressable>
 
         <View style={styles.content}>
@@ -225,11 +229,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.2)',
   },
-  deleteButton: {
+  pinButton: {
     position: 'absolute',
     top: 8,
     right: 8,
     zIndex: 11,
+    padding: 4,
   },
   content: {
     flex: 1,
