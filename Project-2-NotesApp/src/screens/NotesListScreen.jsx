@@ -16,7 +16,14 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Path, Text as SvgText } from 'react-native-svg';
 import NoteCard from '../components/NoteCard';
+let Audio = null;
+try {
+  Audio = require('expo-av').Audio;
+} catch (error) {
+  console.warn('Audio module not loaded:', error);
+}
 
 export default function NotesListScreen({ 
   notes, 
@@ -33,6 +40,58 @@ export default function NotesListScreen({
   const [query, setQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [selectedNote, setSelectedNote] = useState(null);
+
+  // Audio Player Row Component (defined locally to access stylesheet and hooks easily)
+  const AudioPlayerRow = ({ uri, duration }) => {
+    const [sound, setSound] = useState(null);
+    const [isPlaying, setIsPlaying] = useState(false);
+
+    useEffect(() => {
+      return sound
+        ? () => {
+            sound.unloadAsync();
+          }
+        : undefined;
+    }, [sound]);
+
+    const handlePlayPause = async () => {
+      if (!Audio) {
+        Alert.alert('Not Supported', 'Audio playback is not supported in this environment.');
+        return;
+      }
+      if (sound === null) {
+        const { sound: newSound } = await Audio.Sound.createAsync(
+          { uri },
+          { shouldPlay: true }
+        );
+        setSound(newSound);
+        setIsPlaying(true);
+        newSound.setOnPlaybackStatusUpdate((status) => {
+          if (status.didJustFinish) {
+            setIsPlaying(false);
+            newSound.setPositionAsync(0);
+          }
+        });
+      } else {
+        if (isPlaying) {
+          await sound.pauseAsync();
+          setIsPlaying(false);
+        } else {
+          await sound.playAsync();
+          setIsPlaying(true);
+        }
+      }
+    };
+
+    return (
+      <View style={styles.audioRow}>
+        <Pressable onPress={handlePlayPause} style={styles.audioPlayBtn}>
+          <Ionicons name={isPlaying ? "pause" : "play"} size={16} color="#FFFFFF" />
+        </Pressable>
+        <Text style={styles.audioText}>Voice Memo ({duration}s)</Text>
+      </View>
+    );
+  };
 
   // Handle Back Button to close Search or Modal
   useEffect(() => {
@@ -313,6 +372,32 @@ export default function NotesListScreen({
           justifyContent: 'center',
           elevation: 5,
         },
+        audioRow: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          backgroundColor: '#FFFFFF',
+          borderWidth: 1,
+          borderColor: 'rgba(0,0,0,0.1)',
+          borderRadius: 14,
+          paddingVertical: 10,
+          paddingHorizontal: 14,
+          marginVertical: 4,
+          gap: 12,
+        },
+        audioPlayBtn: {
+          width: 36,
+          height: 36,
+          borderRadius: 18,
+          backgroundColor: theme.primary,
+          alignItems: 'center',
+          justifyContent: 'center',
+        },
+        audioText: {
+          flex: 1,
+          fontSize: 14,
+          fontWeight: '700',
+          color: '#333333',
+        },
       }),
     [theme, isDark, isTablet]
   );
@@ -455,7 +540,149 @@ export default function NotesListScreen({
               showsVerticalScrollIndicator={false}
               contentContainerStyle={{ paddingBottom: 20 }}
             >
-              <Text style={styles.modalContent}>{selectedNote?.content}</Text>
+              {selectedNote?.images && selectedNote.images.length > 0 && (
+                <ScrollView 
+                  horizontal 
+                  showsHorizontalScrollIndicator={false}
+                  style={{ marginBottom: 16 }}
+                  contentContainerStyle={{ gap: 10 }}
+                >
+                  {selectedNote.images.map((img, idx) => (
+                    <Image 
+                      key={idx} 
+                      source={{ uri: img.uri }} 
+                      style={{ 
+                        width: 220, 
+                        height: 160, 
+                        borderRadius: 10, 
+                        backgroundColor: 'rgba(0,0,0,0.05)',
+                        borderWidth: 1,
+                        borderColor: 'rgba(0,0,0,0.05)',
+                      }} 
+                    />
+                  ))}
+                </ScrollView>
+              )}
+
+              {selectedNote?.drawings && selectedNote.drawings.length > 0 && (
+                <ScrollView 
+                  horizontal 
+                  showsHorizontalScrollIndicator={false}
+                  style={{ marginBottom: 16 }}
+                  contentContainerStyle={{ gap: 10 }}
+                >
+                  {selectedNote.drawings.map((drawing, idx) => (
+                    <View 
+                      key={idx} 
+                      style={{ 
+                        width: 220, 
+                        height: 280, 
+                        borderRadius: 10, 
+                        backgroundColor: '#FFFFFF',
+                        borderWidth: 1,
+                        borderColor: 'rgba(0,0,0,0.1)',
+                        padding: 8,
+                      }}
+                    >
+                      <Svg width="100%" height="100%" viewBox="0 0 350 450">
+                        {drawing.lines.map((line, lIdx) => {
+                          const path = line.reduce((acc, point, idx) => {
+                            if (idx === 0) return `M ${point.x} ${point.y}`;
+                            return `${acc} L ${point.x} ${point.y}`;
+                          }, '');
+                          
+                          const first = line[0];
+                          const last = line[line.length - 1];
+                          let pathData = path;
+                          if (first && last && line.length > 2) {
+                            const dist = Math.sqrt((first.x - last.x) ** 2 + (first.y - last.y) ** 2);
+                            if (dist < 8) {
+                              pathData += ' Z';
+                            }
+                          }
+                          
+                          return (
+                            <React.Fragment key={lIdx}>
+                              <Path
+                                d={pathData}
+                                stroke={line[0]?.color || '#000000'}
+                                strokeWidth={line[0]?.width || 4}
+                                strokeOpacity={line[0]?.opacity !== undefined ? line[0].opacity : 1}
+                                fill="none"
+                              />
+                              {line[0]?.text && (() => {
+                                let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+                                line.forEach(p => {
+                                  if (p.x < minX) minX = p.x;
+                                  if (p.x > maxX) maxX = p.x;
+                                  if (p.y < minY) minY = p.y;
+                                  if (p.y > maxY) maxY = p.y;
+                                });
+                                const cx = (minX + maxX) / 2;
+                                const cy = (minY + maxY) / 2;
+                                return (
+                                  <SvgText
+                                    x={cx}
+                                    y={cy + 4}
+                                    fill={line[0].color || '#000000'}
+                                    fontSize={14}
+                                    fontWeight="bold"
+                                    textAnchor="middle"
+                                    alignmentBaseline="middle"
+                                    {...(line[0].rotation !== undefined && {
+                                      transform: `rotate(${(line[0].rotation * 180) / Math.PI}, ${cx}, ${cy})`
+                                    })}
+                                  >
+                                    {line[0].text}
+                                  </SvgText>
+                                );
+                              })()}
+                            </React.Fragment>
+                          );
+                        })}
+                      </Svg>
+                    </View>
+                  ))}
+                </ScrollView>
+              )}
+
+              {selectedNote?.audio && selectedNote.audio.length > 0 && (
+                <View style={{ marginBottom: 16 }}>
+                  {selectedNote.audio.map((track, idx) => (
+                    <AudioPlayerRow 
+                      key={idx}
+                      uri={track.uri}
+                      duration={track.duration}
+                    />
+                  ))}
+                </View>
+              )}
+
+              {selectedNote?.noteType === 'checklist' && selectedNote.checklist && selectedNote.checklist.length > 0 ? (
+                <View style={{ gap: 8, marginVertical: 8 }}>
+                  {selectedNote.checklist.map((item) => (
+                    <View key={item.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                      <Ionicons 
+                        name={item.checked ? "checkbox" : "square-outline"} 
+                        size={20} 
+                        color={item.checked ? '#757575' : '#333333'} 
+                      />
+                      <Text 
+                        style={{
+                          fontSize: 18,
+                          color: '#444444',
+                          textDecorationLine: item.checked ? 'line-through' : 'none',
+                          opacity: item.checked ? 0.6 : 1,
+                        }}
+                      >
+                        {item.text}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              ) : (
+                <Text style={styles.modalContent}>{selectedNote?.content}</Text>
+              )}
             </ScrollView>
 
             <Pressable 
