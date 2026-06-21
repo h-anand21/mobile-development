@@ -53,7 +53,12 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
 
   const DEFAULT_TEMPLATE_DATA = {
     nutrition: {
-      schedule: { "08:00": "", "10:00": "", "12:00": "", "14:00": "", "16:00": "", "18:00": "", "20:00": "", "22:00": "" },
+      schedule: [
+        { time: "08:00", task: "" },
+        { time: "12:00", task: "" },
+        { time: "16:00", task: "" },
+        { time: "20:00", task: "" }
+      ],
       meals: { breakfast: "", lunch: "", dinner: "", snack: "" },
       priorities: "",
       notes: "",
@@ -66,11 +71,11 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
         { id: "h2", text: "Meditation", checked: false },
         { id: "h3", text: "Stretching", checked: false },
       ],
-      gratitude: ["", "", ""],
+      gratitude: ["Family", "Good health", "Sunshine"],
       affirmations: "",
-      goals: "",
       sleepHours: 7,
-      productivity: 3
+      productivity: 3,
+      notes: ""
     },
     minimal: {
       focus: "",
@@ -78,7 +83,11 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
         { id: "t1", text: "Routine task 1", checked: false },
         { id: "t2", text: "Routine task 2", checked: false },
       ],
-      schedule: { "08:00": "", "11:00": "", "14:00": "", "17:00": "", "20:00": "" },
+      schedule: [
+        { time: "09:00", task: "" },
+        { time: "14:00", task: "" },
+        { time: "19:00", task: "" }
+      ],
       notes: ""
     },
     cute: {
@@ -86,6 +95,14 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
       afternoonSchedule: [
         { id: "a1", text: "Lunch break", checked: false },
         { id: "a2", text: "Read / study", checked: false },
+      ],
+      eveningSchedule: [
+        { id: "e1", text: "Evening walk / tea", checked: false },
+        { id: "e2", text: "Review daily tasks", checked: false },
+      ],
+      nightSchedule: [
+        { id: "n1", text: "Read a book", checked: false },
+        { id: "n2", text: "Bedtime prep", checked: false },
       ],
       goals: [
         { id: "g1", text: "Primary goal", checked: false },
@@ -104,7 +121,86 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
       selfcare: [
         { id: "sa1", text: "Read 10 pages", checked: false },
         { id: "sa2", text: "No screens before bed", checked: false },
-      ]
+      ],
+      notes: ""
+    },
+    student: {
+      focus: "",
+      classes: [
+        { time: "09:00", text: "" },
+        { time: "11:00", text: "" }
+      ],
+      studyTasks: [
+        { id: "st1", text: "Revision chapter 2", checked: false },
+        { id: "st2", text: "Practice math problems", checked: false }
+      ],
+      deadlines: [
+        { id: "d1", text: "" }
+      ],
+      notes: ""
+    },
+    fitness: {
+      workout: "",
+      waterGlasses: 4,
+      calories: "",
+      weight: "",
+      productivity: 3,
+      notes: ""
+    },
+    exam: {
+      subjects: [
+        {
+          id: "sub_1",
+          name: "",
+          examDate: "",
+          topics: [
+            { id: "topic_1", text: "Revision Topic", checked: false }
+          ],
+          studyHours: 4,
+          productivity: 3
+        }
+      ],
+      notes: ""
+    },
+    travel: {
+      destination: "",
+      duration: "",
+      packingList: [
+        { id: "tr1", text: "Passport & Tickets", checked: false },
+        { id: "tr2", text: "Phone Charger", checked: false }
+      ],
+      itinerary: [
+        { time: "Day 1", task: "Arrival & Hotel Check-in" }
+      ],
+      notes: ""
+    },
+    shopping: {
+      store: "",
+      budget: "",
+      items: [
+        { id: "sh1", text: "Groceries", checked: false }
+      ],
+      notes: ""
+    },
+    finance: {
+      budgetLimit: "",
+      income: "",
+      savingsGoal: "",
+      expenses: [
+        { id: "fn1", text: "Groceries - $50", checked: false },
+        { id: "fn2", text: "Transport - $20", checked: false }
+      ],
+      notes: ""
+    },
+    investment: {
+      investmentGoal: "",
+      dailyAmount: "",
+      assets: [
+        { id: "in1", text: "Stocks - $20", checked: false },
+        { id: "in2", text: "Mutual Funds - $30", checked: false }
+      ],
+      productivity: 3,
+      notes: ""
     }
   };
 
@@ -168,6 +264,107 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
     setTemplateData(prev => {
       const updated = { ...prev };
       updated[section] = updated[section].filter(item => item.id !== itemId);
+      return updated;
+    });
+  };
+
+  // Exam Subject / Topics Helpers
+  const addSubject = () => {
+    setTemplateData(prev => {
+      const updated = { ...prev };
+      const newSubject = {
+        id: `sub_${Date.now()}`,
+        name: "",
+        examDate: "",
+        topics: [
+          { id: `topic_${Date.now()}`, text: "Revision Topic", checked: false }
+        ],
+        studyHours: 4,
+        productivity: 3
+      };
+      updated.subjects = [...(updated.subjects || []), newSubject];
+      return updated;
+    });
+  };
+
+  const removeSubject = (subjectId) => {
+    setTemplateData(prev => {
+      const updated = { ...prev };
+      updated.subjects = (updated.subjects || []).filter(sub => sub.id !== subjectId);
+      return updated;
+    });
+  };
+
+  const updateSubjectField = (subjectId, key, value) => {
+    setTemplateData(prev => {
+      const updated = { ...prev };
+      updated.subjects = (updated.subjects || []).map(sub => 
+        sub.id === subjectId ? { ...sub, [key]: value } : sub
+      );
+      return updated;
+    });
+  };
+
+  const addSubjectTopic = (subjectId, defaultText = "") => {
+    setTemplateData(prev => {
+      const updated = { ...prev };
+      updated.subjects = (updated.subjects || []).map(sub => {
+        if (sub.id === subjectId) {
+          return {
+            ...sub,
+            topics: [...(sub.topics || []), { id: `topic_${Date.now()}`, text: defaultText, checked: false }]
+          };
+        }
+        return sub;
+      });
+      return updated;
+    });
+  };
+
+  const updateSubjectTopicText = (subjectId, topicId, text) => {
+    setTemplateData(prev => {
+      const updated = { ...prev };
+      updated.subjects = (updated.subjects || []).map(sub => {
+        if (sub.id === subjectId) {
+          return {
+            ...sub,
+            topics: (sub.topics || []).map(t => t.id === topicId ? { ...t, text } : t)
+          };
+        }
+        return sub;
+      });
+      return updated;
+    });
+  };
+
+  const removeSubjectTopic = (subjectId, topicId) => {
+    setTemplateData(prev => {
+      const updated = { ...prev };
+      updated.subjects = (updated.subjects || []).map(sub => {
+        if (sub.id === subjectId) {
+          return {
+            ...sub,
+            topics: (sub.topics || []).filter(t => t.id !== topicId)
+          };
+        }
+        return sub;
+      });
+      return updated;
+    });
+  };
+
+  const toggleSubjectTopic = (subjectId, topicId) => {
+    setTemplateData(prev => {
+      const updated = { ...prev };
+      updated.subjects = (updated.subjects || []).map(sub => {
+        if (sub.id === subjectId) {
+          return {
+            ...sub,
+            topics: (sub.topics || []).map(t => t.id === topicId ? { ...t, checked: !t.checked } : t)
+          };
+        }
+        return sub;
+      });
       return updated;
     });
   };
@@ -931,6 +1128,33 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
       const selfDone = (data.selfcare || []).filter(s => s.checked).length;
       return `Habits tracker progress:\nHealth: ${healthDone}/${data.health?.length || 0}\nWork: ${workDone}/${data.work?.length || 0}\nSelf-care: ${selfDone}/${data.selfcare?.length || 0}`;
     }
+    if (type === 'student') {
+      const tasksDone = (data.studyTasks || []).filter(t => t.checked).length;
+      return `Study Focus: ${data.focus || '-'}\nStudy tasks: ${tasksDone}/${data.studyTasks?.length || 0} complete`;
+    }
+    if (type === 'fitness') {
+      return `Workout: ${data.workout || '-'}\nWater intake: ${data.waterGlasses || 0} glasses`;
+    }
+    if (type === 'exam') {
+      const subs = data.subjects || [];
+      const totalTopics = subs.reduce((acc, sub) => acc + (sub.topics?.length || 0), 0);
+      const doneTopics = subs.reduce((acc, sub) => acc + (sub.topics?.filter(t => t.checked).length || 0), 0);
+      return `Exam Prep - Subjects: ${subs.length} | Topics: ${doneTopics}/${totalTopics} completed`;
+    }
+    if (type === 'travel') {
+      return `Travel destination: ${data.destination || '-'}\nPacking checklist: ${(data.packingList || []).filter(p => p.checked).length}/${data.packingList?.length || 0} items packed`;
+    }
+    if (type === 'shopping') {
+      const itemsDone = (data.items || []).filter(i => i.checked).length;
+      return `Shopping - Store: ${data.store || '-'}\nItems: ${itemsDone}/${data.items?.length || 0} bought`;
+    }
+    if (type === 'finance') {
+      return `Finance Tracker - Budget limit: ${data.budgetLimit || '-'}\nIncome: ${data.income || '-'} | Savings Goal: ${data.savingsGoal || '-'}`;
+    }
+    if (type === 'investment') {
+      const assetsDone = (data.assets || []).filter(a => a.checked).length;
+      return `Investment Goal: ${data.investmentGoal || '-'}\nDaily Invested: ${data.dailyAmount || '-'} | Assets checked: ${assetsDone}/${data.assets?.length || 0}`;
+    }
     return '';
   };
 
@@ -997,21 +1221,48 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
 
           {/* Hourly Timeline */}
           <Text style={[styles.templateSectionHeader, { color: '#0D47A1' }]}>Schedule Timeline</Text>
-          {Object.keys(templateData.schedule || {}).sort().map(time => (
-            <View key={time} style={styles.templateTimelineRow}>
-              <Text style={[styles.templateTimelineTime, { color: '#1A237E' }]}>{time}</Text>
+          {(templateData.schedule || []).map((item, idx) => (
+            <View key={idx} style={styles.templateTimelineRow}>
               <TextInput
-                value={templateData.schedule[time]}
+                value={item.time}
+                onChangeText={(val) => {
+                  const updatedSchedule = [...templateData.schedule];
+                  updatedSchedule[idx].time = val;
+                  updateTemplateField('schedule', null, updatedSchedule);
+                }}
+                placeholder="08:00"
+                placeholderTextColor="#90A4AE"
+                style={{ fontSize: 14, fontWeight: '800', width: 60, color: '#1A237E', borderBottomWidth: 1, borderBottomColor: '#90CAF9', paddingVertical: 4 }}
+              />
+              <TextInput
+                value={item.task}
                 onChangeText={(txt) => {
-                  const updatedSchedule = { ...templateData.schedule, [time]: txt };
+                  const updatedSchedule = [...templateData.schedule];
+                  updatedSchedule[idx].task = txt;
                   updateTemplateField('schedule', null, updatedSchedule);
                 }}
                 placeholder="Schedule task..."
                 placeholderTextColor="#90A4AE"
                 style={[styles.templateTimelineInput, { borderBottomColor: '#90CAF9', color: '#1C1C1C' }]}
               />
+              <Pressable onPress={() => {
+                const updatedSchedule = templateData.schedule.filter((_, i) => i !== idx);
+                updateTemplateField('schedule', null, updatedSchedule);
+              }} style={{ padding: 4 }}>
+                <Ionicons name="close" size={16} color="#EF4444" />
+              </Pressable>
             </View>
           ))}
+          <Pressable 
+            onPress={() => {
+              const updatedSchedule = [...(templateData.schedule || []), { time: "12:00", task: "" }];
+              updateTemplateField('schedule', null, updatedSchedule);
+            }}
+            style={[styles.templateAddListItemBtn, { borderColor: '#90CAF9' }]}
+          >
+            <Ionicons name="add" size={16} color="#0D47A1" />
+            <Text style={{ color: '#0D47A1', fontSize: 13, fontWeight: '700' }}>Add Time Slot</Text>
+          </Pressable>
 
           {/* Productivity rating */}
           <Text style={[styles.templateSectionHeader, { color: '#0D47A1' }]}>Productivity Score</Text>
@@ -1156,10 +1407,26 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
                 }}
                 placeholder="Something wonderful..."
                 placeholderTextColor="#F48FB1"
-                style={[styles.templateInputUnderline, { borderBottomColor: '#F48FB1', color: '#1C1C1C' }]}
+                style={[styles.templateInputUnderline, { borderBottomColor: '#F48FB1', color: '#1C1C1C', flex: 1 }]}
               />
+              <Pressable onPress={() => {
+                const updatedGrat = templateData.gratitude.filter((_, idx) => idx !== index);
+                updateTemplateField('gratitude', null, updatedGrat);
+              }} style={{ padding: 4 }}>
+                <Ionicons name="close" size={16} color="#EC407A" />
+              </Pressable>
             </View>
           ))}
+          <Pressable 
+            onPress={() => {
+              const updatedGrat = [...(templateData.gratitude || []), ""];
+              updateTemplateField('gratitude', null, updatedGrat);
+            }}
+            style={[styles.templateAddListItemBtn, { borderColor: '#F48FB1' }]}
+          >
+            <Ionicons name="add" size={16} color="#D81B60" />
+            <Text style={{ color: '#D81B60', fontSize: 13, fontWeight: '700' }}>Add Gratitude Entry</Text>
+          </Pressable>
 
           {/* Affirmation & Goals */}
           <Text style={[styles.templateSectionHeader, { color: '#880E4F', marginTop: 15 }]}>Daily Affirmations</Text>
@@ -1171,6 +1438,18 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
             style={[styles.templateInputBoxMultiline, { borderColor: '#F48FB1', color: '#1C1C1C' }]}
             multiline
             numberOfLines={2}
+          />
+
+          {/* Notes */}
+          <Text style={[styles.templateSectionHeader, { color: '#880E4F', marginTop: 15 }]}>Planner Notes</Text>
+          <TextInput
+            value={templateData.notes}
+            onChangeText={(txt) => updateTemplateField('notes', null, txt)}
+            placeholder="Jot down notes..."
+            placeholderTextColor="#F48FB1"
+            style={[styles.templateInputBoxMultiline, { borderColor: '#F48FB1', color: '#1C1C1C' }]}
+            multiline
+            numberOfLines={3}
           />
         </View>
       );
@@ -1222,21 +1501,48 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
 
           {/* Schedule */}
           <Text style={[styles.templateSectionHeader, { color: '#3E2723', marginTop: 15 }]}>Timeline</Text>
-          {Object.keys(templateData.schedule || {}).sort().map(time => (
-            <View key={time} style={styles.templateTimelineRow}>
-              <Text style={[styles.templateTimelineTime, { color: '#5D4037' }]}>{time}</Text>
+          {(templateData.schedule || []).map((item, idx) => (
+            <View key={idx} style={styles.templateTimelineRow}>
               <TextInput
-                value={templateData.schedule[time]}
+                value={item.time}
+                onChangeText={(val) => {
+                  const updatedSchedule = [...templateData.schedule];
+                  updatedSchedule[idx].time = val;
+                  updateTemplateField('schedule', null, updatedSchedule);
+                }}
+                placeholder="09:00"
+                placeholderTextColor="#8D6E63"
+                style={{ fontSize: 14, fontWeight: '800', width: 60, color: '#5D4037', borderBottomWidth: 1, borderBottomColor: '#D7CCC8', paddingVertical: 4 }}
+              />
+              <TextInput
+                value={item.task}
                 onChangeText={(txt) => {
-                  const updatedSchedule = { ...templateData.schedule, [time]: txt };
+                  const updatedSchedule = [...templateData.schedule];
+                  updatedSchedule[idx].task = txt;
                   updateTemplateField('schedule', null, updatedSchedule);
                 }}
                 placeholder="Schedule task..."
                 placeholderTextColor="#8D6E63"
                 style={[styles.templateTimelineInput, { borderBottomColor: '#D7CCC8', color: '#1C1C1C' }]}
               />
+              <Pressable onPress={() => {
+                const updatedSchedule = templateData.schedule.filter((_, i) => i !== idx);
+                updateTemplateField('schedule', null, updatedSchedule);
+              }} style={{ padding: 4 }}>
+                <Ionicons name="close" size={16} color="#8D6E63" />
+              </Pressable>
             </View>
           ))}
+          <Pressable 
+            onPress={() => {
+              const updatedSchedule = [...(templateData.schedule || []), { time: "12:00", task: "" }];
+              updateTemplateField('schedule', null, updatedSchedule);
+            }}
+            style={[styles.templateAddListItemBtn, { borderColor: '#D7CCC8' }]}
+          >
+            <Ionicons name="add" size={16} color="#5D4037" />
+            <Text style={{ color: '#5D4037', fontSize: 13, fontWeight: '700' }}>Add Time Slot</Text>
+          </Pressable>
 
           {/* Notes */}
           <Text style={[styles.templateSectionHeader, { color: '#3E2723', marginTop: 15 }]}>General Notes</Text>
@@ -1322,6 +1628,68 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
           ))}
           <Pressable 
             onPress={() => addTemplateListItem('afternoonSchedule', "New Task")}
+            style={[styles.templateAddListItemBtn, { borderColor: '#FFF59D' }]}
+          >
+            <Ionicons name="add" size={16} color="#F57F17" />
+            <Text style={{ color: '#F57F17', fontSize: 13, fontWeight: '700' }}>Add Task</Text>
+          </Pressable>
+
+          {/* Evening Schedule */}
+          <Text style={[styles.templateSectionHeader, { color: '#F57F17', marginTop: 15 }]}>🌆 Evening Schedule</Text>
+          {(templateData.eveningSchedule || []).map(item => (
+            <View key={item.id} style={styles.templateListItemRow}>
+              <Pressable onPress={() => toggleTemplateListItem('eveningSchedule', item.id)} style={{ padding: 4 }}>
+                <Ionicons 
+                  name={item.checked ? "checkbox" : "square-outline"} 
+                  size={20} 
+                  color="#FBC02D" 
+                />
+              </Pressable>
+              <TextInput
+                value={item.text}
+                onChangeText={(txt) => updateTemplateListItemText('eveningSchedule', item.id, txt)}
+                placeholder="Schedule item..."
+                placeholderTextColor="#FBC02D"
+                style={[styles.templateListItemInput, { color: '#1C1C1C' }, item.checked && { textDecorationLine: 'line-through', opacity: 0.6 }]}
+              />
+              <Pressable onPress={() => removeTemplateListItem('eveningSchedule', item.id)} style={{ padding: 4 }}>
+                <Ionicons name="close" size={16} color="#FBC02D" />
+              </Pressable>
+            </View>
+          ))}
+          <Pressable 
+            onPress={() => addTemplateListItem('eveningSchedule', "New Task")}
+            style={[styles.templateAddListItemBtn, { borderColor: '#FFF59D' }]}
+          >
+            <Ionicons name="add" size={16} color="#F57F17" />
+            <Text style={{ color: '#F57F17', fontSize: 13, fontWeight: '700' }}>Add Task</Text>
+          </Pressable>
+
+          {/* Night Schedule */}
+          <Text style={[styles.templateSectionHeader, { color: '#F57F17', marginTop: 15 }]}>🌙 Night Schedule</Text>
+          {(templateData.nightSchedule || []).map(item => (
+            <View key={item.id} style={styles.templateListItemRow}>
+              <Pressable onPress={() => toggleTemplateListItem('nightSchedule', item.id)} style={{ padding: 4 }}>
+                <Ionicons 
+                  name={item.checked ? "checkbox" : "square-outline"} 
+                  size={20} 
+                  color="#FBC02D" 
+                />
+              </Pressable>
+              <TextInput
+                value={item.text}
+                onChangeText={(txt) => updateTemplateListItemText('nightSchedule', item.id, txt)}
+                placeholder="Schedule item..."
+                placeholderTextColor="#FBC02D"
+                style={[styles.templateListItemInput, { color: '#1C1C1C' }, item.checked && { textDecorationLine: 'line-through', opacity: 0.6 }]}
+              />
+              <Pressable onPress={() => removeTemplateListItem('nightSchedule', item.id)} style={{ padding: 4 }}>
+                <Ionicons name="close" size={16} color="#FBC02D" />
+              </Pressable>
+            </View>
+          ))}
+          <Pressable 
+            onPress={() => addTemplateListItem('nightSchedule', "New Task")}
             style={[styles.templateAddListItemBtn, { borderColor: '#FFF59D' }]}
           >
             <Ionicons name="add" size={16} color="#F57F17" />
@@ -1438,6 +1806,762 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
             <Ionicons name="add" size={16} color="#2E7D32" />
             <Text style={{ color: '#2E7D32', fontSize: 13, fontWeight: '700' }}>Add Habit</Text>
           </Pressable>
+
+          {/* Notes */}
+          <Text style={[styles.templateSectionHeader, { color: '#1B5E20', marginTop: 15 }]}>Planner Notes</Text>
+          <TextInput
+            value={templateData.notes}
+            onChangeText={(txt) => updateTemplateField('notes', null, txt)}
+            placeholder="Jot down notes..."
+            placeholderTextColor="#A5D6A7"
+            style={[styles.templateInputBoxMultiline, { borderColor: '#A5D6A7', color: '#1C1C1C' }]}
+            multiline
+            numberOfLines={3}
+          />
+        </View>
+      );
+    }
+
+    if (templateType === 'student') {
+      return (
+        <View style={[styles.templateContainer, { backgroundColor: '#F3E5F5', borderColor: '#E1BEE7' }]}>
+          {/* Focus */}
+          <Text style={[styles.templateSectionHeader, { color: '#6A1B9A' }]}>🎓 Today's Study Focus</Text>
+          <TextInput
+            value={templateData.focus}
+            onChangeText={(txt) => updateTemplateField('focus', null, txt)}
+            placeholder="Main study goal today..."
+            placeholderTextColor="#BA68C8"
+            style={[styles.templateInputUnderline, { borderBottomColor: '#BA68C8', color: '#1C1C1C' }]}
+          />
+
+          {/* Classes / Lectures */}
+          <Text style={[styles.templateSectionHeader, { color: '#6A1B9A', marginTop: 15 }]}>📚 Classes & Lectures</Text>
+          {(templateData.classes || []).map((item, idx) => (
+            <View key={idx} style={styles.templateTimelineRow}>
+              <TextInput
+                value={item.time}
+                onChangeText={(val) => {
+                  const updatedClasses = [...templateData.classes];
+                  updatedClasses[idx].time = val;
+                  updateTemplateField('classes', null, updatedClasses);
+                }}
+                placeholder="09:00"
+                placeholderTextColor="#BA68C8"
+                style={{ fontSize: 14, fontWeight: '800', width: 60, color: '#6A1B9A', borderBottomWidth: 1, borderBottomColor: '#BA68C8', paddingVertical: 4 }}
+              />
+              <TextInput
+                value={item.text}
+                onChangeText={(txt) => {
+                  const updatedClasses = [...templateData.classes];
+                  updatedClasses[idx].text = txt;
+                  updateTemplateField('classes', null, updatedClasses);
+                }}
+                placeholder="Subject / Class name..."
+                placeholderTextColor="#BA68C8"
+                style={[styles.templateTimelineInput, { borderBottomColor: '#BA68C8', color: '#1C1C1C' }]}
+              />
+              <Pressable onPress={() => {
+                const updatedClasses = templateData.classes.filter((_, i) => i !== idx);
+                updateTemplateField('classes', null, updatedClasses);
+              }} style={{ padding: 4 }}>
+                <Ionicons name="close" size={16} color="#BA68C8" />
+              </Pressable>
+            </View>
+          ))}
+          <Pressable 
+            onPress={() => {
+              const updatedClasses = [...(templateData.classes || []), { time: "09:00", text: "" }];
+              updateTemplateField('classes', null, updatedClasses);
+            }}
+            style={[styles.templateAddListItemBtn, { borderColor: '#E1BEE7' }]}
+          >
+            <Ionicons name="add" size={16} color="#6A1B9A" />
+            <Text style={{ color: '#6A1B9A', fontSize: 13, fontWeight: '700' }}>Add Class</Text>
+          </Pressable>
+
+          {/* Study Tasks checklist */}
+          <Text style={[styles.templateSectionHeader, { color: '#6A1B9A', marginTop: 15 }]}>✏️ Study Tasks & Homework</Text>
+          {(templateData.studyTasks || []).map(item => (
+            <View key={item.id} style={styles.templateListItemRow}>
+              <Pressable onPress={() => toggleTemplateListItem('studyTasks', item.id)} style={{ padding: 4 }}>
+                <Ionicons 
+                  name={item.checked ? "checkbox" : "square-outline"} 
+                  size={20} 
+                  color="#8E24AA" 
+                />
+              </Pressable>
+              <TextInput
+                value={item.text}
+                onChangeText={(txt) => updateTemplateListItemText('studyTasks', item.id, txt)}
+                placeholder="Task description..."
+                placeholderTextColor="#BA68C8"
+                style={[styles.templateListItemInput, { color: '#1C1C1C' }, item.checked && { textDecorationLine: 'line-through', opacity: 0.6 }]}
+              />
+              <Pressable onPress={() => removeTemplateListItem('studyTasks', item.id)} style={{ padding: 4 }}>
+                <Ionicons name="close" size={16} color="#8E24AA" />
+              </Pressable>
+            </View>
+          ))}
+          <Pressable 
+            onPress={() => addTemplateListItem('studyTasks', "New Study Task")}
+            style={[styles.templateAddListItemBtn, { borderColor: '#E1BEE7' }]}
+          >
+            <Ionicons name="add" size={16} color="#6A1B9A" />
+            <Text style={{ color: '#6A1B9A', fontSize: 13, fontWeight: '700' }}>Add Task</Text>
+          </Pressable>
+
+          {/* Deadlines */}
+          <Text style={[styles.templateSectionHeader, { color: '#6A1B9A', marginTop: 15 }]}>⚠️ Upcoming Deadlines & Exams</Text>
+          {(templateData.deadlines || []).map((item, idx) => (
+            <View key={item.id} style={styles.templateListItemRow}>
+              <TextInput
+                value={item.text}
+                onChangeText={(txt) => {
+                  const updatedDeadlines = templateData.deadlines.map(d => d.id === item.id ? { ...d, text: txt } : d);
+                  updateTemplateField('deadlines', null, updatedDeadlines);
+                }}
+                placeholder="Assignment / Exam..."
+                placeholderTextColor="#BA68C8"
+                style={[styles.templateListItemInput, { color: '#1C1C1C', flex: 1 }]}
+              />
+              <Pressable onPress={() => {
+                const updatedDeadlines = templateData.deadlines.filter(d => d.id !== item.id);
+                updateTemplateField('deadlines', null, updatedDeadlines);
+              }} style={{ padding: 4 }}>
+                <Ionicons name="close" size={16} color="#8E24AA" />
+              </Pressable>
+            </View>
+          ))}
+          <Pressable 
+            onPress={() => {
+              const updatedDeadlines = [...(templateData.deadlines || []), { id: `d_${Date.now()}`, text: "" }];
+              updateTemplateField('deadlines', null, updatedDeadlines);
+            }}
+            style={[styles.templateAddListItemBtn, { borderColor: '#E1BEE7' }]}
+          >
+            <Ionicons name="add" size={16} color="#6A1B9A" />
+            <Text style={{ color: '#6A1B9A', fontSize: 13, fontWeight: '700' }}>Add Deadline</Text>
+          </Pressable>
+
+          {/* Notes */}
+          <Text style={[styles.templateSectionHeader, { color: '#6A1B9A', marginTop: 15 }]}>📝 Study Notes & Reminders</Text>
+          <TextInput
+            value={templateData.notes}
+            onChangeText={(txt) => updateTemplateField('notes', null, txt)}
+            placeholder="Jot down formulas, study notes..."
+            placeholderTextColor="#BA68C8"
+            style={[styles.templateInputBoxMultiline, { borderColor: '#E1BEE7', color: '#1C1C1C' }]}
+            multiline
+            numberOfLines={3}
+          />
+        </View>
+      );
+    }
+
+    if (templateType === 'fitness') {
+      return (
+        <View style={[styles.templateContainer, { backgroundColor: '#E0F2F1', borderColor: '#B2DFDB' }]}>
+          {/* Workout Target */}
+          <Text style={[styles.templateSectionHeader, { color: '#004D40' }]}>🏋️ Workout Target</Text>
+          <TextInput
+            value={templateData.workout}
+            onChangeText={(txt) => updateTemplateField('workout', null, txt)}
+            placeholder="Workout plan (e.g. Cardio / Leg Day)..."
+            placeholderTextColor="#80CBC4"
+            style={[styles.templateInputUnderline, { borderBottomColor: '#80CBC4', color: '#1C1C1C' }]}
+          />
+
+          {/* Water Intake */}
+          <Text style={[styles.templateSectionHeader, { color: '#004D40', marginTop: 15 }]}>💧 Water Intake (Glasses)</Text>
+          <View style={styles.templateStarsRow}>
+            {Array.from({ length: 8 }).map((_, i) => {
+              const isActive = (templateData.waterGlasses || 0) > i;
+              return (
+                <Pressable 
+                  key={i} 
+                  onPress={() => updateTemplateField('waterGlasses', null, i + 1)} 
+                  style={{ padding: 4 }}
+                >
+                  <Ionicons 
+                    name={isActive ? "water" : "water-outline"} 
+                    size={26} 
+                    color={isActive ? "#00BCD4" : "#80CBC4"} 
+                  />
+                </Pressable>
+              );
+            })}
+          </View>
+
+          {/* Calories and Weight */}
+          <View style={styles.templateGridTwoColumn}>
+            <View style={styles.templateGridCell}>
+              <Text style={[styles.templateGridLabel, { color: '#004D40' }]}>Calories Intake</Text>
+              <TextInput
+                value={templateData.calories}
+                onChangeText={(txt) => updateTemplateField('calories', null, txt)}
+                placeholder="e.g. 2000 kcal"
+                placeholderTextColor="#80CBC4"
+                style={[styles.templateInputBox, { borderColor: '#80CBC4', color: '#1C1C1C' }]}
+              />
+            </View>
+            <View style={styles.templateGridCell}>
+              <Text style={[styles.templateGridLabel, { color: '#004D40' }]}>Body Weight</Text>
+              <TextInput
+                value={templateData.weight}
+                onChangeText={(txt) => updateTemplateField('weight', null, txt)}
+                placeholder="e.g. 70 kg"
+                placeholderTextColor="#80CBC4"
+                style={[styles.templateInputBox, { borderColor: '#80CBC4', color: '#1C1C1C' }]}
+              />
+            </View>
+          </View>
+
+          {/* Energy level rating */}
+          <Text style={[styles.templateSectionHeader, { color: '#004D40', marginTop: 15 }]}>⚡ Energy Score</Text>
+          <View style={styles.templateStarsRow}>
+            {[1, 2, 3, 4, 5].map(star => (
+              <Pressable 
+                key={star} 
+                onPress={() => updateTemplateField('productivity', null, star)}
+                style={{ padding: 4 }}
+              >
+                <Ionicons 
+                  name={star <= (templateData.productivity || 0) ? "star" : "star-outline"} 
+                  size={28} 
+                  color="#FFB300" 
+                />
+              </Pressable>
+            ))}
+          </View>
+
+          {/* Notes */}
+          <Text style={[styles.templateSectionHeader, { color: '#004D40', marginTop: 15 }]}>📝 Workout Notes & Reflections</Text>
+          <TextInput
+            value={templateData.notes}
+            onChangeText={(txt) => updateTemplateField('notes', null, txt)}
+            placeholder="Jot down notes, stretch logs..."
+            placeholderTextColor="#80CBC4"
+            style={[styles.templateInputBoxMultiline, { borderColor: '#80CBC4', color: '#1C1C1C' }]}
+            multiline
+            numberOfLines={3}
+          />
+        </View>
+      );
+    }
+
+    if (templateType === 'exam') {
+      const subjectsList = templateData.subjects || [];
+      return (
+        <View style={[styles.templateContainer, { backgroundColor: '#FBE9E7', borderColor: '#FFAB91' }]}>
+          <Text style={[styles.templateSectionHeader, { color: '#BF360C', fontSize: 16, fontWeight: '900', marginBottom: 12 }]}>
+            🎓 Exam Subjects List
+          </Text>
+
+          {subjectsList.map((sub, sIdx) => (
+            <View 
+              key={sub.id} 
+              style={{
+                backgroundColor: '#FFFFFF',
+                borderRadius: 18,
+                padding: 14,
+                borderWidth: 1.5,
+                borderColor: '#FFAB91',
+                marginBottom: 16,
+              }}
+            >
+              {/* Header inside Card */}
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                <Text style={{ fontSize: 14, fontWeight: '800', color: '#BF360C' }}>
+                  Subject #{sIdx + 1}
+                </Text>
+                {subjectsList.length > 1 && (
+                  <Pressable onPress={() => removeSubject(sub.id)} style={{ padding: 4 }}>
+                    <Ionicons name="trash-outline" size={18} color="#EF5350" />
+                  </Pressable>
+                )}
+              </View>
+
+              {/* Subject Details Grid */}
+              <View style={styles.templateGridTwoColumn}>
+                <View style={styles.templateGridCell}>
+                  <Text style={[styles.templateGridLabel, { color: '#BF360C' }]}>Subject Name</Text>
+                  <TextInput
+                    value={sub.name}
+                    onChangeText={(txt) => updateSubjectField(sub.id, 'name', txt)}
+                    placeholder="e.g. Mathematics"
+                    placeholderTextColor="#FFAB91"
+                    style={[styles.templateInputBox, { borderColor: '#FFAB91', color: '#1C1C1C' }]}
+                  />
+                </View>
+                <View style={styles.templateGridCell}>
+                  <Text style={[styles.templateGridLabel, { color: '#BF360C' }]}>Exam Date</Text>
+                  <TextInput
+                    value={sub.examDate}
+                    onChangeText={(txt) => updateSubjectField(sub.id, 'examDate', txt)}
+                    placeholder="e.g. June 28"
+                    placeholderTextColor="#FFAB91"
+                    style={[styles.templateInputBox, { borderColor: '#FFAB91', color: '#1C1C1C' }]}
+                  />
+                </View>
+              </View>
+
+              {/* Study Hours Target */}
+              <View style={{ marginVertical: 8 }}>
+                <Text style={[styles.templateGridLabel, { color: '#BF360C' }]}>Study Hours Target</Text>
+                <TextInput
+                  value={String(sub.studyHours || '')}
+                  onChangeText={(txt) => {
+                    const val = parseInt(txt) || 0;
+                    updateSubjectField(sub.id, 'studyHours', val);
+                  }}
+                  keyboardType="numeric"
+                  placeholder="4"
+                  placeholderTextColor="#FFAB91"
+                  style={[styles.templateInputBox, { borderColor: '#FFAB91', color: '#1C1C1C' }]}
+                />
+              </View>
+
+              {/* Preparedness Score */}
+              <View style={{ marginVertical: 8 }}>
+                <Text style={[styles.templateGridLabel, { color: '#BF360C', marginBottom: 4 }]}>Preparedness Score</Text>
+                <View style={styles.templateStarsRow}>
+                  {[1, 2, 3, 4, 5].map(star => (
+                    <Pressable 
+                      key={star} 
+                      onPress={() => updateSubjectField(sub.id, 'productivity', star)}
+                      style={{ padding: 2 }}
+                    >
+                      <Ionicons 
+                        name={star <= (sub.productivity || 0) ? "star" : "star-outline"} 
+                        size={22} 
+                        color="#D84315" 
+                      />
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+
+              {/* Prepared Topics checklist */}
+              <Text style={[styles.templateSectionHeader, { color: '#BF360C', marginTop: 10, fontSize: 13 }]}>
+                ✏️ Topics to Prepare
+              </Text>
+              {(sub.topics || []).map(topic => (
+                <View key={topic.id} style={styles.templateListItemRow}>
+                  <Pressable onPress={() => toggleSubjectTopic(sub.id, topic.id)} style={{ padding: 4 }}>
+                    <Ionicons 
+                      name={topic.checked ? "checkbox" : "square-outline"} 
+                      size={20} 
+                      color="#BF360C" 
+                    />
+                  </Pressable>
+                  <TextInput
+                    value={topic.text}
+                    onChangeText={(txt) => updateSubjectTopicText(sub.id, topic.id, txt)}
+                    placeholder="Topic name..."
+                    placeholderTextColor="#FFAB91"
+                    style={[styles.templateListItemInput, { color: '#1C1C1C' }, topic.checked && { textDecorationLine: 'line-through', opacity: 0.6 }]}
+                  />
+                  <Pressable onPress={() => removeSubjectTopic(sub.id, topic.id)} style={{ padding: 4 }}>
+                    <Ionicons name="close" size={16} color="#BF360C" />
+                  </Pressable>
+                </View>
+              ))}
+              <Pressable 
+                onPress={() => addSubjectTopic(sub.id, "New Topic")}
+                style={[styles.templateAddListItemBtn, { borderColor: '#FFAB91', marginTop: 8 }]}
+              >
+                <Ionicons name="add" size={16} color="#BF360C" />
+                <Text style={{ color: '#BF360C', fontSize: 13, fontWeight: '700' }}>Add Topic</Text>
+              </Pressable>
+            </View>
+          ))}
+
+          {/* Add Subject Button */}
+          <Pressable 
+            onPress={addSubject}
+            style={[styles.templateAddListItemBtn, { borderColor: '#BF360C', backgroundColor: '#FFFFFF', borderStyle: 'solid', paddingVertical: 12, marginBottom: 15 }]}
+          >
+            <Ionicons name="add-circle" size={18} color="#BF360C" />
+            <Text style={{ color: '#BF360C', fontSize: 14, fontWeight: '800' }}>Add Subject</Text>
+          </Pressable>
+
+          {/* General Notes */}
+          <Text style={[styles.templateSectionHeader, { color: '#BF360C', marginTop: 10 }]}>📝 General Study Notes</Text>
+          <TextInput
+            value={templateData.notes}
+            onChangeText={(txt) => updateTemplateField('notes', null, txt)}
+            placeholder="Jot down formulas, notes, exam center details..."
+            placeholderTextColor="#FFAB91"
+            style={[styles.templateInputBoxMultiline, { borderColor: '#FFAB91', color: '#1C1C1C' }]}
+            multiline
+            numberOfLines={3}
+          />
+        </View>
+      );
+    }
+
+    if (templateType === 'travel') {
+      return (
+        <View style={[styles.templateContainer, { backgroundColor: '#E0F7FA', borderColor: '#80DEEA' }]}>
+          {/* Destination & Duration */}
+          <View style={styles.templateGridTwoColumn}>
+            <View style={styles.templateGridCell}>
+              <Text style={[styles.templateGridLabel, { color: '#006064' }]}>Destination</Text>
+              <TextInput
+                value={templateData.destination}
+                onChangeText={(txt) => updateTemplateField('destination', null, txt)}
+                placeholder="e.g. Paris, France"
+                placeholderTextColor="#80DEEA"
+                style={[styles.templateInputBox, { borderColor: '#80DEEA', color: '#1C1C1C' }]}
+              />
+            </View>
+            <View style={styles.templateGridCell}>
+              <Text style={[styles.templateGridLabel, { color: '#006064' }]}>Duration</Text>
+              <TextInput
+                value={templateData.duration}
+                onChangeText={(txt) => updateTemplateField('duration', null, txt)}
+                placeholder="e.g. 5 Days"
+                placeholderTextColor="#80DEEA"
+                style={[styles.templateInputBox, { borderColor: '#80DEEA', color: '#1C1C1C' }]}
+              />
+            </View>
+          </View>
+
+          {/* Packing List checklist */}
+          <Text style={[styles.templateSectionHeader, { color: '#006064' }]}>🎒 Packing List</Text>
+          {(templateData.packingList || []).map(item => (
+            <View key={item.id} style={styles.templateListItemRow}>
+              <Pressable onPress={() => toggleTemplateListItem('packingList', item.id)} style={{ padding: 4 }}>
+                <Ionicons 
+                  name={item.checked ? "checkbox" : "square-outline"} 
+                  size={20} 
+                  color="#006064" 
+                />
+              </Pressable>
+              <TextInput
+                value={item.text}
+                onChangeText={(txt) => updateTemplateListItemText('packingList', item.id, txt)}
+                placeholder="Item name..."
+                placeholderTextColor="#80DEEA"
+                style={[styles.templateListItemInput, { color: '#1C1C1C' }, item.checked && { textDecorationLine: 'line-through', opacity: 0.6 }]}
+              />
+              <Pressable onPress={() => removeTemplateListItem('packingList', item.id)} style={{ padding: 4 }}>
+                <Ionicons name="close" size={16} color="#006064" />
+              </Pressable>
+            </View>
+          ))}
+          <Pressable 
+            onPress={() => addTemplateListItem('packingList', "New Item")}
+            style={[styles.templateAddListItemBtn, { borderColor: '#80DEEA' }]}
+          >
+            <Ionicons name="add" size={16} color="#006064" />
+            <Text style={{ color: '#006064', fontSize: 13, fontWeight: '700' }}>Add Item</Text>
+          </Pressable>
+
+          {/* Itinerary Timeline */}
+          <Text style={[styles.templateSectionHeader, { color: '#006064', marginTop: 15 }]}>🗺️ Itinerary / Plans</Text>
+          {(templateData.itinerary || []).map((item, idx) => (
+            <View key={idx} style={styles.templateTimelineRow}>
+              <TextInput
+                value={item.time}
+                onChangeText={(val) => {
+                  const updatedItinerary = [...templateData.itinerary];
+                  updatedItinerary[idx].time = val;
+                  updateTemplateField('itinerary', null, updatedItinerary);
+                }}
+                placeholder="Day 1"
+                placeholderTextColor="#80DEEA"
+                style={{ fontSize: 14, fontWeight: '800', width: 60, color: '#006064', borderBottomWidth: 1, borderBottomColor: '#80DEEA', paddingVertical: 4 }}
+              />
+              <TextInput
+                value={item.task}
+                onChangeText={(txt) => {
+                  const updatedItinerary = [...templateData.itinerary];
+                  updatedItinerary[idx].task = txt;
+                  updateTemplateField('itinerary', null, updatedItinerary);
+                }}
+                placeholder="Plans..."
+                placeholderTextColor="#80DEEA"
+                style={[styles.templateTimelineInput, { borderBottomColor: '#80DEEA', color: '#1C1C1C' }]}
+              />
+              <Pressable onPress={() => {
+                const updatedItinerary = templateData.itinerary.filter((_, i) => i !== idx);
+                updateTemplateField('itinerary', null, updatedItinerary);
+              }} style={{ padding: 4 }}>
+                <Ionicons name="close" size={16} color="#006064" />
+              </Pressable>
+            </View>
+          ))}
+          <Pressable 
+            onPress={() => {
+              const updatedItinerary = [...(templateData.itinerary || []), { time: "Day 1", task: "" }];
+              updateTemplateField('itinerary', null, updatedItinerary);
+            }}
+            style={[styles.templateAddListItemBtn, { borderColor: '#80DEEA' }]}
+          >
+            <Ionicons name="add" size={16} color="#006064" />
+            <Text style={{ color: '#006064', fontSize: 13, fontWeight: '700' }}>Add Plan Slot</Text>
+          </Pressable>
+
+          {/* Notes */}
+          <Text style={[styles.templateSectionHeader, { color: '#006064', marginTop: 15 }]}>📝 Travel Notes & Details</Text>
+          <TextInput
+            value={templateData.notes}
+            onChangeText={(txt) => updateTemplateField('notes', null, txt)}
+            placeholder="Flights, hotels, budget references..."
+            placeholderTextColor="#80DEEA"
+            style={[styles.templateInputBoxMultiline, { borderColor: '#80DEEA', color: '#1C1C1C' }]}
+            multiline
+            numberOfLines={3}
+          />
+        </View>
+      );
+    }
+
+    if (templateType === 'shopping') {
+      return (
+        <View style={[styles.templateContainer, { backgroundColor: '#FFF8E1', borderColor: '#FFE082' }]}>
+          {/* Store Name & Budget Limit */}
+          <View style={styles.templateGridTwoColumn}>
+            <View style={styles.templateGridCell}>
+              <Text style={[styles.templateGridLabel, { color: '#E65100' }]}>Store / App</Text>
+              <TextInput
+                value={templateData.store}
+                onChangeText={(txt) => updateTemplateField('store', null, txt)}
+                placeholder="e.g. Costco / Amazon"
+                placeholderTextColor="#FFE082"
+                style={[styles.templateInputBox, { borderColor: '#FFE082', color: '#1C1C1C' }]}
+              />
+            </View>
+            <View style={styles.templateGridCell}>
+              <Text style={[styles.templateGridLabel, { color: '#E65100' }]}>Budget Limit</Text>
+              <TextInput
+                value={templateData.budget}
+                onChangeText={(txt) => updateTemplateField('budget', null, txt)}
+                placeholder="e.g. $100"
+                placeholderTextColor="#FFE082"
+                style={[styles.templateInputBox, { borderColor: '#FFE082', color: '#1C1C1C' }]}
+              />
+            </View>
+          </View>
+
+          {/* Shopping Checklist */}
+          <Text style={[styles.templateSectionHeader, { color: '#E65100' }]}>🛒 Shopping List Items</Text>
+          {(templateData.items || []).map(item => (
+            <View key={item.id} style={styles.templateListItemRow}>
+              <Pressable onPress={() => toggleTemplateListItem('items', item.id)} style={{ padding: 4 }}>
+                <Ionicons 
+                  name={item.checked ? "checkbox" : "square-outline"} 
+                  size={20} 
+                  color="#E65100" 
+                />
+              </Pressable>
+              <TextInput
+                value={item.text}
+                onChangeText={(txt) => updateTemplateListItemText('items', item.id, txt)}
+                placeholder="Item name / Qty..."
+                placeholderTextColor="#FFE082"
+                style={[styles.templateListItemInput, { color: '#1C1C1C' }, item.checked && { textDecorationLine: 'line-through', opacity: 0.6 }]}
+              />
+              <Pressable onPress={() => removeTemplateListItem('items', item.id)} style={{ padding: 4 }}>
+                <Ionicons name="close" size={16} color="#E65100" />
+              </Pressable>
+            </View>
+          ))}
+          <Pressable 
+            onPress={() => addTemplateListItem('items', "New Item")}
+            style={[styles.templateAddListItemBtn, { borderColor: '#FFE082' }]}
+          >
+            <Ionicons name="add" size={16} color="#E65100" />
+            <Text style={{ color: '#E65100', fontSize: 13, fontWeight: '700' }}>Add Item</Text>
+          </Pressable>
+
+          {/* Notes */}
+          <Text style={[styles.templateSectionHeader, { color: '#E65100', marginTop: 15 }]}>📝 Shopping Notes</Text>
+          <TextInput
+            value={templateData.notes}
+            onChangeText={(txt) => updateTemplateField('notes', null, txt)}
+            placeholder="Jot down store timing, coupons..."
+            placeholderTextColor="#FFE082"
+            style={[styles.templateInputBoxMultiline, { borderColor: '#FFE082', color: '#1C1C1C' }]}
+            multiline
+            numberOfLines={3}
+          />
+        </View>
+      );
+    }
+
+    if (templateType === 'finance') {
+      return (
+        <View style={[styles.templateContainer, { backgroundColor: '#E8F5E9', borderColor: '#A5D6A7' }]}>
+          {/* Income, Budget & Savings Goal */}
+          <View style={styles.templateGridTwoColumn}>
+            <View style={styles.templateGridCell}>
+              <Text style={[styles.templateGridLabel, { color: '#1B5E20' }]}>Income</Text>
+              <TextInput
+                value={templateData.income}
+                onChangeText={(txt) => updateTemplateField('income', null, txt)}
+                placeholder="e.g. $3000"
+                placeholderTextColor="#A5D6A7"
+                style={[styles.templateInputBox, { borderColor: '#A5D6A7', color: '#1C1C1C' }]}
+              />
+            </View>
+            <View style={styles.templateGridCell}>
+              <Text style={[styles.templateGridLabel, { color: '#1B5E20' }]}>Budget Limit</Text>
+              <TextInput
+                value={templateData.budgetLimit}
+                onChangeText={(txt) => updateTemplateField('budgetLimit', null, txt)}
+                placeholder="e.g. $1500"
+                placeholderTextColor="#A5D6A7"
+                style={[styles.templateInputBox, { borderColor: '#A5D6A7', color: '#1C1C1C' }]}
+              />
+            </View>
+          </View>
+          <View style={{ marginTop: 8 }}>
+            <Text style={[styles.templateGridLabel, { color: '#1B5E20' }]}>Savings Goal</Text>
+            <TextInput
+              value={templateData.savingsGoal}
+              onChangeText={(txt) => updateTemplateField('savingsGoal', null, txt)}
+              placeholder="e.g. $500"
+              placeholderTextColor="#A5D6A7"
+              style={[styles.templateInputBox, { borderColor: '#A5D6A7', color: '#1C1C1C' }]}
+            />
+          </View>
+
+          {/* Expense transactions checklist */}
+          <Text style={[styles.templateSectionHeader, { color: '#1B5E20', marginTop: 15 }]}>💸 Expense Tracker List</Text>
+          {(templateData.expenses || []).map(item => (
+            <View key={item.id} style={styles.templateListItemRow}>
+              <Pressable onPress={() => toggleTemplateListItem('expenses', item.id)} style={{ padding: 4 }}>
+                <Ionicons 
+                  name={item.checked ? "checkbox" : "square-outline"} 
+                  size={20} 
+                  color="#1B5E20" 
+                />
+              </Pressable>
+              <TextInput
+                value={item.text}
+                onChangeText={(txt) => updateTemplateListItemText('expenses', item.id, txt)}
+                placeholder="Expense item (e.g. Rent - $1000)..."
+                placeholderTextColor="#A5D6A7"
+                style={[styles.templateListItemInput, { color: '#1C1C1C' }, item.checked && { textDecorationLine: 'line-through', opacity: 0.6 }]}
+              />
+              <Pressable onPress={() => removeTemplateListItem('expenses', item.id)} style={{ padding: 4 }}>
+                <Ionicons name="close" size={16} color="#1B5E20" />
+              </Pressable>
+            </View>
+          ))}
+          <Pressable 
+            onPress={() => addTemplateListItem('expenses', "New Expense")}
+            style={[styles.templateAddListItemBtn, { borderColor: '#A5D6A7' }]}
+          >
+            <Ionicons name="add" size={16} color="#1B5E20" />
+            <Text style={{ color: '#1B5E20', fontSize: 13, fontWeight: '700' }}>Add Expense</Text>
+          </Pressable>
+
+          {/* Notes */}
+          <Text style={[styles.templateSectionHeader, { color: '#1B5E20', marginTop: 15 }]}>📝 Money Notes & Reminders</Text>
+          <TextInput
+            value={templateData.notes}
+            onChangeText={(txt) => updateTemplateField('notes', null, txt)}
+            placeholder="Jot down bills dates, financial summary..."
+            placeholderTextColor="#A5D6A7"
+            style={[styles.templateInputBoxMultiline, { borderColor: '#A5D6A7', color: '#1C1C1C' }]}
+            multiline
+            numberOfLines={3}
+          />
+        </View>
+      );
+    }
+
+    if (templateType === 'investment') {
+      return (
+        <View style={[styles.templateContainer, { backgroundColor: '#FFFDF0', borderColor: '#FFD700' }]}>
+          {/* Investment Goal & Daily Amount */}
+          <View style={styles.templateGridTwoColumn}>
+            <View style={styles.templateGridCell}>
+              <Text style={[styles.templateGridLabel, { color: '#6F5200' }]}>Investment Goal</Text>
+              <TextInput
+                value={templateData.investmentGoal}
+                onChangeText={(txt) => updateTemplateField('investmentGoal', null, txt)}
+                placeholder="e.g. Retirement / House"
+                placeholderTextColor="#D4AF37"
+                style={[styles.templateInputBox, { borderColor: '#FFD700', color: '#1C1C1C' }]}
+              />
+            </View>
+            <View style={styles.templateGridCell}>
+              <Text style={[styles.templateGridLabel, { color: '#6F5200' }]}>Amount Invested Today</Text>
+              <TextInput
+                value={templateData.dailyAmount}
+                onChangeText={(txt) => updateTemplateField('dailyAmount', null, txt)}
+                placeholder="e.g. $50"
+                placeholderTextColor="#D4AF37"
+                style={[styles.templateInputBox, { borderColor: '#FFD700', color: '#1C1C1C' }]}
+              />
+            </View>
+          </View>
+
+          {/* Checklist of assets */}
+          <Text style={[styles.templateSectionHeader, { color: '#6F5200' }]}>💰 Assets Checklist (Investments)</Text>
+          {(templateData.assets || []).map(item => (
+            <View key={item.id} style={styles.templateListItemRow}>
+              <Pressable onPress={() => toggleTemplateListItem('assets', item.id)} style={{ padding: 4 }}>
+                <Ionicons 
+                  name={item.checked ? "checkbox" : "square-outline"} 
+                  size={20} 
+                  color="#6F5200" 
+                />
+              </Pressable>
+              <TextInput
+                value={item.text}
+                onChangeText={(txt) => updateTemplateListItemText('assets', item.id, txt)}
+                placeholder="Asset item (e.g. Stocks - $20)..."
+                placeholderTextColor="#D4AF37"
+                style={[styles.templateListItemInput, { color: '#1C1C1C' }, item.checked && { textDecorationLine: 'line-through', opacity: 0.6 }]}
+              />
+              <Pressable onPress={() => removeTemplateListItem('assets', item.id)} style={{ padding: 4 }}>
+                <Ionicons name="close" size={16} color="#6F5200" />
+              </Pressable>
+            </View>
+          ))}
+          <Pressable 
+            onPress={() => addTemplateListItem('assets', "New Asset")}
+            style={[styles.templateAddListItemBtn, { borderColor: '#FFD700' }]}
+          >
+            <Ionicons name="add" size={16} color="#6F5200" />
+            <Text style={{ color: '#6F5200', fontSize: 13, fontWeight: '700' }}>Add Asset</Text>
+          </Pressable>
+
+          {/* Investment Discipline Score */}
+          <Text style={[styles.templateSectionHeader, { color: '#6F5200', marginTop: 15 }]}>⭐ Discipline / Confidence Score</Text>
+          <View style={styles.templateStarsRow}>
+            {[1, 2, 3, 4, 5].map(star => (
+              <Pressable 
+                key={star} 
+                onPress={() => updateTemplateField('productivity', null, star)}
+                style={{ padding: 4 }}
+              >
+                <Ionicons 
+                  name={star <= (templateData.productivity || 0) ? "star" : "star-outline"} 
+                  size={28} 
+                  color="#FFB300" 
+                />
+              </Pressable>
+            ))}
+          </View>
+
+          {/* Notes */}
+          <Text style={[styles.templateSectionHeader, { color: '#6F5200', marginTop: 15 }]}>📝 Investment Notes & Insights</Text>
+          <TextInput
+            value={templateData.notes}
+            onChangeText={(txt) => updateTemplateField('notes', null, txt)}
+            placeholder="Market insights, allocation breakdown..."
+            placeholderTextColor="#D4AF37"
+            style={[styles.templateInputBoxMultiline, { borderColor: '#FFD700', color: '#1C1C1C' }]}
+            multiline
+            numberOfLines={3}
+          />
         </View>
       );
     }
@@ -2150,6 +3274,146 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
                   <Text style={[styles.templateCardTitle, { color: '#1B5E20' }]}>Habit Tracker Grid</Text>
                   <Text style={[styles.templateCardDesc, { color: '#2E7D32' }]}>
                     Multiple grouped habit checklists: Health, Work, and Self-Care grids.
+                  </Text>
+                </View>
+              </Pressable>
+
+              {/* Template 6: Student */}
+              <Pressable 
+                onPress={() => handleSelectTemplate('student')}
+                style={({ pressed }) => [
+                  styles.templateCardOption,
+                  { borderColor: '#E1BEE7', backgroundColor: '#F3E5F5' },
+                  pressed && { opacity: 0.8 }
+                ]}
+              >
+                <View style={styles.templateCardIconCircle}>
+                  <Ionicons name="school-outline" size={24} color="#6A1B9A" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.templateCardTitle, { color: '#6A1B9A' }]}>Student Planner</Text>
+                  <Text style={[styles.templateCardDesc, { color: '#8E24AA' }]}>
+                    Today's study focus, class schedule, tasks & homework checklists, upcoming deadlines & exam log.
+                  </Text>
+                </View>
+              </Pressable>
+
+              {/* Template 7: Fitness */}
+              <Pressable 
+                onPress={() => handleSelectTemplate('fitness')}
+                style={({ pressed }) => [
+                  styles.templateCardOption,
+                  { borderColor: '#B2DFDB', backgroundColor: '#E0F2F1' },
+                  pressed && { opacity: 0.8 }
+                ]}
+              >
+                <View style={styles.templateCardIconCircle}>
+                  <Ionicons name="fitness-outline" size={24} color="#004D40" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.templateCardTitle, { color: '#004D40' }]}>Fitness & Health Tracker</Text>
+                  <Text style={[styles.templateCardDesc, { color: '#00796B' }]}>
+                    Workout plans, interactive water intake log, body weight tracker, calories count & energy rating.
+                  </Text>
+                </View>
+              </Pressable>
+
+              {/* Template 8: Exam Prep */}
+              <Pressable 
+                onPress={() => handleSelectTemplate('exam')}
+                style={({ pressed }) => [
+                  styles.templateCardOption,
+                  { borderColor: '#FFAB91', backgroundColor: '#FBE9E7' },
+                  pressed && { opacity: 0.8 }
+                ]}
+              >
+                <View style={styles.templateCardIconCircle}>
+                  <Ionicons name="document-text-outline" size={24} color="#D84315" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.templateCardTitle, { color: '#BF360C' }]}>Exam Preparation Planner</Text>
+                  <Text style={[styles.templateCardDesc, { color: '#D84315' }]}>
+                    Subject title, exam date, topics checklists, study hours targets & preparedness index.
+                  </Text>
+                </View>
+              </Pressable>
+
+              {/* Template 9: Travel */}
+              <Pressable 
+                onPress={() => handleSelectTemplate('travel')}
+                style={({ pressed }) => [
+                  styles.templateCardOption,
+                  { borderColor: '#80DEEA', backgroundColor: '#E0F7FA' },
+                  pressed && { opacity: 0.8 }
+                ]}
+              >
+                <View style={styles.templateCardIconCircle}>
+                  <Ionicons name="airplane-outline" size={24} color="#006064" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.templateCardTitle, { color: '#006064' }]}>Travel & Itinerary Planner</Text>
+                  <Text style={[styles.templateCardDesc, { color: '#00838F' }]}>
+                    Destination logs, travel duration, itinerary schedules and packing list trackers.
+                  </Text>
+                </View>
+              </Pressable>
+
+              {/* Template 10: Shopping */}
+              <Pressable 
+                onPress={() => handleSelectTemplate('shopping')}
+                style={({ pressed }) => [
+                  styles.templateCardOption,
+                  { borderColor: '#FFE082', backgroundColor: '#FFF8E1' },
+                  pressed && { opacity: 0.8 }
+                ]}
+              >
+                <View style={styles.templateCardIconCircle}>
+                  <Ionicons name="cart-outline" size={24} color="#E65100" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.templateCardTitle, { color: '#E65100' }]}>Shopping & Grocery List</Text>
+                  <Text style={[styles.templateCardDesc, { color: '#F57C00' }]}>
+                    Store or app name, total shopping budget limits and item checklist tracker.
+                  </Text>
+                </View>
+              </Pressable>
+
+              {/* Template 11: Finance */}
+              <Pressable 
+                onPress={() => handleSelectTemplate('finance')}
+                style={({ pressed }) => [
+                  styles.templateCardOption,
+                  { borderColor: '#A5D6A7', backgroundColor: '#E8F5E9' },
+                  pressed && { opacity: 0.8 }
+                ]}
+              >
+                <View style={styles.templateCardIconCircle}>
+                  <Ionicons name="cash-outline" size={24} color="#1B5E20" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.templateCardTitle, { color: '#1B5E20' }]}>Personal Finance & Expenses</Text>
+                  <Text style={[styles.templateCardDesc, { color: '#2E7D32' }]}>
+                    Income and savings goals tracker, budget threshold & expense transaction checkers.
+                  </Text>
+                </View>
+              </Pressable>
+
+              {/* Template 12: Investment */}
+              <Pressable 
+                onPress={() => handleSelectTemplate('investment')}
+                style={({ pressed }) => [
+                  styles.templateCardOption,
+                  { borderColor: '#FFD700', backgroundColor: '#FFFDF0' },
+                  pressed && { opacity: 0.8 }
+                ]}
+              >
+                <View style={styles.templateCardIconCircle}>
+                  <Ionicons name="trending-up-outline" size={24} color="#6F5200" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.templateCardTitle, { color: '#6F5200' }]}>Daily Investment Tracker</Text>
+                  <Text style={[styles.templateCardDesc, { color: '#8A6D00' }]}>
+                    Daily investment goals, asset checklists, amount invested today & confidence rating.
                   </Text>
                 </View>
               </Pressable>

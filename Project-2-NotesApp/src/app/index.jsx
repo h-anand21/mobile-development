@@ -16,6 +16,60 @@ const STORAGE_KEYS = {
   LAST_RESET_DATE: 'wordsy_last_reset_date',
 };
 
+const localGenerateTemplateSummary = (type, data) => {
+  if (type === 'nutrition') {
+    const mealSum = `Meals: B: ${data.meals?.breakfast || '-'}, L: ${data.meals?.lunch || '-'}, D: ${data.meals?.dinner || '-'}`;
+    const prioritySum = data.priorities ? `Priorities: ${data.priorities}` : '';
+    return `${mealSum}\n${prioritySum}\nProductivity: ${'⭐'.repeat(data.productivity || 0)}`;
+  }
+  if (type === 'wellness') {
+    const moodSum = `Mood: ${data.mood?.toUpperCase() || '-'}`;
+    const sleepSum = `Sleep: ${data.sleepHours || 0} hours`;
+    const grats = (data.gratitude || []).filter(g => g.trim() !== '').map(g => `- ${g}`).join('\n');
+    return `${moodSum} | ${sleepSum}\n${grats ? 'Gratitude:\n' + grats : ''}`;
+  }
+  if (type === 'minimal') {
+    return `Focus: ${data.focus || '-'}\nSchedule and Todo checklist`;
+  }
+  if (type === 'cute') {
+    return `Focus: ${data.focus || '-'}\nCute organizer schedule and goals`;
+  }
+  if (type === 'habits') {
+    const healthDone = (data.health || []).filter(h => h.checked).length;
+    const workDone = (data.work || []).filter(w => w.checked).length;
+    const selfDone = (data.selfcare || []).filter(s => s.checked).length;
+    return `Habits tracker progress:\nHealth: ${healthDone}/${data.health?.length || 0}\nWork: ${workDone}/${data.work?.length || 0}\nSelf-care: ${selfDone}/${data.selfcare?.length || 0}`;
+  }
+  if (type === 'student') {
+    const tasksDone = (data.studyTasks || []).filter(t => t.checked).length;
+    return `Study Focus: ${data.focus || '-'}\nStudy tasks: ${tasksDone}/${data.studyTasks?.length || 0} complete`;
+  }
+  if (type === 'fitness') {
+    return `Workout: ${data.workout || '-'}\nWater intake: ${data.waterGlasses || 0} glasses`;
+  }
+  if (type === 'exam') {
+    const subs = data.subjects || [];
+    const totalTopics = subs.reduce((acc, sub) => acc + (sub.topics?.length || 0), 0);
+    const doneTopics = subs.reduce((acc, sub) => acc + (sub.topics?.filter(t => t.checked).length || 0), 0);
+    return `Exam Prep - Subjects: ${subs.length} | Topics: ${doneTopics}/${totalTopics} completed`;
+  }
+  if (type === 'travel') {
+    return `Travel destination: ${data.destination || '-'}\nPacking checklist: ${(data.packingList || []).filter(p => p.checked).length}/${data.packingList?.length || 0} items packed`;
+  }
+  if (type === 'shopping') {
+    const itemsDone = (data.items || []).filter(i => i.checked).length;
+    return `Shopping - Store: ${data.store || '-'}\nItems: ${itemsDone}/${data.items?.length || 0} bought`;
+  }
+  if (type === 'finance') {
+    return `Finance Tracker - Budget limit: ${data.budgetLimit || '-'}\nIncome: ${data.income || '-'} | Savings Goal: ${data.savingsGoal || '-'}`;
+  }
+  if (type === 'investment') {
+    const assetsDone = (data.assets || []).filter(a => a.checked).length;
+    return `Investment Goal: ${data.investmentGoal || '-'}\nDaily Invested: ${data.dailyAmount || '-'} | Assets checked: ${assetsDone}/${data.assets?.length || 0}`;
+  }
+  return '';
+};
+
 export default function App() {
   const systemScheme = useColorScheme();
   const [isDark, setIsDark] = useState(systemScheme === 'dark');
@@ -103,6 +157,45 @@ export default function App() {
                   checklist: updatedChecklist,
                   content: updatedContent,
                 };
+              } else if (note.noteType === 'template' && note.templateData) {
+                const updatedData = { ...note.templateData };
+                let dataChanged = false;
+                const checkboxSections = [
+                  'morningHabits', 'todo', 'goals', 'afternoonSchedule', 
+                  'eveningSchedule', 'nightSchedule',
+                  'health', 'work', 'selfcare', 'studyTasks', 
+                  'packingList', 'items', 'expenses', 'assets'
+                ];
+                checkboxSections.forEach(section => {
+                  if (updatedData[section] && Array.isArray(updatedData[section])) {
+                    updatedData[section] = updatedData[section].map(item => ({ ...item, checked: false }));
+                    dataChanged = true;
+                  }
+                });
+
+                // Reset exam subjects topics
+                if (updatedData.subjects && Array.isArray(updatedData.subjects)) {
+                  updatedData.subjects = updatedData.subjects.map(sub => {
+                    if (sub.topics && Array.isArray(sub.topics)) {
+                      return {
+                        ...sub,
+                        topics: sub.topics.map(item => ({ ...item, checked: false }))
+                      };
+                    }
+                    return sub;
+                  });
+                  dataChanged = true;
+                }
+
+                if (dataChanged) {
+                  resetDone = true;
+                  const updatedContent = localGenerateTemplateSummary(note.templateType, updatedData);
+                  return {
+                    ...note,
+                    templateData: updatedData,
+                    content: updatedContent
+                  };
+                }
               }
             }
             return note;

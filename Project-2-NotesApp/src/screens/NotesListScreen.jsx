@@ -185,6 +185,33 @@ export default function NotesListScreen({
       const selfDone = (data.selfcare || []).filter(s => s.checked).length;
       return `Habits tracker progress:\nHealth: ${healthDone}/${data.health?.length || 0}\nWork: ${workDone}/${data.work?.length || 0}\nSelf-care: ${selfDone}/${data.selfcare?.length || 0}`;
     }
+    if (type === 'student') {
+      const tasksDone = (data.studyTasks || []).filter(t => t.checked).length;
+      return `Study Focus: ${data.focus || '-'}\nStudy tasks: ${tasksDone}/${data.studyTasks?.length || 0} complete`;
+    }
+    if (type === 'fitness') {
+      return `Workout: ${data.workout || '-'}\nWater intake: ${data.waterGlasses || 0} glasses`;
+    }
+    if (type === 'exam') {
+      const subs = data.subjects || [];
+      const totalTopics = subs.reduce((acc, sub) => acc + (sub.topics?.length || 0), 0);
+      const doneTopics = subs.reduce((acc, sub) => acc + (sub.topics?.filter(t => t.checked).length || 0), 0);
+      return `Exam Prep - Subjects: ${subs.length} | Topics: ${doneTopics}/${totalTopics} completed`;
+    }
+    if (type === 'travel') {
+      return `Travel destination: ${data.destination || '-'}\nPacking checklist: ${(data.packingList || []).filter(p => p.checked).length}/${data.packingList?.length || 0} items packed`;
+    }
+    if (type === 'shopping') {
+      const itemsDone = (data.items || []).filter(i => i.checked).length;
+      return `Shopping - Store: ${data.store || '-'}\nItems: ${itemsDone}/${data.items?.length || 0} bought`;
+    }
+    if (type === 'finance') {
+      return `Finance Tracker - Budget limit: ${data.budgetLimit || '-'}\nIncome: ${data.income || '-'} | Savings Goal: ${data.savingsGoal || '-'}`;
+    }
+    if (type === 'investment') {
+      const assetsDone = (data.assets || []).filter(a => a.checked).length;
+      return `Investment Goal: ${data.investmentGoal || '-'}\nDaily Invested: ${data.dailyAmount || '-'} | Assets checked: ${assetsDone}/${data.assets?.length || 0}`;
+    }
     return '';
   };
 
@@ -226,6 +253,51 @@ export default function NotesListScreen({
     onUpdateNote(updatedNote);
   };
 
+  const handleToggleSubjectTopic = (subjectId, topicId) => {
+    if (!selectedNote || !onUpdateNote) return;
+    const updatedSubjects = selectedNote.templateData.subjects.map(sub => {
+      if (sub.id === subjectId) {
+        return {
+          ...sub,
+          topics: sub.topics.map(t => t.id === topicId ? { ...t, checked: !t.checked } : t)
+        };
+      }
+      return sub;
+    });
+    const updatedData = {
+      ...selectedNote.templateData,
+      subjects: updatedSubjects
+    };
+    const updatedNote = {
+      ...selectedNote,
+      templateData: updatedData,
+      content: generateTemplateSummary(selectedNote.templateType, updatedData)
+    };
+    setSelectedNote(updatedNote);
+    onUpdateNote(updatedNote);
+  };
+
+  const handleUpdateSubjectField = (subjectId, key, value) => {
+    if (!selectedNote || !onUpdateNote) return;
+    const updatedSubjects = selectedNote.templateData.subjects.map(sub => {
+      if (sub.id === subjectId) {
+        return { ...sub, [key]: value };
+      }
+      return sub;
+    });
+    const updatedData = {
+      ...selectedNote.templateData,
+      subjects: updatedSubjects
+    };
+    const updatedNote = {
+      ...selectedNote,
+      templateData: updatedData,
+      content: generateTemplateSummary(selectedNote.templateType, updatedData)
+    };
+    setSelectedNote(updatedNote);
+    onUpdateNote(updatedNote);
+  };
+
   const renderSpiralSpine = () => {
     const loops = Array.from({ length: 12 });
     return (
@@ -254,6 +326,20 @@ export default function NotesListScreen({
           return [styles.modalPaper, { backgroundColor: '#FFFDE7', borderRadius: 28, transform: [{ rotate: '-1.5deg' }] }];
         case 'habits':
           return [styles.modalPaper, { backgroundColor: '#E8F5E9', borderRadius: 16, transform: [{ rotate: '0deg' }] }];
+        case 'student':
+          return [styles.modalPaper, { backgroundColor: '#F3E5F5', borderRadius: 16, transform: [{ rotate: '0deg' }] }];
+        case 'fitness':
+          return [styles.modalPaper, { backgroundColor: '#E0F2F1', borderRadius: 16, transform: [{ rotate: '0deg' }] }];
+        case 'exam':
+          return [styles.modalPaper, { backgroundColor: '#FBE9E7', borderRadius: 24, transform: [{ rotate: '1.2deg' }] }];
+        case 'travel':
+          return [styles.modalPaper, { backgroundColor: '#E0F7FA', borderRadius: 16, transform: [{ rotate: '0deg' }] }];
+        case 'shopping':
+          return [styles.modalPaper, { backgroundColor: '#FFF8E1', borderRadius: 28, transform: [{ rotate: '-1.5deg' }] }];
+        case 'finance':
+          return [styles.modalPaper, { backgroundColor: '#E8F5E9', borderRadius: 16, transform: [{ rotate: '0deg' }] }];
+        case 'investment':
+          return [styles.modalPaper, { backgroundColor: '#FFFDF0', borderRadius: 16, transform: [{ rotate: '0deg' }] }];
         default:
           return styles.modalPaper;
       }
@@ -299,14 +385,14 @@ export default function NotesListScreen({
 
             <View style={styles.detailSection}>
               <Text style={styles.notebookSectionTitle}>⏰ TIMELINE SCHEDULE</Text>
-              {Object.keys(data.schedule || {}).sort().map(time => {
-                const isNotEmpty = !!data.schedule[time];
+              {(data.schedule || []).map((item, idx) => {
+                const isNotEmpty = !!item.task;
                 return (
-                  <View key={time} style={styles.timelineRow}>
-                    <Text style={styles.timelineTimeText}>{time}</Text>
+                  <View key={idx} style={styles.timelineRow}>
+                    <Text style={styles.timelineTimeText}>{item.time}</Text>
                     <View style={styles.timelineRuledLine}>
                       <Text selectable={true} style={[styles.timelineContentText, !isNotEmpty && { color: '#B0BEC5', fontStyle: 'italic' }]}>
-                        {data.schedule[time] || "Free Slot"}
+                        {item.task || "Free Slot"}
                       </Text>
                     </View>
                   </View>
@@ -458,6 +544,13 @@ export default function NotesListScreen({
               <Text selectable={true} style={styles.affirmationText}>"{data.affirmations}"</Text>
             </View>
           ) : null}
+
+          {data.notes ? (
+            <View style={styles.detailSection}>
+              <Text style={[styles.notebookSectionTitle, { color: '#880E4F' }]}>📝 PLANNER NOTES</Text>
+              <Text selectable={true} style={styles.handwrittenText}>{data.notes}</Text>
+            </View>
+          ) : null}
         </View>
       );
     }
@@ -495,13 +588,13 @@ export default function NotesListScreen({
 
           <View style={styles.detailSection}>
             <Text style={styles.minimalSectionTitle}>TIMELINE</Text>
-            {Object.keys(data.schedule || {}).sort().map(time => {
-              const hasTask = !!data.schedule[time];
+            {(data.schedule || []).map((item, idx) => {
+              const hasTask = !!item.task;
               return (
-                <View key={time} style={styles.minimalScheduleRow}>
-                  <Text style={styles.minimalScheduleTime}>{time}</Text>
+                <View key={idx} style={styles.minimalScheduleRow}>
+                  <Text style={styles.minimalScheduleTime}>{item.time}</Text>
                   <Text selectable={true} style={[styles.minimalScheduleTask, !hasTask && { color: '#BCAAA4', fontStyle: 'italic' }]}>
-                    {data.schedule[time] || "Empty"}
+                    {item.task || "Empty"}
                   </Text>
                 </View>
               );
@@ -572,6 +665,52 @@ export default function NotesListScreen({
             ))}
           </View>
 
+          <View style={styles.detailSection}>
+            <Text style={styles.cuteSectionTitle}>🌆 Evening Schedule</Text>
+            {(data.eveningSchedule || []).map(item => (
+              <Pressable
+                key={item.id}
+                onPress={() => handleToggleTemplateCheckbox('eveningSchedule', item.id)}
+                style={styles.cuteCheckboxRow}
+              >
+                <Ionicons
+                  name={item.checked ? "checkbox" : "square-outline"}
+                  size={20}
+                  color="#FBC02D"
+                />
+                <Text style={[
+                  styles.cuteCheckboxText,
+                  item.checked && { textDecorationLine: 'line-through', opacity: 0.5 }
+                ]}>
+                  {item.text}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
+          <View style={styles.detailSection}>
+            <Text style={styles.cuteSectionTitle}>🌙 Night Schedule</Text>
+            {(data.nightSchedule || []).map(item => (
+              <Pressable
+                key={item.id}
+                onPress={() => handleToggleTemplateCheckbox('nightSchedule', item.id)}
+                style={styles.cuteCheckboxRow}
+              >
+                <Ionicons
+                  name={item.checked ? "checkbox" : "square-outline"}
+                  size={20}
+                  color="#FBC02D"
+                />
+                <Text style={[
+                  styles.cuteCheckboxText,
+                  item.checked && { textDecorationLine: 'line-through', opacity: 0.5 }
+                ]}>
+                  {item.text}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
           {data.notes ? (
             <View style={styles.cuteNotesCard}>
               <Text style={styles.cuteSectionTitle}>📝 Planner Notes</Text>
@@ -621,6 +760,524 @@ export default function NotesListScreen({
               </View>
             );
           })}
+          {data.notes ? (
+            <View style={[styles.habitGroupCard, { borderColor: '#A5D6A7' }]}>
+              <Text style={[styles.habitGroupTitle, { color: '#1B5E20' }]}>📝 PLANNER NOTES</Text>
+              <Text selectable={true} style={styles.handwrittenText}>{data.notes}</Text>
+            </View>
+          ) : null}
+        </View>
+      );
+    }
+
+    if (type === 'student') {
+      return (
+        <View style={styles.studentDetailContainer}>
+          {renderSpiralSpine()}
+          <View style={[styles.ruledContent, { borderLeftColor: '#CE93D8' }]}>
+            <View style={styles.studentFocusContainer}>
+              <Text style={styles.studentFocusLabel}>🎓 TODAY'S STUDY FOCUS</Text>
+              <Text selectable={true} style={styles.studentFocusText}>{data.focus || "No study focus set."}</Text>
+            </View>
+
+            <View style={styles.detailSection}>
+              <Text style={[styles.notebookSectionTitle, { color: '#6A1B9A' }]}>📚 CLASSES & LECTURES</Text>
+              {(data.classes || []).map((item, idx) => {
+                const isNotEmpty = !!item.text;
+                return (
+                  <View key={idx} style={styles.timelineRow}>
+                    <Text style={[styles.timelineTimeText, { color: '#6A1B9A', width: 50 }]}>{item.time}</Text>
+                    <View style={[styles.timelineRuledLine, { borderBottomColor: '#E1BEE7' }]}>
+                      <Text selectable={true} style={[styles.timelineContentText, !isNotEmpty && { color: '#BA68C8', fontStyle: 'italic' }]}>
+                        {item.text || "No Class"}
+                      </Text>
+                    </View>
+                  </View>
+                );
+              })}
+              {(!data.classes || data.classes.length === 0) && (
+                <Text style={styles.habitEmptyText}>No classes today.</Text>
+              )}
+            </View>
+
+            <View style={styles.detailSection}>
+              <Text style={[styles.notebookSectionTitle, { color: '#6A1B9A' }]}>✏️ STUDY TASKS & HOMEWORK</Text>
+              {(data.studyTasks || []).map(item => (
+                <Pressable
+                  key={item.id}
+                  onPress={() => handleToggleTemplateCheckbox('studyTasks', item.id)}
+                  style={styles.wellnessHabitRow}
+                >
+                  <Ionicons
+                    name={item.checked ? "checkbox" : "square-outline"}
+                    size={20}
+                    color="#8E24AA"
+                  />
+                  <Text style={[
+                    styles.wellnessHabitText,
+                    { color: '#4A148C' },
+                    item.checked && { textDecorationLine: 'line-through', opacity: 0.6 }
+                  ]}>
+                    {item.text}
+                  </Text>
+                </Pressable>
+              ))}
+              {(!data.studyTasks || data.studyTasks.length === 0) && (
+                <Text style={styles.habitEmptyText}>No study tasks listed.</Text>
+              )}
+            </View>
+
+            <View style={styles.detailSection}>
+              <Text style={[styles.notebookSectionTitle, { color: '#6A1B9A' }]}>⚠️ DEADLINES & EXAMS</Text>
+              {(data.deadlines || []).map((item, idx) => {
+                if (!item.text || item.text.trim() === '') return null;
+                return (
+                  <View key={item.id || idx} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginVertical: 4 }}>
+                    <Ionicons name="alert-circle-outline" size={16} color="#BA68C8" />
+                    <Text selectable={true} style={[styles.timelineContentText, { color: '#4A148C' }]}>
+                      {item.text}
+                    </Text>
+                  </View>
+                );
+              })}
+              {(!data.deadlines || data.deadlines.length === 0 || (data.deadlines.length === 1 && !data.deadlines[0].text)) && (
+                <Text style={styles.habitEmptyText}>No upcoming deadlines.</Text>
+              )}
+            </View>
+
+            {data.notes ? (
+              <View style={styles.detailSection}>
+                <Text style={[styles.notebookSectionTitle, { color: '#6A1B9A' }]}>📝 STUDY NOTES & REMINDERS</Text>
+                <Text selectable={true} style={styles.handwrittenText}>{data.notes}</Text>
+              </View>
+            ) : null}
+          </View>
+        </View>
+      );
+    }
+
+    if (type === 'fitness') {
+      return (
+        <View style={styles.fitnessDetailContainer}>
+          <View style={styles.fitnessWorkoutCard}>
+            <Text style={styles.fitnessWorkoutLabel}>🏋️ Workout Target</Text>
+            <Text selectable={true} style={styles.fitnessWorkoutText}>{data.workout || "Rest Day 🧘"}</Text>
+          </View>
+
+          <View style={styles.detailSection}>
+            <Text style={[styles.notebookSectionTitle, { color: '#004D40' }]}>💧 Water Intake Tracker</Text>
+            <Text style={{ fontSize: 13, fontWeight: '700', color: '#00796B', marginBottom: 6 }}>
+              {data.waterGlasses || 0} / 8 Glasses
+            </Text>
+            <View style={[styles.detailStarsRow, { flexWrap: 'wrap', gap: 12 }]}>
+              {Array.from({ length: 8 }).map((_, i) => {
+                const isActive = (data.waterGlasses || 0) > i;
+                return (
+                  <Pressable 
+                    key={i} 
+                    onPress={() => handleUpdateTemplateField('waterGlasses', null, i + 1)} 
+                    style={{ padding: 4 }}
+                  >
+                    <Ionicons 
+                      name={isActive ? "water" : "water-outline"} 
+                      size={28} 
+                      color={isActive ? "#00BCD4" : "#80CBC4"} 
+                    />
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+
+          <View style={styles.wellnessGridRow}>
+            <View style={styles.wellnessGridCol}>
+              <View style={[styles.sleepCounter, { borderColor: '#80CBC4', padding: 8 }]}>
+                <Text style={[styles.mealBoxTitle, { color: '#004D40', marginBottom: 2 }]}>🔥 Calories</Text>
+                <Text selectable={true} style={styles.mealBoxText}>{data.calories || "—"}</Text>
+              </View>
+            </View>
+            <View style={styles.wellnessGridCol}>
+              <View style={[styles.sleepCounter, { borderColor: '#80CBC4', padding: 8 }]}>
+                <Text style={[styles.mealBoxTitle, { color: '#004D40', marginBottom: 2 }]}>⚖️ Weight</Text>
+                <Text selectable={true} style={styles.mealBoxText}>{data.weight || "—"}</Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.detailSection}>
+            <Text style={[styles.notebookSectionTitle, { color: '#004D40' }]}>⚡ Energy Score</Text>
+            <View style={styles.detailStarsRow}>
+              {[1, 2, 3, 4, 5].map(star => (
+                <Pressable 
+                  key={star} 
+                  onPress={() => handleUpdateTemplateField('productivity', null, star)}
+                  style={{ padding: 4 }}
+                >
+                  <Ionicons 
+                    name={star <= (data.productivity || 0) ? "star" : "star-outline"} 
+                    size={28} 
+                    color="#FFB300" 
+                  />
+                </Pressable>
+              ))}
+            </View>
+          </View>
+
+          {data.notes ? (
+            <View style={styles.detailSection}>
+              <Text style={[styles.notebookSectionTitle, { color: '#004D40' }]}>📝 Workout Notes & Reflections</Text>
+              <Text selectable={true} style={styles.handwrittenText}>{data.notes}</Text>
+            </View>
+          ) : null}
+        </View>
+      );
+    }
+
+    if (type === 'exam') {
+      const subjectsList = data.subjects || [];
+      return (
+        <View style={styles.examDetailContainer}>
+          {subjectsList.map((sub, sIdx) => {
+            const totalTopics = sub.topics?.length || 0;
+            const doneTopics = (sub.topics || []).filter(t => t.checked).length;
+            return (
+              <View 
+                key={sub.id || sIdx} 
+                style={{
+                  backgroundColor: '#FFFFFF',
+                  borderRadius: 16,
+                  padding: 14,
+                  borderWidth: 1.5,
+                  borderColor: '#FFAB91',
+                  marginBottom: 16,
+                }}
+              >
+                {/* Subject Header */}
+                <Text style={[styles.examFocusLabel, { color: '#BF360C', fontSize: 15, fontWeight: '900', marginBottom: 4 }]}>
+                  🎓 {sub.name || `Subject #${sIdx + 1}`}
+                </Text>
+                {sub.examDate ? (
+                  <Text style={{ fontSize: 12, color: '#E64A19', fontWeight: '700', marginBottom: 10 }}>
+                    📅 Exam Date: {sub.examDate}
+                  </Text>
+                ) : null}
+
+                {/* Topics list */}
+                <View style={[styles.detailSection, { marginBottom: 12 }]}>
+                  <Text style={[styles.notebookSectionTitle, { color: '#BF360C', fontSize: 12, marginBottom: 6 }]}>
+                    ✏️ Topics to Prepare ({doneTopics}/{totalTopics})
+                  </Text>
+                  {(sub.topics || []).map(topic => (
+                    <Pressable
+                      key={topic.id}
+                      onPress={() => handleToggleSubjectTopic(sub.id, topic.id)}
+                      style={styles.wellnessHabitRow}
+                    >
+                      <Ionicons
+                        name={topic.checked ? "checkbox" : "square-outline"}
+                        size={20}
+                        color="#BF360C"
+                      />
+                      <Text style={[
+                        styles.wellnessHabitText,
+                        { color: '#4E342E' },
+                        topic.checked && { textDecorationLine: 'line-through', opacity: 0.5 }
+                      ]}>
+                        {topic.text}
+                      </Text>
+                    </Pressable>
+                  ))}
+                  {(!sub.topics || sub.topics.length === 0) && (
+                    <Text style={styles.habitEmptyText}>No topics defined.</Text>
+                  )}
+                </View>
+
+                {/* Stats row inside Card */}
+                <View style={styles.wellnessGridRow}>
+                  <View style={styles.wellnessGridCol}>
+                    <View style={[styles.sleepCounter, { borderColor: '#FFAB91', padding: 8, marginTop: 0 }]}>
+                      <Text style={[styles.mealBoxTitle, { color: '#BF360C', marginBottom: 2 }]}>⏱️ Study Target</Text>
+                      <Text style={styles.mealBoxText}>{sub.studyHours || 0} hrs</Text>
+                    </View>
+                  </View>
+                  <View style={styles.wellnessGridCol}>
+                    <View style={[styles.sleepCounter, { borderColor: '#FFAB91', padding: 8, marginTop: 0 }]}>
+                      <Text style={[styles.mealBoxTitle, { color: '#BF360C', marginBottom: 2 }]}>⭐ Preparedness</Text>
+                      <View style={styles.detailStarsRow}>
+                        {[1, 2, 3, 4, 5].map(star => (
+                          <Pressable 
+                            key={star} 
+                            onPress={() => handleUpdateSubjectField(sub.id, 'productivity', star)}
+                            style={{ padding: 1 }}
+                          >
+                            <Ionicons 
+                              name={star <= (sub.productivity || 0) ? "star" : "star-outline"} 
+                              size={16} 
+                              color="#FF7043" 
+                            />
+                          </Pressable>
+                        ))}
+                      </View>
+                    </View>
+                  </View>
+                </View>
+              </View>
+            );
+          })}
+
+          {data.notes ? (
+            <View style={styles.detailSection}>
+              <Text style={[styles.notebookSectionTitle, { color: '#BF360C' }]}>📝 General Study Notes</Text>
+              <Text selectable={true} style={styles.handwrittenText}>{data.notes}</Text>
+            </View>
+          ) : null}
+        </View>
+      );
+    }
+
+    if (type === 'travel') {
+      return (
+        <View style={styles.travelDetailContainer}>
+          {renderSpiralSpine()}
+          <View style={[styles.ruledContent, { borderLeftColor: '#80DEEA' }]}>
+            <View style={styles.travelFocusContainer}>
+              <Text style={styles.travelFocusLabel}>✈️ TRAVEL PLANNER</Text>
+              <Text selectable={true} style={styles.travelFocusText}>
+                {data.destination || "No destination set"} {data.duration ? `(${data.duration})` : ""}
+              </Text>
+            </View>
+
+            <View style={styles.detailSection}>
+              <Text style={[styles.notebookSectionTitle, { color: '#006064' }]}>🎒 Packing Checklist</Text>
+              {(data.packingList || []).map(item => (
+                <Pressable
+                  key={item.id}
+                  onPress={() => handleToggleTemplateCheckbox('packingList', item.id)}
+                  style={styles.wellnessHabitRow}
+                >
+                  <Ionicons
+                    name={item.checked ? "checkbox" : "square-outline"}
+                    size={20}
+                    color="#006064"
+                  />
+                  <Text style={[
+                    styles.wellnessHabitText,
+                    { color: '#004D40' },
+                    item.checked && { textDecorationLine: 'line-through', opacity: 0.5 }
+                  ]}>
+                    {item.text}
+                  </Text>
+                </Pressable>
+              ))}
+              {(!data.packingList || data.packingList.length === 0) && (
+                <Text style={styles.habitEmptyText}>No packing items listed.</Text>
+              )}
+            </View>
+
+            <View style={styles.detailSection}>
+              <Text style={[styles.notebookSectionTitle, { color: '#006064' }]}>🗺️ Itinerary Details</Text>
+              {(data.itinerary || []).map((item, idx) => {
+                const isNotEmpty = !!item.task;
+                return (
+                  <View key={idx} style={styles.timelineRow}>
+                    <Text style={[styles.timelineTimeText, { color: '#006064', width: 50 }]}>{item.time}</Text>
+                    <View style={[styles.timelineRuledLine, { borderBottomColor: '#80DEEA' }]}>
+                      <Text selectable={true} style={[styles.timelineContentText, !isNotEmpty && { color: '#00838F', fontStyle: 'italic' }]}>
+                        {item.task || "No Plans"}
+                      </Text>
+                    </View>
+                  </View>
+                );
+              })}
+              {(!data.itinerary || data.itinerary.length === 0) && (
+                <Text style={styles.habitEmptyText}>No itinerary slots today.</Text>
+              )}
+            </View>
+
+            {data.notes ? (
+              <View style={styles.detailSection}>
+                <Text style={[styles.notebookSectionTitle, { color: '#006064' }]}>📝 Travel Notes & References</Text>
+                <Text selectable={true} style={styles.handwrittenText}>{data.notes}</Text>
+              </View>
+            ) : null}
+          </View>
+        </View>
+      );
+    }
+
+    if (type === 'shopping') {
+      return (
+        <View style={styles.shoppingDetailContainer}>
+          <View style={styles.shoppingFocusCard}>
+            <Text style={styles.shoppingFocusLabel}>🛒 Shopping & Grocery List</Text>
+            <Text selectable={true} style={styles.shoppingFocusText}>
+              Store: {data.store || "Any Store"} {data.budget ? `(Budget: ${data.budget})` : ""}
+            </Text>
+          </View>
+
+          <View style={styles.detailSection}>
+            <Text style={[styles.notebookSectionTitle, { color: '#E65100' }]}>📋 Shopping Items</Text>
+            {(data.items || []).map(item => (
+              <Pressable
+                key={item.id}
+                onPress={() => handleToggleTemplateCheckbox('items', item.id)}
+                style={styles.wellnessHabitRow}
+              >
+                <Ionicons
+                  name={item.checked ? "checkbox" : "square-outline"}
+                  size={20}
+                  color="#E65100"
+                />
+                <Text style={[
+                  styles.wellnessHabitText,
+                  { color: '#5D4037' },
+                  item.checked && { textDecorationLine: 'line-through', opacity: 0.5 }
+                ]}>
+                  {item.text}
+                </Text>
+              </Pressable>
+            ))}
+            {(!data.items || data.items.length === 0) && (
+              <Text style={styles.habitEmptyText}>No items added.</Text>
+            )}
+          </View>
+
+          {data.notes ? (
+            <View style={styles.detailSection}>
+              <Text style={[styles.notebookSectionTitle, { color: '#E65100' }]}>📝 Shopping Notes</Text>
+              <Text selectable={true} style={styles.handwrittenText}>{data.notes}</Text>
+            </View>
+          ) : null}
+        </View>
+      );
+    }
+
+    if (type === 'finance') {
+      return (
+        <View style={styles.financeDetailContainer}>
+          <View style={[styles.detailSection, { marginBottom: 12 }]}>
+            <Text style={[styles.notebookSectionTitle, { color: '#1B5E20' }]}>📊 Financial Thresholds</Text>
+            <View style={styles.wellnessGridRow}>
+              <View style={styles.wellnessGridCol}>
+                <View style={[styles.sleepCounter, { borderColor: '#A5D6A7', padding: 8 }]}>
+                  <Text style={[styles.mealBoxTitle, { color: '#1B5E20', marginBottom: 2 }]}>💵 Income</Text>
+                  <Text selectable={true} style={styles.mealBoxText}>{data.income || "—"}</Text>
+                </View>
+              </View>
+              <View style={styles.wellnessGridCol}>
+                <View style={[styles.sleepCounter, { borderColor: '#A5D6A7', padding: 8 }]}>
+                  <Text style={[styles.mealBoxTitle, { color: '#1B5E20', marginBottom: 2 }]}>⚠️ Budget Limit</Text>
+                  <Text selectable={true} style={styles.mealBoxText}>{data.budgetLimit || "—"}</Text>
+                </View>
+              </View>
+            </View>
+            <View style={{ marginTop: 10 }}>
+              <View style={[styles.sleepCounter, { borderColor: '#A5D6A7', padding: 8 }]}>
+                <Text style={[styles.mealBoxTitle, { color: '#1B5E20', marginBottom: 2 }]}>🎯 Savings Goal</Text>
+                <Text selectable={true} style={styles.mealBoxText}>{data.savingsGoal || "—"}</Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.detailSection}>
+            <Text style={[styles.notebookSectionTitle, { color: '#1B5E20' }]}>💸 Expense transactions checklist</Text>
+            {(data.expenses || []).map(item => (
+              <Pressable
+                key={item.id}
+                onPress={() => handleToggleTemplateCheckbox('expenses', item.id)}
+                style={styles.wellnessHabitRow}
+              >
+                <Ionicons
+                  name={item.checked ? "checkbox" : "square-outline"}
+                  size={20}
+                  color="#1B5E20"
+                />
+                <Text style={[
+                  styles.wellnessHabitText,
+                  { color: '#2E7D32' },
+                  item.checked && { textDecorationLine: 'line-through', opacity: 0.5 }
+                ]}>
+                  {item.text}
+                </Text>
+              </Pressable>
+            ))}
+            {(!data.expenses || data.expenses.length === 0) && (
+              <Text style={styles.habitEmptyText}>No expenses listed.</Text>
+            )}
+          </View>
+
+          {data.notes ? (
+            <View style={styles.detailSection}>
+              <Text style={[styles.notebookSectionTitle, { color: '#1B5E20' }]}>📝 Money Notes & Reminders</Text>
+              <Text selectable={true} style={styles.handwrittenText}>{data.notes}</Text>
+            </View>
+          ) : null}
+        </View>
+      );
+    }
+
+    if (type === 'investment') {
+      return (
+        <View style={styles.investmentDetailContainer}>
+          <View style={styles.investmentFocusCard}>
+            <Text style={styles.investmentFocusLabel}>📈 Investment Goal</Text>
+            <Text selectable={true} style={styles.investmentFocusText}>
+              {data.investmentGoal || "Accumulate Wealth"} {data.dailyAmount ? `(Today: ${data.dailyAmount})` : ""}
+            </Text>
+          </View>
+
+          <View style={styles.detailSection}>
+            <Text style={[styles.notebookSectionTitle, { color: '#6F5200' }]}>💰 Assets & Allocations Checklist</Text>
+            {(data.assets || []).map(item => (
+              <Pressable
+                key={item.id}
+                onPress={() => handleToggleTemplateCheckbox('assets', item.id)}
+                style={styles.wellnessHabitRow}
+              >
+                <Ionicons
+                  name={item.checked ? "checkbox" : "square-outline"}
+                  size={20}
+                  color="#6F5200"
+                />
+                <Text style={[
+                  styles.wellnessHabitText,
+                  { color: '#5D4037' },
+                  item.checked && { textDecorationLine: 'line-through', opacity: 0.5 }
+                ]}>
+                  {item.text}
+                </Text>
+              </Pressable>
+            ))}
+            {(!data.assets || data.assets.length === 0) && (
+              <Text style={styles.habitEmptyText}>No assets defined.</Text>
+            )}
+          </View>
+
+          <View style={styles.detailSection}>
+            <Text style={[styles.notebookSectionTitle, { color: '#6F5200' }]}>⭐ Discipline / Confidence Score</Text>
+            <View style={styles.detailStarsRow}>
+              {[1, 2, 3, 4, 5].map(star => (
+                <Pressable 
+                  key={star} 
+                  onPress={() => handleUpdateTemplateField('productivity', null, star)}
+                  style={{ padding: 4 }}
+                >
+                  <Ionicons 
+                    name={star <= (data.productivity || 0) ? "star" : "star-outline"} 
+                    size={28} 
+                    color="#FFB300" 
+                  />
+                </Pressable>
+              ))}
+            </View>
+          </View>
+
+          {data.notes ? (
+            <View style={styles.detailSection}>
+              <Text style={[styles.notebookSectionTitle, { color: '#6F5200' }]}>📝 Investment Notes & Insights</Text>
+              <Text selectable={true} style={styles.handwrittenText}>{data.notes}</Text>
+            </View>
+          ) : null}
         </View>
       );
     }
@@ -1678,6 +2335,170 @@ export default function NotesListScreen({
           textAlign: 'center',
           marginVertical: 4,
         },
+        studentDetailContainer: {
+          flex: 1,
+          paddingLeft: 18,
+        },
+        studentFocusContainer: {
+          backgroundColor: '#F3E5F5',
+          borderRadius: 12,
+          padding: 12,
+          borderWidth: 1.5,
+          borderColor: '#E1BEE7',
+          marginBottom: 16,
+          alignItems: 'center',
+        },
+        studentFocusLabel: {
+          fontSize: 12,
+          fontWeight: '900',
+          color: '#6A1B9A',
+          letterSpacing: 1,
+          marginBottom: 4,
+        },
+        studentFocusText: {
+          fontSize: 16,
+          fontWeight: '800',
+          color: '#1C1C1C',
+          textAlign: 'center',
+        },
+        fitnessDetailContainer: {
+          flex: 1,
+          paddingHorizontal: 4,
+        },
+        fitnessWorkoutCard: {
+          backgroundColor: '#E0F2F1',
+          borderRadius: 16,
+          padding: 14,
+          alignItems: 'center',
+          borderWidth: 2,
+          borderColor: '#B2DFDB',
+          marginBottom: 16,
+        },
+        fitnessWorkoutLabel: {
+          fontSize: 13,
+          fontWeight: '900',
+          color: '#004D40',
+          marginBottom: 4,
+          textTransform: 'uppercase',
+          letterSpacing: 0.5,
+        },
+        fitnessWorkoutText: {
+          fontSize: 16,
+          color: '#1C1C1C',
+          fontWeight: '800',
+          textAlign: 'center',
+        },
+        examDetailContainer: {
+          flex: 1,
+          paddingHorizontal: 4,
+        },
+        examFocusCard: {
+          backgroundColor: '#FFFFFF',
+          borderRadius: 16,
+          padding: 14,
+          alignItems: 'center',
+          borderWidth: 2,
+          borderColor: '#FFAB91',
+          marginBottom: 16,
+        },
+        examFocusLabel: {
+          fontSize: 13,
+          fontWeight: '900',
+          color: '#BF360C',
+          marginBottom: 4,
+          textTransform: 'uppercase',
+          letterSpacing: 0.5,
+        },
+        examFocusText: {
+          fontSize: 16,
+          color: '#1C1C1C',
+          fontWeight: '800',
+          textAlign: 'center',
+        },
+        travelDetailContainer: {
+          flex: 1,
+          paddingLeft: 18,
+        },
+        travelFocusContainer: {
+          backgroundColor: '#E0F7FA',
+          borderRadius: 12,
+          padding: 12,
+          borderWidth: 1.5,
+          borderColor: '#80DEEA',
+          marginBottom: 16,
+          alignItems: 'center',
+        },
+        travelFocusLabel: {
+          fontSize: 12,
+          fontWeight: '900',
+          color: '#006064',
+          letterSpacing: 1,
+          marginBottom: 4,
+        },
+        travelFocusText: {
+          fontSize: 16,
+          fontWeight: '800',
+          color: '#1C1C1C',
+          textAlign: 'center',
+        },
+        shoppingDetailContainer: {
+          flex: 1,
+          paddingHorizontal: 4,
+        },
+        shoppingFocusCard: {
+          backgroundColor: '#FFFFFF',
+          borderRadius: 16,
+          padding: 14,
+          alignItems: 'center',
+          borderWidth: 2,
+          borderColor: '#FFE082',
+          marginBottom: 16,
+        },
+        shoppingFocusLabel: {
+          fontSize: 13,
+          fontWeight: '900',
+          color: '#E65100',
+          marginBottom: 4,
+          textTransform: 'uppercase',
+          letterSpacing: 0.5,
+        },
+        shoppingFocusText: {
+          fontSize: 16,
+          color: '#1C1C1C',
+          fontWeight: '800',
+          textAlign: 'center',
+        },
+        financeDetailContainer: {
+          flex: 1,
+          paddingHorizontal: 4,
+        },
+        investmentDetailContainer: {
+          flex: 1,
+          paddingHorizontal: 4,
+        },
+        investmentFocusCard: {
+          backgroundColor: '#FFFFFF',
+          borderRadius: 16,
+          padding: 14,
+          alignItems: 'center',
+          borderWidth: 2,
+          borderColor: '#FFD700',
+          marginBottom: 16,
+        },
+        investmentFocusLabel: {
+          fontSize: 13,
+          fontWeight: '900',
+          color: '#6F5200',
+          marginBottom: 4,
+          textTransform: 'uppercase',
+          letterSpacing: 0.5,
+        },
+        investmentFocusText: {
+          fontSize: 16,
+          color: '#1C1C1C',
+          fontWeight: '800',
+          textAlign: 'center',
+        },
       }),
     [theme, isDark, isTablet]
   );
@@ -1750,6 +2571,18 @@ export default function NotesListScreen({
               if (item.checked) completedChecklistItems++;
             });
           }
+          if (data.eveningSchedule) {
+            data.eveningSchedule.forEach(item => {
+              totalChecklistItems++;
+              if (item.checked) completedChecklistItems++;
+            });
+          }
+          if (data.nightSchedule) {
+            data.nightSchedule.forEach(item => {
+              totalChecklistItems++;
+              if (item.checked) completedChecklistItems++;
+            });
+          }
         } else if (note.templateType === 'habits') {
           ['health', 'work', 'selfcare'].forEach(grp => {
             if (data[grp]) {
@@ -1758,6 +2591,40 @@ export default function NotesListScreen({
                 if (item.checked) completedChecklistItems++;
               });
             }
+          });
+        } else if (note.templateType === 'student' && data.studyTasks) {
+          data.studyTasks.forEach(item => {
+            totalChecklistItems++;
+            if (item.checked) completedChecklistItems++;
+          });
+        } else if (note.templateType === 'exam' && data.subjects) {
+          data.subjects.forEach(sub => {
+            if (sub.topics) {
+              sub.topics.forEach(item => {
+                totalChecklistItems++;
+                if (item.checked) completedChecklistItems++;
+              });
+            }
+          });
+        } else if (note.templateType === 'travel' && data.packingList) {
+          data.packingList.forEach(item => {
+            totalChecklistItems++;
+            if (item.checked) completedChecklistItems++;
+          });
+        } else if (note.templateType === 'shopping' && data.items) {
+          data.items.forEach(item => {
+            totalChecklistItems++;
+            if (item.checked) completedChecklistItems++;
+          });
+        } else if (note.templateType === 'finance' && data.expenses) {
+          data.expenses.forEach(item => {
+            totalChecklistItems++;
+            if (item.checked) completedChecklistItems++;
+          });
+        } else if (note.templateType === 'investment' && data.assets) {
+          data.assets.forEach(item => {
+            totalChecklistItems++;
+            if (item.checked) completedChecklistItems++;
           });
         }
       }
