@@ -64,6 +64,16 @@ export default function DrawingCanvas({ visible, onClose, onSave, theme, initial
   const [originalLine, setOriginalLine] = useState(null);
   const [shapeText, setShapeText] = useState('');
   const [isTextInputVisible, setIsTextInputVisible] = useState(false);
+  const canvasRef = useRef(null);
+  const [canvasOffset, setCanvasOffset] = useState({ x: 0, y: 0 });
+
+  const updateCanvasOffset = () => {
+    canvasRef.current?.measure((x, y, width, height, pageX, pageY) => {
+      if (pageX !== undefined && pageY !== undefined) {
+        setCanvasOffset({ x: pageX, y: pageY });
+      }
+    });
+  };
 
   const getBoundingBox = (line) => {
     if (!line || line.length === 0) return null;
@@ -91,6 +101,26 @@ export default function DrawingCanvas({ visible, onClose, onSave, theme, initial
   };
 
   const findClosestLineIndex = (x, y) => {
+    // 1. Check if touch is inside the bounding box of a closed shape
+    for (let idx = lines.length - 1; idx >= 0; idx--) {
+      const line = lines[idx];
+      if (line && line.length >= 3) {
+        const first = line[0];
+        const last = line[line.length - 1];
+        if (first && last) {
+          // Check if path is closed (start and end points are near each other)
+          const isClosed = Math.sqrt((first.x - last.x) ** 2 + (first.y - last.y) ** 2) < 15;
+          if (isClosed) {
+            const box = getBoundingBox(line);
+            if (box && x >= box.minX && x <= box.maxX && y >= box.minY && y <= box.maxY) {
+              return idx;
+            }
+          }
+        }
+      }
+    }
+
+    // 2. Fall back to point proximity (closest line path)
     let closestIndex = null;
     let minDistance = 35; // 35px selection radius
     
@@ -112,17 +142,23 @@ export default function DrawingCanvas({ visible, onClose, onSave, theme, initial
   const handleCanvasLayout = (event) => {
     const { width, height } = event.nativeEvent.layout;
     setCanvasSize({ width: width || 350, height: height || 450 });
+    updateCanvasOffset();
   };
 
   const handleTouchStart = (event) => {
+    updateCanvasOffset();
     const touches = event.nativeEvent.touches;
     
     // 2-Finger scroll canvas detection
     if (touches && touches.length === 2) {
       const p1 = touches[0];
       const p2 = touches[1];
-      const midX = (p1.locationX + p2.locationX) / 2;
-      const midY = (p1.locationY + p2.locationY) / 2;
+      const midX = canvasOffset.x !== 0 
+        ? ((p1.pageX + p2.pageX) / 2) - canvasOffset.x 
+        : (p1.locationX + p2.locationX) / 2;
+      const midY = canvasOffset.y !== 0 
+        ? ((p1.pageY + p2.pageY) / 2) - canvasOffset.y 
+        : (p1.locationY + p2.locationY) / 2;
       setDragStartPoint({ x: midX, y: midY });
       setIsPanningTwoFingers(true);
       return;
@@ -130,9 +166,13 @@ export default function DrawingCanvas({ visible, onClose, onSave, theme, initial
 
     setIsPanningTwoFingers(false);
 
-    const { locationX, locationY } = event.nativeEvent;
-    const actualX = locationX + panOffset.x;
-    const actualY = locationY + panOffset.y;
+    const { pageX, pageY, locationX, locationY } = event.nativeEvent;
+    const actualX = canvasOffset.x !== 0 
+      ? pageX - canvasOffset.x + panOffset.x 
+      : locationX + panOffset.x;
+    const actualY = canvasOffset.y !== 0 
+      ? pageY - canvasOffset.y + panOffset.y 
+      : locationY + panOffset.y;
 
     if (tool === 'eraser') {
       checkProximityAndErase(actualX, actualY);
@@ -217,6 +257,13 @@ export default function DrawingCanvas({ visible, onClose, onSave, theme, initial
             setOriginalLine(lines[selectedLineIndex]);
             return;
           }
+
+          // 9. Drag Anchor (Click anywhere inside bounding box to move)
+          if (actualX >= box.minX && actualX <= box.maxX && actualY >= box.minY && actualY <= box.maxY) {
+            setDragStartPoint({ x: actualX, y: actualY });
+            setOriginalLine(lines[selectedLineIndex]);
+            return;
+          }
         }
       }
 
@@ -280,8 +327,12 @@ export default function DrawingCanvas({ visible, onClose, onSave, theme, initial
     if (touches && touches.length === 2 && isPanningTwoFingers && dragStartPoint) {
       const p1 = touches[0];
       const p2 = touches[1];
-      const midX = (p1.locationX + p2.locationX) / 2;
-      const midY = (p1.locationY + p2.locationY) / 2;
+      const midX = canvasOffset.x !== 0 
+        ? ((p1.pageX + p2.pageX) / 2) - canvasOffset.x 
+        : (p1.locationX + p2.locationX) / 2;
+      const midY = canvasOffset.y !== 0 
+        ? ((p1.pageY + p2.pageY) / 2) - canvasOffset.y 
+        : (p1.locationY + p2.locationY) / 2;
 
       const dx = midX - dragStartPoint.x;
       const dy = midY - dragStartPoint.y;
@@ -296,9 +347,13 @@ export default function DrawingCanvas({ visible, onClose, onSave, theme, initial
 
     if (isPanningTwoFingers) return;
 
-    const { locationX, locationY } = event.nativeEvent;
-    const actualX = locationX + panOffset.x;
-    const actualY = locationY + panOffset.y;
+    const { pageX, pageY, locationX, locationY } = event.nativeEvent;
+    const actualX = canvasOffset.x !== 0 
+      ? pageX - canvasOffset.x + panOffset.x 
+      : locationX + panOffset.x;
+    const actualY = canvasOffset.y !== 0 
+      ? pageY - canvasOffset.y + panOffset.y 
+      : locationY + panOffset.y;
 
     if (tool === 'eraser') {
       checkProximityAndErase(actualX, actualY);
@@ -606,6 +661,7 @@ export default function DrawingCanvas({ visible, onClose, onSave, theme, initial
 
         {/* Drawing Board */}
         <Pressable
+          ref={canvasRef}
           style={[styles.canvasContainer, { backgroundColor: '#FFFFFF' }]}
           onLayout={handleCanvasLayout}
           onTouchStart={handleTouchStart}

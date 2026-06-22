@@ -16,6 +16,26 @@ const STORAGE_KEYS = {
   LAST_RESET_DATE: 'wordsy_last_reset_date',
 };
 
+const getSafeRoutineArray = (routine) => {
+  if (Array.isArray(routine)) {
+    return routine.map((r, index) => ({
+      id: r?.id || `r_${index}`,
+      time: r?.time || '08:00',
+      task: r?.task || '',
+      checked: !!r?.checked
+    }));
+  }
+  if (routine && typeof routine === 'object') {
+    return Object.keys(routine).map((key, index) => ({
+      id: routine[key]?.id || key || `r_${index}`,
+      time: routine[key]?.time || '08:00',
+      task: routine[key]?.task || '',
+      checked: !!routine[key]?.checked
+    }));
+  }
+  return [];
+};
+
 const localGenerateTemplateSummary = (type, data) => {
   if (type === 'nutrition') {
     const mealSum = `Meals: B: ${data.meals?.breakfast || '-'}, L: ${data.meals?.lunch || '-'}, D: ${data.meals?.dinner || '-'}`;
@@ -71,6 +91,28 @@ const localGenerateTemplateSummary = (type, data) => {
     const shift = data.shiftInfo || {};
     const patientsDone = (data.patients || []).filter(p => p.roundsDone).length;
     return `Clinical Rounds - ${shift.role || 'Doctor'} | Patients: ${patientsDone}/${data.patients?.length || 0} rounds done`;
+  }
+  if (type === 'med_study') {
+    let routineDone = 0;
+    let totalRoutine = 0;
+    let topicsDone = 0;
+    let totalTopics = 0;
+    (data.subjects || []).forEach(s => {
+      if (s.routine) {
+        const rArr = getSafeRoutineArray(s.routine);
+        rArr.forEach(r => {
+          totalRoutine++;
+          if (r.checked) routineDone++;
+        });
+      }
+      if (s.topics) {
+        s.topics.forEach(t => {
+          totalTopics++;
+          if (t.checked) topicsDone++;
+        });
+      }
+    });
+    return `Med Study Routine | Goal: ${data.studyGoal || '-'}\nRoutine: ${routineDone}/${totalRoutine} | Topics: ${topicsDone}/${totalTopics} checked | Subjects: ${data.subjects?.length || 0}`;
   }
   return '';
 };
@@ -169,7 +211,7 @@ export default function App() {
                   'morningHabits', 'todo', 'goals', 'afternoonSchedule', 
                   'eveningSchedule', 'nightSchedule',
                   'health', 'work', 'selfcare', 'studyTasks', 
-                  'packingList', 'items', 'expenses', 'assets', 'clinicalTasks'
+                  'packingList', 'items', 'expenses', 'assets', 'clinicalTasks', 'clinicalLog'
                 ];
                 checkboxSections.forEach(section => {
                   if (updatedData[section] && Array.isArray(updatedData[section])) {
@@ -208,6 +250,25 @@ export default function App() {
                     ...updatedData.clinicianCare,
                     lunchBreak: false
                   };
+                  dataChanged = true;
+                }
+
+                // Reset med_study subjects' routine checkmarks and topic checkmarks
+                if (updatedData.subjects && Array.isArray(updatedData.subjects) && note.templateType === 'med_study') {
+                  updatedData.subjects = updatedData.subjects.map(s => {
+                    const subCopy = { ...s };
+                    if (subCopy.routine) {
+                      const rArr = getSafeRoutineArray(subCopy.routine);
+                      subCopy.routine = rArr.map(r => ({
+                        ...r,
+                        checked: false
+                      }));
+                    }
+                    if (subCopy.topics && Array.isArray(subCopy.topics)) {
+                      subCopy.topics = subCopy.topics.map(t => ({ ...t, checked: false }));
+                    }
+                    return subCopy;
+                  });
                   dataChanged = true;
                 }
 
@@ -267,7 +328,7 @@ export default function App() {
   }, [folders, isLoading]);
 
   const handleSaveNote = (updatedNote) => {
-    if (editingNote) {
+    if (editingNote && editingNote.id) {
       setNotes((prev) =>
         prev.map((note) =>
           note.id === editingNote.id
@@ -378,8 +439,12 @@ export default function App() {
             isDark={isDark}
             setIsDark={setIsDark}
             theme={theme}
-            onCreateNew={() => {
-              setEditingNote(null);
+            onCreateNew={(type) => {
+              if (type) {
+                setEditingNote({ noteType: type });
+              } else {
+                setEditingNote(null);
+              }
               setScreen('editor');
             }}
             onDelete={handleDeleteNote}

@@ -12,9 +12,10 @@ const STICKY_COLORS = [
   '#FFFD96', // Pale Yellow
 ];
 
-export default function NoteCard({ note, index, onPress, onPinToggle }) {
+export default function NoteCard({ note, index, isDark, onPress, onPinToggle }) {
   const backgroundColor = STICKY_COLORS[index % STICKY_COLORS.length];
   
+
   const rotation = useMemo(() => {
     const rotations = ['-1.5deg', '1deg', '-1deg', '1.5deg', '-0.5deg'];
     return rotations[index % rotations.length];
@@ -61,7 +62,119 @@ export default function NoteCard({ note, index, onPress, onPinToggle }) {
                 source={{ uri: note.images[0].uri }} 
                 style={styles.cardImagePreview} 
               />
-            ) : (
+            ) : (note.noteType === 'notebook' && note.templateData?.pages?.[0]) ? (() => {
+              const firstPage = note.templateData.pages[0];
+              const pageLines = firstPage.lines || [];
+              const pageTextBoxes = firstPage.textBoxes || [];
+              const isPageDark = firstPage.pageThemeMode ? firstPage.pageThemeMode === 'dark' : isDark;
+              const resolvePageColor = (color) => {
+                if (!color) return isPageDark ? '#FFFFFF' : '#000000';
+                const c = color.toUpperCase();
+                if (c === '#000000' && isPageDark) return '#FFFFFF';
+                if (c === '#FFFFFF' && !isPageDark) return '#000000';
+                return color;
+              };
+              const pageHeight = firstPage.pageHeight || 500;
+              const lineSlotsRuled = Math.floor(pageHeight / 55);
+              const lineSlotsGridH = Math.floor(pageHeight / 55);
+              return (
+                 <View style={[styles.cardImagePreview, { backgroundColor: isPageDark ? '#121212' : '#FFFFFF', padding: 3, borderWidth: 0.5, borderColor: isPageDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }]}>
+                  <Svg width="100%" height="100%" viewBox={`0 0 360 ${pageHeight}`}>
+                    {/* Rules/Grids */}
+                    {firstPage.pageStyle === 'ruled' && (
+                      <>
+                        {Array.from({ length: lineSlotsRuled }).map((_, i) => (
+                          <Path
+                            key={`c-ruled-${i}`}
+                            d={`M 0 ${(i + 1) * 55} L 360 ${(i + 1) * 55}`}
+                            stroke={isPageDark ? "#2C3E50" : "#B3E5FC"}
+                            strokeWidth={1}
+                            opacity={isPageDark ? 0.6 : 0.8}
+                          />
+                        ))}
+                        <Path d={`M 45 0 L 45 ${pageHeight}`} stroke={isPageDark ? "#E74C3C" : "#FFCDD2"} strokeWidth={1.5} opacity={isPageDark ? 0.5 : 0.8} />
+                      </>
+                    )}
+                    {firstPage.pageStyle === 'grid' && (
+                      <>
+                        {Array.from({ length: lineSlotsGridH }).map((_, i) => (
+                          <Path
+                            key={`c-grid-h-${i}`}
+                            d={`M 0 ${(i + 1) * 55} L 360 ${(i + 1) * 55}`}
+                            stroke={isPageDark ? "#2A2A2A" : "#ECEFF1"}
+                            strokeWidth={1.5}
+                          />
+                        ))}
+                        {Array.from({ length: 6 }).map((_, i) => (
+                          <Path
+                            key={`c-grid-v-${i}`}
+                            d={`M ${(i + 1) * 55} 0 L ${(i + 1) * 55} ${pageHeight}`}
+                            stroke={isPageDark ? "#2A2A2A" : "#ECEFF1"}
+                            strokeWidth={1.5}
+                          />
+                        ))}
+                      </>
+                    )}
+
+                    {/* Drawings */}
+                    {pageLines.map((line, lIdx) => {
+                      const path = line.reduce((acc, point, idx) => {
+                        if (idx === 0) return `M ${point.x} ${point.y}`;
+                        return `${acc} L ${point.x} ${point.y}`;
+                      }, '');
+                      const first = line[0];
+                      const last = line[line.length - 1];
+                      let pathData = path;
+                      if (first && last && line.length > 2) {
+                        const dist = Math.sqrt((first.x - last.x) ** 2 + (first.y - last.y) ** 2);
+                        if (dist < 8) pathData += ' Z';
+                      }
+                      return (
+                        <Path
+                          key={lIdx}
+                          d={pathData}
+                          stroke={resolvePageColor(line[0]?.color)}
+                          strokeWidth={line[0]?.width || 4}
+                          strokeOpacity={line[0]?.opacity !== undefined ? line[0].opacity : 1}
+                          fill="none"
+                        />
+                      );
+                    })}
+
+                    {/* Text Boxes */}
+                    {pageTextBoxes.map((box) => (
+                      <SvgText
+                        key={box.id}
+                        x={box.x + box.width / 2}
+                        y={box.y + box.height / 2 + 5}
+                        fill={resolvePageColor(box.color)}
+                        fontSize={16}
+                        fontWeight={box.fontStyle?.includes('bold') ? 'bold' : 'normal'}
+                        fontStyle={box.fontStyle?.includes('italic') ? 'italic' : 'normal'}
+                        textAnchor="middle"
+                        alignmentBaseline="middle"
+                      >
+                        {box.text.split('\n')[0] || ''}
+                      </SvgText>
+                    ))}
+                  </Svg>
+                  {(firstPage.images || []).map((img) => (
+                    <Image
+                      key={img.id}
+                      source={{ uri: img.uri }}
+                      style={{
+                        position: 'absolute',
+                        left: `${(img.x / 360) * 100}%`,
+                        top: `${(img.y / pageHeight) * 100}%`,
+                        width: `${(img.width / 360) * 100}%`,
+                        height: `${(img.height / pageHeight) * 100}%`,
+                      }}
+                      resizeMode="cover"
+                    />
+                  ))}
+                </View>
+              );
+            })() : (
               note.drawings && note.drawings.length > 0 && (
                 <View style={[styles.cardImagePreview, { backgroundColor: '#FFFFFF', padding: 4 }]}>
                   <Svg width="100%" height="100%" viewBox="0 0 350 450">
@@ -162,6 +275,14 @@ export default function NoteCard({ note, index, onPress, onPinToggle }) {
           
           <View style={[styles.footer, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
             <View style={{ flexDirection: 'row', gap: 4, alignItems: 'center' }}>
+              {note.noteType === 'notebook' && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+                  <Ionicons name="book-outline" size={12} color="rgba(0,0,0,0.4)" />
+                  <Text style={{ fontSize: 10, color: 'rgba(0,0,0,0.4)', fontWeight: '700' }}>
+                    {note.templateData?.pages?.length || 1} pgs
+                  </Text>
+                </View>
+              )}
               {note.noteType === 'template' && (
                 <Ionicons name="calendar-outline" size={12} color="rgba(0,0,0,0.4)" />
               )}

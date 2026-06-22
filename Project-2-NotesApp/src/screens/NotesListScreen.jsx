@@ -18,14 +18,83 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Path, Text as SvgText } from 'react-native-svg';
+import Svg, { Path, Circle, Rect, Text as SvgText } from 'react-native-svg';
 import NoteCard from '../components/NoteCard';
+
+const TABLE_TEMPLATES = [
+  {
+    id: 'gray',
+    name: 'Classic Gray',
+    headerBg: '#475569',
+    headerText: '#FFFFFF',
+    cellBg: '#FFFFFF',
+    altCellBg: '#F8FAFC',
+    borderColor: '#94A3B8'
+  },
+  {
+    id: 'amber',
+    name: 'Warm Amber',
+    headerBg: '#D97706',
+    headerText: '#FFFFFF',
+    cellBg: '#FFFBEB',
+    altCellBg: '#FEF3C7',
+    borderColor: '#F59E0B'
+  },
+  {
+    id: 'green',
+    name: 'Forest Green',
+    headerBg: '#059669',
+    headerText: '#FFFFFF',
+    cellBg: '#ECFDF5',
+    altCellBg: '#D1FAE5',
+    borderColor: '#10B981'
+  },
+  {
+    id: 'blue',
+    name: 'Ocean Blue',
+    headerBg: '#2563EB',
+    headerText: '#FFFFFF',
+    cellBg: '#EFF6FF',
+    altCellBg: '#DBEAFE',
+    borderColor: '#3B82F6'
+  },
+  {
+    id: 'lavender',
+    name: 'Lavender',
+    headerBg: '#7C3AED',
+    headerText: '#FFFFFF',
+    cellBg: '#F5F3FF',
+    altCellBg: '#EDE9FE',
+    borderColor: '#8B5CF6'
+  }
+];
+
 let Audio = null;
 try {
   Audio = require('expo-av').Audio;
 } catch (error) {
   console.warn('Audio module not loaded:', error);
 }
+
+const getSafeRoutineArray = (routine) => {
+  if (Array.isArray(routine)) {
+    return routine.map((r, index) => ({
+      id: r?.id || `r_${index}`,
+      time: r?.time || '08:00',
+      task: r?.task || '',
+      checked: !!r?.checked
+    }));
+  }
+  if (routine && typeof routine === 'object') {
+    return Object.keys(routine).map((key, index) => ({
+      id: routine[key]?.id || key || `r_${index}`,
+      time: routine[key]?.time || '08:00',
+      task: routine[key]?.task || '',
+      checked: !!routine[key]?.checked
+    }));
+  }
+  return [];
+};
 
 export default function NotesListScreen({ 
   notes, 
@@ -51,7 +120,13 @@ export default function NotesListScreen({
 
   // Folders and Drawer States
   const [selectedFolderId, setSelectedFolderId] = useState(null); // null means "All Notes"
+  const [viewerPageIdx, setViewerPageIdx] = useState(0);
+
+  useEffect(() => {
+    setViewerPageIdx(0);
+  }, [selectedNote]);
   const [isDrawerVisible, setIsDrawerVisible] = useState(false);
+  const [isTypePickerVisible, setIsTypePickerVisible] = useState(false);
   const drawerAnimation = useRef(new Animated.Value(-280)).current;
 
   // Folder creation modal states
@@ -217,6 +292,26 @@ export default function NotesListScreen({
       const patientsDone = (data.patients || []).filter(p => p.roundsDone).length;
       return `Clinical Rounds - ${shift.role || 'Doctor'} | Patients: ${patientsDone}/${data.patients?.length || 0} rounds done`;
     }
+    if (type === 'med_study') {
+      let routineDone = 0;
+      let totalRoutine = 0;
+      let topicsDone = 0;
+      let totalTopics = 0;
+      (data.subjects || []).forEach(s => {
+        const rArr = getSafeRoutineArray(s.routine);
+        rArr.forEach(r => {
+          totalRoutine++;
+          if (r.checked) routineDone++;
+        });
+        if (s.topics) {
+          s.topics.forEach(t => {
+            totalTopics++;
+            if (t.checked) topicsDone++;
+          });
+        }
+      });
+      return `Med Study Routine | Goal: ${data.studyGoal || '-'}\nRoutine: ${routineDone}/${totalRoutine} | Topics: ${topicsDone}/${totalTopics} checked | Subjects: ${data.subjects?.length || 0}`;
+    }
     return '';
   };
 
@@ -342,6 +437,78 @@ export default function NotesListScreen({
     onUpdateNote(updatedNote);
   };
 
+  const handleToggleMedStudySubjectRoutine = (subId, itemId) => {
+    if (!selectedNote || !onUpdateNote) return;
+    const updatedSubjects = (selectedNote.templateData.subjects || []).map(s => {
+      if (s.id === subId) {
+        const rArr = getSafeRoutineArray(s.routine);
+        return {
+          ...s,
+          routine: rArr.map(r => 
+            r.id === itemId ? { ...r, checked: !r.checked } : r
+          )
+        };
+      }
+      return s;
+    });
+    const updatedData = {
+      ...selectedNote.templateData,
+      subjects: updatedSubjects
+    };
+    const updatedNote = {
+      ...selectedNote,
+      templateData: updatedData,
+      content: generateTemplateSummary(selectedNote.templateType, updatedData)
+    };
+    setSelectedNote(updatedNote);
+    onUpdateNote(updatedNote);
+  };
+
+  const handleToggleMedStudySubjectTopic = (subId, topicId) => {
+    if (!selectedNote || !onUpdateNote) return;
+    const updatedSubjects = (selectedNote.templateData.subjects || []).map(s => {
+      if (s.id === subId) {
+        return {
+          ...s,
+          topics: (s.topics || []).map(t => 
+            t.id === topicId ? { ...t, checked: !t.checked } : t
+          )
+        };
+      }
+      return s;
+    });
+    const updatedData = {
+      ...selectedNote.templateData,
+      subjects: updatedSubjects
+    };
+    const updatedNote = {
+      ...selectedNote,
+      templateData: updatedData,
+      content: generateTemplateSummary(selectedNote.templateType, updatedData)
+    };
+    setSelectedNote(updatedNote);
+    onUpdateNote(updatedNote);
+  };
+
+  const handleUpdateMedStudySubjectRating = (subId, rating) => {
+    if (!selectedNote || !onUpdateNote) return;
+    const updatedSubjects = (selectedNote.templateData.subjects || []).map(s => 
+      s.id === subId ? { ...s, rating } : s
+    );
+    const updatedData = {
+      ...selectedNote.templateData,
+      subjects: updatedSubjects
+    };
+    const updatedNote = {
+      ...selectedNote,
+      templateData: updatedData,
+      content: generateTemplateSummary(selectedNote.templateType, updatedData)
+    };
+    setSelectedNote(updatedNote);
+    onUpdateNote(updatedNote);
+  };
+
+
   const renderSpiralSpine = () => {
     const loops = Array.from({ length: 12 });
     return (
@@ -386,11 +553,498 @@ export default function NotesListScreen({
           return [styles.modalPaper, { backgroundColor: '#FFFDF0', borderRadius: 16, transform: [{ rotate: '0deg' }] }];
         case 'medical':
           return [styles.modalPaper, { backgroundColor: '#E0F2F1', borderRadius: 20, transform: [{ rotate: '0.8deg' }] }];
+        case 'med_study':
+          return [styles.modalPaper, { backgroundColor: '#E8F5E9', borderRadius: 20, transform: [{ rotate: '-0.8deg' }] }];
         default:
           return styles.modalPaper;
       }
     }
     return styles.modalPaper;
+  };
+
+  const renderNotebookDetailView = () => {
+    const pagesList = selectedNote?.templateData?.pages || [];
+    if (pagesList.length === 0) {
+      return <Text style={{ fontStyle: 'italic', color: theme.mutedText, textAlign: 'center', margin: 20 }}>Notebook is empty.</Text>;
+    }
+    
+    const pageIdx = Math.max(0, Math.min(viewerPageIdx, pagesList.length - 1));
+    const page = pagesList[pageIdx] || { pageStyle: 'ruled', borderDesign: 'classic', lines: [], textBoxes: [] };
+    const pageLines = page.lines || [];
+    const pageTextBoxes = page.textBoxes || [];
+    const isPageDark = page.pageThemeMode ? page.pageThemeMode === 'dark' : isDark;
+
+    const resolveColor = (color) => {
+      if (!color) return isPageDark ? '#FFFFFF' : '#000000';
+      const c = color.toUpperCase();
+      if (c === '#000000' && isPageDark) return '#FFFFFF';
+      if (c === '#FFFFFF' && !isPageDark) return '#000000';
+      return color;
+    };
+
+     const pageHeight = page.pageHeight || 500;
+     const displayWidth = Math.min(320, width - 60);
+     const displayHeight = displayWidth * (pageHeight / 360);
+     const viewerScale = displayWidth / 360;
+
+     const renderViewerGuidelines = (style) => {
+       if (style === 'ruled') {
+         const lineSlots = Math.floor(pageHeight / 24);
+         return (
+           <>
+             {Array.from({ length: lineSlots }).map((_, i) => (
+               <Path
+                 key={`v-ruled-${i}`}
+                 d={`M 0 ${(i + 1) * 24} L 360 ${(i + 1) * 24}`}
+                 stroke={isPageDark ? "#2C3E50" : "#B3E5FC"}
+                 strokeWidth={0.8}
+                 opacity={isPageDark ? 0.6 : 0.8}
+               />
+             ))}
+             <Path
+               d={`M 45 0 L 45 ${pageHeight}`}
+               stroke={isPageDark ? "#E74C3C" : "#FFCDD2"}
+               strokeWidth={1.2}
+               opacity={isPageDark ? 0.5 : 0.8}
+             />
+           </>
+         );
+       }
+       if (style === 'grid') {
+         const hSlots = Math.floor(pageHeight / 20);
+         const vSlots = Math.floor(360 / 20);
+         return (
+           <>
+             {Array.from({ length: hSlots }).map((_, i) => (
+               <Path
+                 key={`v-grid-h-${i}`}
+                 d={`M 0 ${(i + 1) * 20} L 360 ${(i + 1) * 20}`}
+                 stroke={isPageDark ? "#2A2A2A" : "#ECEFF1"}
+                 strokeWidth={0.8}
+               />
+             ))}
+             {Array.from({ length: vSlots }).map((_, i) => (
+               <Path
+                 key={`v-grid-v-${i}`}
+                 d={`M ${(i + 1) * 20} 0 L ${(i + 1) * 20} ${pageHeight}`}
+                 stroke={isPageDark ? "#2A2A2A" : "#ECEFF1"}
+                 strokeWidth={0.8}
+               />
+             ))}
+           </>
+         );
+       }
+       if (style === 'dotted') {
+         const rCount = Math.floor(pageHeight / 20);
+         const cCount = Math.floor(360 / 20);
+         const dots = [];
+         for (let r = 1; r < rCount; r++) {
+           for (let c = 1; c < cCount; c++) {
+             dots.push(
+               <Circle
+                 key={`v-dot-${r}-${c}`}
+                 cx={c * 20}
+                 cy={r * 20}
+                 r={1.2}
+                 fill={isPageDark ? "#444444" : "#B0BEC5"}
+                 opacity={0.7}
+               />
+             );
+           }
+         }
+         return dots;
+       }
+       return null;
+     };
+
+    const renderViewerBorderDesign = (design) => {
+      if (design === 'minimal') {
+        return (
+          <Rect
+            x={10}
+            y={10}
+            width={340}
+            height={pageHeight - 20}
+            rx={10}
+            stroke="#B0BEC5"
+            strokeWidth={1.5}
+            fill="none"
+          />
+        );
+      }
+      if (design === 'classic') {
+        return (
+          <>
+            <Rect
+              x={10}
+              y={10}
+              width={340}
+              height={pageHeight - 20}
+              rx={6}
+              stroke="#5D4037"
+              strokeWidth={1.5}
+              fill="none"
+            />
+            <Rect
+              x={14}
+              y={14}
+              width={332}
+              height={pageHeight - 28}
+              rx={4}
+              stroke="#8D6E63"
+              strokeWidth={0.6}
+              fill="none"
+            />
+          </>
+        );
+      }
+      if (design === 'cute') {
+        return (
+          <>
+            <Rect
+              x={12}
+              y={12}
+              width={336}
+              height={pageHeight - 24}
+              rx={20}
+              stroke="#FF8A80"
+              strokeDasharray="4,4"
+              strokeWidth={2}
+              fill="none"
+            />
+            <Path d="M 22 22 L 25 28 L 31 29 L 26 33 L 28 39 L 22 36 L 16 39 L 18 33 L 13 29 L 19 28 Z" fill="#FF8A80" />
+            <Path d="M 338 22 L 341 28 L 347 29 L 342 33 L 344 39 L 338 36 L 332 39 L 334 33 L 329 29 L 335 28 Z" fill="#FF8A80" />
+            <Path d={`M 22 ${pageHeight - 22} L 25 ${pageHeight - 16} L 31 ${pageHeight - 15} L 26 ${pageHeight - 11} L 28 ${pageHeight - 5} L 22 ${pageHeight - 8} L 16 ${pageHeight - 5} L 18 ${pageHeight - 11} L 13 ${pageHeight - 15} L 19 ${pageHeight - 16} Z`} fill="#FF8A80" />
+            <Path d={`M 338 ${pageHeight - 22} L 341 ${pageHeight - 16} L 347 ${pageHeight - 15} L 342 ${pageHeight - 11} L 344 ${pageHeight - 5} L 338 ${pageHeight - 8} L 332 ${pageHeight - 5} L 334 ${pageHeight - 11} L 329 ${pageHeight - 15} L 335 ${pageHeight - 16} Z`} fill="#FF8A80" />
+          </>
+        );
+      }
+      if (design === 'elegant') {
+        return (
+          <>
+            <Rect
+              x={10}
+              y={10}
+              width={340}
+              height={pageHeight - 20}
+              stroke="#D4AF37"
+              strokeWidth={1.5}
+              fill="none"
+            />
+            <Path d={`M 6 15 L 15 6 M 354 15 L 345 6 M 6 ${pageHeight - 15} L 15 ${pageHeight - 6} M 354 ${pageHeight - 15} L 345 ${pageHeight - 6}`} stroke="#D4AF37" strokeWidth={1.5} />
+            <Rect
+              x={15}
+              y={15}
+              width={330}
+              height={pageHeight - 30}
+              stroke="#D4AF37"
+              strokeWidth={0.8}
+              fill="none"
+            />
+          </>
+        );
+      }
+      if (design === 'floral') {
+        return (
+          <>
+            <Rect
+              x={12}
+              y={12}
+              width={336}
+              height={pageHeight - 24}
+              rx={12}
+              stroke="#81C784"
+              strokeWidth={1.2}
+              fill="none"
+            />
+            <Path d="M 12 25 Q 25 25 25 12 Q 20 20 12 25 Z" fill="#4CAF50" />
+            <Path d="M 348 25 Q 335 25 335 12 Q 340 20 348 25 Z" fill="#4CAF50" />
+            <Path d={`M 12 ${pageHeight - 25} Q 25 ${pageHeight - 25} 25 ${pageHeight - 12} Q 20 ${pageHeight - 20} 12 ${pageHeight - 25} Z`} fill="#4CAF50" />
+            <Path d={`M 348 ${pageHeight - 25} Q 335 ${pageHeight - 25} 335 ${pageHeight - 12} Q 340 ${pageHeight - 20} 348 ${pageHeight - 25} Z`} fill="#4CAF50" />
+          </>
+        );
+      }
+      return null;
+    };
+
+    const getPathData = (points) => {
+      if (points.length === 0) return '';
+      const path = points.reduce((acc, point, idx) => {
+        if (idx === 0) return `M ${point.x} ${point.y}`;
+        return `${acc} L ${point.x} ${point.y}`;
+      }, '');
+      const first = points[0];
+      const last = points[points.length - 1];
+      if (first && last && points.length > 2) {
+        const dist = Math.sqrt((first.x - last.x) ** 2 + (first.y - last.y) ** 2);
+        if (dist < 8) return path + ' Z';
+      }
+      return path;
+    };
+
+    const getBoundingBox = (line) => {
+      if (!line || line.length === 0) return null;
+      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+      line.forEach((p) => {
+        if (p.x < minX) minX = p.x;
+        if (p.x > maxX) maxX = p.x;
+        if (p.y < minY) minY = p.y;
+        if (p.y > maxY) maxY = p.y;
+      });
+      return { minX, maxX, minY, maxY };
+    };
+
+    return (
+      <View style={{ flex: 1, alignItems: 'center', width: '100%' }}>
+        <ScrollView
+          style={{ flex: 1, width: '100%' }}
+          contentContainerStyle={{ alignItems: 'center', paddingVertical: 10 }}
+        >
+          <View
+            style={{
+              width: displayWidth,
+              height: displayHeight,
+              backgroundColor: isPageDark ? '#121212' : '#FFFFFF',
+              borderRadius: 10,
+              overflow: 'hidden',
+              elevation: 3,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.1,
+              shadowRadius: 4,
+              position: 'relative'
+            }}
+          >
+            <Svg
+              style={StyleSheet.absoluteFill}
+              viewBox={`0 0 360 ${pageHeight}`}
+            >
+            {renderViewerGuidelines(page.pageStyle)}
+            {renderViewerBorderDesign(page.borderDesign)}
+
+            {pageLines.map((line, idx) => (
+              <Path
+                key={idx}
+                d={getPathData(line)}
+                stroke={resolveColor(line[0]?.color)}
+                strokeWidth={line[0]?.width || 4}
+                strokeOpacity={line[0]?.opacity !== undefined ? line[0].opacity : 1}
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            ))}
+
+            {pageLines.map((line, idx) => {
+              if (line[0]?.text) {
+                const box = getBoundingBox(line);
+                if (box) {
+                  const cx = (box.minX + box.maxX) / 2;
+                  const cy = (box.minY + box.maxY) / 2;
+                  return (
+                    <SvgText
+                      key={`v-label-${idx}`}
+                      x={cx}
+                      y={cy + 4}
+                      fill={resolveColor(line[0].color)}
+                      fontSize={14}
+                      fontWeight="bold"
+                      textAnchor="middle"
+                      alignmentBaseline="middle"
+                    >
+                      {line[0].text}
+                    </SvgText>
+                  );
+                }
+              }
+              return null;
+            })}
+
+            {/* Render Saved Tapes in preview */}
+            {(page.tapes || []).map((t) => (
+              <Rect
+                key={t.id}
+                x={t.x}
+                y={t.y}
+                width={t.width}
+                height={t.height}
+                rx={4}
+                fill={t.color}
+                opacity={t.hidden ? 0.15 : 0.95}
+                stroke={t.hidden ? undefined : resolveColor(t.color)}
+                strokeWidth={t.hidden ? 0 : 1}
+                strokeDasharray={t.hidden ? '2,2' : undefined}
+              />
+            ))}
+          </Svg>
+
+          {(page.images || []).map((img) => (
+            <Image
+              key={img.id}
+              source={{ uri: img.uri }}
+              style={{
+                position: 'absolute',
+                left: img.x * viewerScale,
+                top: img.y * viewerScale,
+                width: img.width * viewerScale,
+                height: img.height * viewerScale,
+              }}
+              resizeMode="contain"
+            />
+          ))}
+
+          {pageTextBoxes.map((box) => {
+            const alignmentStyle = box.alignment || 'left';
+            const isBoxBold = box.fontStyle?.includes('bold');
+            const isBoxItalic = box.fontStyle?.includes('italic');
+
+            return (
+              <View
+                key={box.id}
+                style={{
+                  position: 'absolute',
+                  left: box.x * viewerScale,
+                  top: box.y * viewerScale,
+                  width: box.width * viewerScale,
+                  height: box.height * viewerScale,
+                  backgroundColor: box.bgColor || 'transparent',
+                  borderRadius: box.bgColor ? 6 * viewerScale : 0,
+                  padding: box.bgColor ? 8 * viewerScale : 4,
+                  elevation: box.bgColor ? 2 : 0,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: (box.fontSize || 16) * viewerScale * 1.1,
+                    color: box.bgColor ? box.color : resolveColor(box.color),
+                    textAlign: alignmentStyle,
+                    fontWeight: isBoxBold ? 'bold' : 'normal',
+                    fontStyle: isBoxItalic ? 'italic' : 'normal',
+                  }}
+                  numberOfLines={4}
+                >
+                  {box.text}
+                </Text>
+              </View>
+            );
+          })}
+
+          {/* Render Tables in preview overlay */}
+          {(page.tables || []).map((tab) => {
+            const templateId = tab.template || 'gray';
+            const template = TABLE_TEMPLATES.find(t => t.id === templateId) || TABLE_TEMPLATES[0];
+            const borderDark = tab.borderDark !== false;
+            
+            const headerBg = isPageDark ? '#1E293B' : template.headerBg;
+            const headerText = template.headerText;
+            const borderColor = borderDark 
+              ? (isPageDark ? '#475569' : '#334155') 
+              : (isPageDark ? '#1E293B' : '#E2E8F0');
+
+            return (
+              <View
+                key={tab.id}
+                style={{
+                  position: 'absolute',
+                  left: tab.x * viewerScale,
+                  top: tab.y * viewerScale,
+                  width: tab.width * viewerScale,
+                  height: tab.height * viewerScale,
+                }}
+              >
+                <View style={{ flexDirection: 'column', width: '100%', height: '100%' }}>
+                  {Array.from({ length: tab.rows }).map((_, rIdx) => {
+                    const rowHeight = tab.cellHeights[rIdx] * viewerScale;
+                    return (
+                      <View key={rIdx} style={{ flexDirection: 'row', height: rowHeight, width: '100%' }}>
+                        {Array.from({ length: tab.cols }).map((_, cIdx) => {
+                          const colWidth = tab.cellWidths[cIdx] * viewerScale;
+                          const cellText = tab.data[rIdx]?.[cIdx] || '';
+                          const isHeader = rIdx === 0;
+                          
+                          let cellBg = isPageDark ? '#121212' : '#FFFFFF';
+                          if (isHeader) {
+                            cellBg = headerBg;
+                          } else if (rIdx % 2 === 1) {
+                            cellBg = isPageDark ? '#1E1E1E' : template.cellBg;
+                          } else {
+                            cellBg = isPageDark ? '#181818' : template.altCellBg;
+                          }
+
+                          const cellTextColor = isHeader 
+                            ? headerText 
+                            : resolveColor(isPageDark ? '#FFFFFF' : '#000000');
+
+                          return (
+                            <View
+                              key={cIdx}
+                              style={{
+                                width: colWidth,
+                                height: '100%',
+                                borderWidth: borderDark ? 1.2 * viewerScale : 0.6 * viewerScale,
+                                borderColor: borderColor,
+                                backgroundColor: cellBg,
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                padding: 1,
+                              }}
+                            >
+                              <Text
+                                style={{
+                                  fontSize: (isHeader ? 11 : 10) * viewerScale,
+                                  fontWeight: isHeader ? 'bold' : 'normal',
+                                  color: cellTextColor,
+                                  textAlign: 'center',
+                                }}
+                                numberOfLines={2}
+                              >
+                                {cellText}
+                              </Text>
+                            </View>
+                          );
+                        })}
+                      </View>
+                    );
+                  })}
+                </View>
+              </View>
+            );
+          })}
+        </View>
+      </ScrollView>
+
+      <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 16,
+            marginTop: 15,
+            backgroundColor: isDark ? '#2A2A2A' : '#ECEFF1',
+            paddingVertical: 6,
+            paddingHorizontal: 16,
+            borderRadius: 20
+          }}
+        >
+          <Pressable
+            onPress={() => setViewerPageIdx(Math.max(0, pageIdx - 1))}
+            disabled={pageIdx === 0}
+            style={{ opacity: pageIdx === 0 ? 0.3 : 1, padding: 4 }}
+          >
+            <Ionicons name="chevron-back" size={20} color={theme.text} />
+          </Pressable>
+          <Text style={{ fontSize: 13, fontWeight: '800', color: theme.text }}>
+            Page {pageIdx + 1} of {pagesList.length}
+          </Text>
+          <Pressable
+            onPress={() => setViewerPageIdx(Math.min(pagesList.length - 1, pageIdx + 1))}
+            disabled={pageIdx === pagesList.length - 1}
+            style={{ opacity: pageIdx === pagesList.length - 1 ? 0.3 : 1, padding: 4 }}
+          >
+            <Ionicons name="chevron-forward" size={20} color={theme.text} />
+          </Pressable>
+        </View>
+      </View>
+    );
   };
 
   const renderTemplateDetailView = () => {
@@ -403,7 +1057,7 @@ export default function NotesListScreen({
           {renderSpiralSpine()}
           <View style={styles.ruledContent}>
             <View style={styles.detailSection}>
-              <Text style={styles.notebookSectionTitle}>🎯 TODAY'S PRIORITIES</Text>
+              <Text style={styles.notebookSectionTitle}>🎯 TODAY&apos;S PRIORITIES</Text>
               <Text selectable={true} style={styles.handwrittenText}>{data.priorities || "No priorities listed."}</Text>
             </View>
 
@@ -478,7 +1132,7 @@ export default function NotesListScreen({
       return (
         <View style={styles.wellnessDetailContainer}>
           <View style={styles.detailSection}>
-            <Text style={[styles.notebookSectionTitle, { color: '#880E4F' }]}>🧘 TODAY'S MOOD</Text>
+            <Text style={[styles.notebookSectionTitle, { color: '#880E4F' }]}>🧘 TODAY&apos;S MOOD</Text>
             <View style={styles.wellnessMoodRow}>
               {[
                 { id: 'calm', icon: '🧘', label: 'Calm' },
@@ -587,7 +1241,7 @@ export default function NotesListScreen({
           {data.affirmations ? (
             <View style={styles.detailSection}>
               <Text style={[styles.notebookSectionTitle, { color: '#880E4F' }]}>🌟 AFFIRMATION</Text>
-              <Text selectable={true} style={styles.affirmationText}>"{data.affirmations}"</Text>
+              <Text selectable={true} style={styles.affirmationText}>&quot;{data.affirmations}&quot;</Text>
             </View>
           ) : null}
 
@@ -605,7 +1259,7 @@ export default function NotesListScreen({
       return (
         <View style={styles.minimalDetailContainer}>
           <View style={styles.minimalFocusContainer}>
-            <Text style={styles.minimalFocusLabel}>TODAY'S FOCUS</Text>
+            <Text style={styles.minimalFocusLabel}>TODAY&apos;S FOCUS</Text>
             <Text selectable={true} style={styles.minimalFocusText}>{data.focus || "No primary focus."}</Text>
           </View>
 
@@ -822,7 +1476,7 @@ export default function NotesListScreen({
           {renderSpiralSpine()}
           <View style={[styles.ruledContent, { borderLeftColor: '#CE93D8' }]}>
             <View style={styles.studentFocusContainer}>
-              <Text style={styles.studentFocusLabel}>🎓 TODAY'S STUDY FOCUS</Text>
+              <Text style={styles.studentFocusLabel}>🎓 TODAY&apos;S STUDY FOCUS</Text>
               <Text selectable={true} style={styles.studentFocusText}>{data.focus || "No study focus set."}</Text>
             </View>
 
@@ -1494,6 +2148,182 @@ export default function NotesListScreen({
           {data.notes ? (
             <View style={styles.detailSection}>
               <Text style={[styles.notebookSectionTitle, { color: '#004D40' }]}>📝 Clinical Notes & Handover</Text>
+              <Text selectable={true} style={styles.handwrittenText}>{data.notes}</Text>
+            </View>
+          ) : null}
+        </View>
+      );
+    }
+
+    if (type === 'med_study') {
+      const subjectsList = data.subjects || [];
+      const clinicalLogList = data.clinicalLog || [];
+
+      const renderDetailRoutineRow = (subId, item, idx) => {
+        return (
+          <Pressable
+            key={item.id || idx}
+            onPress={() => handleToggleMedStudySubjectRoutine(subId, item.id)}
+            style={styles.wellnessHabitRow}
+          >
+            <Ionicons
+              name={item.checked ? "checkbox" : "square-outline"}
+              size={18}
+              color="#2E7D32"
+            />
+            <Text style={{ fontSize: 12, fontWeight: '800', color: '#2E7D32', width: 45 }}>
+              {item.time}
+            </Text>
+            <Text style={[
+              styles.wellnessHabitText,
+              { color: '#1C1C1C', flex: 1, fontSize: 12 },
+              item.checked && { textDecorationLine: 'line-through', opacity: 0.5 }
+            ]}>
+              {item.task || '—'}
+            </Text>
+          </Pressable>
+        );
+      };
+
+      return (
+        <View style={styles.fitnessDetailContainer}>
+          {/* Main Study Goal Banner */}
+          {data.studyGoal ? (
+            <View style={[styles.fitnessWorkoutCard, { borderColor: '#81C784', backgroundColor: '#E8F5E9' }]}>
+              <Text style={[styles.fitnessWorkoutLabel, { color: '#2E7D32' }]}>🎓 Main Medical Study Goal</Text>
+              <Text selectable={true} style={[styles.fitnessWorkoutText, { color: '#1C1C1C', fontSize: 14, fontWeight: '700' }]}>
+                {data.studyGoal}
+              </Text>
+            </View>
+          ) : null}
+
+          {/* Medical Subjects Confidence Rating & Routines */}
+          <View style={styles.detailSection}>
+            <Text style={[styles.notebookSectionTitle, { color: '#2E7D32', marginBottom: 8 }]}>📚 Subjects, Topics & Routines</Text>
+            {subjectsList.map((sub, idx) => {
+              return (
+                <View 
+                  key={sub.id || idx} 
+                  style={{
+                    backgroundColor: '#FFFFFF',
+                    borderRadius: 14,
+                    padding: 12,
+                    borderWidth: 1.5,
+                    borderColor: '#81C784',
+                    marginBottom: 12,
+                  }}
+                >
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                    <Text style={{ fontSize: 14, fontWeight: '900', color: '#2E7D32' }}>
+                      {sub.name || 'Unnamed Subject'}
+                    </Text>
+                    {sub.studyDuration ? (
+                      <Text style={{ fontSize: 11, fontWeight: '800', color: '#1B5E20', backgroundColor: '#E8F5E9', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
+                        ⏱️ {sub.studyDuration}
+                      </Text>
+                    ) : null}
+                  </View>
+
+                  {/* Nested Topics Checklist */}
+                  <View style={{ marginBottom: 8, paddingVertical: 4 }}>
+                    <Text style={{ fontSize: 11, fontWeight: '700', color: '#2E7D32', marginBottom: 4 }}>📖 Study Topics & Targets</Text>
+                    {(sub.topics || []).map((topic, tIdx) => (
+                      <Pressable
+                        key={topic.id || tIdx}
+                        onPress={() => handleToggleMedStudySubjectTopic(sub.id, topic.id)}
+                        style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginVertical: 3 }}
+                      >
+                        <Ionicons
+                          name={topic.checked ? "checkbox" : "square-outline"}
+                          size={18}
+                          color="#2E7D32"
+                        />
+                        <Text style={[
+                          { color: '#1C1C1C', flex: 1, fontSize: 12 },
+                          topic.checked && { textDecorationLine: 'line-through', opacity: 0.5 }
+                        ]}>
+                          {topic.text || '—'}
+                        </Text>
+                        {topic.duration ? (
+                          <Text style={{ fontSize: 11, color: '#666', fontStyle: 'italic' }}>
+                            ({topic.duration})
+                          </Text>
+                        ) : null}
+                      </Pressable>
+                    ))}
+                    {(!sub.topics || sub.topics.length === 0) && (
+                      <Text style={{ fontSize: 11, color: '#999', fontStyle: 'italic' }}>No topics listed.</Text>
+                    )}
+                  </View>
+
+                  {/* Subject Routine */}
+                  <View style={{ marginVertical: 6, paddingVertical: 4, borderTopWidth: 1, borderTopColor: '#E8F5E9', borderBottomWidth: 1, borderBottomColor: '#E8F5E9' }}>
+                    <Text style={{ fontSize: 11, fontWeight: '700', color: '#2E7D32', marginBottom: 4 }}>⏰ Subject Routine</Text>
+                    {getSafeRoutineArray(sub.routine).map((rItem, rIdx) => renderDetailRoutineRow(sub.id, rItem, rIdx))}
+                    {(getSafeRoutineArray(sub.routine).length === 0) && (
+                      <Text style={{ fontSize: 11, color: '#999', fontStyle: 'italic' }}>No routines listed.</Text>
+                    )}
+                  </View>
+
+                  {/* Confidence Rating Stars */}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 6 }}>
+                    <Text style={{ fontSize: 11, color: '#777', fontWeight: '700' }}>Confidence</Text>
+                    <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
+                      {[1, 2, 3, 4, 5].map(star => (
+                        <Pressable 
+                          key={star} 
+                          onPress={() => handleUpdateMedStudySubjectRating(sub.id, star)}
+                          style={{ padding: 1 }}
+                        >
+                          <Ionicons 
+                            name={star <= (sub.rating || 0) ? "star" : "star-outline"} 
+                            size={16} 
+                            color="#4CAF50" 
+                          />
+                        </Pressable>
+                      ))}
+                    </View>
+                  </View>
+                </View>
+              );
+            })}
+            {subjectsList.length === 0 ? (
+              <Text style={styles.habitEmptyText}>No subjects listed.</Text>
+            ) : null}
+          </View>
+
+          {/* Clinical Practical Checklist */}
+          <View style={styles.detailSection}>
+            <Text style={[styles.notebookSectionTitle, { color: '#2E7D32' }]}>📋 Clinical Practical & Case Log</Text>
+            {(clinicalLogList || []).map((item, cIdx) => (
+              <Pressable
+                key={item.id || cIdx}
+                onPress={() => handleToggleTemplateCheckbox('clinicalLog', item.id)}
+                style={styles.wellnessHabitRow}
+              >
+                <Ionicons
+                  name={item.checked ? "checkbox" : "square-outline"}
+                  size={20}
+                  color="#2E7D32"
+                />
+                <Text style={[
+                  styles.wellnessHabitText,
+                  { color: '#1C1C1C' },
+                  item.checked && { textDecorationLine: 'line-through', opacity: 0.5 }
+                ]}>
+                  {item.text}
+                </Text>
+              </Pressable>
+            ))}
+            {(clinicalLogList.length === 0) && (
+              <Text style={styles.habitEmptyText}>No practical tasks listed.</Text>
+            )}
+          </View>
+
+          {/* Study Summary Notes */}
+          {data.notes ? (
+            <View style={styles.detailSection}>
+              <Text style={[styles.notebookSectionTitle, { color: '#2E7D32' }]}>📝 Study Pearls & Key Learnings</Text>
               <Text selectable={true} style={styles.handwrittenText}>{data.notes}</Text>
             </View>
           ) : null}
@@ -2720,6 +3550,56 @@ export default function NotesListScreen({
           fontWeight: '800',
           textAlign: 'center',
         },
+        typePickerItem: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          padding: 12,
+          borderRadius: 14,
+          borderWidth: 1,
+          gap: 12,
+        },
+        typePickerIconBg: {
+          width: 40,
+          height: 40,
+          borderRadius: 10,
+          justifyContent: 'center',
+          alignItems: 'center',
+        },
+        typePickerItemTitle: {
+          fontSize: 15,
+          fontWeight: '800',
+        },
+        typePickerItemDesc: {
+          fontSize: 11,
+          marginTop: 2,
+        },
+        pickerContainer: {
+          width: '90%',
+          borderRadius: 24,
+          padding: 24,
+          alignItems: 'center',
+          elevation: 20,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 10 },
+          shadowOpacity: 0.25,
+          shadowRadius: 15,
+        },
+        pickerTitle: {
+          fontSize: 20,
+          fontWeight: '900',
+          marginBottom: 20,
+        },
+        pickerCloseBtn: {
+          height: 50,
+          borderRadius: 16,
+          justifyContent: 'center',
+          alignItems: 'center',
+        },
+        pickerCloseBtnText: {
+          color: '#FFFFFF',
+          fontSize: 16,
+          fontWeight: '700',
+        },
       }),
     [theme, isDark, isTablet]
   );
@@ -2729,7 +3609,9 @@ export default function NotesListScreen({
     
     // Filter notes based on selected folder first
     let folderNotes = notes;
-    if (selectedFolderId !== null) {
+    if (selectedFolderId === 'filter_notebook') {
+      folderNotes = notes.filter(note => note.noteType === 'notebook');
+    } else if (selectedFolderId !== null) {
       folderNotes = notes.filter(note => note.folderId === selectedFolderId);
     }
     
@@ -2750,6 +3632,7 @@ export default function NotesListScreen({
   const routineProgress = useMemo(() => {
     const routineNotes = notes.filter(note => {
       if (selectedFolderId) {
+        if (selectedFolderId === 'filter_notebook') return false;
         return note.folderId === selectedFolderId;
       }
       const folder = folders.find(f => f.id === note.folderId);
@@ -2864,6 +3747,29 @@ export default function NotesListScreen({
             totalChecklistItems++;
             if (data.clinicianCare.lunchBreak) completedChecklistItems++;
           }
+        } else if (note.templateType === 'med_study') {
+          if (data.subjects && Array.isArray(data.subjects)) {
+            data.subjects.forEach(s => {
+              if (s.routine) {
+                Object.values(s.routine).forEach(item => {
+                  totalChecklistItems++;
+                  if (item.checked) completedChecklistItems++;
+                });
+              }
+              if (s.topics && Array.isArray(s.topics)) {
+                s.topics.forEach(item => {
+                  totalChecklistItems++;
+                  if (item.checked) completedChecklistItems++;
+                });
+              }
+            });
+          }
+          if (data.clinicalLog) {
+            data.clinicalLog.forEach(item => {
+              totalChecklistItems++;
+              if (item.checked) completedChecklistItems++;
+            });
+          }
         }
       }
     });
@@ -2926,7 +3832,9 @@ export default function NotesListScreen({
             <Text style={styles.mainTitle}>
               {selectedFolderId === null 
                 ? "My Notes" 
-                : (folders.find(f => f.id === selectedFolderId)?.name || "My Notes")}
+                : (selectedFolderId === 'filter_notebook'
+                    ? "Digital Notebooks"
+                    : (folders.find(f => f.id === selectedFolderId)?.name || "My Notes"))}
             </Text>
             <Text style={styles.dateSub}>Today {today}</Text>
           </View>
@@ -2937,7 +3845,7 @@ export default function NotesListScreen({
           <View style={[styles.routineProgressCard, { borderColor: theme.border }]}>
             <View style={styles.routineHeader}>
               <Ionicons name="flame" size={22} color="#FF8C00" />
-              <Text style={[styles.routineProgressTitle, { color: theme.text }]}>Today's Routine Progress</Text>
+              <Text style={[styles.routineProgressTitle, { color: theme.text }]}>Today&apos;s Routine Progress</Text>
               <Text style={[styles.routineProgressText, { color: theme.mutedText }]}>
                 {routineProgress.completed}/{routineProgress.total} Tasks
               </Text>
@@ -2965,7 +3873,7 @@ export default function NotesListScreen({
 
         {/* Create Card (Hide when searching) */}
         {!isSearching && (
-          <Pressable onPress={onCreateNew} style={styles.createCard}>
+          <Pressable onPress={() => setIsTypePickerVisible(true)} style={styles.createCard}>
             <LinearGradient
               colors={['#FF8C00', '#FFD700']}
               start={{ x: 0, y: 0 }}
@@ -2991,6 +3899,7 @@ export default function NotesListScreen({
           <NoteCard
             note={item}
             index={index}
+            isDark={isDark}
             onPress={() => setSelectedNote(item)}
             onPinToggle={() => onPinToggle(item.id)}
           />
@@ -3194,6 +4103,8 @@ export default function NotesListScreen({
 
               {selectedNote?.noteType === 'template' ? (
                 renderTemplateDetailView()
+              ) : selectedNote?.noteType === 'notebook' ? (
+                renderNotebookDetailView()
               ) : selectedNote?.noteType === 'checklist' && selectedNote.checklist && selectedNote.checklist.length > 0 ? (
                 <View style={{ gap: 8, marginVertical: 8 }}>
                   {selectedNote.checklist.map((item) => (
@@ -3285,6 +4196,95 @@ export default function NotesListScreen({
         </Pressable>
       </Modal>
 
+      {/* Note Type Picker Modal */}
+      <Modal
+        visible={isTypePickerVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setIsTypePickerVisible(false)}
+      >
+        <Pressable 
+          style={styles.modalOverlay} 
+          onPress={() => setIsTypePickerVisible(false)}
+        >
+          <Pressable 
+            style={[styles.pickerContainer, { backgroundColor: isDark ? '#1E1E1E' : '#F9F7F2', width: '90%', padding: 22 }]} 
+            onPress={() => {}}
+          >
+            <Text style={[styles.pickerTitle, { color: theme.text, marginBottom: 15 }]}>Create New</Text>
+            
+            <View style={{ gap: 12, width: '100%' }}>
+              {[
+                { 
+                  type: 'text', 
+                  title: 'Text Note', 
+                  desc: 'Standard note with rich media & drawings',
+                  icon: 'document-text-outline',
+                  iconBg: '#E8F5E9',
+                  iconColor: '#4CAF50'
+                },
+                { 
+                  type: 'checklist', 
+                  title: 'Task Checklist', 
+                  desc: 'Quick todo list to track tasks',
+                  icon: 'checkbox-outline',
+                  iconBg: '#FFF3E0',
+                  iconColor: '#FF9800'
+                },
+                { 
+                  type: 'notebook', 
+                  title: 'Digital Notebook', 
+                  desc: 'Canvas page with ruler, tables, tapes',
+                  icon: 'book-outline',
+                  iconBg: '#E3F2FD',
+                  iconColor: '#2196F3'
+                },
+                { 
+                  type: 'template', 
+                  title: 'Planner Template', 
+                  desc: 'Wellness, routines, studies & diet logs',
+                  icon: 'calendar-outline',
+                  iconBg: '#F3E5F5',
+                  iconColor: '#9C27B0'
+                }
+              ].map((item) => (
+                <Pressable
+                  key={item.type}
+                  onPress={() => {
+                    setIsTypePickerVisible(false);
+                    onCreateNew(item.type);
+                  }}
+                  style={({ pressed }) => [
+                    styles.typePickerItem,
+                    { 
+                      backgroundColor: isDark ? '#2A2A2A' : '#FFFFFF',
+                      borderColor: isDark ? '#333333' : '#E5E5E5',
+                      opacity: pressed ? 0.8 : 1
+                    }
+                  ]}
+                >
+                  <View style={[styles.typePickerIconBg, { backgroundColor: item.iconBg }]}>
+                    <Ionicons name={item.icon} size={22} color={item.iconColor} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.typePickerItemTitle, { color: theme.text }]}>{item.title}</Text>
+                    <Text style={[styles.typePickerItemDesc, { color: theme.mutedText }]}>{item.desc}</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={18} color={theme.mutedText} />
+                </Pressable>
+              ))}
+            </View>
+
+            <Pressable 
+              style={[styles.pickerCloseBtn, { backgroundColor: theme.primary, marginTop: 20, width: '100%' }]} 
+              onPress={() => setIsTypePickerVisible(false)}
+            >
+              <Text style={styles.pickerCloseBtnText}>Cancel</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
       {/* Custom Left Drawer Sidebar */}
       {isDrawerVisible && (
         <View style={styles.drawerBackdrop}>
@@ -3334,6 +4334,29 @@ export default function NotesListScreen({
                   selectedFolderId === null && styles.drawerItemTextActive,
                   { color: selectedFolderId === null ? '#FFFFFF' : theme.text }
                 ]}>All Notes</Text>
+              </Pressable>
+              
+              {/* Digital Notebooks Filter */}
+              <Pressable 
+                onPress={() => {
+                  setSelectedFolderId('filter_notebook');
+                  closeDrawer();
+                }}
+                style={[
+                  styles.drawerItem,
+                  selectedFolderId === 'filter_notebook' && styles.drawerItemActive
+                ]}
+              >
+                <Ionicons 
+                  name="book-outline" 
+                  size={20} 
+                  color={selectedFolderId === 'filter_notebook' ? '#FFFFFF' : theme.text} 
+                />
+                <Text style={[
+                  styles.drawerItemText,
+                  selectedFolderId === 'filter_notebook' && styles.drawerItemTextActive,
+                  { color: selectedFolderId === 'filter_notebook' ? '#FFFFFF' : theme.text }
+                ]}>Digital Notebooks</Text>
               </Pressable>
 
               {/* Custom Folders */}

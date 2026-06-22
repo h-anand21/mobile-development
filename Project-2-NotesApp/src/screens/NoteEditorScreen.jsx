@@ -18,6 +18,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import Svg, { Path, Text as SvgText } from 'react-native-svg';
 import DrawingCanvas from './DrawingCanvas';
+import NotebookCanvas from './NotebookCanvas';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 let Audio = null;
 try {
@@ -25,6 +26,26 @@ try {
 } catch (error) {
   console.warn('Audio module not loaded:', error);
 }
+
+const getSafeRoutineArray = (routine) => {
+  if (Array.isArray(routine)) {
+    return routine.map((r, index) => ({
+      id: r?.id || `r_${index}`,
+      time: r?.time || '08:00',
+      task: r?.task || '',
+      checked: !!r?.checked
+    }));
+  }
+  if (routine && typeof routine === 'object') {
+    return Object.keys(routine).map((key, index) => ({
+      id: routine[key]?.id || key || `r_${index}`,
+      time: routine[key]?.time || '08:00',
+      task: routine[key]?.task || '',
+      checked: !!routine[key]?.checked
+    }));
+  }
+  return [];
+};
 
 export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, folders = [] }) {
   const { height } = useWindowDimensions();
@@ -37,19 +58,60 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
   const descriptionScrollViewRef = useRef(null);
 
   // New Media, Checklist & Template states
-  const [noteType, setNoteType] = useState(noteToEdit ? noteToEdit.noteType : 'text'); // 'text', 'checklist', or 'template'
+  const [noteType, setNoteType] = useState(noteToEdit ? noteToEdit.noteType : 'text'); // 'text', 'checklist', or 'template', 'notebook'
   const [templateType, setTemplateType] = useState(noteToEdit ? noteToEdit.templateType : null);
-  const [templateData, setTemplateData] = useState(noteToEdit ? (noteToEdit.templateData || {}) : {});
+  const [templateData, setTemplateData] = useState(() => {
+    if (noteToEdit) {
+      if (noteToEdit.noteType === 'notebook' && (!noteToEdit.templateData || !noteToEdit.templateData.pages)) {
+        return {
+          pages: [
+            {
+              pageStyle: 'ruled',
+              borderDesign: 'classic',
+              lines: [],
+              textBoxes: [],
+              images: [],
+              tapes: [],
+              tables: [],
+              pageHeight: 1500
+            }
+          ]
+        };
+      }
+      return noteToEdit.templateData || {};
+    }
+    return {};
+  });
   const [isTemplateModalVisible, setIsTemplateModalVisible] = useState(false);
 
-  const [checklist, setChecklist] = useState(noteToEdit ? (noteToEdit.checklist || []) : []);
+  const [checklist, setChecklist] = useState(() => {
+    if (noteToEdit) {
+      if (noteToEdit.noteType === 'checklist' && (!noteToEdit.checklist || noteToEdit.checklist.length === 0)) {
+        return [{ id: 'c_1', text: '', checked: false }];
+      }
+      return noteToEdit.checklist || [];
+    }
+    return [];
+  });
   const [images, setImages] = useState(noteToEdit ? (noteToEdit.images || []) : []);
   const [drawings, setDrawings] = useState(noteToEdit ? (noteToEdit.drawings || []) : []);
   const [audio, setAudio] = useState(noteToEdit ? (noteToEdit.audio || []) : []);
   const [isBottomSheetVisible, setIsBottomSheetVisible] = useState(false);
   const [isDrawingCanvasVisible, setIsDrawingCanvasVisible] = useState(false);
+  const [isNotebookCanvasVisible, setIsNotebookCanvasVisible] = useState(false);
   const [editingDrawingIndex, setEditingDrawingIndex] = useState(null);
   const [viewerImageUri, setViewerImageUri] = useState(null);
+
+  // Auto-open picker / canvas for preselected note type on creation
+  React.useEffect(() => {
+    if (noteToEdit && !noteToEdit.id) {
+      if (noteToEdit.noteType === 'notebook') {
+        setIsNotebookCanvasVisible(true);
+      } else if (noteToEdit.noteType === 'template') {
+        setIsTemplateModalVisible(true);
+      }
+    }
+  }, [noteToEdit]);
 
   // Time Picker States
   const [isTimePickerVisible, setIsTimePickerVisible] = useState(false);
@@ -236,6 +298,48 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
         stressLevel: 3,
         lunchBreak: false
       },
+      notes: ""
+    },
+    med_study: {
+      studyGoal: "",
+      subjects: [
+        {
+          id: "ms1",
+          name: "Anatomy",
+          studyDuration: "2 hours",
+          rating: 3,
+          topics: [
+            { id: "mst1_1", text: "Coronary Arteries", duration: "45 mins", checked: false },
+            { id: "mst1_2", text: "Cardiac Chambers", duration: "30 mins", checked: false }
+          ],
+          routine: [
+            { id: "r1_1", time: "08:00", task: "Ward rounds & clinical cases", checked: false },
+            { id: "r1_2", time: "14:00", task: "Library study & lecture", checked: false },
+            { id: "r1_3", time: "18:00", task: "M&M conference review", checked: false },
+            { id: "r1_4", time: "22:00", task: "Self study & pathology notes", checked: false }
+          ]
+        },
+        {
+          id: "ms2",
+          name: "Pharmacology",
+          studyDuration: "1 hour",
+          rating: 4,
+          topics: [
+            { id: "mst2_1", text: "Beta Blockers", duration: "30 mins", checked: false },
+            { id: "mst2_2", text: "Calcium Channel Blockers", duration: "30 mins", checked: false }
+          ],
+          routine: [
+            { id: "r2_1", time: "08:00", task: "Ward rounds & clinical cases", checked: false },
+            { id: "r2_2", time: "14:00", task: "Library study & lecture", checked: false },
+            { id: "r2_3", time: "18:00", task: "M&M conference review", checked: false },
+            { id: "r2_4", time: "22:00", task: "Self study & pathology notes", checked: false }
+          ]
+        }
+      ],
+      clinicalLog: [
+        { id: "cl1", text: "Observe suture removal in Ward 3", checked: false },
+        { id: "cl2", text: "Review ABG reports of ICU patient", checked: false }
+      ],
       notes: ""
     }
   };
@@ -439,6 +543,161 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
     });
   };
 
+  // Medical Student/Study Helpers
+  const addMedStudySubject = () => {
+    setTemplateData(prev => {
+      const updated = { ...prev };
+      const newSub = {
+        id: `ms_${Date.now()}`,
+        name: "",
+        studyDuration: "",
+        rating: 3,
+        topics: [
+          { id: `mst_${Date.now()}_1`, text: "", duration: "", checked: false }
+        ],
+        routine: [
+          { id: `r_${Date.now()}_1`, time: "08:00", task: "", checked: false },
+          { id: `r_${Date.now()}_2`, time: "12:00", task: "", checked: false },
+          { id: `r_${Date.now()}_3`, time: "18:00", task: "", checked: false },
+          { id: `r_${Date.now()}_4`, time: "22:00", task: "", checked: false }
+        ]
+      };
+      updated.subjects = [...(updated.subjects || []), newSub];
+      return updated;
+    });
+  };
+
+  const removeMedStudySubject = (subId) => {
+    setTemplateData(prev => {
+      const updated = { ...prev };
+      updated.subjects = (updated.subjects || []).filter(s => s.id !== subId);
+      return updated;
+    });
+  };
+
+  const updateMedStudySubjectField = (subId, key, value) => {
+    setTemplateData(prev => {
+      const updated = { ...prev };
+      updated.subjects = (updated.subjects || []).map(s => 
+        s.id === subId ? { ...s, [key]: value } : s
+      );
+      return updated;
+    });
+  };
+
+  const updateMedStudySubjectRoutineField = (subId, itemId, field, value) => {
+    setTemplateData(prev => {
+      const updated = { ...prev };
+      updated.subjects = (updated.subjects || []).map(s => {
+        if (s.id === subId) {
+          return {
+            ...s,
+            routine: getSafeRoutineArray(s.routine).map(r => 
+              r.id === itemId ? { ...r, [field]: value } : r
+            )
+          };
+        }
+        return s;
+      });
+      return updated;
+    });
+  };
+
+  const addMedStudySubjectRoutineItem = (subId) => {
+    setTemplateData(prev => {
+      const updated = { ...prev };
+      updated.subjects = (updated.subjects || []).map(s => {
+        if (s.id === subId) {
+          const newRoutine = {
+            id: `r_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+            time: "12:00",
+            task: "",
+            checked: false
+          };
+          return {
+            ...s,
+            routine: [...getSafeRoutineArray(s.routine), newRoutine]
+          };
+        }
+        return s;
+      });
+      return updated;
+    });
+  };
+
+  const removeMedStudySubjectRoutineItem = (subId, itemId) => {
+    setTemplateData(prev => {
+      const updated = { ...prev };
+      updated.subjects = (updated.subjects || []).map(s => {
+        if (s.id === subId) {
+          return {
+            ...s,
+            routine: getSafeRoutineArray(s.routine).filter(r => r.id !== itemId)
+          };
+        }
+        return s;
+      });
+      return updated;
+    });
+  };
+
+  const addMedStudySubjectTopic = (subId) => {
+    setTemplateData(prev => {
+      const updated = { ...prev };
+      updated.subjects = (updated.subjects || []).map(s => {
+        if (s.id === subId) {
+          const newTopic = {
+            id: `mst_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+            text: "",
+            duration: "",
+            checked: false
+          };
+          return {
+            ...s,
+            topics: [...(s.topics || []), newTopic]
+          };
+        }
+        return s;
+      });
+      return updated;
+    });
+  };
+
+  const removeMedStudySubjectTopic = (subId, topicId) => {
+    setTemplateData(prev => {
+      const updated = { ...prev };
+      updated.subjects = (updated.subjects || []).map(s => {
+        if (s.id === subId) {
+          return {
+            ...s,
+            topics: (s.topics || []).filter(t => t.id !== topicId)
+          };
+        }
+        return s;
+      });
+      return updated;
+    });
+  };
+
+  const updateMedStudySubjectTopicField = (subId, topicId, field, value) => {
+    setTemplateData(prev => {
+      const updated = { ...prev };
+      updated.subjects = (updated.subjects || []).map(s => {
+        if (s.id === subId) {
+          return {
+            ...s,
+            topics: (s.topics || []).map(t => 
+              t.id === topicId ? { ...t, [field]: value } : t
+            )
+          };
+        }
+        return s;
+      });
+      return updated;
+    });
+  };
+
+
   // Time Picker Helpers
   const openTimePicker = (type, index) => {
     setTimePickerTarget({ type, index });
@@ -454,6 +713,12 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
     } else if (type === 'medicalEnd') {
       const shiftTime = templateData.shiftInfo?.shiftTime || "08:00 - 16:00";
       currentTime = shiftTime.split(" - ")[1] || "16:00";
+    } else if (type.startsWith('med_study|')) {
+      const [, subId, itemId] = type.split('|');
+      const sub = (templateData.subjects || []).find(s => s.id === subId);
+      const rArr = getSafeRoutineArray(sub?.routine);
+      const item = rArr.find(r => r.id === itemId);
+      currentTime = item?.time || "08:00";
     }
     
     // Parse HH:MM
@@ -496,6 +761,21 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
       }
       
       updateTemplateField('shiftInfo', 'shiftTime', `${start} - ${end}`);
+    } else if (type.startsWith('med_study|')) {
+      const [, subId, itemId] = type.split('|');
+      const updatedSubjects = (templateData.subjects || []).map(s => {
+        if (s.id === subId) {
+          const rArr = getSafeRoutineArray(s.routine);
+          return {
+            ...s,
+            routine: rArr.map(r => 
+              r.id === itemId ? { ...r, time: formattedTime } : r
+            )
+          };
+        }
+        return s;
+      });
+      updateTemplateField('subjects', null, updatedSubjects);
     }
     
     setIsTimePickerVisible(false);
@@ -1351,7 +1631,7 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
     if (type === 'wellness') {
       const moodSum = `Mood: ${data.mood?.toUpperCase() || '-'}`;
       const sleepSum = `Sleep: ${data.sleepHours || 0} hours`;
-      const grats = (data.gratitude || []).filter(g => g.trim() !== '').map(g => `- ${g}`).join('\n');
+      const grats = (data.gratitude || []).filter(g => g && typeof g === 'string' && g.trim() !== '').map(g => `- ${g}`).join('\n');
       return `${moodSum} | ${sleepSum}\n${grats ? 'Gratitude:\n' + grats : ''}`;
     }
     if (type === 'minimal') {
@@ -1397,6 +1677,27 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
       const shift = data.shiftInfo || {};
       const patientsDone = (data.patients || []).filter(p => p.roundsDone).length;
       return `Clinical Rounds - ${shift.role || 'Doctor'} | Patients: ${patientsDone}/${data.patients?.length || 0} rounds done`;
+    }
+    if (type === 'med_study') {
+      let routineDone = 0;
+      let totalRoutine = 0;
+      let topicsDone = 0;
+      let totalTopics = 0;
+      (data.subjects || []).forEach(s => {
+        if (s.routine) {
+          Object.values(s.routine).forEach(r => {
+            totalRoutine++;
+            if (r.checked) routineDone++;
+          });
+        }
+        if (s.topics) {
+          s.topics.forEach(t => {
+            totalTopics++;
+            if (t.checked) topicsDone++;
+          });
+        }
+      });
+      return `Med Study Routine | Goal: ${data.studyGoal || '-'}\nRoutine: ${routineDone}/${totalRoutine} | Topics: ${topicsDone}/${totalTopics} checked | Subjects: ${data.subjects?.length || 0}`;
     }
     return '';
   };
@@ -1561,7 +1862,7 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
       return (
         <View style={[styles.templateContainer, { backgroundColor: '#FCE4EC', borderColor: '#F48FB1' }]}>
           {/* Mood Selector */}
-          <Text style={[styles.templateSectionHeader, { color: '#880E4F' }]}>Today's Mood</Text>
+          <Text style={[styles.templateSectionHeader, { color: '#880E4F' }]}>Today&apos;s Mood</Text>
           <View style={styles.templateMoodRow}>
             {[
               { id: 'calm', icon: '🧘', label: 'Calm' },
@@ -1719,7 +2020,7 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
       return (
         <View style={[styles.templateContainer, { backgroundColor: '#F9F6F0', borderColor: '#D7CCC8' }]}>
           {/* Today's Focus */}
-          <Text style={[styles.templateSectionHeader, { color: '#3E2723' }]}>Today's Focus</Text>
+          <Text style={[styles.templateSectionHeader, { color: '#3E2723' }]}>Today&apos;s Focus</Text>
           <TextInput
             value={templateData.focus}
             onChangeText={(txt) => updateTemplateField('focus', null, txt)}
@@ -2103,7 +2404,7 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
       return (
         <View style={[styles.templateContainer, { backgroundColor: '#F3E5F5', borderColor: '#E1BEE7' }]}>
           {/* Focus */}
-          <Text style={[styles.templateSectionHeader, { color: '#6A1B9A' }]}>🎓 Today's Study Focus</Text>
+          <Text style={[styles.templateSectionHeader, { color: '#6A1B9A' }]}>🎓 Today&apos;s Study Focus</Text>
           <TextInput
             value={templateData.focus}
             onChangeText={(txt) => updateTemplateField('focus', null, txt)}
@@ -3124,6 +3425,319 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
       );
     }
 
+    if (templateType === 'med_study') {
+      const subjectsList = templateData.subjects || [];
+      const clinicalLogList = templateData.clinicalLog || [];
+
+      return (
+        <View style={[styles.templateContainer, { backgroundColor: '#E8F5E9', borderColor: '#81C784' }]}>
+          {/* Main Study Goal */}
+          <Text style={[styles.templateSectionHeader, { color: '#2E7D32', fontSize: 16, fontWeight: '900', marginBottom: 6 }]}>
+            🎓 Today&apos;s Medical Study Goal
+          </Text>
+          <TextInput
+            value={templateData.studyGoal}
+            onChangeText={(txt) => updateTemplateField('studyGoal', null, txt)}
+            placeholder="e.g. Cardiothoracic surgery case review or Pathology notes..."
+            placeholderTextColor="#A5D6A7"
+            style={[styles.templateInputUnderline, { borderBottomColor: '#81C784', color: '#1C1C1C', marginBottom: 15 }]}
+          />
+
+          {/* Medical Subjects Checklist */}
+          <Text style={[styles.templateSectionHeader, { color: '#2E7D32', marginTop: 10, marginBottom: 8 }]}>
+            📚 Medical Subjects & Confidence ({subjectsList.length})
+          </Text>
+
+          {subjectsList.map((sub, idx) => (
+            <View 
+              key={sub.id} 
+              style={{
+                backgroundColor: '#FFFFFF',
+                borderRadius: 16,
+                padding: 12,
+                borderWidth: 1.5,
+                borderColor: '#81C784',
+                marginBottom: 12,
+              }}
+            >
+              {/* Header inside Card */}
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <Text style={{ fontSize: 13, fontWeight: '800', color: '#2E7D32' }}>
+                  Subject #{idx + 1}
+                </Text>
+                {subjectsList.length > 1 && (
+                  <Pressable onPress={() => removeMedStudySubject(sub.id)} style={{ padding: 4 }}>
+                    <Ionicons name="trash-outline" size={16} color="#EF5350" />
+                  </Pressable>
+                )}
+              </View>
+
+              {/* Subject details inputs */}
+              <View style={styles.templateGridTwoColumn}>
+                <View style={styles.templateGridCell}>
+                  <Text style={[styles.templateGridLabel, { color: '#2E7D32' }]}>Subject Name</Text>
+                  <TextInput
+                    value={sub.name}
+                    onChangeText={(txt) => updateMedStudySubjectField(sub.id, 'name', txt)}
+                    placeholder="e.g. Pathology"
+                    placeholderTextColor="#A5D6A7"
+                    style={[styles.templateInputBox, { borderColor: '#81C784', color: '#1C1C1C' }]}
+                  />
+                </View>
+                <View style={styles.templateGridCell}>
+                  <Text style={[styles.templateGridLabel, { color: '#2E7D32' }]}>Subject Target Time</Text>
+                  <TextInput
+                    value={sub.studyDuration}
+                    onChangeText={(txt) => updateMedStudySubjectField(sub.id, 'studyDuration', txt)}
+                    placeholder="e.g. 2 hours"
+                    placeholderTextColor="#A5D6A7"
+                    style={[styles.templateInputBox, { borderColor: '#81C784', color: '#1C1C1C' }]}
+                  />
+                </View>
+              </View>
+
+              {/* Study Topics */}
+              <Text style={{ fontSize: 12, fontWeight: '700', color: '#2E7D32', marginTop: 12, marginBottom: 4 }}>
+                📖 Study Topics & Target Duration
+              </Text>
+              {(sub.topics || []).map((topic, tIdx) => (
+                <View key={topic.id || tIdx} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginVertical: 4 }}>
+                  {/* Topic Checkbox Toggle */}
+                  <Pressable 
+                    onPress={() => updateMedStudySubjectTopicField(sub.id, topic.id, 'checked', !topic.checked)}
+                    style={{ padding: 4 }}
+                  >
+                    <Ionicons 
+                      name={topic.checked ? "checkbox" : "square-outline"} 
+                      size={18} 
+                      color="#2E7D32" 
+                    />
+                  </Pressable>
+
+                  {/* Topic text input */}
+                  <TextInput
+                    value={topic.text}
+                    onChangeText={(txt) => updateMedStudySubjectTopicField(sub.id, topic.id, 'text', txt)}
+                    placeholder="e.g. Cell Injury"
+                    placeholderTextColor="#A5D6A7"
+                    style={[
+                      styles.templateTimelineInput, 
+                      { borderBottomColor: '#81C784', color: '#1C1C1C', flex: 1 },
+                      topic.checked && { textDecorationLine: 'line-through', opacity: 0.6 }
+                    ]}
+                  />
+
+                  {/* Topic duration input */}
+                  <TextInput
+                    value={topic.duration}
+                    onChangeText={(txt) => updateMedStudySubjectTopicField(sub.id, topic.id, 'duration', txt)}
+                    placeholder="e.g. 45m"
+                    placeholderTextColor="#A5D6A7"
+                    style={{
+                      width: 60,
+                      borderBottomWidth: 1.2,
+                      borderBottomColor: '#81C784',
+                      fontSize: 12,
+                      color: '#1C1C1C',
+                      padding: 1,
+                      textAlign: 'center'
+                    }}
+                  />
+
+                  {/* Delete topic button */}
+                  {sub.topics && sub.topics.length > 1 && (
+                    <Pressable onPress={() => removeMedStudySubjectTopic(sub.id, topic.id)} style={{ padding: 4 }}>
+                      <Ionicons name="close-circle-outline" size={16} color="#EF5350" />
+                    </Pressable>
+                  )}
+                </View>
+              ))}
+
+              {/* Add Topic Button */}
+              <Pressable 
+                onPress={() => addMedStudySubjectTopic(sub.id)}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 4,
+                  alignSelf: 'flex-start',
+                  marginTop: 6,
+                  paddingVertical: 4,
+                  paddingHorizontal: 8,
+                  borderRadius: 6,
+                  borderWidth: 1,
+                  borderColor: '#81C784',
+                  backgroundColor: '#F1F8E9'
+                }}
+              >
+                <Ionicons name="add" size={14} color="#2E7D32" />
+                <Text style={{ fontSize: 11, fontWeight: '700', color: '#2E7D32' }}>Add Topic</Text>
+              </Pressable>
+
+              {/* Daily Shift & Study Routine for this subject */}
+              <Text style={{ fontSize: 12, fontWeight: '700', color: '#2E7D32', marginTop: 12, marginBottom: 4 }}>
+                ⏰ Subject Daily Routine
+              </Text>
+              {getSafeRoutineArray(sub.routine).map((item, rIdx) => {
+                return (
+                  <View key={item.id || rIdx} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginVertical: 4 }}>
+                    {/* Checked Toggle */}
+                    <Pressable 
+                      onPress={() => updateMedStudySubjectRoutineField(sub.id, item.id, 'checked', !item.checked)}
+                      style={{ padding: 4 }}
+                    >
+                      <Ionicons 
+                        name={item.checked ? "checkbox" : "square-outline"} 
+                        size={18} 
+                        color="#2E7D32" 
+                      />
+                    </Pressable>
+
+                    {/* Time input + Clock Icon */}
+                    <View 
+                      style={{
+                        width: 75,
+                        borderBottomWidth: 1.2,
+                        borderBottomColor: '#81C784',
+                        paddingVertical: 1,
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 2
+                      }}
+                    >
+                      <TextInput
+                        value={item.time}
+                        onChangeText={(val) => updateMedStudySubjectRoutineField(sub.id, item.id, 'time', val)}
+                        placeholder="08:00"
+                        placeholderTextColor="#A5D6A7"
+                        style={{ fontSize: 12, fontWeight: '800', flex: 1, color: '#2E7D32', padding: 0 }}
+                      />
+                      <Pressable onPress={() => openTimePicker(`med_study|${sub.id}|${item.id}`)} style={{ padding: 2 }}>
+                        <Ionicons name="time-outline" size={13} color="#2E7D32" />
+                      </Pressable>
+                    </View>
+
+                    {/* Task Description */}
+                    <TextInput
+                      value={item.task}
+                      onChangeText={(txt) => updateMedStudySubjectRoutineField(sub.id, item.id, 'task', txt)}
+                      placeholder="Routine Activity..."
+                      placeholderTextColor="#A5D6A7"
+                      style={[
+                        styles.templateTimelineInput, 
+                        { borderBottomColor: '#81C784', color: '#1C1C1C', flex: 1 },
+                        item.checked && { textDecorationLine: 'line-through', opacity: 0.6 }
+                      ]}
+                    />
+
+                    {/* Delete routine item button */}
+                    {getSafeRoutineArray(sub.routine).length > 1 && (
+                      <Pressable onPress={() => removeMedStudySubjectRoutineItem(sub.id, item.id)} style={{ padding: 4 }}>
+                        <Ionicons name="trash-outline" size={14} color="#EF5350" />
+                      </Pressable>
+                    )}
+                  </View>
+                );
+              })}
+
+              {/* Add Routine Task Button */}
+              <Pressable 
+                onPress={() => addMedStudySubjectRoutineItem(sub.id)}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 4,
+                  alignSelf: 'flex-start',
+                  marginTop: 6,
+                  paddingVertical: 4,
+                  paddingHorizontal: 8,
+                  borderRadius: 6,
+                  borderWidth: 1,
+                  borderColor: '#81C784',
+                  backgroundColor: '#F1F8E9'
+                }}
+              >
+                <Ionicons name="add" size={14} color="#2E7D32" />
+                <Text style={{ fontSize: 11, fontWeight: '700', color: '#2E7D32' }}>Add Routine Task</Text>
+              </Pressable>
+
+              {/* Confidence Rating */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 10, borderTopWidth: 1, borderTopColor: '#E8F5E9', paddingTop: 8 }}>
+                <Text style={{ fontSize: 12, fontWeight: '700', color: '#2E7D32' }}>Study Confidence Rating</Text>
+                <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
+                  {[1, 2, 3, 4, 5].map(star => (
+                    <Pressable 
+                      key={star} 
+                      onPress={() => updateMedStudySubjectField(sub.id, 'rating', star)}
+                      style={{ padding: 1 }}
+                    >
+                      <Ionicons 
+                        name={star <= (sub.rating || 0) ? "star" : "star-outline"} 
+                        size={18} 
+                        color="#4CAF50" 
+                      />
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+            </View>
+          ))}
+
+          {/* Add Subject Button */}
+          <Pressable 
+            onPress={addMedStudySubject}
+            style={[styles.templateAddListItemBtn, { borderColor: '#2E7D32', backgroundColor: '#FFFFFF', borderStyle: 'solid', paddingVertical: 10, marginBottom: 15 }]}
+          >
+            <Ionicons name="add-circle" size={16} color="#2E7D32" />
+            <Text style={{ color: '#2E7D32', fontSize: 13, fontWeight: '800' }}>Add Study Subject</Text>
+          </Pressable>
+
+          {/* Clinical Practical Log Checklist */}
+          <Text style={[styles.templateSectionHeader, { color: '#2E7D32', marginTop: 10 }]}>📋 Clinical Practical & Case Log</Text>
+          {(clinicalLogList || []).map((item, cIdx) => (
+            <View key={item.id || cIdx} style={styles.templateListItemRow}>
+              <Pressable onPress={() => toggleTemplateListItem('clinicalLog', item.id)} style={{ padding: 4 }}>
+                <Ionicons 
+                  name={item.checked ? "checkbox" : "square-outline"} 
+                  size={20} 
+                  color="#2E7D32" 
+                />
+              </Pressable>
+              <TextInput
+                value={item.text}
+                onChangeText={(txt) => updateTemplateListItemText('clinicalLog', item.id, txt)}
+                placeholder="Observe procedure, study patient files..."
+                placeholderTextColor="#A5D6A7"
+                style={[styles.templateListItemInput, { color: '#1C1C1C' }, item.checked && { textDecorationLine: 'line-through', opacity: 0.6 }]}
+              />
+              <Pressable onPress={() => removeTemplateListItem('clinicalLog', item.id)} style={{ padding: 4 }}>
+                <Ionicons name="close" size={16} color="#A5D6A7" />
+              </Pressable>
+            </View>
+          ))}
+          <Pressable 
+            onPress={() => addTemplateListItem('clinicalLog', "New Practical Task")}
+            style={[styles.templateAddListItemBtn, { borderColor: '#81C784' }]}
+          >
+            <Ionicons name="add" size={16} color="#2E7D32" />
+            <Text style={{ color: '#2E7D32', fontSize: 13, fontWeight: '700' }}>Add Task</Text>
+          </Pressable>
+
+          {/* Study Summary Notes */}
+          <Text style={[styles.templateSectionHeader, { color: '#2E7D32', marginTop: 15 }]}>📝 Study Pearls & Key Learnings</Text>
+          <TextInput
+            value={templateData.notes}
+            onChangeText={(txt) => updateTemplateField('notes', null, txt)}
+            placeholder="Jot down quick medical formulas, drug names, patient symptoms or diagnostic notes..."
+            placeholderTextColor="#A5D6A7"
+            style={[styles.templateInputBoxMultiline, { borderColor: '#81C784', color: '#1C1C1C' }]}
+            multiline
+            numberOfLines={3}
+          />
+        </View>
+      );
+    }
+
     return null;
   };
 
@@ -3371,13 +3985,61 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
           <View style={styles.labelGroup}>
             <Ionicons name="reader" size={14} color={theme.primary} />
             <Text style={styles.label}>
-              {noteType === 'template' ? `${templateType.toUpperCase()} PLANNER` : (noteType === 'checklist' ? 'Checklist Items' : 'Description')}
+              {noteType === 'template' ? `${(templateType || 'Template').toUpperCase()} PLANNER` : (noteType === 'notebook' ? 'Digital Notebook Pages' : (noteType === 'checklist' ? 'Checklist Items' : 'Description'))}
             </Text>
           </View>
           
           {noteType === 'template' ? (
             <View style={{ flexGrow: 1, paddingBottom: 20 }}>
               {renderTemplateEditorForm()}
+            </View>
+          ) : noteType === 'notebook' ? (
+            <View style={{ flexGrow: 1, paddingBottom: 20, alignItems: 'center', justifyContent: 'center', minHeight: 280 }}>
+              <LinearGradient
+                colors={['#FF8C00', '#FFD700']}
+                style={{
+                  width: 130,
+                  height: 170,
+                  borderRadius: 16,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  elevation: 5,
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.15,
+                  shadowRadius: 6,
+                  marginBottom: 16,
+                  position: 'relative'
+                }}
+              >
+                <View style={{ position: 'absolute', left: 8, top: 18, bottom: 18, width: 4, backgroundColor: '#E07B00', borderRadius: 2 }} />
+                <Ionicons name="book" size={50} color="#FFFFFF" />
+                <Text style={{ color: '#FFFFFF', fontWeight: '900', fontSize: 13, marginTop: 8, textAlign: 'center', paddingHorizontal: 10 }}>
+                  Notebook
+                </Text>
+              </LinearGradient>
+              <Text style={{ fontSize: 18, fontWeight: '900', color: theme.text, marginBottom: 4 }}>
+                Digital Notebook Note
+              </Text>
+              <Text style={{ fontSize: 13, color: theme.mutedText, marginBottom: 20 }}>
+                {templateData.pages?.length || 1} Pages • Ruled, Grid & Custom Borders
+              </Text>
+              <Pressable
+                onPress={() => setIsNotebookCanvasVisible(true)}
+                style={{
+                  backgroundColor: theme.primary,
+                  paddingHorizontal: 22,
+                  paddingVertical: 12,
+                  borderRadius: 14,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 8,
+                  elevation: 3,
+                }}
+              >
+                <Ionicons name="create" size={18} color="#FFFFFF" />
+                <Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 14 }}>Edit Notebook Pages</Text>
+              </Pressable>
             </View>
           ) : noteType === 'checklist' ? (
             <View style={{ flexGrow: 1, paddingBottom: 20 }}>
@@ -3469,16 +4131,21 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
 
         <Pressable
           onPress={() => {
-            const hasChecklistItems = checklist.some(item => item.text.trim() !== '');
+            const hasChecklistItems = checklist.some(item => item && item.text && typeof item.text === 'string' && item.text.trim() !== '');
             const hasTemplateData = noteType === 'template' && templateType;
-            if (title.trim() || body.trim() || hasChecklistItems || hasTemplateData) {
+            const hasNotebookData = noteType === 'notebook' && templateData.pages && templateData.pages.length > 0;
+            const isTitleValid = title && typeof title === 'string' && title.trim();
+            const isBodyValid = body && typeof body === 'string' && body.trim();
+            if (isTitleValid || isBodyValid || hasChecklistItems || hasTemplateData || hasNotebookData) {
               onSave({ 
-                title: title || (templateType ? `${templateType.charAt(0).toUpperCase() + templateType.slice(1)} Planner` : 'Untitled Note'), 
+                title: title || (templateType ? `${templateType.charAt(0).toUpperCase() + templateType.slice(1)} Planner` : (noteType === 'notebook' ? 'Digital Notebook' : 'Untitled Note')), 
                 content: noteType === 'template'
                   ? generateTemplateSummary(templateType, templateData)
                   : (noteType === 'checklist' 
                       ? checklist.map(item => `${item.checked ? '[x]' : '[ ]'} ${item.text}`).join('\n')
-                      : body),
+                      : (noteType === 'notebook'
+                          ? `${templateData.pages?.length || 1} Pages Digital Notebook`
+                          : body)),
                 noteType,
                 templateType,
                 templateData,
@@ -3606,6 +4273,36 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
                 </View>
                 <Text style={styles.bottomSheetItemText}>Planner Templates</Text>
               </Pressable>
+
+              {/* Option 6: Digital Notebook */}
+              <Pressable 
+                onPress={() => {
+                  setIsBottomSheetVisible(false);
+                  setNoteType('notebook');
+                  if (!templateData.pages || templateData.pages.length === 0) {
+                    setTemplateData({
+                      pages: [
+                        {
+                          pageStyle: 'ruled',
+                          borderDesign: 'classic',
+                          lines: [],
+                          textBoxes: []
+                        }
+                      ]
+                    });
+                  }
+                  setIsNotebookCanvasVisible(true);
+                }} 
+                style={({ pressed }) => [
+                   styles.bottomSheetItem,
+                   { backgroundColor: pressed ? theme.overlay : 'transparent' }
+                ]}
+              >
+                <View style={[styles.bottomSheetItemIconContainer, { backgroundColor: '#BBDEFB' }]}>
+                  <Ionicons name="book" size={20} color="#1565C0" />
+                </View>
+                <Text style={styles.bottomSheetItemText}>Digital Notebook</Text>
+              </Pressable>
             </View>
           </Pressable>
         </Pressable>
@@ -3621,6 +4318,19 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
         onSave={handleSaveDrawing}
         theme={theme}
         initialLines={editingDrawingIndex !== null ? drawings[editingDrawingIndex]?.lines : []}
+      />
+
+      <NotebookCanvas
+        visible={isNotebookCanvasVisible}
+        onClose={() => setIsNotebookCanvasVisible(false)}
+        onSave={(updatedPages) => {
+          setTemplateData({ pages: updatedPages });
+          setNoteType('notebook');
+          setIsNotebookCanvasVisible(false);
+          setStatus('Notebook updated! 📓');
+        }}
+        theme={theme}
+        initialPages={templateData.pages || []}
       />
 
       {/* Audio Recorder Modal */}
@@ -3851,7 +4561,7 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.templateCardTitle, { color: '#6A1B9A' }]}>Student Planner</Text>
                   <Text style={[styles.templateCardDesc, { color: '#8E24AA' }]}>
-                    Today's study focus, class schedule, tasks & homework checklists, upcoming deadlines & exam log.
+                    Today&apos;s study focus, class schedule, tasks & homework checklists, upcoming deadlines & exam log.
                   </Text>
                 </View>
               </Pressable>
@@ -3995,6 +4705,27 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
                   </Text>
                 </View>
               </Pressable>
+
+              {/* Template 14: Med Study */}
+              <Pressable 
+                onPress={() => handleSelectTemplate('med_study')}
+                style={({ pressed }) => [
+                  styles.templateCardOption,
+                  { borderColor: '#81C784', backgroundColor: '#E8F5E9' },
+                  pressed && { opacity: 0.8 }
+                ]}
+              >
+                <View style={styles.templateCardIconCircle}>
+                  <Ionicons name="school-outline" size={24} color="#2E7D32" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.templateCardTitle, { color: '#2E7D32' }]}>Medical Student Routine & Study</Text>
+                  <Text style={[styles.templateCardDesc, { color: '#2E7D32' }]}>
+                    Morning, afternoon, evening & night routines with time pickers, study goals, subjects tracker & clinical case logs.
+                  </Text>
+                </View>
+              </Pressable>
+
 
             </ScrollView>
           </Pressable>
