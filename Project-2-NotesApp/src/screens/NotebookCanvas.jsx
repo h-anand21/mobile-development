@@ -2292,10 +2292,10 @@ export default function NotebookCanvas({ visible, onClose, onSave, theme, initia
           <View style={styles.headerTop}>
             <View style={{ flexDirection: 'row', gap: 6 }}>
               <Pressable onPress={handleSave} style={[styles.iconBtn, { width: 34, height: 34 }]}>
-                <Ionicons name="close" size={20} color="#FFFFFF" />
+                <Ionicons name="close" size={20} color="#1C1C1C" />
               </Pressable>
               <Pressable onPress={handleSave} style={[styles.iconBtn, { width: 34, height: 34 }]}>
-                <Ionicons name="checkmark" size={20} color="#FFFFFF" />
+                <Ionicons name="checkmark" size={20} color="#1C1C1C" />
               </Pressable>
             </View>
             
@@ -2313,7 +2313,7 @@ export default function NotebookCanvas({ visible, onClose, onSave, theme, initia
                 disabled={currentPageIdx === 0}
                 style={[styles.pageNavBtn, currentPageIdx === 0 && { opacity: 0.4 }]}
               >
-                <Ionicons name="chevron-back" size={16} color="#FFFFFF" />
+                <Ionicons name="chevron-back" size={16} color="#1C1C1C" />
               </Pressable>
               
               <Text style={[styles.pageIndicator, { fontSize: 12 }]}>
@@ -2336,7 +2336,7 @@ export default function NotebookCanvas({ visible, onClose, onSave, theme, initia
                 <Ionicons 
                   name={currentPageIdx === pages.length - 1 ? "add" : "chevron-forward"} 
                   size={16} 
-                  color="#FFFFFF" 
+                  color="#1C1C1C" 
                 />
               </Pressable>
             </View>
@@ -2347,20 +2347,20 @@ export default function NotebookCanvas({ visible, onClose, onSave, theme, initia
                 disabled={pagesHistory.length === 0}
                 style={[styles.iconBtn, { width: 34, height: 34 }, pagesHistory.length === 0 && { opacity: 0.4 }]}
               >
-                <Ionicons name="arrow-undo-outline" size={18} color="#FFFFFF" />
+                <Ionicons name="arrow-undo-outline" size={18} color="#1C1C1C" />
               </Pressable>
               <Pressable 
                 onPress={handleRedo} 
                 disabled={pagesRedoStack.length === 0}
                 style={[styles.iconBtn, { width: 34, height: 34 }, pagesRedoStack.length === 0 && { opacity: 0.4 }]}
               >
-                <Ionicons name="arrow-redo-outline" size={18} color="#FFFFFF" />
+                <Ionicons name="arrow-redo-outline" size={18} color="#1C1C1C" />
               </Pressable>
               <Pressable onPress={handleTogglePageTheme} style={[styles.iconBtn, { width: 34, height: 34 }]}>
-                <Ionicons name={isPageDark ? "sunny-outline" : "moon-outline"} size={18} color="#FFFFFF" />
+                <Ionicons name={isPageDark ? "sunny-outline" : "moon-outline"} size={18} color="#1C1C1C" />
               </Pressable>
               <Pressable onPress={handleDeletePage} style={[styles.iconBtn, { width: 34, height: 34 }]}>
-                <Ionicons name="trash-outline" size={18} color="#FFFFFF" />
+                <Ionicons name="trash-outline" size={18} color="#1C1C1C" />
               </Pressable>
             </View>
           </View>
@@ -3897,18 +3897,22 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 8,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: 'rgba(255,255,255,0.35)',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(28,28,28,0.15)',
   },
   pageNavigator: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: 'rgba(0,0,0,0.15)',
+    backgroundColor: 'rgba(255,255,255,0.35)',
     paddingVertical: 4,
     paddingHorizontal: 12,
     borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(28,28,28,0.15)',
   },
   pageNavBtn: {
     padding: 2,
@@ -3916,7 +3920,7 @@ const styles = StyleSheet.create({
   pageIndicator: {
     fontSize: 14,
     fontWeight: '900',
-    color: '#FFFFFF',
+    color: '#1C1C1C',
   },
   canvasWrapper: {
     flex: 1,

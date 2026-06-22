@@ -1214,23 +1214,23 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
           width: 38,
           height: 38,
           borderRadius: 10,
-          backgroundColor: 'rgba(255,255,255,0.25)',
+          backgroundColor: 'rgba(255,255,255,0.35)',
           alignItems: 'center',
           justifyContent: 'center',
           borderWidth: 1,
-          borderColor: 'rgba(255,255,255,0.2)',
+          borderColor: 'rgba(28,28,28,0.15)',
         },
         headerContent: {
           zIndex: 2,
         },
         headerTitle: {
-          color: '#FFFFFF',
+          color: '#1C1C1C',
           fontSize: 22,
           fontWeight: '900',
           letterSpacing: -0.5,
         },
         headerSubtitle: {
-          color: 'rgba(255,255,255,0.85)',
+          color: 'rgba(28,28,28,0.8)',
           fontSize: 12,
           marginTop: 1,
           fontWeight: '500',
@@ -4023,7 +4023,7 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
 
         <View style={styles.headerTop}>
           <Pressable onPress={onBack} style={styles.iconBtn}>
-            <Ionicons name="chevron-back" size={20} color="#FFFFFF" />
+            <Ionicons name="chevron-back" size={20} color="#1C1C1C" />
           </Pressable>
           
           <View style={{ flexDirection: 'row', gap: 10 }}>
@@ -4034,7 +4034,7 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
               <Ionicons 
                 name={reminder ? "notifications" : "notifications-outline"} 
                 size={18} 
-                color={reminder ? "#FFD700" : "#FFFFFF"} 
+                color="#1C1C1C" 
               />
             </Pressable>
 
@@ -4042,7 +4042,7 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
               onPress={() => setIsBottomSheetVisible(true)} 
               style={styles.iconBtn}
             >
-              <Ionicons name="add" size={22} color="#FFFFFF" />
+              <Ionicons name="add" size={22} color="#1C1C1C" />
             </Pressable>
             
             <Pressable 
@@ -4058,7 +4058,7 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
               }} 
               style={styles.iconBtn}
             >
-              <Ionicons name="sparkles-outline" size={18} color="#FFFFFF" />
+              <Ionicons name="sparkles-outline" size={18} color="#1C1C1C" />
             </Pressable>
           </View>
         </View>

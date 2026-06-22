@@ -9,7 +9,10 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.himu21.project2notesapp"
+      "bundleIdentifier": "com.himu21.project2notesapp",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "This app requires microphone access to record audio notes."
+      }
     },
     "android": {
       "adaptiveIcon": {

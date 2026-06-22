@@ -645,15 +645,15 @@ export default function DrawingCanvas({ visible, onClose, onSave, theme, initial
         >
           <View style={styles.headerTop}>
             <Pressable onPress={onClose} style={styles.iconBtn}>
-              <Ionicons name="close" size={24} color="#FFFFFF" />
+              <Ionicons name="close" size={24} color="#1C1C1C" />
             </Pressable>
             <Text style={styles.headerTitle}>Sketch Canvas</Text>
             <View style={{ flexDirection: 'row', gap: 10 }}>
               <Pressable onPress={handleClear} style={styles.iconBtn}>
-                <Ionicons name="trash-outline" size={22} color="#FFFFFF" />
+                <Ionicons name="trash-outline" size={22} color="#1C1C1C" />
               </Pressable>
               <Pressable onPress={handleSave} style={styles.iconBtn}>
-                <Ionicons name="checkmark" size={24} color="#FFFFFF" />
+                <Ionicons name="checkmark" size={24} color="#1C1C1C" />
               </Pressable>
             </View>
           </View>
@@ -1222,7 +1222,7 @@ const styles = StyleSheet.create({
     height: 48,
   },
   headerTitle: {
-    color: '#FFFFFF',
+    color: '#1C1C1C',
     fontSize: 20,
     fontWeight: '900',
   },
@@ -1230,9 +1230,11 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 10,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: 'rgba(255,255,255,0.35)',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(28,28,28,0.15)',
   },
   canvasContainer: {
     flex: 1,
