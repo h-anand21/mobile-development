@@ -102,6 +102,165 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
   const [editingDrawingIndex, setEditingDrawingIndex] = useState(null);
   const [viewerImageUri, setViewerImageUri] = useState(null);
 
+  // Reminder States
+  const [reminder, setReminder] = useState(noteToEdit ? noteToEdit.reminder : null);
+  const [isReminderModalVisible, setIsReminderModalVisible] = useState(false);
+  const [isCustomReminderVisible, setIsCustomReminderVisible] = useState(false);
+  
+  // Custom Reminder Picker States
+  const [activePickerType, setActivePickerType] = useState(null); // 'date_select' | 'time_select' | 'repeat_select'
+  
+  // Temporary scheduling states inside the modal
+  const [schedDate, setSchedDate] = useState(() => {
+    if (noteToEdit?.reminder?.dateTime) {
+      return new Date(noteToEdit.reminder.dateTime);
+    }
+    const d = new Date();
+    if (d.getHours() < 18) {
+      d.setHours(18, 0, 0, 0);
+    } else {
+      d.setDate(d.getDate() + 1);
+      d.setHours(8, 0, 0, 0);
+    }
+    return d;
+  });
+  const [schedRepeat, setSchedRepeat] = useState(noteToEdit?.reminder?.repeat || 'none');
+  
+  // For custom date scroll wheel
+  const [isDatePickerModalVisible, setIsDatePickerModalVisible] = useState(false);
+  const [selectedYear, setSelectedYear] = useState(String(new Date().getFullYear()));
+  const [selectedMonth, setSelectedMonth] = useState(['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][new Date().getMonth()]);
+  const [selectedDay, setSelectedDay] = useState(String(new Date().getDate()).padStart(2, '0'));
+
+  const formatReminderText = (dateTimeStr, repeat) => {
+    if (!dateTimeStr) return '';
+    const dt = new Date(dateTimeStr);
+    const now = new Date();
+    const isToday = dt.toDateString() === now.toDateString();
+    
+    const tomorrow = new Date(now);
+    tomorrow.setDate(now.getDate() + 1);
+    const isTomorrow = dt.toDateString() === tomorrow.toDateString();
+    
+    let hours = dt.getHours();
+    const minutes = String(dt.getMinutes()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+    const timeStr = `${hours}:${minutes} ${ampm}`;
+    
+    let datePart = '';
+    if (isToday) {
+      datePart = 'Today';
+    } else if (isTomorrow) {
+      datePart = 'Tomorrow';
+    } else {
+      datePart = dt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+    }
+    
+    let repeatPart = '';
+    if (repeat && repeat !== 'none') {
+      repeatPart = `, Every ${repeat === 'daily' ? 'day' : (repeat === 'weekly' ? 'week' : (repeat === 'monthly' ? 'month' : 'year'))}`;
+    }
+    
+    return `${datePart}, ${timeStr}${repeatPart}`;
+  };
+
+  const getSchedDateLabel = (dateVal) => {
+    const now = new Date();
+    const isToday = dateVal.toDateString() === now.toDateString();
+    const tomorrow = new Date(now);
+    tomorrow.setDate(now.getDate() + 1);
+    const isTomorrow = dateVal.toDateString() === tomorrow.toDateString();
+    
+    if (isToday) return 'Today';
+    if (isTomorrow) return 'Tomorrow';
+    return dateVal.toLocaleDateString('en-IN', { day: 'numeric', month: 'long' });
+  };
+
+  const getSchedTimeLabel = (dateVal) => {
+    let hours = dateVal.getHours();
+    const minutes = String(dateVal.getMinutes()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+    return `${hours}:${minutes} ${ampm}`;
+  };
+
+  const getSchedRepeatLabel = (repeatVal) => {
+    if (repeatVal === 'none') return 'Does not repeat';
+    if (repeatVal === 'daily') return 'Daily';
+    if (repeatVal === 'weekly') return 'Weekly';
+    if (repeatVal === 'monthly') return 'Monthly';
+    if (repeatVal === 'yearly') return 'Yearly';
+    return 'Does not repeat';
+  };
+
+  const getNextTuesday = () => {
+    const d = new Date();
+    const day = d.getDay();
+    const daysToAdd = (2 - day + 7) % 7 || 7;
+    d.setDate(d.getDate() + daysToAdd);
+    d.setHours(8, 0, 0, 0);
+    return d;
+  };
+
+  const setReminderQuick = (type) => {
+    const now = new Date();
+    let target = new Date();
+    
+    if (type === 'today') {
+      if (now.getHours() < 18) {
+        target.setHours(18, 0, 0, 0);
+      } else if (now.getHours() < 21) {
+        target.setHours(21, 0, 0, 0);
+      } else {
+        target.setDate(now.getDate() + 1);
+        target.setHours(8, 0, 0, 0);
+      }
+    } else if (type === 'tomorrow') {
+      target.setDate(now.getDate() + 1);
+      target.setHours(8, 0, 0, 0);
+    } else if (type === 'tuesday') {
+      const tues = getNextTuesday();
+      target.setDate(tues.getDate());
+      target.setMonth(tues.getMonth());
+      target.setFullYear(tues.getFullYear());
+      target.setHours(8, 0, 0, 0);
+    }
+    
+    const formatted = formatReminderText(target.toISOString(), 'none');
+    setReminder({
+      id: noteToEdit?.reminder?.id || Date.now().toString(),
+      dateTime: target.toISOString(),
+      repeat: 'none',
+      formattedText: formatted,
+    });
+    setIsReminderModalVisible(false);
+  };
+
+  const openReminderConfig = () => {
+    if (reminder?.dateTime) {
+      setSchedDate(new Date(reminder.dateTime));
+      setSchedRepeat(reminder.repeat || 'none');
+    }
+    setIsReminderModalVisible(true);
+  };
+
+  const confirmCustomDatePicker = () => {
+    const monthIdx = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].indexOf(selectedMonth);
+    const dayVal = parseInt(selectedDay, 10);
+    const yearVal = parseInt(selectedYear, 10);
+    
+    const maxDays = new Date(yearVal, monthIdx + 1, 0).getDate();
+    const clampedDay = Math.min(dayVal, maxDays);
+    
+    const newDate = new Date(schedDate);
+    newDate.setFullYear(yearVal, monthIdx, clampedDay);
+    setSchedDate(newDate);
+    setIsDatePickerModalVisible(false);
+  };
+
   // Auto-open picker / canvas for preselected note type on creation
   React.useEffect(() => {
     if (noteToEdit && !noteToEdit.id) {
@@ -719,6 +878,10 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
       const rArr = getSafeRoutineArray(sub?.routine);
       const item = rArr.find(r => r.id === itemId);
       currentTime = item?.time || "08:00";
+    } else if (type === 'reminder') {
+      const hours = String(schedDate.getHours()).padStart(2, '0');
+      const minutes = String(schedDate.getMinutes()).padStart(2, '0');
+      currentTime = `${hours}:${minutes}`;
     }
     
     // Parse HH:MM
@@ -776,6 +939,11 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
         return s;
       });
       updateTemplateField('subjects', null, updatedSubjects);
+    } else if (type === 'reminder') {
+      const [h, m] = formattedTime.split(':');
+      const newDate = new Date(schedDate);
+      newDate.setHours(parseInt(h, 10), parseInt(m, 10), 0, 0);
+      setSchedDate(newDate);
     }
     
     setIsTimePickerVisible(false);
@@ -1123,6 +1291,99 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
           borderBottomWidth: 1,
           borderBottomColor: theme.border,
           marginBottom: 16,
+        },
+        reminderActiveBadge: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          backgroundColor: 'rgba(13, 71, 161, 0.08)',
+          borderRadius: 14,
+          paddingLeft: 12,
+          paddingRight: 6,
+          paddingVertical: 6,
+          gap: 6,
+          borderWidth: 1,
+          borderColor: 'rgba(13, 71, 161, 0.15)',
+        },
+        reminderActiveBadgeText: {
+          fontSize: 13,
+          color: '#0D47A1',
+          fontWeight: '700',
+        },
+        reminderActiveBadgeDelete: {
+          padding: 4,
+          borderRadius: 10,
+          backgroundColor: 'rgba(13, 71, 161, 0.08)',
+          marginLeft: 4,
+        },
+        reminderFormRow: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 12,
+          paddingVertical: 6,
+        },
+        reminderFormSelect: {
+          flex: 1,
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          borderBottomWidth: 1,
+          borderColor: theme.border,
+          paddingVertical: 10,
+          paddingHorizontal: 4,
+        },
+        reminderFormSelectText: {
+          fontSize: 16,
+          color: theme.text,
+          fontWeight: '500',
+        },
+        reminderFormActions: {
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginTop: 24,
+        },
+        reminderFormBtnDelete: {
+          paddingVertical: 12,
+          paddingHorizontal: 16,
+        },
+        reminderFormBtnDeleteText: {
+          color: '#C62828',
+          fontSize: 15,
+          fontWeight: '700',
+        },
+        reminderFormBtnCancel: {
+          paddingVertical: 12,
+          paddingHorizontal: 16,
+        },
+        reminderFormBtnCancelText: {
+          color: theme.mutedText,
+          fontSize: 15,
+          fontWeight: '700',
+        },
+        reminderFormBtnSave: {
+          backgroundColor: theme.primary,
+          paddingVertical: 12,
+          paddingHorizontal: 24,
+          borderRadius: 18,
+          elevation: 2,
+        },
+        reminderFormBtnSaveText: {
+          color: '#FFFFFF',
+          fontSize: 15,
+          fontWeight: '800',
+        },
+        dropdownOptionItem: {
+          paddingVertical: 14,
+          paddingHorizontal: 16,
+          borderRadius: 12,
+          backgroundColor: theme.surface,
+          borderWidth: 1,
+          borderColor: theme.border,
+        },
+        dropdownOptionText: {
+          fontSize: 15,
+          color: theme.text,
+          fontWeight: '600',
         },
         bodyScroll: {
           flex: 1,
@@ -1524,7 +1785,7 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
         },
         timePickerContainer: {
           width: 280,
-          backgroundColor: '#FFFFFF',
+          backgroundColor: theme.surface,
           borderRadius: 20,
           padding: 20,
           alignItems: 'center',
@@ -1533,11 +1794,13 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
           shadowOffset: { width: 0, height: 2 },
           shadowOpacity: 0.25,
           shadowRadius: 4,
+          borderWidth: theme.background === '#121212' ? 1 : 0,
+          borderColor: theme.border,
         },
         timePickerTitle: {
           fontSize: 16,
           fontWeight: '800',
-          color: '#1C1C1C',
+          color: theme.text,
           marginBottom: 15,
         },
         timePickerColumnsRow: {
@@ -1554,12 +1817,12 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
         timePickerColumnLabel: {
           fontSize: 12,
           fontWeight: '700',
-          color: '#78909C',
+          color: theme.mutedText,
           marginBottom: 6,
         },
         timePickerColumnScroll: {
           width: '100%',
-          backgroundColor: '#F5F7F8',
+          backgroundColor: theme.background,
           borderRadius: 12,
         },
         timePickerItem: {
@@ -1571,20 +1834,20 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
           marginVertical: 2,
         },
         timePickerItemActive: {
-          backgroundColor: '#37474F',
+          backgroundColor: theme.primary,
         },
         timePickerItemText: {
           fontSize: 16,
           fontWeight: '700',
-          color: '#455A64',
+          color: theme.text,
         },
         timePickerItemTextActive: {
-          color: '#FFFFFF',
+          color: theme.background === '#121212' ? '#121212' : '#FFFFFF',
         },
         timePickerColon: {
           fontSize: 28,
           fontWeight: '900',
-          color: '#37474F',
+          color: theme.text,
           marginHorizontal: 10,
           paddingBottom: 20,
         },
@@ -1603,18 +1866,18 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
           justifyContent: 'center',
         },
         timePickerBtnCancel: {
-          backgroundColor: '#ECEFF1',
+          backgroundColor: theme.background === '#121212' ? theme.border : '#ECEFF1',
         },
         timePickerBtnConfirm: {
-          backgroundColor: '#37474F',
+          backgroundColor: theme.primary,
         },
         timePickerBtnTextCancel: {
-          color: '#546E7A',
+          color: theme.mutedText,
           fontSize: 14,
           fontWeight: '700',
         },
         timePickerBtnTextConfirm: {
-          color: '#FFFFFF',
+          color: theme.background === '#121212' ? '#121212' : '#FFFFFF',
           fontSize: 14,
           fontWeight: '800',
         },
@@ -3765,6 +4028,17 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
           
           <View style={{ flexDirection: 'row', gap: 10 }}>
             <Pressable 
+              onPress={openReminderConfig} 
+              style={styles.iconBtn}
+            >
+              <Ionicons 
+                name={reminder ? "notifications" : "notifications-outline"} 
+                size={18} 
+                color={reminder ? "#FFD700" : "#FFFFFF"} 
+              />
+            </Pressable>
+
+            <Pressable 
               onPress={() => setIsBottomSheetVisible(true)} 
               style={styles.iconBtn}
             >
@@ -3814,6 +4088,29 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
             placeholderTextColor={theme.placeholder}
             style={styles.titleInput}
           />
+
+          {reminder && (
+            <View style={{ flexDirection: 'row', marginBottom: 12 }}>
+              <Pressable 
+                onPress={openReminderConfig}
+                style={styles.reminderActiveBadge}
+              >
+                <Ionicons name="notifications" size={14} color="#0D47A1" />
+                <Text style={styles.reminderActiveBadgeText}>
+                  {formatReminderText(reminder.dateTime, reminder.repeat)}
+                </Text>
+                <Pressable 
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    setReminder(null);
+                  }}
+                  style={styles.reminderActiveBadgeDelete}
+                >
+                  <Ionicons name="close" size={14} color="#0D47A1" />
+                </Pressable>
+              </Pressable>
+            </View>
+          )}
 
           {/* Folder Tag Selector */}
           <View style={styles.folderSelectRow}>
@@ -4154,6 +4451,7 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
                 images,
                 drawings,
                 audio,
+                reminder,
               });
             } else {
               setStatus('Oops! Add some content first ✍️');
@@ -4820,6 +5118,476 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
               </Pressable>
               <Pressable 
                 onPress={confirmTimeSelection}
+                style={[styles.timePickerBtn, styles.timePickerBtnConfirm]}
+              >
+                <Text style={styles.timePickerBtnTextConfirm}>Confirm</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Main Reminder Options Bottom Sheet */}
+      <Modal
+        visible={isReminderModalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setIsReminderModalVisible(false)}
+      >
+        <Pressable 
+          style={styles.bottomSheetOverlay} 
+          onPress={() => setIsReminderModalVisible(false)}
+        >
+          <Pressable style={styles.bottomSheetContainer} onPress={() => {}}>
+            <View style={styles.bottomSheetHandle} />
+            <Text style={styles.bottomSheetTitle}>Remind me later</Text>
+            
+            <View style={styles.bottomSheetList}>
+              <Pressable 
+                onPress={() => setReminderQuick('today')} 
+                style={styles.bottomSheetItem}
+              >
+                <View style={[styles.bottomSheetItemIconContainer, { backgroundColor: '#E3F2FD' }]}>
+                  <Ionicons name="time-outline" size={20} color="#0D47A1" />
+                </View>
+                <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text style={styles.bottomSheetItemText}>Later today</Text>
+                  <Text style={{ fontSize: 13, color: theme.mutedText }}>6:00 PM</Text>
+                </View>
+              </Pressable>
+
+              <Pressable 
+                onPress={() => setReminderQuick('tomorrow')} 
+                style={styles.bottomSheetItem}
+              >
+                <View style={[styles.bottomSheetItemIconContainer, { backgroundColor: '#E3F2FD' }]}>
+                  <Ionicons name="alarm-outline" size={20} color="#0D47A1" />
+                </View>
+                <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text style={styles.bottomSheetItemText}>Tomorrow morning</Text>
+                  <Text style={{ fontSize: 13, color: theme.mutedText }}>8:00 AM</Text>
+                </View>
+              </Pressable>
+
+              <Pressable 
+                onPress={() => setReminderQuick('tuesday')} 
+                style={styles.bottomSheetItem}
+              >
+                <View style={[styles.bottomSheetItemIconContainer, { backgroundColor: '#E3F2FD' }]}>
+                  <Ionicons name="calendar-outline" size={20} color="#0D47A1" />
+                </View>
+                <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text style={styles.bottomSheetItemText}>Next Tuesday</Text>
+                  <Text style={{ fontSize: 13, color: theme.mutedText }}>8:00 AM</Text>
+                </View>
+              </Pressable>
+
+              <Pressable 
+                onPress={() => {
+                  setIsReminderModalVisible(false);
+                  setIsCustomReminderVisible(true);
+                }} 
+                style={styles.bottomSheetItem}
+              >
+                <View style={[
+                  styles.bottomSheetItemIconContainer, 
+                  { backgroundColor: theme.background === '#121212' ? 'rgba(255, 255, 255, 0.1)' : '#F5F5F5' }
+                ]}>
+                  <Ionicons name="create-outline" size={20} color={theme.text} />
+                </View>
+                <Text style={styles.bottomSheetItemText}>Pick a date & time</Text>
+              </Pressable>
+            </View>
+
+            {reminder && (
+              <Pressable 
+                onPress={() => {
+                  setReminder(null);
+                  setIsReminderModalVisible(false);
+                }}
+                style={{
+                  marginTop: 20,
+                  backgroundColor: '#FFEBEE',
+                  paddingVertical: 14,
+                  borderRadius: 14,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Text style={{ color: '#C62828', fontWeight: '800', fontSize: 15 }}>Delete reminder</Text>
+              </Pressable>
+            )}
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Pick a Date & Time Modal */}
+      <Modal
+        visible={isCustomReminderVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setIsCustomReminderVisible(false)}
+      >
+        <Pressable 
+          style={styles.bottomSheetOverlay} 
+          onPress={() => setIsCustomReminderVisible(false)}
+        >
+          <Pressable style={styles.bottomSheetContainer} onPress={() => {}}>
+            <View style={styles.bottomSheetHandle} />
+            <Text style={styles.bottomSheetTitle}>Pick a date & time</Text>
+            
+            <View style={{ gap: 14, marginVertical: 12 }}>
+              {/* Date Selector Row */}
+              <View style={styles.reminderFormRow}>
+                <Ionicons name="calendar-outline" size={20} color={theme.mutedText} style={{ width: 24 }} />
+                <Pressable 
+                  onPress={() => setActivePickerType('date_select')}
+                  style={styles.reminderFormSelect}
+                >
+                  <Text style={styles.reminderFormSelectText}>
+                    {getSchedDateLabel(schedDate)}
+                  </Text>
+                  <Ionicons name="chevron-down" size={16} color={theme.mutedText} />
+                </Pressable>
+              </View>
+
+              {/* Time Selector Row */}
+              <View style={styles.reminderFormRow}>
+                <Ionicons name="time-outline" size={20} color={theme.mutedText} style={{ width: 24 }} />
+                <Pressable 
+                  onPress={() => setActivePickerType('time_select')}
+                  style={styles.reminderFormSelect}
+                >
+                  <Text style={styles.reminderFormSelectText}>
+                    {getSchedTimeLabel(schedDate)}
+                  </Text>
+                  <Ionicons name="chevron-down" size={16} color={theme.mutedText} />
+                </Pressable>
+              </View>
+
+              {/* Repeat Selector Row */}
+              <View style={styles.reminderFormRow}>
+                <Ionicons name="repeat-outline" size={20} color={theme.mutedText} style={{ width: 24 }} />
+                <Pressable 
+                  onPress={() => setActivePickerType('repeat_select')}
+                  style={styles.reminderFormSelect}
+                >
+                  <Text style={styles.reminderFormSelectText}>
+                    {getSchedRepeatLabel(schedRepeat)}
+                  </Text>
+                  <Ionicons name="chevron-down" size={16} color={theme.mutedText} />
+                </Pressable>
+              </View>
+            </View>
+
+            {/* Modal Actions Footer */}
+            <View style={styles.reminderFormActions}>
+              <Pressable 
+                onPress={() => {
+                  setReminder(null);
+                  setIsCustomReminderVisible(false);
+                }}
+                style={styles.reminderFormBtnDelete}
+              >
+                <Text style={styles.reminderFormBtnDeleteText}>Delete</Text>
+              </Pressable>
+              
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                <Pressable 
+                  onPress={() => setIsCustomReminderVisible(false)}
+                  style={styles.reminderFormBtnCancel}
+                >
+                  <Text style={styles.reminderFormBtnCancelText}>Cancel</Text>
+                </Pressable>
+                
+                <Pressable 
+                  onPress={() => {
+                    const formatted = formatReminderText(schedDate.toISOString(), schedRepeat);
+                    setReminder({
+                      id: noteToEdit?.reminder?.id || Date.now().toString(),
+                      dateTime: schedDate.toISOString(),
+                      repeat: schedRepeat,
+                      formattedText: formatted,
+                    });
+                    setIsCustomReminderVisible(false);
+                  }}
+                  style={styles.reminderFormBtnSave}
+                >
+                  <Text style={styles.reminderFormBtnSaveText}>Save</Text>
+                </Pressable>
+              </View>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Floating Selection Menus */}
+      <Modal
+        visible={activePickerType !== null}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setActivePickerType(null)}
+      >
+        <Pressable 
+          style={styles.timePickerOverlay} 
+          onPress={() => setActivePickerType(null)}
+        >
+          <View style={[styles.timePickerContainer, { padding: 15 }]}>
+            <Text style={[styles.timePickerTitle, { marginBottom: 12 }]}>
+              {activePickerType === 'date_select' ? 'Select Date' : (activePickerType === 'time_select' ? 'Select Time' : 'Select Repeat')}
+            </Text>
+            
+            {activePickerType === 'date_select' && (
+              <View style={{ gap: 6 }}>
+                <Pressable 
+                  onPress={() => {
+                    const d = new Date(schedDate);
+                    const now = new Date();
+                    d.setFullYear(now.getFullYear(), now.getMonth(), now.getDate());
+                    setSchedDate(d);
+                    setActivePickerType(null);
+                  }}
+                  style={styles.dropdownOptionItem}
+                >
+                  <Text style={styles.dropdownOptionText}>Today</Text>
+                </Pressable>
+                <Pressable 
+                  onPress={() => {
+                    const d = new Date(schedDate);
+                    const now = new Date();
+                    now.setDate(now.getDate() + 1);
+                    d.setFullYear(now.getFullYear(), now.getMonth(), now.getDate());
+                    setSchedDate(d);
+                    setActivePickerType(null);
+                  }}
+                  style={styles.dropdownOptionItem}
+                >
+                  <Text style={styles.dropdownOptionText}>Tomorrow</Text>
+                </Pressable>
+                <Pressable 
+                  onPress={() => {
+                    const d = new Date(schedDate);
+                    const tues = getNextTuesday();
+                    d.setFullYear(tues.getFullYear(), tues.getMonth(), tues.getDate());
+                    setSchedDate(d);
+                    setActivePickerType(null);
+                  }}
+                  style={styles.dropdownOptionItem}
+                >
+                  <Text style={styles.dropdownOptionText}>Next Tuesday</Text>
+                </Pressable>
+                <Pressable 
+                  onPress={() => {
+                    setActivePickerType(null);
+                    setSelectedYear(String(schedDate.getFullYear()));
+                    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                    setSelectedMonth(months[schedDate.getMonth()]);
+                    setSelectedDay(String(schedDate.getDate()).padStart(2, '0'));
+                    setIsDatePickerModalVisible(true);
+                  }}
+                  style={styles.dropdownOptionItem}
+                >
+                  <Text style={[styles.dropdownOptionText, { color: theme.primary, fontWeight: '700' }]}>Pick a date...</Text>
+                </Pressable>
+              </View>
+            )}
+
+            {activePickerType === 'time_select' && (
+              <View style={{ gap: 6 }}>
+                <Pressable 
+                  onPress={() => {
+                    const d = new Date(schedDate);
+                    d.setHours(8, 0, 0, 0);
+                    setSchedDate(d);
+                    setActivePickerType(null);
+                  }}
+                  style={styles.dropdownOptionItem}
+                >
+                  <Text style={styles.dropdownOptionText}>Morning (8:00 AM)</Text>
+                </Pressable>
+                <Pressable 
+                  onPress={() => {
+                    const d = new Date(schedDate);
+                    d.setHours(13, 0, 0, 0);
+                    setSchedDate(d);
+                    setActivePickerType(null);
+                  }}
+                  style={styles.dropdownOptionItem}
+                >
+                  <Text style={styles.dropdownOptionText}>Afternoon (1:00 PM)</Text>
+                </Pressable>
+                <Pressable 
+                  onPress={() => {
+                    const d = new Date(schedDate);
+                    d.setHours(18, 0, 0, 0);
+                    setSchedDate(d);
+                    setActivePickerType(null);
+                  }}
+                  style={styles.dropdownOptionItem}
+                >
+                  <Text style={styles.dropdownOptionText}>Evening (6:00 PM)</Text>
+                </Pressable>
+                <Pressable 
+                  onPress={() => {
+                    const d = new Date(schedDate);
+                    d.setHours(9, 0, 0, 0);
+                    setSchedDate(d);
+                    setActivePickerType(null);
+                  }}
+                  style={styles.dropdownOptionItem}
+                >
+                  <Text style={styles.dropdownOptionText}>All day (9:00 AM)</Text>
+                </Pressable>
+                <Pressable 
+                  onPress={() => {
+                    setActivePickerType(null);
+                    openTimePicker('reminder');
+                  }}
+                  style={styles.dropdownOptionItem}
+                >
+                  <Text style={[styles.dropdownOptionText, { color: theme.primary, fontWeight: '700' }]}>Pick a time...</Text>
+                </Pressable>
+              </View>
+            )}
+
+            {activePickerType === 'repeat_select' && (
+              <View style={{ gap: 6 }}>
+                {['none', 'daily', 'weekly', 'monthly', 'yearly'].map(rep => (
+                  <Pressable 
+                    key={rep}
+                    onPress={() => {
+                      setSchedRepeat(rep);
+                      setActivePickerType(null);
+                    }}
+                    style={styles.dropdownOptionItem}
+                  >
+                    <Text style={styles.dropdownOptionText}>
+                      {rep === 'none' ? 'Does not repeat' : (rep === 'daily' ? 'Daily' : (rep === 'weekly' ? 'Weekly' : (rep === 'monthly' ? 'Monthly' : 'Yearly')))}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            )}
+          </View>
+        </Pressable>
+      </Modal>
+
+      {/* Custom Date Scroll Picker Modal */}
+      <Modal
+        visible={isDatePickerModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setIsDatePickerModalVisible(false)}
+      >
+        <View style={styles.timePickerOverlay}>
+          <View style={[styles.timePickerContainer, { width: 320 }]}>
+            <Text style={styles.timePickerTitle}>Select Date</Text>
+            
+            <View style={styles.timePickerColumnsRow}>
+              {/* Month Column */}
+              <View style={[styles.timePickerColumnWrapper, { width: 90 }]}>
+                <Text style={styles.timePickerColumnLabel}>Month</Text>
+                <ScrollView 
+                  style={styles.timePickerColumnScroll} 
+                  showsVerticalScrollIndicator={false}
+                  contentContainerStyle={{ paddingVertical: 10 }}
+                >
+                  {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map(mon => {
+                    const isSelected = mon === selectedMonth;
+                    return (
+                      <Pressable 
+                        key={mon} 
+                        onPress={() => setSelectedMonth(mon)}
+                        style={[
+                           styles.timePickerItem,
+                           isSelected && styles.timePickerItemActive
+                        ]}
+                      >
+                        <Text style={[
+                          styles.timePickerItemText,
+                          isSelected && styles.timePickerItemTextActive
+                        ]}>
+                          {mon}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+
+              {/* Day Column */}
+              <View style={[styles.timePickerColumnWrapper, { width: 70 }]}>
+                <Text style={styles.timePickerColumnLabel}>Day</Text>
+                <ScrollView 
+                  style={styles.timePickerColumnScroll} 
+                  showsVerticalScrollIndicator={false}
+                  contentContainerStyle={{ paddingVertical: 10 }}
+                >
+                  {Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, '0')).map(day => {
+                    const isSelected = day === selectedDay;
+                    return (
+                      <Pressable 
+                        key={day} 
+                        onPress={() => setSelectedDay(day)}
+                        style={[
+                           styles.timePickerItem,
+                           isSelected && styles.timePickerItemActive
+                        ]}
+                      >
+                        <Text style={[
+                          styles.timePickerItemText,
+                          isSelected && styles.timePickerItemTextActive
+                        ]}>
+                          {day}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+
+              {/* Year Column */}
+              <View style={[styles.timePickerColumnWrapper, { width: 80 }]}>
+                <Text style={styles.timePickerColumnLabel}>Year</Text>
+                <ScrollView 
+                  style={styles.timePickerColumnScroll} 
+                  showsVerticalScrollIndicator={false}
+                  contentContainerStyle={{ paddingVertical: 10 }}
+                >
+                  {Array.from({ length: 5 }, (_, i) => String(new Date().getFullYear() + i)).map(yr => {
+                    const isSelected = yr === selectedYear;
+                    return (
+                      <Pressable 
+                        key={yr} 
+                        onPress={() => setSelectedYear(yr)}
+                        style={[
+                           styles.timePickerItem,
+                           isSelected && styles.timePickerItemActive
+                        ]}
+                      >
+                        <Text style={[
+                          styles.timePickerItemText,
+                          isSelected && styles.timePickerItemTextActive
+                        ]}>
+                          {yr}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+            </View>
+
+            {/* Modal Actions */}
+            <View style={styles.timePickerActionsRow}>
+              <Pressable 
+                onPress={() => setIsDatePickerModalVisible(false)}
+                style={[styles.timePickerBtn, styles.timePickerBtnCancel]}
+              >
+                <Text style={styles.timePickerBtnTextCancel}>Cancel</Text>
+              </Pressable>
+              <Pressable 
+                onPress={confirmCustomDatePicker}
                 style={[styles.timePickerBtn, styles.timePickerBtnConfirm]}
               >
                 <Text style={styles.timePickerBtnTextConfirm}>Confirm</Text>

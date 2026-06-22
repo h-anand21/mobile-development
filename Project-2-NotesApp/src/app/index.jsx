@@ -9,6 +9,93 @@ import WelcomeScreen from '../screens/WelcomeScreen';
 import SetupProfileScreen from '../screens/SetupProfileScreen';
 import { lightTheme, darkTheme } from '../constants/theme';
 
+let Notifications = null;
+try {
+  Notifications = require('expo-notifications');
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldBadge: false,
+    }),
+  });
+} catch (error) {
+  console.warn('Notifications module could not be loaded in Expo Go:', error);
+}
+
+const scheduleNoteReminder = async (noteId, title, content, reminder) => {
+  if (!Notifications) {
+    console.warn('Notifications module not loaded. Local notification skipped.');
+    return;
+  }
+  try {
+    await Notifications.cancelScheduledNotificationAsync(noteId);
+
+    if (!reminder || !reminder.dateTime) {
+      return;
+    }
+
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+    if (existingStatus !== 'granted') {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+
+    if (finalStatus !== 'granted') {
+      console.warn('Notification permission not granted');
+      return;
+    }
+
+    const triggerDate = new Date(reminder.dateTime);
+    if (triggerDate <= new Date()) {
+      return;
+    }
+
+    let trigger = triggerDate;
+    if (reminder.repeat && reminder.repeat !== 'none') {
+      if (reminder.repeat === 'daily') {
+        trigger = {
+          hour: triggerDate.getHours(),
+          minute: triggerDate.getMinutes(),
+          repeats: true,
+        };
+      } else if (reminder.repeat === 'weekly') {
+        trigger = {
+          weekday: triggerDate.getDay() + 1,
+          hour: triggerDate.getHours(),
+          minute: triggerDate.getMinutes(),
+          repeats: true,
+        };
+      }
+    }
+
+    await Notifications.scheduleNotificationAsync({
+      identifier: noteId,
+      content: {
+        title: `🔔 Reminder: ${title || 'Untitled Note'}`,
+        body: content ? content.slice(0, 100) : 'Tap to open your note.',
+        data: { noteId },
+      },
+      trigger,
+    });
+    console.log(`Successfully scheduled notification for noteId: ${noteId} at ${triggerDate.toLocaleString()}`);
+  } catch (error) {
+    console.error('Error scheduling notification:', error);
+  }
+};
+
+const cancelNoteReminder = async (noteId) => {
+  if (!Notifications) {
+    return;
+  }
+  try {
+    await Notifications.cancelScheduledNotificationAsync(noteId);
+  } catch (error) {
+    console.error('Error cancelling notification:', error);
+  }
+};
+
 const STORAGE_KEYS = {
   NOTES: 'wordsy_notes',
   USER_PROFILE: 'wordsy_user_profile',
@@ -346,6 +433,7 @@ export default function App() {
             : note
         )
       );
+      scheduleNoteReminder(editingNote.id, updatedNote.title, updatedNote.content, updatedNote.reminder);
       setEditingNote(null);
     } else {
       const noteWithId = {
@@ -360,12 +448,14 @@ export default function App() {
         }),
       };
       setNotes((prev) => [noteWithId, ...prev]);
+      scheduleNoteReminder(noteWithId.id, noteWithId.title, noteWithId.content, noteWithId.reminder);
     }
     setScreen('list');
   };
 
   const handleDeleteNote = (id) => {
     setNotes((prev) => prev.filter((note) => note.id !== id));
+    cancelNoteReminder(id);
   };
 
   const handlePinToggle = (id) => {

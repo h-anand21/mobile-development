@@ -22,6 +22,7 @@ export default function NoteCard({ note, index, isDark, onPress, onPinToggle }) 
   }, [index]);
 
   const decorationType = index % 3;
+  const displayDate = note.date || '';
 
   return (
     <View style={[styles.wrapper, { transform: [{ rotate: rotation }] }]}>
@@ -79,7 +80,7 @@ export default function NoteCard({ note, index, isDark, onPress, onPinToggle }) 
               const lineSlotsGridH = Math.floor(pageHeight / 55);
               return (
                  <View style={[styles.cardImagePreview, { backgroundColor: isPageDark ? '#121212' : '#FFFFFF', padding: 3, borderWidth: 0.5, borderColor: isPageDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }]}>
-                  <Svg width="100%" height="100%" viewBox={`0 0 360 ${pageHeight}`}>
+                  <Svg width="100%" height="100%" viewBox={`0 0 360 ${pageHeight}`} preserveAspectRatio="xMidYMin slice">
                     {/* Rules/Grids */}
                     {firstPage.pageStyle === 'ruled' && (
                       <>
@@ -177,7 +178,7 @@ export default function NoteCard({ note, index, isDark, onPress, onPinToggle }) 
             })() : (
               note.drawings && note.drawings.length > 0 && (
                 <View style={[styles.cardImagePreview, { backgroundColor: '#FFFFFF', padding: 4 }]}>
-                  <Svg width="100%" height="100%" viewBox="0 0 350 450">
+                  <Svg width="100%" height="100%" viewBox="0 0 350 450" preserveAspectRatio="xMidYMin slice">
                     {note.drawings[0].lines.map((line, lIdx) => {
                       const path = line.reduce((acc, point, idx) => {
                         if (idx === 0) return `M ${point.x} ${point.y}`;
@@ -263,7 +264,7 @@ export default function NoteCard({ note, index, isDark, onPress, onPinToggle }) 
                   </Text>
                 )}
               </View>
-            ) : (
+            ) : note.noteType === 'notebook' ? null : (
               <Text 
                 style={styles.preview} 
                 numberOfLines={((note.images && note.images.length > 0) || (note.drawings && note.drawings.length > 0)) ? 1 : 3}
@@ -271,9 +272,17 @@ export default function NoteCard({ note, index, isDark, onPress, onPinToggle }) 
                 {note.content}
               </Text>
             )}
+            {note.reminder && (
+              <View style={styles.cardReminderBadge}>
+                <Ionicons name="notifications" size={10} color="#0D47A1" />
+                <Text style={styles.cardReminderText} numberOfLines={1}>
+                  {note.reminder.formattedText}
+                </Text>
+              </View>
+            )}
           </View>
           
-          <View style={[styles.footer, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
+          <View style={styles.footer}>
             <View style={{ flexDirection: 'row', gap: 4, alignItems: 'center' }}>
               {note.noteType === 'notebook' && (
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
@@ -296,7 +305,7 @@ export default function NoteCard({ note, index, isDark, onPress, onPinToggle }) 
                 <Ionicons name="mic-outline" size={12} color="rgba(0,0,0,0.4)" />
               )}
             </View>
-            <Text style={styles.dateText}>{note.date}</Text>
+            <Text style={styles.dateText}>{displayDate}</Text>
           </View>
         </View>
       </Pressable>
@@ -381,10 +390,11 @@ const styles = StyleSheet.create({
     paddingTop: 4,
   },
   dateText: {
-    fontSize: 10,
-    color: 'rgba(0,0,0,0.5)',
+    fontSize: 9.5,
+    color: 'rgba(0,0,0,0.6)',
     fontWeight: '700',
     textAlign: 'right',
+    marginTop: 2,
   },
   cardImagePreview: {
     width: '100%',
@@ -416,5 +426,24 @@ const styles = StyleSheet.create({
     color: 'rgba(0,0,0,0.5)',
     fontWeight: '700',
     marginTop: 2,
+  },
+  cardReminderBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(13, 71, 161, 0.08)',
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    gap: 4,
+    marginTop: 6,
+    alignSelf: 'flex-start',
+    maxWidth: '100%',
+    borderWidth: 0.5,
+    borderColor: 'rgba(13, 71, 161, 0.15)',
+  },
+  cardReminderText: {
+    fontSize: 9,
+    color: '#0D47A1',
+    fontWeight: '700',
   },
 });
