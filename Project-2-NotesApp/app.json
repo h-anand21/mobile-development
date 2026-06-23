@@ -2,7 +2,7 @@
   "expo": {
     "name": "Wordsy",
     "slug": "Project-2-NotesApp",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "project2notesapp",
@@ -20,7 +20,7 @@
         "backgroundColor": "#FF8C00"
       },
       "package": "com.himu21.project2notesapp",
-      "versionCode": 1
+      "versionCode": 3
     },
     "web": {
       "output": "static"

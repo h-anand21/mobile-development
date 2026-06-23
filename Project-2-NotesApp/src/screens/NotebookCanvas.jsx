@@ -1918,53 +1918,58 @@ export default function NotebookCanvas({ visible, onClose, onSave, theme, initia
   };
 
   const handleAddImage = async (useCamera = false) => {
-    const permissionResult = useCamera 
-      ? await ImagePicker.requestCameraPermissionsAsync() 
-      : await ImagePicker.requestMediaLibraryPermissionsAsync();
+    try {
+      const permissionResult = useCamera 
+        ? await ImagePicker.requestCameraPermissionsAsync() 
+        : await ImagePicker.requestMediaLibraryPermissionsAsync();
 
-    if (!permissionResult.granted) {
-      Alert.alert(
-        'Permission Required',
-        `We need ${useCamera ? 'camera' : 'gallery'} permission to add photos!`
-      );
-      return;
-    }
+      if (!permissionResult.granted) {
+        Alert.alert(
+          'Permission Required',
+          `We need ${useCamera ? 'camera' : 'gallery'} permission to add photos!`
+        );
+        return;
+      }
 
-    const result = useCamera
-      ? await ImagePicker.launchCameraAsync({
-          mediaTypes: ['images'],
-          allowsEditing: true,
-          quality: 0.8,
-        })
-      : await ImagePicker.launchImageLibraryAsync({
-          mediaTypes: ['images'],
-          allowsEditing: true,
-          quality: 0.8,
-        });
+      const result = useCamera
+        ? await ImagePicker.launchCameraAsync({
+            mediaTypes: ['images'],
+            allowsEditing: true,
+            quality: 0.8,
+          })
+        : await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ['images'],
+            allowsEditing: true,
+            quality: 0.8,
+          });
 
-    if (!result.canceled && result.assets && result.assets.length > 0) {
-      const asset = result.assets[0];
-      const selectedUri = asset.uri;
-      
-      const assetW = asset.width || 300;
-      const assetH = asset.height || 300;
-      const initialWidth = 150;
-      const initialHeight = Math.round((initialWidth * assetH) / assetW);
-      
-      const newImg = {
-        id: `img_${Date.now()}`,
-        uri: selectedUri,
-        x: Math.round((CANVAS_WIDTH - initialWidth) / 2),
-        y: Math.round((CANVAS_HEIGHT - initialHeight) / 2),
-        width: initialWidth,
-        height: initialHeight
-      };
-      
-      setImages(prev => [...prev, newImg]);
-      setSelectedImageId(newImg.id);
-      setSelectedTextBoxId(null);
-      setSelectedLineIndex(null);
-      setTool('select');
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        const selectedUri = asset.uri;
+        
+        const assetW = asset.width || 300;
+        const assetH = asset.height || 300;
+        const initialWidth = 150;
+        const initialHeight = Math.round((initialWidth * assetH) / assetW);
+        
+        const newImg = {
+          id: `img_${Date.now()}`,
+          uri: selectedUri,
+          x: Math.round((CANVAS_WIDTH - initialWidth) / 2),
+          y: Math.round((CANVAS_HEIGHT - initialHeight) / 2),
+          width: initialWidth,
+          height: initialHeight
+        };
+        
+        setImages(prev => [...prev, newImg]);
+        setSelectedImageId(newImg.id);
+        setSelectedTextBoxId(null);
+        setSelectedLineIndex(null);
+        setTool('select');
+      }
+    } catch (error) {
+      console.warn('Failed to add image on canvas:', error);
+      Alert.alert('Error', 'An error occurred while trying to access the camera or gallery.');
     }
   };
 

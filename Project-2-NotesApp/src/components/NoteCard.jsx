@@ -155,7 +155,7 @@ export default function NoteCard({ note, index, isDark, onPress, onPinToggle }) 
                         textAnchor="middle"
                         alignmentBaseline="middle"
                       >
-                        {box.text.split('\n')[0] || ''}
+                        {(box.text || '').split('\n')[0] || ''}
                       </SvgText>
                     ))}
                   </Svg>

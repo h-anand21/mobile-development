@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { StyleSheet, View, useColorScheme, ActivityIndicator, BackHandler } from 'react-native';
+import { StyleSheet, View, useColorScheme, ActivityIndicator, BackHandler, Platform } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -76,6 +76,9 @@ const scheduleNoteReminder = async (noteId, title, content, reminder) => {
         title: `🔔 Reminder: ${title || 'Untitled Note'}`,
         body: content ? content.slice(0, 100) : 'Tap to open your note.',
         data: { noteId },
+        android: {
+          channelId: 'default',
+        },
       },
       trigger,
     });
@@ -206,6 +209,26 @@ const localGenerateTemplateSummary = (type, data) => {
 
 export default function App() {
   const systemScheme = useColorScheme();
+  
+  // Register Android Notification Channel on app launch
+  useEffect(() => {
+    const configureChannel = async () => {
+      if (Platform.OS === 'android' && Notifications) {
+        try {
+          await Notifications.setNotificationChannelAsync('default', {
+            name: 'Default Reminders',
+            importance: Notifications.AndroidImportance.MAX,
+            vibrationPattern: [0, 250, 250, 250],
+            lightColor: '#FF8C00',
+          });
+        } catch (error) {
+          console.warn('Failed to set notification channel:', error);
+        }
+      }
+    };
+    configureChannel();
+  }, []);
+
   const [isDark, setIsDark] = useState(systemScheme === 'dark');
   const [screen, setScreen] = useState('welcome');
   const [notes, setNotes] = useState([]);

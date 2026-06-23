@@ -27,6 +27,13 @@ try {
   console.warn('Audio module not loaded:', error);
 }
 
+let Notifications = null;
+try {
+  Notifications = require('expo-notifications');
+} catch {
+  // Silent fallback
+}
+
 const getSafeRoutineArray = (routine) => {
   if (Array.isArray(routine)) {
     return routine.map((r, index) => ({
@@ -47,12 +54,166 @@ const getSafeRoutineArray = (routine) => {
   return [];
 };
 
+const convertTemplateToText = (type, data) => {
+  if (!type || !data) return '';
+  let lines = [];
+  lines.push(`--- ${(type || 'Template').toUpperCase()} PLANNER ---`);
+  
+  if (data.focus) lines.push(`Focus: ${data.focus}`);
+  if (data.priorities) lines.push(`Priorities: ${data.priorities}`);
+  if (data.workout) lines.push(`Workout: ${data.workout}`);
+  if (data.calories) lines.push(`Calories: ${data.calories}`);
+  if (data.weight) lines.push(`Weight: ${data.weight}`);
+  if (data.destination) lines.push(`Destination: ${data.destination}${data.duration ? ` (${data.duration})` : ''}`);
+  if (data.store) lines.push(`Store: ${data.store}${data.budget ? ` (Budget: ${data.budget})` : ''}`);
+  if (data.budgetLimit || data.income || data.savingsGoal) {
+    lines.push(`Budget Limit: ${data.budgetLimit || 'N/A'} | Income: ${data.income || 'N/A'} | Savings Goal: ${data.savingsGoal || 'N/A'}`);
+  }
+  if (data.investmentGoal) lines.push(`Investment Goal: ${data.investmentGoal}${data.dailyAmount ? ` (Daily: ${data.dailyAmount})` : ''}`);
+  if (data.studyGoal) lines.push(`Study Goal: ${data.studyGoal}`);
+  
+  if (data.meals) {
+    const { breakfast, lunch, dinner, snack } = data.meals;
+    if (breakfast || lunch || dinner || snack) {
+      lines.push(`Meals:`);
+      if (breakfast) lines.push(`  - Breakfast: ${breakfast}`);
+      if (lunch) lines.push(`  - Lunch: ${lunch}`);
+      if (dinner) lines.push(`  - Dinner: ${dinner}`);
+      if (snack) lines.push(`  - Snacks: ${snack}`);
+    }
+  }
+
+  const addTaskList = (title, items) => {
+    if (items && items.length > 0) {
+      const activeItems = items.filter(item => item && (item.text || item.task));
+      if (activeItems.length > 0) {
+        lines.push(`${title}:`);
+        activeItems.forEach(item => {
+          const check = item.checked ? '[x]' : '[ ]';
+          lines.push(`  ${check} ${item.text || item.task}`);
+        });
+      }
+    }
+  };
+
+  if (data.morningHabits) addTaskList('Morning Habits', data.morningHabits);
+  if (data.todo) addTaskList('To Do', data.todo);
+  if (data.goals) addTaskList('Goals', data.goals);
+  if (data.packingList) addTaskList('Packing List', data.packingList);
+  if (data.items) addTaskList('Items', data.items);
+  if (data.expenses) addTaskList('Expenses', data.expenses);
+  if (data.assets) addTaskList('Assets', data.assets);
+  if (data.clinicalTasks) addTaskList('Clinical Tasks', data.clinicalTasks);
+  if (data.clinicalLog) addTaskList('Clinical Log', data.clinicalLog);
+  if (data.studyTasks) addTaskList('Study Tasks', data.studyTasks);
+  if (data.deadlines) addTaskList('Deadlines', data.deadlines);
+
+  if (data.gratitude && data.gratitude.length > 0) {
+    const activeGrat = data.gratitude.filter(g => g && g.trim());
+    if (activeGrat.length > 0) {
+      lines.push(`Gratitude:`);
+      activeGrat.forEach(g => lines.push(`  - ${g}`));
+    }
+  }
+  
+  if (data.affirmations) lines.push(`Affirmations: ${data.affirmations}`);
+
+  if (data.schedule && data.schedule.length > 0) {
+    const activeSched = data.schedule.filter(s => s && s.task);
+    if (activeSched.length > 0) {
+      lines.push(`Schedule:`);
+      activeSched.forEach(s => lines.push(`  - ${s.time}: ${s.task}`));
+    }
+  }
+  if (data.afternoonSchedule) addTaskList('Afternoon Schedule', data.afternoonSchedule);
+  if (data.eveningSchedule) addTaskList('Evening Schedule', data.eveningSchedule);
+  if (data.nightSchedule) addTaskList('Night Schedule', data.nightSchedule);
+
+  if (data.habits) {
+    if (data.habits.health) addTaskList('Health Habits', data.habits.health);
+    if (data.habits.work) addTaskList('Work Habits', data.habits.work);
+    if (data.habits.selfcare) addTaskList('Selfcare Habits', data.habits.selfcare);
+  }
+
+  if (data.classes && data.classes.length > 0) {
+    const activeClasses = data.classes.filter(c => c && c.text);
+    if (activeClasses.length > 0) {
+      lines.push(`Classes:`);
+      activeClasses.forEach(c => lines.push(`  - ${c.time}: ${c.text}`));
+    }
+  }
+
+  if (data.itinerary && data.itinerary.length > 0) {
+    const activeItin = data.itinerary.filter(i => i && i.task);
+    if (activeItin.length > 0) {
+      lines.push(`Itinerary:`);
+      activeItin.forEach(i => lines.push(`  - ${i.time}: ${i.task}`));
+    }
+  }
+
+  if (data.patients && data.patients.length > 0) {
+    const activePatients = data.patients.filter(p => p && p.bedNumber);
+    if (activePatients.length > 0) {
+      lines.push(`Patients:`);
+      activePatients.forEach(p => {
+        const v = p.vitalsChecked ? '[x]' : '[ ]';
+        const r = p.roundsDone ? '[x]' : '[ ]';
+        lines.push(`  - ${p.bedNumber}: ${p.diagnosis || ''} (Vitals: ${v}, Rounds: ${r})`);
+      });
+    }
+  }
+
+  if (data.subjects && data.subjects.length > 0) {
+    const activeSubjects = data.subjects.filter(sub => sub && sub.name);
+    if (activeSubjects.length > 0) {
+      lines.push(`Subjects:`);
+      activeSubjects.forEach(sub => {
+        lines.push(`  - ${sub.name} (Exam: ${sub.examDate || 'N/A'}, Study: ${sub.studyHours || 0}h)`);
+        if (sub.topics) {
+          sub.topics.forEach(t => {
+            const chk = t.checked ? '[x]' : '[ ]';
+            if (t.text) lines.push(`    ${chk} ${t.text}`);
+          });
+        }
+        if (sub.routine) {
+          const rArr = getSafeRoutineArray(sub.routine);
+          rArr.forEach(r => {
+            const chk = r.checked ? '[x]' : '[ ]';
+            if (r.task) lines.push(`    ${chk} ${r.time}: ${r.task}`);
+          });
+        }
+      });
+    }
+  }
+
+  if (data.notes) lines.push(`Notes: ${data.notes}`);
+  
+  return lines.join('\n');
+};
+
+const convertNotebookToText = (pages) => {
+  if (!pages || !Array.isArray(pages)) return '';
+  let lines = [];
+  lines.push('--- DIGITAL NOTEBOOK ---');
+  pages.forEach((page, index) => {
+    lines.push(`Page ${index + 1}:`);
+    if (page.textBoxes && page.textBoxes.length > 0) {
+      page.textBoxes.forEach((box) => {
+        if (box && box.text && box.text.trim()) {
+          lines.push(`  * ${box.text}`);
+        }
+      });
+    }
+  });
+  return lines.join('\n');
+};
+
 export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, folders = [] }) {
   const { height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const [folderId, setFolderId] = useState(noteToEdit ? noteToEdit.folderId : null);
   const [title, setTitle] = useState(noteToEdit ? noteToEdit.title : '');
-  const [body, setBody] = useState(noteToEdit ? (noteToEdit.noteType === 'text' ? noteToEdit.content : '') : '');
+  const [body, setBody] = useState(noteToEdit ? (noteToEdit.noteType === 'text' ? (noteToEdit.content || '') : '') : '');
   const [status, setStatus] = useState('');
   const scrollViewRef = useRef(null);
   const descriptionScrollViewRef = useRef(null);
@@ -239,11 +400,24 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
     setIsReminderModalVisible(false);
   };
 
-  const openReminderConfig = () => {
+  const openReminderConfig = async () => {
     if (reminder?.dateTime) {
       setSchedDate(new Date(reminder.dateTime));
       setSchedRepeat(reminder.repeat || 'none');
     }
+    
+    // Request permission immediately on opening the reminder config
+    if (Notifications) {
+      try {
+        const { status: existingStatus } = await Notifications.getPermissionsAsync();
+        if (existingStatus !== 'granted') {
+          await Notifications.requestPermissionsAsync();
+        }
+      } catch (err) {
+        console.warn('Failed to request notification permission in editor:', err);
+      }
+    }
+    
     setIsReminderModalVisible(true);
   };
 
@@ -504,9 +678,23 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
   };
 
   const handleSelectTemplate = (type) => {
+    let existingContent = '';
+    if (noteType === 'text') {
+      existingContent = body;
+    } else if (noteType === 'checklist') {
+      existingContent = checklist.map(item => (item.checked ? '[x] ' : '[ ] ') + item.text).join('\n');
+    } else if (noteType === 'notebook') {
+      existingContent = convertNotebookToText(templateData?.pages);
+    }
+
+    const tData = JSON.parse(JSON.stringify(DEFAULT_TEMPLATE_DATA[type]));
+    if (tData && typeof tData === 'object' && 'notes' in tData) {
+      tData.notes = existingContent || tData.notes;
+    }
+
     setNoteType('template');
     setTemplateType(type);
-    setTemplateData(JSON.parse(JSON.stringify(DEFAULT_TEMPLATE_DATA[type])));
+    setTemplateData(tData);
     setIsTemplateModalVisible(false);
     
     // Auto category to Daily Routine if routine folder exists
@@ -1088,34 +1276,39 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
   const handlePickImage = async (useCamera = false) => {
     setIsBottomSheetVisible(false);
     
-    // Ask permission
-    const permissionResult = useCamera 
-      ? await ImagePicker.requestCameraPermissionsAsync() 
-      : await ImagePicker.requestMediaLibraryPermissionsAsync();
+    try {
+      // Ask permission
+      const permissionResult = useCamera 
+        ? await ImagePicker.requestCameraPermissionsAsync() 
+        : await ImagePicker.requestMediaLibraryPermissionsAsync();
 
-    if (!permissionResult.granted) {
-      Alert.alert(
-        'Permission Required',
-        `We need ${useCamera ? 'camera' : 'gallery'} permission to attach photos!`
-      );
-      return;
-    }
+      if (!permissionResult.granted) {
+        Alert.alert(
+          'Permission Required',
+          `We need ${useCamera ? 'camera' : 'gallery'} permission to attach photos!`
+        );
+        return;
+      }
 
-    const result = useCamera
-      ? await ImagePicker.launchCameraAsync({
-          mediaTypes: ['images'],
-          allowsEditing: true,
-          quality: 0.8,
-        })
-      : await ImagePicker.launchImageLibraryAsync({
-          mediaTypes: ['images'],
-          allowsEditing: true,
-          quality: 0.8,
-        });
+      const result = useCamera
+        ? await ImagePicker.launchCameraAsync({
+            mediaTypes: ['images'],
+            allowsEditing: true,
+            quality: 0.8,
+          })
+        : await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ['images'],
+            allowsEditing: true,
+            quality: 0.8,
+          });
 
-    if (!result.canceled && result.assets && result.assets.length > 0) {
-      const selectedUri = result.assets[0].uri;
-      setImages(prev => [...prev, { uri: selectedUri }]);
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const selectedUri = result.assets[0].uri;
+        setImages(prev => [...prev, { uri: selectedUri }]);
+      }
+    } catch (error) {
+      console.warn('Failed to pick image:', error);
+      Alert.alert('Error', 'An error occurred while trying to access the camera or gallery.');
     }
   };
 
@@ -1162,14 +1355,23 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
   };
 
   const handleSwitchToChecklist = () => {
-    if (noteType === 'text') {
-      const lines = body.split('\n').filter(line => line.trim() !== '');
-      const initialList = lines.length > 0 
-        ? lines.map((line, index) => ({ id: `${Date.now()}-${index}`, text: line, checked: false }))
-        : [{ id: Date.now().toString(), text: '', checked: false }];
-      setChecklist(initialList);
-      setNoteType('checklist');
+    let sourceText = body || '';
+    if (noteType === 'template') {
+      sourceText = convertTemplateToText(templateType, templateData);
+    } else if (noteType === 'notebook') {
+      sourceText = convertNotebookToText(templateData?.pages);
     }
+
+    const lines = (sourceText || '').split('\n').filter(line => line.trim() !== '');
+    const initialList = lines.length > 0 
+      ? lines.map((line, index) => {
+          const cleanLine = line.replace(/^\s*([-\*]\s*|\[[ x]\]\s*)/, '');
+          const checked = line.includes('[x]');
+          return { id: `${Date.now()}-${index}`, text: cleanLine, checked };
+        })
+      : [{ id: Date.now().toString(), text: '', checked: false }];
+    setChecklist(initialList);
+    setNoteType('checklist');
     setIsBottomSheetVisible(false);
   };
 
@@ -1177,8 +1379,14 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
     if (noteType === 'checklist') {
       const combinedText = checklist.map(item => item.text).join('\n');
       setBody(combinedText);
-      setNoteType('text');
+    } else if (noteType === 'template') {
+      const formatted = convertTemplateToText(templateType, templateData);
+      setBody(formatted);
+    } else if (noteType === 'notebook') {
+      const formatted = convertNotebookToText(templateData?.pages);
+      setBody(formatted);
     }
+    setNoteType('text');
     setIsBottomSheetVisible(false);
   };
 
@@ -4535,72 +4743,110 @@ export default function NoteEditorScreen({ onSave, onBack, theme, noteToEdit, fo
                 <Text style={styles.bottomSheetItemText}>Record Audio</Text>
               </Pressable>
 
-              {/* Option 4: Checklist */}
-              <Pressable 
-                onPress={noteType === 'checklist' ? handleSwitchToText : handleSwitchToChecklist} 
-                style={({ pressed }) => [
-                  styles.bottomSheetItem,
-                  { backgroundColor: pressed ? theme.overlay : 'transparent' }
-                ]}
-              >
-                <View style={[styles.bottomSheetItemIconContainer, { backgroundColor: '#C8E6C9' }]}>
-                  <Ionicons 
-                    name={noteType === 'checklist' ? "document-text" : "checkbox"} 
-                    size={20} 
-                    color="#388E3C" 
-                  />
-                </View>
-                <Text style={styles.bottomSheetItemText}>
-                  {noteType === 'checklist' ? 'Convert to Text' : 'Add Checklist'}
-                </Text>
-              </Pressable>
+              {/* Option 4: Convert to Text (Only if not already text) */}
+              {noteType !== 'text' && (
+                <Pressable 
+                  onPress={handleSwitchToText} 
+                  style={({ pressed }) => [
+                    styles.bottomSheetItem,
+                    { backgroundColor: pressed ? theme.overlay : 'transparent' }
+                  ]}
+                >
+                  <View style={[styles.bottomSheetItemIconContainer, { backgroundColor: '#ECEFF1' }]}>
+                    <Ionicons name="document-text-outline" size={20} color="#455A64" />
+                  </View>
+                  <Text style={styles.bottomSheetItemText}>Convert to Text</Text>
+                </Pressable>
+              )}
 
-              {/* Option 5: Planner Templates */}
-              <Pressable 
-                onPress={() => {
-                  setIsBottomSheetVisible(false);
-                  setIsTemplateModalVisible(true);
-                }} 
-                style={({ pressed }) => [
-                  styles.bottomSheetItem,
-                  { backgroundColor: pressed ? theme.overlay : 'transparent' }
-                ]}
-              >
-                <View style={[styles.bottomSheetItemIconContainer, { backgroundColor: '#E0F7FA' }]}>
-                  <Ionicons name="calendar-outline" size={20} color="#00ACC1" />
-                </View>
-                <Text style={styles.bottomSheetItemText}>Planner Templates</Text>
-              </Pressable>
+              {/* Option 5: Convert to Checklist (Only if not already checklist) */}
+              {noteType !== 'checklist' && (
+                <Pressable 
+                  onPress={handleSwitchToChecklist} 
+                  style={({ pressed }) => [
+                    styles.bottomSheetItem,
+                    { backgroundColor: pressed ? theme.overlay : 'transparent' }
+                  ]}
+                >
+                  <View style={[styles.bottomSheetItemIconContainer, { backgroundColor: '#C8E6C9' }]}>
+                    <Ionicons name="checkbox" size={20} color="#388E3C" />
+                  </View>
+                  <Text style={styles.bottomSheetItemText}>Convert to Checklist</Text>
+                </Pressable>
+              )}
 
-              {/* Option 6: Digital Notebook */}
-              <Pressable 
-                onPress={() => {
-                  setIsBottomSheetVisible(false);
-                  setNoteType('notebook');
-                  if (!templateData.pages || templateData.pages.length === 0) {
-                    setTemplateData({
-                      pages: [
-                        {
-                          pageStyle: 'ruled',
-                          borderDesign: 'classic',
-                          lines: [],
-                          textBoxes: []
-                        }
-                      ]
-                    });
-                  }
-                  setIsNotebookCanvasVisible(true);
-                }} 
-                style={({ pressed }) => [
-                   styles.bottomSheetItem,
-                   { backgroundColor: pressed ? theme.overlay : 'transparent' }
-                ]}
-              >
-                <View style={[styles.bottomSheetItemIconContainer, { backgroundColor: '#BBDEFB' }]}>
-                  <Ionicons name="book" size={20} color="#1565C0" />
-                </View>
-                <Text style={styles.bottomSheetItemText}>Digital Notebook</Text>
-              </Pressable>
+              {/* Option 6: Planner Templates (Only if not already template) */}
+              {noteType !== 'template' && (
+                <Pressable 
+                  onPress={() => {
+                    setIsBottomSheetVisible(false);
+                    setIsTemplateModalVisible(true);
+                  }} 
+                  style={({ pressed }) => [
+                    styles.bottomSheetItem,
+                    { backgroundColor: pressed ? theme.overlay : 'transparent' }
+                  ]}
+                >
+                  <View style={[styles.bottomSheetItemIconContainer, { backgroundColor: '#E0F7FA' }]}>
+                    <Ionicons name="calendar-outline" size={20} color="#00ACC1" />
+                  </View>
+                  <Text style={styles.bottomSheetItemText}>Planner Templates</Text>
+                </Pressable>
+              )}
+
+              {/* Option 7: Digital Notebook (Only if not already notebook) */}
+              {noteType !== 'notebook' && (
+                <Pressable 
+                  onPress={() => {
+                    setIsBottomSheetVisible(false);
+                    setNoteType('notebook');
+                    if (!templateData.pages || templateData.pages.length === 0) {
+                      let pageText = '';
+                      if (noteType === 'text') {
+                        pageText = body;
+                      } else if (noteType === 'checklist') {
+                        pageText = checklist.map(item => (item.checked ? '[x] ' : '[ ] ') + item.text).join('\n');
+                      } else if (noteType === 'template') {
+                        pageText = convertTemplateToText(templateType, templateData);
+                      }
+
+                      setTemplateData({
+                        pages: [
+                          {
+                            pageStyle: 'ruled',
+                            borderDesign: 'classic',
+                            lines: [],
+                            textBoxes: pageText ? [
+                              {
+                                id: `tb_${Date.now()}`,
+                                text: pageText,
+                                x: 50,
+                                y: 100,
+                                width: 250,
+                                height: 150
+                              }
+                            ] : [],
+                            images: [],
+                            tapes: [],
+                            tables: [],
+                            pageHeight: 1500
+                          }
+                        ]
+                      });
+                    }
+                    setIsNotebookCanvasVisible(true);
+                  }} 
+                  style={({ pressed }) => [
+                     styles.bottomSheetItem,
+                     { backgroundColor: pressed ? theme.overlay : 'transparent' }
+                  ]}
+                >
+                  <View style={[styles.bottomSheetItemIconContainer, { backgroundColor: '#BBDEFB' }]}>
+                    <Ionicons name="book" size={20} color="#1565C0" />
+                  </View>
+                  <Text style={styles.bottomSheetItemText}>Digital Notebook</Text>
+                </Pressable>
+              )}
             </View>
           </Pressable>
         </Pressable>

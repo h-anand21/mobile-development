@@ -3619,8 +3619,8 @@ export default function NotesListScreen({
       ? folderNotes 
       : folderNotes.filter(
           (note) =>
-            note.title.toLowerCase().includes(q) ||
-            note.content.toLowerCase().includes(q)
+            (note.title || '').toLowerCase().includes(q) ||
+            (note.content || '').toLowerCase().includes(q)
         );
     return [...baseNotes].sort((a, b) => {
       const aPinned = a.isPinned ? 1 : 0;
