@@ -1,0 +1,17 @@
+# Node modules
+node_modules/
+
+# Local build artifacts and caches
+.expo/
+dist/
+web-build/
+
+# IDE files
+.vscode/
+.idea/
+
+# macOS
+.DS_Store
+
+# Keep local envs out of EAS unless desired (EAS uses secrets/eas.json profiles)
+.env*.local

@@ -1,0 +1,32 @@
+# Expo directories
+.expo/
+dist/
+web-build/
+
+# React Native / Metro
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.eslintcache
+
+# Native build directories
+ios/
+android/
+
+# EAS Build configuration & credentials
+.eas/
+*credentials*.json
+*.jks
+*.keystore
+*.p8
+*.p12
+*.mobileprovision
+
+# macOS
+.DS_Store
+
+# Env files
+.env
+.env.local
+.env*.local
