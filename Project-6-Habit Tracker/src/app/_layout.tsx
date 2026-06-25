@@ -8,10 +8,13 @@ import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { ThemeProvider, useTheme } from '../context/ThemeContext';
 import { initializeNotificationChannel } from '../lib/notifications/setup';
 import { handleNotificationTap } from '../lib/notifications/handlers';
 
-export default function RootLayout() {
+// Inner layout that can access ThemeContext
+function AppLayout() {
+  const { T, isDark } = useTheme();
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
@@ -24,7 +27,6 @@ export default function RootLayout() {
         const onboardingCompleted = await AsyncStorage.getItem('ONBOARDING_COMPLETED');
         
         if (onboardingCompleted !== 'true') {
-          // If not completed, route to onboarding screen 1
           setTimeout(() => {
             router.replace('/onboarding/screen1');
           }, 100);
@@ -39,14 +41,10 @@ export default function RootLayout() {
     prepareApp();
 
     // 3. Register Notification Listeners
-
-    // Listener for when a notification is received in the foreground
     const foregroundSubscription = Notifications.addNotificationReceivedListener(notification => {
       console.log('Foreground notification received:', notification);
-      // You can trigger custom visual feedback here if desired
     });
 
-    // Listener for when the user taps on a notification (foreground or background)
     const responseSubscription = Notifications.addNotificationResponseReceivedListener(response => {
       const data = response.notification.request.content.data;
       console.log('Notification response received:', data);
@@ -61,36 +59,44 @@ export default function RootLayout() {
 
   if (!isReady) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#5EEAD4" />
+      <View style={[styles.loadingContainer, { backgroundColor: T.bg }]}>
+        <ActivityIndicator size="large" color={T.teal} />
       </View>
     );
   }
 
   return (
+    <View style={[styles.container, { backgroundColor: T.bg }]}>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: T.bg },
+          animation: 'slide_from_right',
+        }}
+      >
+        <Stack.Screen name="index" />
+        <Stack.Screen name="onboarding/screen1" />
+        <Stack.Screen name="onboarding/screen2" />
+        <Stack.Screen name="onboarding/screen3" />
+        <Stack.Screen name="new" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="edit" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="habit/[id]" />
+        <Stack.Screen name="analytics" />
+        <Stack.Screen name="achievements" />
+        <Stack.Screen name="notifications" />
+        <Stack.Screen name="settings" />
+      </Stack>
+    </View>
+  );
+}
+
+export default function RootLayout() {
+  return (
     <SafeAreaProvider>
-      <View style={styles.container}>
-        <StatusBar style="light" />
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            contentStyle: { backgroundColor: '#0A1628' },
-            animation: 'slide_from_right',
-          }}
-        >
-          <Stack.Screen name="index" />
-          <Stack.Screen name="onboarding/screen1" />
-          <Stack.Screen name="onboarding/screen2" />
-          <Stack.Screen name="onboarding/screen3" />
-          <Stack.Screen name="new" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="edit" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="habit/[id]" />
-          <Stack.Screen name="analytics" />
-          <Stack.Screen name="achievements" />
-          <Stack.Screen name="notifications" />
-          <Stack.Screen name="settings" />
-        </Stack>
-      </View>
+      <ThemeProvider>
+        <AppLayout />
+      </ThemeProvider>
     </SafeAreaProvider>
   );
 }
@@ -98,11 +104,9 @@ export default function RootLayout() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0A1628',
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: '#0A1628',
     alignItems: 'center',
     justifyContent: 'center',
   },
