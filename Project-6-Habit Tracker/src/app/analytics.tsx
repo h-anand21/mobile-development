@@ -1,33 +1,56 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import Animated, {
+  FadeInDown,
+  FadeInRight,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withSequence,
+  withTiming,
+  Easing,
+} from 'react-native-reanimated';
 import Svg, { Circle, Rect, Line, Text as SvgText } from 'react-native-svg';
 import { useHabits } from '../hooks/use-habits';
 import { getActiveStreak, getLocalDateString } from '../lib/habits/streak';
-import { C } from '../constants/colors';
+import { C, NEO_BG, neoCard, neoBtn } from '../constants/colors';
 
-const { width: SCREEN_W } = Dimensions.get('window');
+const { width: SW } = Dimensions.get('window');
 
-// Multi-ring donut data structure
-function MultiRingChart({ rings, size }: {
-  rings: { percent: number, color: string, strokeWidth: number, radius: number }[],
-  size: number
+// ─────────────────────────────
+// Multi-Ring Donut with animation
+// ─────────────────────────────
+function NeoDonut({ rings, size }: {
+  rings: { percent: number; color: string; strokeW: number; radius: number }[];
+  size: number;
 }) {
   const cx = size / 2, cy = size / 2;
+  const [offsets, setOffsets] = React.useState(rings.map(r => 2 * Math.PI * r.radius));
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setOffsets(rings.map(r => {
+        const circ = 2 * Math.PI * r.radius;
+        return circ - (r.percent / 100) * circ;
+      }));
+    }, 300);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <Svg width={size} height={size}>
       {rings.map((ring, i) => {
         const circ = 2 * Math.PI * ring.radius;
-        const offset = circ - (Math.min(ring.percent, 100) / 100) * circ;
         return (
           <React.Fragment key={i}>
-            <Circle cx={cx} cy={cy} r={ring.radius} stroke="rgba(148,163,184,0.07)"
-              strokeWidth={ring.strokeWidth} fill="transparent" />
-            <Circle cx={cx} cy={cy} r={ring.radius} stroke={ring.color}
-              strokeWidth={ring.strokeWidth} fill="transparent"
-              strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round"
+            <Circle cx={cx} cy={cy} r={ring.radius}
+              stroke="rgba(148,163,184,0.06)" strokeWidth={ring.strokeW} fill="transparent" />
+            <Circle cx={cx} cy={cy} r={ring.radius}
+              stroke={ring.color} strokeWidth={ring.strokeW} fill="transparent"
+              strokeDasharray={circ} strokeDashoffset={offsets[i] ?? circ}
+              strokeLinecap="round"
               transform={`rotate(-90 ${cx} ${cy})`} />
           </React.Fragment>
         );
@@ -36,151 +59,200 @@ function MultiRingChart({ rings, size }: {
   );
 }
 
-export default function AnalyticsScreen() {
-  const router = useRouter();
-  const { habits } = useHabits();
-
-  const todayStr = getLocalDateString();
-  const totalHabits = habits.length;
-  const completedToday = habits.filter(h => h.lastCompletedISO === todayStr).length;
-  const consistencyScore = totalHabits > 0 ? Math.round((completedToday / totalHabits) * 100) : 0;
-  const bestStreak = habits.reduce((max, h) => Math.max(max, getActiveStreak(h)), 0);
-  const totalLogsCount = habits.reduce((acc, h) => acc + h.completedDates.length, 0);
-
-  // Weekly data (last 7 days)
-  const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const getWeeklyData = () => {
-    const data = [];
-    const cursor = new Date();
-    cursor.setDate(cursor.getDate() - 6);
-    for (let i = 0; i < 7; i++) {
-      const iso = `${cursor.getFullYear()}-${String(cursor.getMonth()+1).padStart(2,'0')}-${String(cursor.getDate()).padStart(2,'0')}`;
-      const count = habits.filter(h => h.completedDates.includes(iso)).length;
-      data.push({ label: weekdays[cursor.getDay()], count, isToday: i === 6 });
-      cursor.setDate(cursor.getDate() + 1);
-    }
-    return data;
-  };
-  const weeklyData = getWeeklyData();
-  const maxCount = Math.max(1, ...weeklyData.map(d => d.count));
-
-  // Per-habit progress this week (last 7 days)
-  const getHabitWeeklyRate = (habit: any) => {
-    let count = 0;
-    for (let i = 0; i < 7; i++) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      const iso = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-      if (habit.completedDates.includes(iso)) count++;
-    }
-    return Math.round((count / 7) * 100);
-  };
-
-  // Multi-ring: up to 3 rings based on habit categories
-  const ringColors = [C.teal, C.yellow, C.purple];
-  const rings = habits.slice(0, 3).map((h, i) => ({
-    percent: getHabitWeeklyRate(h),
-    color: ringColors[i % 3],
-    strokeWidth: 10,
-    radius: 52 - i * 18,
-  }));
-  // Fallback rings if no habits
-  const displayRings = rings.length > 0 ? rings : [
-    { percent: 0, color: C.teal, strokeWidth: 10, radius: 52 },
-    { percent: 0, color: C.yellow, strokeWidth: 10, radius: 34 },
-    { percent: 0, color: C.purple, strokeWidth: 10, radius: 16 },
-  ];
-
-  const chartSize = 140;
-  const barChartW = SCREEN_W - 64;
-  const barW = Math.floor(barChartW / 7) - 6;
+// ─────────────────────────────
+// Animated Progress Bar
+// ─────────────────────────────
+function NeoProgressBar({ pct, color }: { pct: number; color: string }) {
+  const [width, setWidth] = React.useState(0);
+  useEffect(() => {
+    const t = setTimeout(() => setWidth(pct), 400);
+    return () => clearTimeout(t);
+  }, [pct]);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
+    <View style={pbStyles.bg}>
+      <View style={[pbStyles.fill, { width: `${width}%`, backgroundColor: color }]} />
+    </View>
+  );
+}
+const pbStyles = StyleSheet.create({
+  bg: { height: 8, backgroundColor: 'rgba(148,163,184,0.08)', borderRadius: 5, overflow: 'hidden' },
+  fill: { height: '100%', borderRadius: 5 },
+});
+
+export default function AnalyticsScreen() {
+  const router  = useRouter();
+  const { habits } = useHabits();
+
+  const todayStr      = getLocalDateString();
+  const total         = habits.length;
+  const doneToday     = habits.filter(h => h.lastCompletedISO === todayStr).length;
+  const consistency   = total > 0 ? Math.round((doneToday / total) * 100) : 0;
+  const bestStreak    = habits.reduce((m, h) => Math.max(m, getActiveStreak(h)), 0);
+  const totalLogs     = habits.reduce((a, h) => a + h.completedDates.length, 0);
+
+  // Weekly data
+  const dayNames = ['S','M','T','W','T','F','S'];
+  const weekData = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    const iso = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    const cnt = habits.filter(h => h.completedDates.includes(iso)).length;
+    return { label: dayNames[d.getDay()], count: cnt, isToday: i === 6 };
+  });
+  const maxBar = Math.max(1, ...weekData.map(d => d.count));
+
+  // Per-habit 7-day rate
+  const getRate = (habit: any) => {
+    let cnt = 0;
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(); d.setDate(d.getDate() - i);
+      const iso = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      if (habit.completedDates.includes(iso)) cnt++;
+    }
+    return Math.round((cnt / 7) * 100);
+  };
+
+  // Rings
+  const ringColors = [C.teal, C.yellow, C.purple];
+  const rings = habits.slice(0, 3).map((h, i) => ({
+    percent: getRate(h),
+    color: ringColors[i % 3],
+    strokeW: 9 - i,
+    radius: 54 - i * 18,
+  }));
+  const displayRings = rings.length > 0 ? rings : [
+    { percent: 0, color: C.teal,   strokeW: 9, radius: 54 },
+    { percent: 0, color: C.yellow, strokeW: 8, radius: 36 },
+    { percent: 0, color: C.purple, strokeW: 7, radius: 18 },
+  ];
+
+  const barW   = Math.floor((SW - 64 - 48) / 7);
+  const chartW = SW - 64;
+
+  // Tab press animations
+  const tabHomeScale  = useSharedValue(1);
+  const tabChartScale = useSharedValue(1);
+  const tabBadgeScale = useSharedValue(1);
+  const tabSetScale   = useSharedValue(1);
+
+  const tabHomeStyle  = useAnimatedStyle(() => ({ transform: [{ scale: tabHomeScale.value }] }));
+  const tabChartStyle = useAnimatedStyle(() => ({ transform: [{ scale: tabChartScale.value }] }));
+  const tabBadgeStyle = useAnimatedStyle(() => ({ transform: [{ scale: tabBadgeScale.value }] }));
+  const tabSetStyle   = useAnimatedStyle(() => ({ transform: [{ scale: tabSetScale.value }] }));
+
+  const pressTab = (v: any) => {
+    v.value = withSequence(withSpring(0.8), withSpring(1, { damping: 10 }));
+  };
+
+
+  return (
+    <SafeAreaView style={styles.safe}>
+      <View style={styles.root}>
 
         {/* Header */}
-        <View style={styles.header}>
-          <Pressable style={styles.backBtn} onPress={() => router.back()}>
-            <Ionicons name="chevron-back" size={20} color={C.textPrimary} />
+        <Animated.View entering={FadeInDown.duration(400).springify()} style={styles.header}>
+          <Pressable
+            onPress={() => router.back()}
+            style={({ pressed }) => [styles.backBtn, pressed && { opacity: 0.7 }]}
+          >
+            <Text style={styles.backArrow}>←</Text>
           </Pressable>
-          <Text style={styles.headerTitle}>Analytics</Text>
-          <View style={{ width: 36 }} />
-        </View>
+          <View style={styles.headerCenter}>
+            <Text style={styles.headerEmoji}>📊</Text>
+            <Text style={styles.headerTitle}>Analytics</Text>
+          </View>
+          <View style={{ width: 40 }} />
+        </Animated.View>
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
 
-          {/* ── Top Card: Multi-ring + quick stats ── */}
-          <View style={styles.topCard}>
+          {/* ── Multi-ring + legend card ── */}
+          <Animated.View entering={FadeInDown.delay(80).duration(500).springify()} style={styles.topCard}>
             <View style={styles.ringArea}>
-              <MultiRingChart rings={displayRings} size={chartSize} />
-              <View style={styles.ringCenterText}>
-                <Text style={styles.ringBigNum}>{consistencyScore}%</Text>
-                <Text style={styles.ringBigLabel}>Today</Text>
+              <NeoDonut rings={displayRings} size={140} />
+              <View style={styles.ringCenterBox}>
+                <Text style={styles.ringBig}>{consistency}%</Text>
+                <Text style={styles.ringSmall}>Today</Text>
               </View>
             </View>
 
-            <View style={styles.ringLegend}>
+            <View style={styles.legend}>
               {habits.slice(0, 3).map((h, i) => (
-                <View key={h.id} style={styles.legendRow}>
-                  <View style={[styles.legendDot, { backgroundColor: ringColors[i % 3] }]} />
-                  <Text style={styles.legendName} numberOfLines={1}>{h.name}</Text>
-                  <Text style={[styles.legendPct, { color: ringColors[i % 3] }]}>
-                    {getHabitWeeklyRate(h)}%
-                  </Text>
-                </View>
+                <Animated.View
+                  key={h.id}
+                  entering={FadeInRight.delay(200 + i * 80).duration(400)}
+                  style={styles.legendRow}
+                >
+                  <Text style={styles.legendEmoji}>{h.emoji}</Text>
+                  <View style={styles.legendText}>
+                    <Text style={styles.legendName} numberOfLines={1}>{h.name}</Text>
+                    <View style={styles.legendBarWrap}>
+                      <View style={[styles.legendBarBg]}>
+                        <View style={[styles.legendBarFill, {
+                          width: `${getRate(h)}%`,
+                          backgroundColor: ringColors[i % 3]
+                        }]} />
+                      </View>
+                    </View>
+                  </View>
+                  <Text style={[styles.legendPct, { color: ringColors[i % 3] }]}>{getRate(h)}%</Text>
+                </Animated.View>
               ))}
               {habits.length === 0 && (
-                <Text style={styles.emptyHint}>Add habits to see analytics</Text>
+                <Text style={styles.emptyHint}>💡 Add habits to see analytics</Text>
               )}
             </View>
-          </View>
+          </Animated.View>
 
-          {/* ── Quick Metrics Row ── */}
-          <View style={styles.metricsRow}>
-            <View style={[styles.metricCard, { backgroundColor: '#0E2240' }]}>
-              <Ionicons name="flame" size={20} color={C.orange} />
-              <Text style={[styles.metricVal, { color: C.orange }]}>{bestStreak}</Text>
-              <Text style={styles.metricLabel}>Best Streak</Text>
-            </View>
-            <View style={[styles.metricCard, { backgroundColor: '#081E10' }]}>
-              <Ionicons name="checkmark-done" size={20} color={C.green} />
-              <Text style={[styles.metricVal, { color: C.green }]}>{totalLogsCount}</Text>
-              <Text style={styles.metricLabel}>Total Logs</Text>
-            </View>
-            <View style={[styles.metricCard, { backgroundColor: '#1A1040' }]}>
-              <Ionicons name="sparkles" size={20} color={C.purple} />
-              <Text style={[styles.metricVal, { color: C.purple }]}>{totalHabits}</Text>
-              <Text style={styles.metricLabel}>Active</Text>
-            </View>
-          </View>
+          {/* ── Metric Pills ── */}
+          <Animated.View entering={FadeInDown.delay(160).duration(500).springify()} style={styles.metricRow}>
+            {[
+              { emoji: '🔥', val: bestStreak, label: 'Best Streak', color: C.orange },
+              { emoji: '✅', val: totalLogs,  label: 'Total Logs',  color: C.green },
+              { emoji: '🎯', val: total,       label: 'Habits',      color: C.purple },
+            ].map((m, i) => (
+              <View key={i} style={styles.metricCard}>
+                <View style={styles.metricIconWrap}>
+                  <Text style={styles.metricEmoji}>{m.emoji}</Text>
+                </View>
+                <Text style={[styles.metricVal, { color: m.color }]}>{m.val}</Text>
+                <Text style={styles.metricLabel}>{m.label}</Text>
+              </View>
+            ))}
+          </Animated.View>
 
-          {/* ── Weekly Activity Bar Chart ── */}
-          <View style={styles.chartCard}>
-            <Text style={styles.cardTitle}>Weekly Activity</Text>
-            <Text style={styles.cardSubtitle}>Completions over the past 7 days</Text>
-            <View style={styles.barChart}>
-              <Svg width={barChartW} height={130}>
-                {/* Guide lines */}
-                {[20, 65, 110].map((y) => (
-                  <Line key={y} x1="0" y1={y} x2={barChartW} y2={y}
-                    stroke="rgba(148,163,184,0.06)" strokeWidth="1" />
+          {/* ── Weekly Bar Chart ── */}
+          <Animated.View entering={FadeInDown.delay(220).duration(500).springify()} style={styles.chartCard}>
+            <View style={styles.chartHeader}>
+              <Text style={styles.chartEmoji}>📅</Text>
+              <View>
+                <Text style={styles.chartTitle}>Weekly Activity</Text>
+                <Text style={styles.chartSub}>Past 7 days</Text>
+              </View>
+            </View>
+            <View style={styles.barArea}>
+              <Svg width={chartW} height={130}>
+                {[20, 70, 110].map(y => (
+                  <Line key={y} x1="0" y1={y} x2={chartW} y2={y}
+                    stroke="rgba(148,163,184,0.05)" strokeWidth="1" />
                 ))}
-                {weeklyData.map((d, idx) => {
-                  const x = idx * (barW + 6) + 2;
-                  const maxBarH = 80;
-                  const barH = Math.max(d.count > 0 ? 8 : 0, (d.count / maxCount) * maxBarH);
-                  const y = 110 - barH;
+                {weekData.map((d, idx) => {
+                  const x  = idx * (barW + 7) + 2;
+                  const bH = Math.max(d.count > 0 ? 10 : 0, (d.count / maxBar) * 80);
+                  const y  = 110 - bH;
+                  const col = d.isToday ? C.teal : `rgba(94,234,212,0.35)`;
                   return (
-                    <React.Fragment key={d.label + idx}>
-                      <Rect x={x} y={20} width={barW} height={90}
-                        rx={6} fill="rgba(148,163,184,0.04)" />
+                    <React.Fragment key={idx}>
+                      <Rect x={x} y={20} width={barW} height={90} rx={8}
+                        fill="rgba(148,163,184,0.04)" />
                       {d.count > 0 && (
-                        <Rect x={x} y={y} width={barW} height={barH}
-                          rx={6} fill={d.isToday ? C.teal : 'rgba(94,234,212,0.5)'} />
+                        <Rect x={x} y={y} width={barW} height={bH} rx={8} fill={col} />
                       )}
-                      <SvgText x={x + barW / 2} y={126} fill={d.isToday ? C.teal : C.textMuted}
-                        fontSize="10" fontWeight="700" textAnchor="middle">
+                      <SvgText x={x + barW / 2} y={126}
+                        fill={d.isToday ? C.teal : C.textMuted}
+                        fontSize="10" fontWeight="700" textAnchor="middle"
+                      >
                         {d.label}
                       </SvgText>
                     </React.Fragment>
@@ -188,66 +260,72 @@ export default function AnalyticsScreen() {
                 })}
               </Svg>
             </View>
-          </View>
+          </Animated.View>
 
-          {/* ── Habit-by-Habit Progress ── */}
+          {/* ── Habit Progress Bars ── */}
           {habits.length > 0 && (
-            <View style={styles.chartCard}>
-              <Text style={styles.cardTitle}>Habit Progress</Text>
-              <Text style={styles.cardSubtitle}>7-day completion rate per habit</Text>
-              {habits.map((habit, i) => {
-                const rate = getHabitWeeklyRate(habit);
-                const barColor = ringColors[i % ringColors.length];
+            <Animated.View entering={FadeInDown.delay(280).duration(500).springify()} style={styles.chartCard}>
+              <View style={styles.chartHeader}>
+                <Text style={styles.chartEmoji}>⚡</Text>
+                <View>
+                  <Text style={styles.chartTitle}>Habit Progress</Text>
+                  <Text style={styles.chartSub}>7-day completion rate</Text>
+                </View>
+              </View>
+              {habits.map((h, i) => {
+                const rate  = getRate(h);
+                const color = ringColors[i % ringColors.length];
                 return (
-                  <View key={habit.id} style={styles.habitProgressRow}>
-                    <Text style={styles.habitProgressEmoji}>{habit.emoji}</Text>
-                    <View style={styles.habitProgressRight}>
-                      <View style={styles.habitProgressLabelRow}>
-                        <Text style={styles.habitProgressName} numberOfLines={1}>
-                          {habit.name}
-                        </Text>
-                        <Text style={[styles.habitProgressPct, { color: barColor }]}>{rate}%</Text>
-                      </View>
-                      <View style={styles.habitProgressBg}>
-                        <View style={[styles.habitProgressFill, {
-                          width: `${rate}%`,
-                          backgroundColor: barColor,
-                        }]} />
-                      </View>
+                  <Animated.View
+                    key={h.id}
+                    entering={FadeInDown.delay(300 + i * 60).duration(400)}
+                    style={styles.habitRow}
+                  >
+                    {/* Neo emoji bubble */}
+                    <View style={styles.habitEmojiBubble}>
+                      <Text style={styles.habitEmojiText}>{h.emoji}</Text>
                     </View>
-                  </View>
+                    <View style={styles.habitRight}>
+                      <View style={styles.habitLabelRow}>
+                        <Text style={styles.habitName} numberOfLines={1}>{h.name}</Text>
+                        <Text style={[styles.habitPct, { color }]}>{rate}%</Text>
+                      </View>
+                      <NeoProgressBar pct={rate} color={color} />
+                    </View>
+                  </Animated.View>
                 );
               })}
-            </View>
+            </Animated.View>
           )}
 
           <View style={{ height: 110 }} />
         </ScrollView>
 
-        {/* ── Tab Bar ── */}
+        {/* Tab Bar */}
         <View style={styles.tabBar}>
-          <Pressable style={styles.tabItem} onPress={() => router.push('/')}>
-            <Ionicons name="home-outline" size={20} color={C.textMuted} />
+          <Pressable style={styles.tabItem} onPressIn={() => pressTab(tabHomeScale)} onPress={() => router.push('/')}>
+            <Animated.View style={tabHomeStyle}><Text style={styles.tabIcon}>🏠</Text></Animated.View>
             <Text style={styles.tabLabel}>Home</Text>
           </Pressable>
 
-          <Pressable style={styles.tabItem} onPress={() => {}}>
-            <View style={styles.tabActive}>
-              <Ionicons name="bar-chart" size={20} color={C.teal} />
-            </View>
+          <Pressable style={styles.tabItem} onPressIn={() => pressTab(tabChartScale)} onPress={() => {}}>
+            <Animated.View style={[styles.tabActivePill, tabChartStyle]}>
+              <Text style={styles.tabIcon}>📊</Text>
+            </Animated.View>
             <Text style={[styles.tabLabel, { color: C.teal }]}>Analytics</Text>
           </Pressable>
 
-          <Pressable style={styles.tabItem} onPress={() => router.push('/achievements')}>
-            <Ionicons name="trophy-outline" size={20} color={C.textMuted} />
+          <Pressable style={styles.tabItem} onPressIn={() => pressTab(tabBadgeScale)} onPress={() => router.push('/achievements')}>
+            <Animated.View style={tabBadgeStyle}><Text style={styles.tabIcon}>🏆</Text></Animated.View>
             <Text style={styles.tabLabel}>Badges</Text>
           </Pressable>
 
-          <Pressable style={styles.tabItem} onPress={() => router.push('/settings')}>
-            <Ionicons name="settings-outline" size={20} color={C.textMuted} />
+          <Pressable style={styles.tabItem} onPressIn={() => pressTab(tabSetScale)} onPress={() => router.push('/settings')}>
+            <Animated.View style={tabSetStyle}><Text style={styles.tabIcon}>⚙️</Text></Animated.View>
             <Text style={styles.tabLabel}>Settings</Text>
           </Pressable>
         </View>
+
 
       </View>
     </SafeAreaView>
@@ -255,8 +333,8 @@ export default function AnalyticsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: C.bgDeep },
-  container: { flex: 1, backgroundColor: C.bgDeep },
+  safe: { flex: 1, backgroundColor: NEO_BG },
+  root: { flex: 1, backgroundColor: NEO_BG },
 
   header: {
     flexDirection: 'row',
@@ -264,239 +342,161 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingTop: 8,
-    paddingBottom: 10,
+    paddingBottom: 12,
   },
   backBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: C.bgCard2,
+    ...neoBtn,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: C.border,
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: C.textPrimary,
-  },
+  backArrow: { fontSize: 18, color: C.textPrimary, fontWeight: '700' },
+  headerCenter: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  headerEmoji:  { fontSize: 20 },
+  headerTitle:  { fontSize: 18, fontWeight: '800', color: C.textPrimary },
 
   scroll: { paddingBottom: 20 },
 
-  // Top multi-ring card
+  // Top ring card
   topCard: {
-    backgroundColor: C.bgCard,
-    borderRadius: 24,
-    marginHorizontal: 16,
-    marginBottom: 14,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: C.border,
+    ...neoCard,
     flexDirection: 'row',
     alignItems: 'center',
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-  },
-  ringArea: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 20,
-  },
-  ringCenterText: {
-    position: 'absolute',
-    alignItems: 'center',
-  },
-  ringBigNum: {
-    fontSize: 22,
-    fontWeight: '900',
-    color: C.textPrimary,
-  },
-  ringBigLabel: {
-    fontSize: 10,
-    color: C.textMuted,
-    fontWeight: '600',
-  },
-  ringLegend: {
-    flex: 1,
-  },
-  legendRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  legendDot: {
-    width: 9,
-    height: 9,
-    borderRadius: 5,
-    marginRight: 8,
-  },
-  legendName: {
-    flex: 1,
-    fontSize: 12,
-    color: C.textSub,
-    fontWeight: '600',
-  },
-  legendPct: {
-    fontSize: 13,
-    fontWeight: '800',
-    marginLeft: 6,
-  },
-  emptyHint: {
-    fontSize: 12,
-    color: C.textMuted,
-    lineHeight: 18,
-  },
-
-  // Metrics
-  metricsRow: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    gap: 10,
-    marginBottom: 14,
-  },
-  metricCard: {
-    flex: 1,
-    borderRadius: 18,
-    padding: 14,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: C.border,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-  },
-  metricVal: {
-    fontSize: 22,
-    fontWeight: '900',
-    marginTop: 6,
-    marginBottom: 2,
-  },
-  metricLabel: {
-    fontSize: 10,
-    color: C.textMuted,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-
-  // Chart card
-  chartCard: {
-    backgroundColor: C.bgCard,
     borderRadius: 24,
     marginHorizontal: 16,
     marginBottom: 14,
     padding: 18,
-    borderWidth: 1,
-    borderColor: C.border,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
   },
-  cardTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: C.textPrimary,
-    marginBottom: 2,
-  },
-  cardSubtitle: {
-    fontSize: 11,
-    color: C.textMuted,
-    marginBottom: 16,
-    fontWeight: '500',
-  },
-  barChart: {
-    alignItems: 'flex-start',
-  },
+  ringArea: { alignItems: 'center', justifyContent: 'center', marginRight: 16 },
+  ringCenterBox: { position: 'absolute', alignItems: 'center' },
+  ringBig:  { fontSize: 20, fontWeight: '900', color: C.textPrimary },
+  ringSmall:{ fontSize: 10, color: C.textMuted, fontWeight: '600' },
+  legend: { flex: 1 },
+  legendRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  legendEmoji: { fontSize: 18, marginRight: 10, width: 26, textAlign: 'center' },
+  legendText: { flex: 1, marginRight: 6 },
+  legendName: { fontSize: 12, color: C.textSub, fontWeight: '600', marginBottom: 4 },
+  legendBarWrap: {},
+  legendBarBg: { height: 5, backgroundColor: 'rgba(148,163,184,0.1)', borderRadius: 3, overflow: 'hidden' },
+  legendBarFill: { height: '100%', borderRadius: 3 },
+  legendPct:  { fontSize: 12, fontWeight: '800' },
+  emptyHint: { fontSize: 12, color: C.textMuted, lineHeight: 20 },
 
-  // Habit progress rows
-  habitProgressRow: {
+  // Metrics
+  metricRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    paddingHorizontal: 16,
+    gap: 12,
     marginBottom: 14,
   },
-  habitProgressEmoji: {
-    fontSize: 20,
+  metricCard: {
+    ...neoCard,
+    flex: 1,
+    borderRadius: 20,
+    padding: 14,
+    alignItems: 'center',
+  },
+  metricIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: NEO_BG,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+    shadowColor: '#070F1C',
+    shadowOffset: { width: 3, height: 3 },
+    shadowOpacity: 0.8,
+    shadowRadius: 5,
+    elevation: 5,
+    borderTopWidth: 1,
+    borderLeftWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.07)',
+    borderLeftColor: 'rgba(255,255,255,0.07)',
+    borderBottomWidth: 1,
+    borderRightWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.45)',
+    borderRightColor: 'rgba(0,0,0,0.45)',
+  },
+  metricEmoji: { fontSize: 18 },
+  metricVal:   { fontSize: 22, fontWeight: '900', marginBottom: 2 },
+  metricLabel: { fontSize: 9, color: C.textMuted, fontWeight: '700', textTransform: 'uppercase', textAlign: 'center' },
+
+  // Chart card
+  chartCard: {
+    ...neoCard,
+    borderRadius: 22,
+    marginHorizontal: 16,
+    marginBottom: 14,
+    padding: 16,
+  },
+  chartHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
+  chartEmoji:  { fontSize: 20 },
+  chartTitle:  { fontSize: 14, fontWeight: '800', color: C.textPrimary },
+  chartSub:    { fontSize: 10, color: C.textMuted, marginTop: 1 },
+  barArea:     { alignItems: 'flex-start' },
+
+  // Habit rows
+  habitRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 14 },
+  habitEmojiBubble: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    backgroundColor: NEO_BG,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginRight: 12,
-    width: 28,
-    textAlign: 'center',
+    shadowColor: '#070F1C',
+    shadowOffset: { width: 3, height: 3 },
+    shadowOpacity: 0.8,
+    shadowRadius: 4,
+    elevation: 4,
+    borderTopWidth: 1,
+    borderLeftWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.07)',
+    borderLeftColor: 'rgba(255,255,255,0.07)',
+    borderBottomWidth: 1,
+    borderRightWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.4)',
+    borderRightColor: 'rgba(0,0,0,0.4)',
   },
-  habitProgressRight: {
-    flex: 1,
-  },
-  habitProgressLabelRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 6,
-  },
-  habitProgressName: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: C.textSub,
-    flex: 1,
-  },
-  habitProgressPct: {
-    fontSize: 13,
-    fontWeight: '800',
-    marginLeft: 8,
-  },
-  habitProgressBg: {
-    height: 7,
-    backgroundColor: 'rgba(148,163,184,0.1)',
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  habitProgressFill: {
-    height: '100%',
-    borderRadius: 4,
-  },
+  habitEmojiText: { fontSize: 20 },
+  habitRight: { flex: 1 },
+  habitLabelRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
+  habitName:  { fontSize: 13, fontWeight: '600', color: C.textSub, flex: 1 },
+  habitPct:   { fontSize: 13, fontWeight: '800', marginLeft: 8 },
 
   // Tab bar
   tabBar: {
     position: 'absolute',
-    bottom: 20,
-    left: 16,
-    right: 16,
-    height: 66,
-    backgroundColor: C.tabBg,
-    borderRadius: 26,
+    bottom: 18,
+    left: 14,
+    right: 14,
+    height: 68,
+    ...neoCard,
+    borderRadius: 28,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
-    borderWidth: 1,
-    borderColor: C.borderMid,
-    elevation: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.4,
-    shadowRadius: 20,
   },
-  tabItem: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 8,
-    width: 64,
-  },
-  tabActive: {
+  tabItem: { alignItems: 'center', justifyContent: 'center', width: 68 },
+  tabActivePill: {
     backgroundColor: C.tealDim,
-    borderRadius: 12,
-    width: 38,
-    height: 30,
+    borderRadius: 14,
+    width: 44,
+    height: 32,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: C.tealBorder,
+    shadowColor: C.teal,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  tabLabel: {
-    fontSize: 10,
-    color: C.textMuted,
-    fontWeight: '600',
-    marginTop: 4,
-  },
+  tabIcon:  { fontSize: 18 },
+  tabLabel: { fontSize: 9, color: C.textMuted, fontWeight: '700', marginTop: 4, textTransform: 'uppercase' },
 });
