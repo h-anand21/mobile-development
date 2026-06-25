@@ -124,7 +124,7 @@ export default function NotificationsScreen() {
                   {pushToken}
                 </Text>
                 <Pressable style={styles.copyBtn} onPress={copyToken}>
-                  <Ionicons name="copy-outline" size={18} color="#0B0F14" />
+                  <Ionicons name="copy-outline" size={18} color="#0A1628" />
                   <Text style={styles.copyBtnText}>Copy Token</Text>
                 </Pressable>
               </View>
@@ -152,11 +152,11 @@ export default function NotificationsScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#0B0F14',
+    backgroundColor: '#0A1628',
   },
   container: {
     flex: 1,
-    backgroundColor: '#0B0F14',
+    backgroundColor: '#0A1628',
   },
   header: {
     flexDirection: 'row',
@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 14,
-    backgroundColor: '#151A22',
+    backgroundColor: '#0F1E35',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
@@ -240,12 +240,12 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   settingsBtnText: {
-    color: '#0B0F14',
+    color: '#0A1628',
     fontSize: 12,
     fontWeight: '700',
   },
   infoCard: {
-    backgroundColor: '#151A22',
+    backgroundColor: '#0F1E35',
     borderWidth: 1,
     borderColor: 'rgba(148, 163, 184, 0.06)',
     borderRadius: 24,
@@ -277,7 +277,7 @@ const styles = StyleSheet.create({
     marginVertical: 12,
   },
   pushCard: {
-    backgroundColor: '#151A22',
+    backgroundColor: '#0F1E35',
     borderWidth: 1,
     borderColor: 'rgba(148, 163, 184, 0.06)',
     borderRadius: 24,
@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   tokenContainer: {
-    backgroundColor: '#0B0F14',
+    backgroundColor: '#0A1628',
     borderRadius: 16,
     padding: 12,
     borderWidth: 0.5,
@@ -331,7 +331,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   copyBtnText: {
-    color: '#0B0F14',
+    color: '#0A1628',
     fontWeight: '700',
     fontSize: 13,
     marginLeft: 6,
@@ -352,7 +352,7 @@ const styles = StyleSheet.create({
     marginVertical: 8,
   },
   retryBtn: {
-    backgroundColor: '#151A22',
+    backgroundColor: '#0F1E35',
     borderColor: 'rgba(245, 158, 11, 0.3)',
     borderWidth: 0.5,
     paddingHorizontal: 16,

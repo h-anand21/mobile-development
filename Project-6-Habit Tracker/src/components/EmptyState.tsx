@@ -45,7 +45,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
-    backgroundColor: '#0B0F14',
+    backgroundColor: '#0A1628',
   },
   iconCircle: {
     width: 80,
@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
     maxWidth: 280,
   },
   button: {
-    backgroundColor: '#151A22',
+    backgroundColor: '#0F1E35',
     borderColor: 'rgba(94, 234, 212, 0.3)',
     borderWidth: 1,
     paddingHorizontal: 24,

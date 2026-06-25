@@ -2,9 +2,10 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Link } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, { FadeInLeft, Layout, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { Habit } from '../lib/habits/types';
 import { getActiveStreak, getLocalDateString } from '../lib/habits/streak';
+import { C } from '../constants/colors';
 
 interface HabitCardProps {
   habit: Habit;
@@ -24,78 +25,73 @@ export default function HabitCard({ habit, onToggleComplete }: HabitCardProps) {
     return `${displayHour}:${displayMinute} ${ampm}`;
   };
 
-  // Convert weekday numbers to names
+  // Convert weekday numbers to short names
   const formatFrequency = () => {
     if (habit.frequency.kind === 'daily') {
-      return `Daily at ${formatTime(habit.frequency.hour, habit.frequency.minute)}`;
+      return `Daily · ${formatTime(habit.frequency.hour, habit.frequency.minute)}`;
     }
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const weekdayNames = habit.frequency.weekdays.map(d => days[d]).join(', ');
-    return `${weekdayNames} at ${formatTime(habit.frequency.hour, habit.frequency.minute)}`;
+    const weekdayNames = habit.frequency.weekdays.map(d => days[d]).join(' · ');
+    return `${weekdayNames} · ${formatTime(habit.frequency.hour, habit.frequency.minute)}`;
   };
 
   const scale = useSharedValue(1);
+  const buttonStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
-  const buttonStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ scale: scale.value }],
-    };
-  });
-
-  const handlePressIn = () => {
-    scale.value = withSpring(0.92);
-  };
-
-  const handlePressOut = () => {
-    scale.value = withSpring(1);
-  };
+  const handlePressIn = () => { scale.value = withSpring(0.88, { damping: 15 }); };
+  const handlePressOut = () => { scale.value = withSpring(1, { damping: 15 }); };
 
   return (
     <Link href={`/habit/${habit.id}`} asChild>
-      <Pressable style={styles.card}>
-        <View style={styles.leftContainer}>
-          <View style={[
-            styles.emojiBox,
-            isCompletedToday && styles.emojiBoxCompleted
-          ]}>
+      <Pressable>
+        <View style={[styles.card, isCompletedToday && styles.cardCompleted]}>
+          {/* Left accent bar */}
+          <View style={[styles.accentBar, { backgroundColor: isCompletedToday ? C.green : C.teal }]} />
+
+          {/* Emoji */}
+          <View style={[styles.emojiBox, isCompletedToday && styles.emojiBoxDone]}>
             <Text style={styles.emojiText}>{habit.emoji}</Text>
           </View>
+
+          {/* Details */}
           <View style={styles.detailsContainer}>
-            <Text style={[
-              styles.habitName,
-              isCompletedToday && styles.completedText
-            ]} numberOfLines={1}>
+            <Text
+              style={[styles.habitName, isCompletedToday && styles.completedName]}
+              numberOfLines={1}
+            >
               {habit.name}
             </Text>
             <Text style={styles.frequencyText} numberOfLines={1}>
               {formatFrequency()}
             </Text>
             {activeStreak > 0 && (
-              <View style={styles.streakContainer}>
-                <Text style={styles.streakText}>🔥 {activeStreak} Day Streak</Text>
+              <View style={styles.streakBadge}>
+                <Text style={styles.streakText}>🔥 {activeStreak}d streak</Text>
               </View>
             )}
           </View>
-        </View>
 
-        <Pressable
-          onPressIn={handlePressIn}
-          onPressOut={handlePressOut}
-          onPress={() => onToggleComplete(habit.id)}
-          style={({ pressed }: { pressed: boolean }) => [
-            styles.checkButton,
-            isCompletedToday ? styles.checkButtonCompleted : styles.checkButtonPending,
-            pressed && { opacity: 0.8 }
-          ]}
-        >
-          <Animated.View style={[buttonStyle, styles.buttonContent]}>
-            {isCompletedToday ? (
-              <Ionicons name="checkmark-circle" size={28} color="#22C55E" />
-            ) : (
-              <Ionicons name="ellipse-outline" size={28} color="#5EEAD4" />
-            )}
-          </Animated.View>
-        </Pressable>
+          {/* Check Button */}
+          <Pressable
+            onPressIn={handlePressIn}
+            onPressOut={handlePressOut}
+            onPress={(e) => {
+              e.preventDefault();
+              onToggleComplete(habit.id);
+            }}
+            hitSlop={12}
+          >
+            <Animated.View style={[styles.checkBtn, buttonStyle,
+              isCompletedToday ? styles.checkBtnDone : styles.checkBtnPending
+            ]}>
+              {isCompletedToday ? (
+                <Ionicons name="checkmark" size={18} color={C.bgDeep} />
+              ) : (
+                <View style={styles.emptyCheck} />
+              )}
+            </Animated.View>
+          </Pressable>
+        </View>
       </Pressable>
     </Link>
   );
@@ -103,94 +99,109 @@ export default function HabitCard({ habit, onToggleComplete }: HabitCardProps) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#151A22',
+    backgroundColor: C.bgCard,
     borderWidth: 1,
-    borderColor: 'rgba(148, 163, 184, 0.08)',
-    borderRadius: 24,
-    padding: 16,
+    borderColor: C.border,
+    borderRadius: 20,
+    padding: 14,
+    paddingLeft: 0,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
+    marginBottom: 10,
     marginHorizontal: 16,
+    overflow: 'hidden',
+    elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.12,
-    shadowRadius: 10,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
   },
-  leftContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
+  cardCompleted: {
+    borderColor: 'rgba(94, 234, 135, 0.15)',
+    backgroundColor: 'rgba(94, 234, 135, 0.04)',
+  },
+  accentBar: {
+    width: 4,
+    height: 42,
+    borderRadius: 4,
+    marginRight: 14,
+    marginLeft: 0,
   },
   emojiBox: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
-    backgroundColor: 'rgba(94, 234, 212, 0.06)',
+    width: 46,
+    height: 46,
+    borderRadius: 14,
+    backgroundColor: C.tealDim,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 16,
+    marginRight: 14,
     borderWidth: 1,
-    borderColor: 'rgba(94, 234, 212, 0.1)',
+    borderColor: C.tealBorder,
   },
-  emojiBoxCompleted: {
-    backgroundColor: 'rgba(34, 197, 94, 0.06)',
-    borderColor: 'rgba(34, 197, 94, 0.15)',
+  emojiBoxDone: {
+    backgroundColor: 'rgba(94, 234, 135, 0.1)',
+    borderColor: 'rgba(94, 234, 135, 0.25)',
   },
   emojiText: {
-    fontSize: 24,
+    fontSize: 22,
   },
   detailsContainer: {
     flex: 1,
-    marginRight: 8,
+    marginRight: 10,
   },
   habitName: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
-    color: '#FFFFFF',
-    marginBottom: 4,
+    color: C.textPrimary,
+    marginBottom: 3,
+    letterSpacing: 0.1,
   },
-  completedText: {
+  completedName: {
+    color: C.textMuted,
     textDecorationLine: 'line-through',
-    color: '#94A3B8',
   },
   frequencyText: {
-    fontSize: 12,
-    color: '#94A3B8',
-    marginBottom: 4,
+    fontSize: 11,
+    color: C.textMuted,
+    marginBottom: 5,
+    letterSpacing: 0.2,
   },
-  streakContainer: {
+  streakBadge: {
     alignSelf: 'flex-start',
-    backgroundColor: 'rgba(245, 158, 11, 0.08)',
-    borderColor: 'rgba(245, 158, 11, 0.2)',
+    backgroundColor: 'rgba(245, 158, 11, 0.1)',
+    borderColor: 'rgba(245, 158, 11, 0.25)',
     borderWidth: 0.5,
-    borderRadius: 8,
-    paddingHorizontal: 8,
+    borderRadius: 6,
+    paddingHorizontal: 7,
     paddingVertical: 2,
-    marginTop: 2,
   },
   streakText: {
-    fontSize: 11,
-    fontWeight: '600',
+    fontSize: 10,
+    fontWeight: '700',
     color: '#F59E0B',
+    letterSpacing: 0.2,
   },
-  checkButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+  checkBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
+    marginRight: 4,
   },
-  checkButtonCompleted: {
-    // Completed state
+  checkBtnDone: {
+    backgroundColor: C.green,
   },
-  checkButtonPending: {
-    // Pending state
+  checkBtnPending: {
+    backgroundColor: 'transparent',
+    borderWidth: 2,
+    borderColor: C.teal,
   },
-  buttonContent: {
-    alignItems: 'center',
-    justifyContent: 'center',
+  emptyCheck: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: C.teal,
+    opacity: 0.4,
   },
 });

@@ -128,28 +128,31 @@ export default function AchievementsScreen() {
           <View style={{ height: 100 }} />
         </ScrollView>
 
-        {/* Floating Custom Navigation Bar */}
+        {/* Floating Tab Bar */}
         <View style={styles.tabBar}>
           <Pressable style={styles.tabItem} onPress={() => router.push('/')}>
-            <Ionicons name="home-outline" size={22} color="#94A3B8" />
+            <Ionicons name="home-outline" size={20} color="#4A6080" />
             <Text style={styles.tabLabel}>Home</Text>
           </Pressable>
 
           <Pressable style={styles.tabItem} onPress={() => router.push('/analytics')}>
-            <Ionicons name="bar-chart-outline" size={22} color="#94A3B8" />
+            <Ionicons name="bar-chart-outline" size={20} color="#4A6080" />
             <Text style={styles.tabLabel}>Analytics</Text>
           </Pressable>
 
           <Pressable style={styles.tabItem} onPress={() => {}}>
-            <Ionicons name="trophy" size={22} color="#5EEAD4" />
+            <View style={styles.tabActive}>
+              <Ionicons name="trophy" size={20} color="#5EEAD4" />
+            </View>
             <Text style={[styles.tabLabel, { color: '#5EEAD4' }]}>Badges</Text>
           </Pressable>
 
           <Pressable style={styles.tabItem} onPress={() => router.push('/settings')}>
-            <Ionicons name="settings-outline" size={22} color="#94A3B8" />
+            <Ionicons name="settings-outline" size={20} color="#4A6080" />
             <Text style={styles.tabLabel}>Settings</Text>
           </Pressable>
         </View>
+
 
       </View>
     </SafeAreaView>
@@ -159,11 +162,11 @@ export default function AchievementsScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#0B0F14',
+    backgroundColor: '#0A1628',
   },
   container: {
     flex: 1,
-    backgroundColor: '#0B0F14',
+    backgroundColor: '#0A1628',
   },
   header: {
     paddingHorizontal: 20,
@@ -181,7 +184,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   streakBanner: {
-    backgroundColor: '#151A22',
+    backgroundColor: '#0F1E35',
     borderColor: 'rgba(245, 158, 11, 0.15)',
     borderWidth: 1,
     borderRadius: 24,
@@ -213,7 +216,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   badgeCard: {
-    backgroundColor: '#151A22',
+    backgroundColor: '#0F1E35',
     borderWidth: 1,
     borderRadius: 24,
     padding: 16,
@@ -263,7 +266,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#0B0F14',
+    backgroundColor: '#0A1628',
     marginRight: 10,
     overflow: 'hidden',
   },
@@ -284,33 +287,43 @@ const styles = StyleSheet.create({
   },
   tabBar: {
     position: 'absolute',
-    bottom: 24,
-    left: 20,
-    right: 20,
-    height: 64,
-    backgroundColor: 'rgba(21, 26, 34, 0.85)',
-    borderRadius: 24,
+    bottom: 20,
+    left: 16,
+    right: 16,
+    height: 66,
+    backgroundColor: 'rgba(15, 30, 53, 0.92)',
+    borderRadius: 26,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
     borderWidth: 1,
-    borderColor: 'rgba(148, 163, 184, 0.08)',
+    borderColor: 'rgba(148, 163, 184, 0.14)',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.3,
-    shadowRadius: 15,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.4,
+    shadowRadius: 20,
+    elevation: 10,
   },
   tabItem: {
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 8,
-    width: 60,
+    width: 64,
+  },
+  tabActive: {
+    backgroundColor: 'rgba(94, 234, 212, 0.12)',
+    borderRadius: 12,
+    width: 38,
+    height: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(94, 234, 212, 0.2)',
   },
   tabLabel: {
     fontSize: 10,
-    color: '#94A3B8',
-    fontWeight: '500',
+    color: '#4A6080',
+    fontWeight: '600',
     marginTop: 4,
   },
 });

@@ -211,7 +211,7 @@ export default function EditHabitScreen() {
                 style={[styles.freqOption, kind === 'daily' && styles.freqOptionActive]}
                 onPress={() => setKind('daily')}
               >
-                <Ionicons name="calendar-outline" size={16} color={kind === 'daily' ? '#0B0F14' : '#94A3B8'} />
+                <Ionicons name="calendar-outline" size={16} color={kind === 'daily' ? '#0A1628' : '#94A3B8'} />
                 <Text style={[styles.freqText, kind === 'daily' && styles.freqTextActive]}>Daily</Text>
               </Pressable>
 
@@ -219,7 +219,7 @@ export default function EditHabitScreen() {
                 style={[styles.freqOption, kind === 'weekly' && styles.freqOptionActive]}
                 onPress={() => setKind('weekly')}
               >
-                <Ionicons name="repeat-outline" size={16} color={kind === 'weekly' ? '#0B0F14' : '#94A3B8'} />
+                <Ionicons name="repeat-outline" size={16} color={kind === 'weekly' ? '#0A1628' : '#94A3B8'} />
                 <Text style={[styles.freqText, kind === 'weekly' && styles.freqTextActive]}>Weekly</Text>
               </Pressable>
             </View>
@@ -264,11 +264,11 @@ export default function EditHabitScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#0B0F14',
+    backgroundColor: '#0A1628',
   },
   container: {
     flex: 1,
-    backgroundColor: '#0B0F14',
+    backgroundColor: '#0A1628',
   },
   header: {
     flexDirection: 'row',
@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 14,
-    backgroundColor: '#151A22',
+    backgroundColor: '#0F1E35',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
@@ -306,7 +306,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   previewCard: {
-    backgroundColor: '#151A22',
+    backgroundColor: '#0F1E35',
     borderColor: 'rgba(94, 234, 212, 0.25)',
     borderWidth: 1,
     borderRadius: 24,
@@ -355,7 +355,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   textInput: {
-    backgroundColor: '#151A22',
+    backgroundColor: '#0F1E35',
     borderColor: 'rgba(148, 163, 184, 0.08)',
     borderWidth: 1,
     borderRadius: 16,
@@ -371,7 +371,7 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 16,
-    backgroundColor: '#151A22',
+    backgroundColor: '#0F1E35',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 10,
@@ -387,7 +387,7 @@ const styles = StyleSheet.create({
   },
   timeSelectorContainer: {
     flexDirection: 'row',
-    backgroundColor: '#151A22',
+    backgroundColor: '#0F1E35',
     borderRadius: 24,
     padding: 16,
     alignItems: 'center',
@@ -405,7 +405,7 @@ const styles = StyleSheet.create({
   timeValBox: {
     width: 56,
     height: 48,
-    backgroundColor: '#0B0F14',
+    backgroundColor: '#0A1628',
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
@@ -446,7 +446,7 @@ const styles = StyleSheet.create({
   },
   freqToggleRow: {
     flexDirection: 'row',
-    backgroundColor: '#151A22',
+    backgroundColor: '#0F1E35',
     padding: 6,
     borderRadius: 16,
     borderWidth: 1,
@@ -470,7 +470,7 @@ const styles = StyleSheet.create({
     marginLeft: 6,
   },
   freqTextActive: {
-    color: '#0B0F14',
+    color: '#0A1628',
     fontWeight: '700',
   },
   weekdayRow: {
@@ -481,7 +481,7 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: '#151A22',
+    backgroundColor: '#0F1E35',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
@@ -497,11 +497,11 @@ const styles = StyleSheet.create({
     color: '#94A3B8',
   },
   weekdayChipLabelActive: {
-    color: '#0B0F14',
+    color: '#0A1628',
     fontWeight: '700',
   },
   saveButton: {
-    backgroundColor: '#151A22',
+    backgroundColor: '#0F1E35',
     borderColor: '#5EEAD4',
     borderWidth: 1,
     height: 56,

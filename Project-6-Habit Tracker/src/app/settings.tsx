@@ -91,7 +91,7 @@ export default function SettingsScreen() {
                 value={quietHours}
                 onValueChange={handleToggleQuietHours}
                 trackColor={{ false: '#1C2330', true: '#5EEAD4' }}
-                thumbColor={quietHours ? '#0B0F14' : '#94A3B8'}
+                thumbColor={quietHours ? '#0A1628' : '#94A3B8'}
               />
             </View>
 
@@ -106,7 +106,7 @@ export default function SettingsScreen() {
                 value={soundEnabled}
                 onValueChange={handleToggleSound}
                 trackColor={{ false: '#1C2330', true: '#5EEAD4' }}
-                thumbColor={soundEnabled ? '#0B0F14' : '#94A3B8'}
+                thumbColor={soundEnabled ? '#0A1628' : '#94A3B8'}
               />
             </View>
 
@@ -181,11 +181,11 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#0B0F14',
+    backgroundColor: '#0A1628',
   },
   container: {
     flex: 1,
-    backgroundColor: '#0B0F14',
+    backgroundColor: '#0A1628',
   },
   header: {
     paddingHorizontal: 20,
@@ -212,7 +212,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   settingsGroup: {
-    backgroundColor: '#151A22',
+    backgroundColor: '#0F1E35',
     borderWidth: 1,
     borderColor: 'rgba(148, 163, 184, 0.06)',
     borderRadius: 24,

@@ -98,7 +98,7 @@ export default function OnboardingScreen3() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0B0F14',
+    backgroundColor: '#0A1628',
     paddingHorizontal: 24,
     paddingBottom: 40,
     justifyContent: 'space-between',
@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   streakCard: {
-    backgroundColor: '#151A22',
+    backgroundColor: '#0F1E35',
     borderWidth: 1,
     borderColor: 'rgba(245, 158, 11, 0.2)',
     borderRadius: 28,
@@ -217,7 +217,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#151A22',
+    backgroundColor: '#0F1E35',
     marginHorizontal: 4,
     borderWidth: 1,
     borderColor: 'rgba(148, 163, 184, 0.2)',
@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
     borderColor: '#5EEAD4',
   },
   button: {
-    backgroundColor: '#151A22',
+    backgroundColor: '#0F1E35',
     borderColor: 'rgba(94, 234, 212, 0.3)',
     borderWidth: 1,
     width: '100%',

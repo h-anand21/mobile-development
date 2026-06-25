@@ -138,7 +138,7 @@ export default function HabitDetailScreen() {
             <Ionicons
               name={isCompletedToday ? 'checkmark-circle' : 'ellipse-outline'}
               size={24}
-              color={isCompletedToday ? '#0B0F14' : '#5EEAD4'}
+              color={isCompletedToday ? '#0A1628' : '#5EEAD4'}
             />
             <Text style={[styles.checkinText, isCompletedToday && styles.checkinTextCompleted]}>
               {isCompletedToday ? 'Completed Today!' : 'Mark Completed Today'}
@@ -214,11 +214,11 @@ export default function HabitDetailScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#0B0F14',
+    backgroundColor: '#0A1628',
   },
   container: {
     flex: 1,
-    backgroundColor: '#0B0F14',
+    backgroundColor: '#0A1628',
   },
   header: {
     flexDirection: 'row',
@@ -233,7 +233,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 14,
-    backgroundColor: '#151A22',
+    backgroundColor: '#0F1E35',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 14,
-    backgroundColor: '#151A22',
+    backgroundColor: '#0F1E35',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
@@ -323,10 +323,10 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   checkinTextCompleted: {
-    color: '#0B0F14',
+    color: '#0A1628',
   },
   streakDisplay: {
-    backgroundColor: '#151A22',
+    backgroundColor: '#0F1E35',
     borderWidth: 1,
     borderColor: 'rgba(148, 163, 184, 0.06)',
     borderRadius: 28,
@@ -363,7 +363,7 @@ const styles = StyleSheet.create({
   },
   statCard: {
     width: '31%',
-    backgroundColor: '#151A22',
+    backgroundColor: '#0F1E35',
     borderColor: 'rgba(148, 163, 184, 0.06)',
     borderWidth: 1,
     borderRadius: 20,
@@ -384,7 +384,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   calendarCard: {
-    backgroundColor: '#151A22',
+    backgroundColor: '#0F1E35',
     borderWidth: 1,
     borderColor: 'rgba(148, 163, 184, 0.06)',
     borderRadius: 28,
@@ -414,7 +414,7 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 10,
-    backgroundColor: '#0B0F14',
+    backgroundColor: '#0A1628',
     borderWidth: 1,
     borderColor: 'rgba(148, 163, 184, 0.08)',
     alignItems: 'center',
@@ -435,7 +435,7 @@ const styles = StyleSheet.create({
     color: '#94A3B8',
   },
   cellTextActive: {
-    color: '#0B0F14',
+    color: '#0A1628',
     fontWeight: '700',
   },
   cellTextToday: {
@@ -443,7 +443,7 @@ const styles = StyleSheet.create({
   },
   errorContainer: {
     flex: 1,
-    backgroundColor: '#0B0F14',
+    backgroundColor: '#0A1628',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 20,
@@ -454,7 +454,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   backBtn: {
-    backgroundColor: '#151A22',
+    backgroundColor: '#0F1E35',
     borderWidth: 1,
     borderColor: '#5EEAD4',
     paddingHorizontal: 24,

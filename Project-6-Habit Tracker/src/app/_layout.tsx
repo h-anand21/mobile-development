@@ -74,7 +74,7 @@ export default function RootLayout() {
         <Stack
           screenOptions={{
             headerShown: false,
-            contentStyle: { backgroundColor: '#0B0F14' },
+            contentStyle: { backgroundColor: '#0A1628' },
             animation: 'slide_from_right',
           }}
         >
@@ -98,11 +98,11 @@ export default function RootLayout() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0B0F14',
+    backgroundColor: '#0A1628',
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: '#0B0F14',
+    backgroundColor: '#0A1628',
     alignItems: 'center',
     justifyContent: 'center',
   },
