@@ -1,9 +1,13 @@
+import 'react-native-get-random-values';
+import { Buffer } from 'buffer';
+global.Buffer = global.Buffer || Buffer;
 import React, { useEffect, useState } from 'react';
 import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { initializeNotificationChannel } from '../lib/notifications/setup';
 import { handleNotificationTap } from '../lib/notifications/handlers';
 
@@ -46,7 +50,7 @@ export default function RootLayout() {
     const responseSubscription = Notifications.addNotificationResponseReceivedListener(response => {
       const data = response.notification.request.content.data;
       console.log('Notification response received:', data);
-      handleNotificationTap(data);
+      handleNotificationTap(data as any);
     });
 
     return () => {
@@ -64,28 +68,30 @@ export default function RootLayout() {
   }
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="light" />
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor: '#0B0F14' },
-          animation: 'slide_from_right',
-        }}
-      >
-        <Stack.Screen name="index" />
-        <Stack.Screen name="onboarding/screen1" />
-        <Stack.Screen name="onboarding/screen2" />
-        <Stack.Screen name="onboarding/screen3" />
-        <Stack.Screen name="new" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="edit" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="habit/[id]" />
-        <Stack.Screen name="analytics" />
-        <Stack.Screen name="achievements" />
-        <Stack.Screen name="notifications" />
-        <Stack.Screen name="settings" />
-      </Stack>
-    </View>
+    <SafeAreaProvider>
+      <View style={styles.container}>
+        <StatusBar style="light" />
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: '#0B0F14' },
+            animation: 'slide_from_right',
+          }}
+        >
+          <Stack.Screen name="index" />
+          <Stack.Screen name="onboarding/screen1" />
+          <Stack.Screen name="onboarding/screen2" />
+          <Stack.Screen name="onboarding/screen3" />
+          <Stack.Screen name="new" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="edit" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="habit/[id]" />
+          <Stack.Screen name="analytics" />
+          <Stack.Screen name="achievements" />
+          <Stack.Screen name="notifications" />
+          <Stack.Screen name="settings" />
+        </Stack>
+      </View>
+    </SafeAreaProvider>
   );
 }
 

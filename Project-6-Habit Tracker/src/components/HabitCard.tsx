@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Link } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInLeft, Layout, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
@@ -82,7 +82,7 @@ export default function HabitCard({ habit, onToggleComplete }: HabitCardProps) {
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
           onPress={() => onToggleComplete(habit.id)}
-          style={({ pressed }) => [
+          style={({ pressed }: { pressed: boolean }) => [
             styles.checkButton,
             isCompletedToday ? styles.checkButtonCompleted : styles.checkButtonPending,
             pressed && { opacity: 0.8 }

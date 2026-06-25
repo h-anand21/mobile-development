@@ -31,15 +31,12 @@ export async function scheduleHabitReminder(habit: Habit): Promise<string[]> {
           body,
           data,
           sound: true,
-          // Assign to Android custom channel
-          android: {
-            channelId: REMINDERS_CHANNEL_ID,
-          },
         },
         trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.DAILY,
+          channelId: REMINDERS_CHANNEL_ID,
           hour: frequency.hour,
           minute: frequency.minute,
-          repeats: true,
         },
       });
       scheduledIds.push(scheduledId);
@@ -56,15 +53,13 @@ export async function scheduleHabitReminder(habit: Habit): Promise<string[]> {
             body,
             data,
             sound: true,
-            android: {
-              channelId: REMINDERS_CHANNEL_ID,
-            },
           },
           trigger: {
+            type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
+            channelId: REMINDERS_CHANNEL_ID,
             weekday: expoWeekday,
             hour: frequency.hour,
             minute: frequency.minute,
-            repeats: true,
           },
         });
         scheduledIds.push(scheduledId);

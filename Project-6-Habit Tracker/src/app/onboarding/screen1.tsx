@@ -1,12 +1,13 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function OnboardingScreen1() {
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.appName}>HabitFlow</Text>
       </View>
@@ -34,13 +35,13 @@ export default function OnboardingScreen1() {
         </View>
 
         <Pressable
-          style={({ pressed }) => [styles.button, pressed && { opacity: 0.9 }]}
+          style={({ pressed }: { pressed: boolean }) => [styles.button, pressed && { opacity: 0.9 }]}
           onPress={() => router.push('/onboarding/screen2')}
         >
           <Text style={styles.buttonText}>Get Started →</Text>
         </Pressable>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -49,7 +50,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#0B0F14',
     paddingHorizontal: 24,
-    paddingTop: 60,
     paddingBottom: 40,
     justifyContent: 'space-between',
   },
