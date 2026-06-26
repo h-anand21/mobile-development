@@ -2,174 +2,229 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView, Switch, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import Animated, {
+  FadeInDown,
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withSpring,
+} from 'react-native-reanimated';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
+import { useTheme } from '../context/ThemeContext';
 
 export default function SettingsScreen() {
   const router = useRouter();
+  const { T, isDark, toggleTheme } = useTheme();
 
-  // Settings states
-  const [quietHours, setQuietHours] = useState(false);
+  const [quietHours,   setQuietHours]   = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
 
-  // Load settings on mount
   useEffect(() => {
-    async function loadSettings() {
-      try {
-        const quiet = await AsyncStorage.getItem('SETTINGS_QUIET_HOURS');
-        const sound = await AsyncStorage.getItem('SETTINGS_SOUND_ENABLED');
-        if (quiet !== null) setQuietHours(quiet === 'true');
-        if (sound !== null) setSoundEnabled(sound === 'true');
-      } catch (e) {
-        console.error('Failed to load settings', e);
-      }
-    }
-    loadSettings();
+    AsyncStorage.multiGet(['SETTINGS_QUIET_HOURS','SETTINGS_SOUND_ENABLED']).then(pairs => {
+      if (pairs[0][1] !== null) setQuietHours(pairs[0][1] === 'true');
+      if (pairs[1][1] !== null) setSoundEnabled(pairs[1][1] === 'true');
+    }).catch(() => {});
   }, []);
 
-  const handleToggleQuietHours = async (val: boolean) => {
+  const handleQuietHours = async (val: boolean) => {
     setQuietHours(val);
     await AsyncStorage.setItem('SETTINGS_QUIET_HOURS', String(val));
-    if (val) {
-      Alert.alert('Quiet Hours Active', 'Reminders will be muted during late night hours (10:00 PM - 07:00 AM).');
-    }
+    if (val) Alert.alert('Quiet Hours', 'Reminders muted 10 PM – 7 AM.');
   };
 
-  const handleToggleSound = async (val: boolean) => {
+  const handleSound = async (val: boolean) => {
     setSoundEnabled(val);
     await AsyncStorage.setItem('SETTINGS_SOUND_ENABLED', String(val));
   };
 
-  const handleResetData = () => {
+  const handleReset = () => {
     Alert.alert(
-      'Reset All Data',
-      'This will permanently delete all habits, streaks, and cancel ALL scheduled reminders. This action cannot be undone.',
+      '⚠️ Reset All Data',
+      'This will permanently delete all habits, streaks, and cancel all reminders. Cannot be undone.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Reset Everything',
-          style: 'destructive',
+          text: 'Reset Everything', style: 'destructive',
           onPress: async () => {
             try {
-              // 1. Cancel all notifications at OS level
               await Notifications.cancelAllScheduledNotificationsAsync();
-              // 2. Clear local storage
               await AsyncStorage.clear();
-              // 3. Route to onboarding
               router.replace('/onboarding/screen1');
-            } catch (error) {
-              console.error('Failed to reset app data:', error);
-            }
+            } catch (e) { console.error(e); }
           },
         },
       ]
     );
   };
 
+  // Tab anims
+  const s0 = useSharedValue(1), s1 = useSharedValue(1), s2 = useSharedValue(1), s3 = useSharedValue(1);
+  const a0 = useAnimatedStyle(() => ({ transform: [{ scale: s0.value }] }));
+  const a1 = useAnimatedStyle(() => ({ transform: [{ scale: s1.value }] }));
+  const a2 = useAnimatedStyle(() => ({ transform: [{ scale: s2.value }] }));
+  const a3 = useAnimatedStyle(() => ({ transform: [{ scale: s3.value }] }));
+  const pt = (v: any) => { v.value = withSequence(withSpring(0.8), withSpring(1, { damping: 10 })); };
+
+  // Theme toggle animation
+  const toggleScale = useSharedValue(1);
+  const toggleStyle = useAnimatedStyle(() => ({ transform: [{ scale: toggleScale.value }] }));
+  const handleToggle = () => {
+    toggleScale.value = withSequence(withSpring(0.85), withSpring(1, { damping: 8 }));
+    toggleTheme();
+  };
+
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        
+    <SafeAreaView style={[styles.safe, { backgroundColor: T.bg }]}>
+      <View style={[styles.root, { backgroundColor: T.bg }]}>
+
         {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Settings</Text>
-        </View>
+        <Animated.View entering={FadeInDown.duration(400).springify()} style={styles.header}>
+          <Text style={[styles.headerEmoji]}>⚙️</Text>
+          <Text style={[styles.headerTitle, { color: T.textPrimary }]}>Settings</Text>
+        </Animated.View>
 
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-          
-          {/* Preferences Section */}
-          <Text style={styles.sectionLabel}>Preferences</Text>
-          <View style={styles.settingsGroup}>
-            
-            <View style={styles.settingRow}>
-              <View style={styles.settingTextContainer}>
-                <Text style={styles.settingTitle}>Quiet Hours (DND)</Text>
-                <Text style={styles.settingDesc}>Mute reminders between 10 PM and 7 AM</Text>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+
+          {/* ── APPEARANCE ── */}
+          <Animated.View entering={FadeInDown.delay(80).springify()}>
+            <Text style={[styles.sectionLabel, { color: T.textMuted }]}>Appearance</Text>
+            <View style={[T.neo, styles.group]}>
+
+              {/* Theme Toggle — big prominent row */}
+              <View style={styles.themeRow}>
+                <View style={[T.neo, styles.themeIconBig, { backgroundColor: T.bg }]}>
+                  <Text style={{ fontSize: 26 }}>{isDark ? '🌙' : '☀️'}</Text>
+                </View>
+                <View style={styles.themeText}>
+                  <Text style={[styles.rowTitle, { color: T.textPrimary }]}>
+                    {isDark ? 'Dark Mode' : 'Light Mode'}
+                  </Text>
+                  <Text style={[styles.rowDesc, { color: T.textMuted }]}>
+                    {isDark ? 'Deep blue neumorphic theme' : 'Bright airy neumorphic theme'}
+                  </Text>
+                </View>
+                <Animated.View style={[styles.themeToggleBtn, { backgroundColor: isDark ? T.tealDim : T.yellowDim, borderColor: isDark ? T.tealBorder : T.teal }, toggleStyle]}>
+                  <Pressable onPress={handleToggle} style={styles.themeToggleInner}>
+                    <View style={[styles.themeThumb, { backgroundColor: isDark ? T.teal : T.yellow, transform: [{ translateX: isDark ? 22 : 0 }] }]} />
+                  </Pressable>
+                </Animated.View>
               </View>
-              <Switch
-                value={quietHours}
-                onValueChange={handleToggleQuietHours}
-                trackColor={{ false: '#1C2330', true: '#5EEAD4' }}
-                thumbColor={quietHours ? '#0A1628' : '#94A3B8'}
-              />
+
             </View>
+          </Animated.View>
 
-            <View style={styles.divider} />
+          {/* ── NOTIFICATIONS ── */}
+          <Animated.View entering={FadeInDown.delay(140).springify()}>
+            <Text style={[styles.sectionLabel, { color: T.textMuted }]}>Notifications</Text>
+            <View style={[T.neo, styles.group]}>
 
-            <View style={styles.settingRow}>
-              <View style={styles.settingTextContainer}>
-                <Text style={styles.settingTitle}>Sound Effects</Text>
-                <Text style={styles.settingDesc}>Play sounds for reminder banners</Text>
+              <View style={styles.row}>
+                <View style={[T.neo, styles.rowIcon, { backgroundColor: T.bg }]}>
+                  <Text style={styles.rowEmoji}>🌙</Text>
+                </View>
+                <View style={styles.rowText}>
+                  <Text style={[styles.rowTitle, { color: T.textPrimary }]}>Quiet Hours</Text>
+                  <Text style={[styles.rowDesc, { color: T.textMuted }]}>Mute reminders 10 PM – 7 AM</Text>
+                </View>
+                <Switch
+                  value={quietHours}
+                  onValueChange={handleQuietHours}
+                  trackColor={{ false: T.border, true: T.teal }}
+                  thumbColor={T.bg}
+                />
               </View>
-              <Switch
-                value={soundEnabled}
-                onValueChange={handleToggleSound}
-                trackColor={{ false: '#1C2330', true: '#5EEAD4' }}
-                thumbColor={soundEnabled ? '#0A1628' : '#94A3B8'}
-              />
+
+              <View style={[styles.divider, { backgroundColor: T.border }]} />
+
+              <View style={styles.row}>
+                <View style={[T.neo, styles.rowIcon, { backgroundColor: T.bg }]}>
+                  <Text style={styles.rowEmoji}>🔊</Text>
+                </View>
+                <View style={styles.rowText}>
+                  <Text style={[styles.rowTitle, { color: T.textPrimary }]}>Sound Effects</Text>
+                  <Text style={[styles.rowDesc, { color: T.textMuted }]}>Play audio for reminders</Text>
+                </View>
+                <Switch
+                  value={soundEnabled}
+                  onValueChange={handleSound}
+                  trackColor={{ false: T.border, true: T.teal }}
+                  thumbColor={T.bg}
+                />
+              </View>
+
             </View>
+          </Animated.View>
 
-          </View>
+          {/* ── APP CONFIG ── */}
+          <Animated.View entering={FadeInDown.delay(200).springify()}>
+            <Text style={[styles.sectionLabel, { color: T.textMuted }]}>App Configuration</Text>
+            <View style={[T.neo, styles.group]}>
 
-          {/* Configuration Section */}
-          <Text style={styles.sectionLabel}>App Configuration</Text>
-          <View style={styles.settingsGroup}>
-            
-            <Pressable style={styles.navigationRow} onPress={() => router.push('/notifications')}>
-              <View style={styles.settingTextContainer}>
-                <Text style={styles.settingTitle}>Notification Registry</Text>
-                <Text style={styles.settingDesc}>Expo Push Tokens & permissions status</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
-            </Pressable>
+              <Pressable style={({ pressed }) => [styles.row, pressed && { opacity: 0.7 }]}
+                onPress={() => router.push('/notifications')}>
+                <View style={[T.neo, styles.rowIcon, { backgroundColor: T.bg }]}>
+                  <Text style={styles.rowEmoji}>🔔</Text>
+                </View>
+                <View style={styles.rowText}>
+                  <Text style={[styles.rowTitle, { color: T.textPrimary }]}>Notification Registry</Text>
+                  <Text style={[styles.rowDesc, { color: T.textMuted }]}>Push tokens & permission status</Text>
+                </View>
+                <Text style={[styles.chevron, { color: T.textMuted }]}>›</Text>
+              </Pressable>
 
-          </View>
+            </View>
+          </Animated.View>
 
-          {/* Danger Zone Section */}
-          <Text style={styles.sectionLabel}>Danger Zone</Text>
-          <View style={[styles.settingsGroup, styles.dangerGroup]}>
-            
-            <Pressable style={styles.navigationRow} onPress={handleResetData}>
-              <View style={styles.settingTextContainer}>
-                <Text style={[styles.settingTitle, styles.dangerText]}>Reset Application Data</Text>
-                <Text style={styles.settingDesc}>Clear storage & cancel all notification triggers</Text>
-              </View>
-              <Ionicons name="trash-outline" size={18} color="#FF4949" />
-            </Pressable>
+          {/* ── DANGER ZONE ── */}
+          <Animated.View entering={FadeInDown.delay(260).springify()}>
+            <Text style={[styles.sectionLabel, { color: T.textMuted }]}>Danger Zone</Text>
+            <View style={[T.neo, styles.group, { borderTopColor: 'rgba(234,94,94,0.2)', borderLeftColor: 'rgba(234,94,94,0.2)' }]}>
 
-          </View>
+              <Pressable style={({ pressed }) => [styles.row, pressed && { opacity: 0.7 }]}
+                onPress={handleReset}>
+                <View style={[T.neo, styles.rowIcon, { backgroundColor: T.bg }]}>
+                  <Text style={styles.rowEmoji}>🗑️</Text>
+                </View>
+                <View style={styles.rowText}>
+                  <Text style={[styles.rowTitle, { color: T.red }]}>Reset Application Data</Text>
+                  <Text style={[styles.rowDesc, { color: T.textMuted }]}>Clear all habits & cancel reminders</Text>
+                </View>
+                <Text style={[styles.chevron, { color: T.red }]}>›</Text>
+              </Pressable>
 
-          {/* About Version */}
-          <View style={styles.aboutContainer}>
-            <Text style={styles.aboutTitle}>HabitFlow</Text>
-            <Text style={styles.aboutVersion}>Version 1.0.0 (Expo SDK 55)</Text>
-            <Text style={styles.aboutCredit}>Built with premium dark aesthetics 🌿</Text>
-          </View>
+            </View>
+          </Animated.View>
 
-          <View style={{ height: 100 }} />
+          {/* About */}
+          <Animated.View entering={FadeInDown.delay(320).springify()} style={styles.about}>
+            <Text style={[styles.aboutApp, { color: T.teal }]}>🌿 HabitFlow</Text>
+            <Text style={[styles.aboutVer, { color: T.textMuted }]}>Version 1.0.0  ·  Expo SDK 55</Text>
+            <Text style={[styles.aboutMode, { color: T.textMuted }]}>{isDark ? '🌙 Dark' : '☀️ Light'} Neumorphic Design</Text>
+          </Animated.View>
+
+          <View style={{ height: 110 }} />
         </ScrollView>
 
-        {/* Floating Custom Navigation Bar */}
-        <View style={styles.tabBar}>
-          <Pressable style={styles.tabItem} onPress={() => router.push('/')}>
-            <Ionicons name="home-outline" size={22} color="#94A3B8" />
-            <Text style={styles.tabLabel}>Home</Text>
+        {/* Tab Bar */}
+        <View style={[T.neo, styles.tabBar, { backgroundColor: T.tabBg }]}>
+          <Pressable style={styles.tabItem} onPressIn={() => pt(s0)} onPress={() => router.push('/')}>
+            <Animated.View style={a0}><Text style={styles.tabIcon}>🏠</Text></Animated.View>
+            <Text style={[styles.tabLabel, { color: T.textMuted }]}>Home</Text>
           </Pressable>
-
-          <Pressable style={styles.tabItem} onPress={() => router.push('/analytics')}>
-            <Ionicons name="bar-chart-outline" size={22} color="#94A3B8" />
-            <Text style={styles.tabLabel}>Analytics</Text>
+          <Pressable style={styles.tabItem} onPressIn={() => pt(s1)} onPress={() => router.push('/analytics')}>
+            <Animated.View style={a1}><Text style={styles.tabIcon}>📊</Text></Animated.View>
+            <Text style={[styles.tabLabel, { color: T.textMuted }]}>Analytics</Text>
           </Pressable>
-
-          <Pressable style={styles.tabItem} onPress={() => router.push('/achievements')}>
-            <Ionicons name="trophy-outline" size={22} color="#94A3B8" />
-            <Text style={styles.tabLabel}>Badges</Text>
+          <Pressable style={styles.tabItem} onPressIn={() => pt(s2)} onPress={() => router.push('/achievements')}>
+            <Animated.View style={a2}><Text style={styles.tabIcon}>🏆</Text></Animated.View>
+            <Text style={[styles.tabLabel, { color: T.textMuted }]}>Badges</Text>
           </Pressable>
-
-          <Pressable style={styles.tabItem} onPress={() => {}}>
-            <Ionicons name="settings" size={22} color="#5EEAD4" />
-            <Text style={[styles.tabLabel, { color: '#5EEAD4' }]}>Settings</Text>
+          <Pressable style={styles.tabItem} onPressIn={() => pt(s3)} onPress={() => {}}>
+            <Animated.View style={[styles.tabActive, { backgroundColor: T.tealDim, borderColor: T.tealBorder }, a3]}>
+              <Text style={styles.tabIcon}>⚙️</Text>
+            </Animated.View>
+            <Text style={[styles.tabLabel, { color: T.teal }]}>Settings</Text>
           </Pressable>
         </View>
 
@@ -179,134 +234,46 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#0A1628',
+  safe: { flex: 1 },
+  root: { flex: 1 },
+
+  header: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 14 },
+  headerEmoji: { fontSize: 22 },
+  headerTitle: { fontSize: 20, fontWeight: '800' },
+
+  scroll: { paddingHorizontal: 16, paddingTop: 4 },
+  sectionLabel: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 8, marginTop: 12, paddingLeft: 4 },
+  group: { borderRadius: 22, paddingHorizontal: 14, paddingVertical: 6, marginBottom: 6 },
+
+  // Theme row — big and prominent
+  themeRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 16 },
+  themeIconBig: { width: 56, height: 56, borderRadius: 18, alignItems: 'center', justifyContent: 'center', marginRight: 14 },
+  themeText: { flex: 1, marginRight: 12 },
+  themeToggleBtn: {
+    width: 52, height: 30, borderRadius: 15, borderWidth: 1,
+    justifyContent: 'center', paddingHorizontal: 3,
   },
-  container: {
-    flex: 1,
-    backgroundColor: '#0A1628',
-  },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(148, 163, 184, 0.06)',
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#FFFFFF',
-  },
-  scrollContent: {
-    padding: 20,
-  },
-  sectionLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#94A3B8',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: 10,
-    marginTop: 10,
-  },
-  settingsGroup: {
-    backgroundColor: '#0F1E35',
-    borderWidth: 1,
-    borderColor: 'rgba(148, 163, 184, 0.06)',
-    borderRadius: 24,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginBottom: 24,
-  },
-  dangerGroup: {
-    borderColor: 'rgba(255, 73, 73, 0.15)',
-    backgroundColor: 'rgba(255, 73, 73, 0.01)',
-  },
-  settingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-  },
-  navigationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: 'rgba(148, 163, 184, 0.06)',
-  },
-  settingTextContainer: {
-    flex: 1,
-    marginRight: 12,
-  },
-  settingTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    marginBottom: 2,
-  },
-  dangerText: {
-    color: '#FF4949',
-  },
-  settingDesc: {
-    fontSize: 12,
-    color: '#94A3B8',
-    lineHeight: 16,
-  },
-  aboutContainer: {
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  aboutTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    marginBottom: 4,
-  },
-  aboutVersion: {
-    fontSize: 12,
-    color: '#94A3B8',
-    marginBottom: 2,
-  },
-  aboutCredit: {
-    fontSize: 11,
-    color: '#5EEAD4',
-    fontStyle: 'italic',
-  },
-  tabBar: {
-    position: 'absolute',
-    bottom: 24,
-    left: 20,
-    right: 20,
-    height: 64,
-    backgroundColor: 'rgba(21, 26, 34, 0.85)',
-    borderRadius: 24,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    borderWidth: 1,
-    borderColor: 'rgba(148, 163, 184, 0.08)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.3,
-    shadowRadius: 15,
-    elevation: 8,
-  },
-  tabItem: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 8,
-    width: 60,
-  },
-  tabLabel: {
-    fontSize: 10,
-    color: '#94A3B8',
-    fontWeight: '500',
-    marginTop: 4,
-  },
+  themeToggleInner: { flex: 1, justifyContent: 'center' },
+  themeThumb: { width: 24, height: 24, borderRadius: 12 },
+
+  // Normal row
+  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12 },
+  rowIcon: { width: 40, height: 40, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginRight: 14 },
+  rowEmoji: { fontSize: 18 },
+  rowText: { flex: 1, marginRight: 10 },
+  rowTitle: { fontSize: 15, fontWeight: '700', marginBottom: 2 },
+  rowDesc:  { fontSize: 11, lineHeight: 16 },
+  chevron:  { fontSize: 22, fontWeight: '300' },
+  divider:  { height: 1, marginVertical: 2 },
+
+  about: { alignItems: 'center', paddingVertical: 20 },
+  aboutApp:  { fontSize: 16, fontWeight: '800', marginBottom: 4 },
+  aboutVer:  { fontSize: 12, marginBottom: 4 },
+  aboutMode: { fontSize: 11, fontStyle: 'italic' },
+
+  tabBar: { position: 'absolute', bottom: 18, left: 14, right: 14, height: 68, borderRadius: 28, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around' },
+  tabItem: { alignItems: 'center', justifyContent: 'center', width: 68 },
+  tabActive: { borderRadius: 14, width: 44, height: 32, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
+  tabIcon:   { fontSize: 18 },
+  tabLabel:  { fontSize: 9, fontWeight: '700', marginTop: 4, textTransform: 'uppercase' },
 });
