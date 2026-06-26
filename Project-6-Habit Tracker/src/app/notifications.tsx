@@ -2,12 +2,13 @@ import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { usePushNotifications } from '../hooks/use-push-notifications';
 import { openNotificationSettings } from '../lib/notifications/setup';
+import { useTheme } from '../context/ThemeContext';
 
 export default function NotificationsScreen() {
   const router = useRouter();
+  const { T, isDark } = useTheme();
   const {
     pushToken,
     permissionStatus,
@@ -32,42 +33,39 @@ export default function NotificationsScreen() {
   const isGranted = permissionStatus === 'granted';
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: T.bg }]}>
+      <View style={[styles.container, { backgroundColor: T.bg }]}>
         
         {/* Header */}
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.backButton}>
-            <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+          <Pressable onPress={() => router.back()} style={({ pressed }) => [T.neo, styles.backButton, pressed && { opacity: 0.7 }]}>
+            <Text style={{ fontSize: 18, color: T.textPrimary }}>←</Text>
           </Pressable>
-          <Text style={styles.headerTitle}>Notification Center</Text>
+          <Text style={[styles.headerTitle, { color: T.textPrimary }]}>Notification Center</Text>
           <View style={{ width: 44 }} />
         </View>
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
           
           {/* Permission Status Card */}
-          <Text style={styles.sectionLabel}>System Status</Text>
+          <Text style={[styles.sectionLabel, { color: T.textMuted }]}>System Status</Text>
           <View style={[
+            T.neo,
             styles.statusCard,
-            isGranted ? styles.statusCardGranted : styles.statusCardDenied
+            { borderLeftWidth: 4, borderLeftColor: isGranted ? T.green : T.orange }
           ]}>
             <View style={[
               styles.iconCircle,
-              { backgroundColor: isGranted ? 'rgba(34, 197, 94, 0.1)' : 'rgba(245, 158, 11, 0.1)' }
+              { backgroundColor: isGranted ? T.greenDim : T.orangeDim }
             ]}>
-              <Ionicons 
-                name={isGranted ? 'checkmark-circle' : 'notifications-off'} 
-                size={26} 
-                color={isGranted ? '#22C55E' : '#F59E0B'} 
-              />
+              <Text style={{ fontSize: 22 }}>{isGranted ? '🔔' : '🔕'}</Text>
             </View>
 
             <View style={styles.statusDetails}>
-              <Text style={styles.statusTitle}>
+              <Text style={[styles.statusTitle, { color: T.textPrimary }]}>
                 {isGranted ? 'Notifications Enabled' : 'Notifications Disabled'}
               </Text>
-              <Text style={styles.statusDesc}>
+              <Text style={[styles.statusDesc, { color: T.textMuted }]}>
                 {isGranted 
                   ? 'Your local habit reminders and push alerts are configured correctly.'
                   : 'You must grant notification permissions to schedule reminders.'}
@@ -75,30 +73,30 @@ export default function NotificationsScreen() {
             </View>
 
             {!isGranted && (
-              <Pressable style={styles.settingsBtn} onPress={handleOpenSettings}>
-                <Text style={styles.settingsBtnText}>Settings</Text>
+              <Pressable style={({ pressed }) => [T.neo, styles.settingsBtn, pressed && { opacity: 0.8 }]} onPress={handleOpenSettings}>
+                <Text style={[styles.settingsBtnText, { color: T.orange }]}>Settings</Text>
               </Pressable>
             )}
           </View>
 
           {/* Local Reminders Info */}
-          <Text style={styles.sectionLabel}>Local Reminders</Text>
-          <View style={styles.infoCard}>
+          <Text style={[styles.sectionLabel, { color: T.textMuted }]}>Local Reminders</Text>
+          <View style={[T.neo, styles.infoCard]}>
             <View style={styles.infoRow}>
-              <Ionicons name="time-outline" size={20} color="#5EEAD4" />
+              <Text style={{ fontSize: 22, marginRight: 12 }}>⏰</Text>
               <View style={styles.infoTextContainer}>
-                <Text style={styles.infoTitle}>Background Reminders</Text>
-                <Text style={styles.infoDesc}>
+                <Text style={[styles.infoTitle, { color: T.textPrimary }]}>Background Reminders</Text>
+                <Text style={[styles.infoDesc, { color: T.textMuted }]}>
                   Reminders are scheduled locally on your device and trigger even if offline.
                 </Text>
               </View>
             </View>
-            <View style={styles.divider} />
+            <View style={[styles.divider, { backgroundColor: T.border }]} />
             <View style={styles.infoRow}>
-              <Ionicons name="phone-portrait-outline" size={20} color="#5EEAD4" />
+              <Text style={{ fontSize: 22, marginRight: 12 }}>📱</Text>
               <View style={styles.infoTextContainer}>
-                <Text style={styles.infoTitle}>Android Importance Channel</Text>
-                <Text style={styles.infoDesc}>
+                <Text style={[styles.infoTitle, { color: T.textPrimary }]}>Android Importance Channel</Text>
+                <Text style={[styles.infoDesc, { color: T.textMuted }]}>
                   Created high-priority "habit-reminders" channel to ensure alerts show as heads-up banners.
                 </Text>
               </View>
@@ -106,36 +104,36 @@ export default function NotificationsScreen() {
           </View>
 
           {/* Push Notifications Configuration */}
-          <Text style={styles.sectionLabel}>Push Notifications</Text>
-          <View style={styles.pushCard}>
-            <Text style={styles.pushCardTitle}>Expo Push Token</Text>
-            <Text style={styles.pushCardDesc}>
+          <Text style={[styles.sectionLabel, { color: T.textMuted }]}>Push Notifications</Text>
+          <View style={[T.neo, styles.pushCard]}>
+            <Text style={[styles.pushCardTitle, { color: T.textPrimary }]}>Expo Push Token</Text>
+            <Text style={[styles.pushCardDesc, { color: T.textMuted }]}>
               This unique token allows push servers to send announcements or streak nudges to your device.
             </Text>
 
             {isRegistering ? (
               <View style={styles.loadingBox}>
-                <ActivityIndicator size="small" color="#5EEAD4" />
-                <Text style={styles.loadingText}>Fetching Push Token...</Text>
+                <ActivityIndicator size="small" color={T.teal} />
+                <Text style={[styles.loadingText, { color: T.textMuted }]}>Fetching Push Token...</Text>
               </View>
             ) : pushToken ? (
-              <View style={styles.tokenContainer}>
-                <Text style={styles.tokenText} numberOfLines={2}>
+              <View style={[T.neoPressed, styles.tokenContainer, { backgroundColor: T.bgPress }]}>
+                <Text style={[styles.tokenText, { color: T.textSub }]} numberOfLines={2}>
                   {pushToken}
                 </Text>
-                <Pressable style={styles.copyBtn} onPress={copyToken}>
-                  <Ionicons name="copy-outline" size={18} color="#0A1628" />
-                  <Text style={styles.copyBtnText}>Copy Token</Text>
+                <Pressable style={({ pressed }) => [T.neo, styles.copyBtn, pressed && { opacity: 0.8 }]} onPress={copyToken}>
+                  <Text style={{ fontSize: 16, marginRight: 6 }}>📋</Text>
+                  <Text style={[styles.copyBtnText, { color: T.teal }]}>Copy Token</Text>
                 </Pressable>
               </View>
             ) : (
-              <View style={styles.tokenErrorBox}>
-                <Ionicons name="warning-outline" size={20} color="#F59E0B" />
-                <Text style={styles.tokenErrorText}>
+              <View style={[styles.tokenErrorBox, { borderColor: T.orangeDim }]}>
+                <Text style={{ fontSize: 22 }}>⚠️</Text>
+                <Text style={[styles.tokenErrorText, { color: T.textMuted }]}>
                   Push tokens require a physical device and an EAS development build client.
                 </Text>
-                <Pressable style={styles.retryBtn} onPress={register}>
-                  <Text style={styles.retryBtnText}>Retry Registration</Text>
+                <Pressable style={({ pressed }) => [T.neo, styles.retryBtn, pressed && { opacity: 0.8 }]} onPress={register}>
+                  <Text style={[styles.retryBtnText, { color: T.orange }]}>Retry Registration</Text>
                 </Pressable>
               </View>
             )}
@@ -152,11 +150,9 @@ export default function NotificationsScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#0A1628',
   },
   container: {
     flex: 1,
-    backgroundColor: '#0A1628',
   },
   header: {
     flexDirection: 'row',
@@ -164,59 +160,44 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     height: 56,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(148, 163, 184, 0.06)',
   },
   backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: '#0F1E35',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(148, 163, 184, 0.08)',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#FFFFFF',
   },
   scrollContent: {
     padding: 20,
   },
   sectionLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
-    color: '#94A3B8',
     textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: 10,
-    marginTop: 10,
+    letterSpacing: 1.2,
+    marginBottom: 8,
+    marginTop: 14,
+    paddingLeft: 4,
   },
   statusCard: {
-    borderWidth: 1,
-    borderRadius: 24,
+    borderRadius: 22,
     padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 24,
-  },
-  statusCardGranted: {
-    backgroundColor: 'rgba(34, 197, 94, 0.04)',
-    borderColor: 'rgba(34, 197, 94, 0.15)',
-  },
-  statusCardDenied: {
-    backgroundColor: 'rgba(245, 158, 11, 0.04)',
-    borderColor: 'rgba(245, 158, 11, 0.15)',
+    marginBottom: 20,
   },
   iconCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: 14,
   },
   statusDetails: {
     flex: 1,
@@ -225,74 +206,60 @@ const styles = StyleSheet.create({
   statusTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#FFFFFF',
     marginBottom: 2,
   },
   statusDesc: {
     fontSize: 12,
-    color: '#94A3B8',
     lineHeight: 16,
   },
   settingsBtn: {
-    backgroundColor: '#F59E0B',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 10,
   },
   settingsBtnText: {
-    color: '#0A1628',
     fontSize: 12,
     fontWeight: '700',
   },
   infoCard: {
-    backgroundColor: '#0F1E35',
-    borderWidth: 1,
-    borderColor: 'rgba(148, 163, 184, 0.06)',
-    borderRadius: 24,
+    borderRadius: 22,
     padding: 16,
-    marginBottom: 24,
+    marginBottom: 20,
   },
   infoRow: {
     flexDirection: 'row',
     paddingVertical: 4,
+    alignItems: 'center',
   },
   infoTextContainer: {
-    marginLeft: 12,
+    marginLeft: 6,
     flex: 1,
   },
   infoTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#FFFFFF',
     marginBottom: 2,
   },
   infoDesc: {
     fontSize: 12,
-    color: '#94A3B8',
     lineHeight: 16,
   },
   divider: {
     height: 1,
-    backgroundColor: 'rgba(148, 163, 184, 0.06)',
     marginVertical: 12,
   },
   pushCard: {
-    backgroundColor: '#0F1E35',
-    borderWidth: 1,
-    borderColor: 'rgba(148, 163, 184, 0.06)',
-    borderRadius: 24,
+    borderRadius: 22,
     padding: 16,
     marginBottom: 20,
   },
   pushCardTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#FFFFFF',
     marginBottom: 4,
   },
   pushCardDesc: {
     fontSize: 12,
-    color: '#94A3B8',
     lineHeight: 16,
     marginBottom: 16,
   },
@@ -303,13 +270,11 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   loadingText: {
-    color: '#94A3B8',
     fontSize: 13,
     marginLeft: 10,
   },
   tokenContainer: {
-    backgroundColor: '#0A1628',
-    borderRadius: 16,
+    borderRadius: 18,
     padding: 12,
     borderWidth: 0.5,
     borderColor: 'rgba(148, 163, 184, 0.1)',
@@ -317,13 +282,11 @@ const styles = StyleSheet.create({
   tokenText: {
     fontSize: 12,
     fontFamily: 'monospace',
-    color: '#94A3B8',
     lineHeight: 16,
     marginBottom: 12,
     textAlign: 'center',
   },
   copyBtn: {
-    backgroundColor: '#5EEAD4',
     flexDirection: 'row',
     height: 40,
     borderRadius: 10,
@@ -331,37 +294,30 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   copyBtnText: {
-    color: '#0A1628',
     fontWeight: '700',
     fontSize: 13,
-    marginLeft: 6,
   },
   tokenErrorBox: {
-    backgroundColor: 'rgba(245, 158, 11, 0.03)',
-    borderColor: 'rgba(245, 158, 11, 0.1)',
+    borderRadius: 18,
     borderWidth: 1,
-    borderRadius: 16,
     padding: 12,
     alignItems: 'center',
   },
   tokenErrorText: {
-    color: '#94A3B8',
     fontSize: 11,
     lineHeight: 15,
     textAlign: 'center',
     marginVertical: 8,
   },
   retryBtn: {
-    backgroundColor: '#0F1E35',
-    borderColor: 'rgba(245, 158, 11, 0.3)',
     borderWidth: 0.5,
+    borderColor: 'rgba(148, 163, 184, 0.1)',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 10,
     marginTop: 4,
   },
   retryBtnText: {
-    color: '#F59E0B',
     fontSize: 12,
     fontWeight: '600',
   },

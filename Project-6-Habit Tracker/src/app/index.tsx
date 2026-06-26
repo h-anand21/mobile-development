@@ -18,7 +18,7 @@ import { usePushNotifications } from '../hooks/use-push-notifications';
 import { useTheme } from '../context/ThemeContext';
 import HabitCard from '../components/HabitCard';
 import EmptyState from '../components/EmptyState';
-import { getLocalDateString, getActiveStreak } from '../lib/habits/streak';
+import { getLocalDateString, getActiveStreak, getYesterdayDateString } from '../lib/habits/streak';
 
 const { width: SW } = Dimensions.get('window');
 
@@ -46,8 +46,8 @@ function AnimatedRing({ percent, size, strokeWidth, color, bgColor }:
 }
 
 // ─── Day Cell ───
-function DayCell({ label, date, isToday, count, total, T }:
-  { label: string; date: number; isToday: boolean; count: number; total: number; T: any }) {
+function DayCell({ label, date, isToday, isSelected, count, total, onPress, T }:
+  { label: string; date: number; isToday: boolean; isSelected: boolean; count: number; total: number; onPress: () => void; T: any }) {
   const s = useSharedValue(0.7);
   const o = useSharedValue(0);
   useEffect(() => {
@@ -60,26 +60,35 @@ function DayCell({ label, date, isToday, count, total, T }:
   const partial = total > 0 && count > 0 && count < total;
 
   return (
-    <Animated.View style={[styles.dayCell, aStyle]}>
-      <Text style={[styles.dayLabel, { color: isToday ? T.teal : T.textMuted }]}>{label}</Text>
-      <View style={[
-        styles.dayCircle,
-        isToday      && { backgroundColor: T.teal },
-        filled && !isToday && { backgroundColor: T.tealDim, borderWidth: 1, borderColor: T.tealBorder },
-        partial && !isToday && { backgroundColor: T.yellowDim, borderWidth: 1, borderColor: 'rgba(234,212,94,0.25)' },
-      ]}>
+    <Pressable onPress={onPress}>
+      <Animated.View style={[styles.dayCell, aStyle]}>
         <Text style={[
-          styles.dayNum,
-          { color: isToday ? T.bg : filled ? T.teal : T.textSub },
-          isToday && { fontWeight: '900' },
+          styles.dayLabel,
+          { color: isSelected ? T.teal : isToday ? T.teal : T.textMuted },
+          isSelected && { fontWeight: 'bold' }
         ]}>
-          {date}
+          {label}
         </Text>
-      </View>
-      <View style={[styles.dayDot, {
-        backgroundColor: count > 0 ? (filled ? T.teal : T.yellow) : 'transparent'
-      }]} />
-    </Animated.View>
+        <View style={[
+          styles.dayCircle,
+          isSelected && { backgroundColor: T.tealDim, borderWidth: 2, borderColor: T.teal },
+          isToday && !isSelected && { backgroundColor: T.teal },
+          filled && !isToday && !isSelected && { backgroundColor: T.tealDim, borderWidth: 1, borderColor: T.tealBorder },
+          partial && !isToday && !isSelected && { backgroundColor: T.yellowDim, borderWidth: 1, borderColor: 'rgba(234,212,94,0.25)' },
+        ]}>
+          <Text style={[
+            styles.dayNum,
+            { color: isSelected ? T.teal : isToday ? T.bg : filled ? T.teal : T.textSub },
+            (isToday || isSelected) && { fontWeight: '900' },
+          ]}>
+            {date}
+          </Text>
+        </View>
+        <View style={[styles.dayDot, {
+          backgroundColor: count > 0 ? (filled ? T.teal : T.yellow) : 'transparent'
+        }]} />
+      </Animated.View>
+    </Pressable>
   );
 }
 
@@ -114,31 +123,68 @@ export default function HomeDashboard() {
   );
 
   const todayStr   = getLocalDateString();
-  const todayWD    = new Date().getDay();
-  const hour       = new Date().getHours();
-  const greeting   = hour < 12 ? 'Good Morning' : hour < 17 ? 'Good Afternoon' : 'Good Evening';
-  const greetEmoji = hour < 12 ? '🌅' : hour < 17 ? '☀️' : '🌙';
+  const [selectedDateStr, setSelectedDateStr] = React.useState(todayStr);
 
-  const todayHabits    = habits.filter(h => h.frequency.kind === 'daily' || h.frequency.weekdays.includes(todayWD));
-  const completedCount = todayHabits.filter(h => h.lastCompletedISO === todayStr).length;
-  const total          = todayHabits.length;
+  const selectedDate = new Date(selectedDateStr);
+  const selectedWD   = selectedDate.getDay();
+  const hour         = new Date().getHours();
+  const greeting     = hour < 12 ? 'Good Morning' : hour < 17 ? 'Good Afternoon' : 'Good Evening';
+  const greetEmoji   = hour < 12 ? '🌅' : hour < 17 ? '☀️' : '🌙';
+
+  const activeHabits   = habits.filter(h => h.frequency.kind === 'daily' || h.frequency.weekdays.includes(selectedWD));
+  const completedCount = activeHabits.filter(h => h.completedDates.includes(selectedDateStr)).length;
+  const total          = activeHabits.length;
   const pct            = total > 0 ? Math.round((completedCount / total) * 100) : 0;
   const bestStreak     = habits.reduce((m, h) => Math.max(m, getActiveStreak(h)), 0);
   const totalLogs      = habits.reduce((a, h) => a + h.completedDates.length, 0);
   const successRate    = habits.length > 0
-    ? Math.round((habits.filter(h => h.lastCompletedISO === todayStr).length / habits.length) * 100) : 0;
+    ? Math.round((habits.filter(h => h.completedDates.includes(selectedDateStr)).length / habits.length) * 100) : 0;
 
-  // Weekly strip
   const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+  // Scrollable calendar strip (last 30 days, today on far left)
+  const calendarDays = Array.from({ length: 30 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const iso = getLocalDateString(d);
+    let displayLabel = dayNames[d.getDay()];
+    if (i === 0) displayLabel = 'Today';
+    else if (i === 1) displayLabel = 'Yest';
+
+    return {
+      label: displayLabel,
+      date: d.getDate(),
+      iso,
+      isToday: i === 0,
+      count: habits.filter(h => h.completedDates.includes(iso)).length,
+      total: habits.length,
+    };
+  });
+
+  // Weekly strip for mini bar chart
   const weekStrip = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(); d.setDate(d.getDate() - (6 - i));
-    const iso = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    const iso = getLocalDateString(d);
     return { label: dayNames[d.getDay()], date: d.getDate(), iso, isToday: i === 6,
       count: habits.filter(h => h.completedDates.includes(iso)).length, total: habits.length };
   });
 
   const weekBars = weekStrip.map(d => d.count);
   const maxBar   = Math.max(1, ...weekBars);
+
+  const getSectionTitle = () => {
+    if (selectedDateStr === todayStr) return "Today's Habits";
+    if (selectedDateStr === getYesterdayDateString()) return "Yesterday's Habits";
+
+    try {
+      const parts = selectedDateStr.split('-');
+      const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      return `Habits on ${d.getDate()} ${months[d.getMonth()]}`;
+    } catch {
+      return `Habits on ${selectedDateStr}`;
+    }
+  };
 
   // Pulse anim for avatar
   const pulse = useSharedValue(1);
@@ -189,12 +235,20 @@ export default function HomeDashboard() {
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
 
-          {/* ═══ WEEKLY CALENDAR ═══ */}
+          {/* ═══ MONTHLY SCROLLABLE CALENDAR ═══ */}
           <Animated.View entering={FadeInDown.delay(80).duration(500).springify()}
-            style={[T.neo, styles.calCard]}>
-            {weekStrip.map((day) => (
-              <DayCell key={day.iso} {...day} T={T} />
-            ))}
+            style={[T.neo, styles.calCard, { paddingVertical: 12, paddingHorizontal: 4 }]}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ flexDirection: 'row', gap: 12, paddingHorizontal: 12 }}>
+              {calendarDays.map((day) => (
+                <DayCell
+                  key={day.iso}
+                  {...day}
+                  isSelected={day.iso === selectedDateStr}
+                  onPress={() => setSelectedDateStr(day.iso)}
+                  T={T}
+                />
+              ))}
+            </ScrollView>
           </Animated.View>
 
           {/* ═══ STATS GRID ═══ */}
@@ -283,7 +337,7 @@ export default function HomeDashboard() {
                   <Text style={[styles.ringPct, { fontSize: 13, color: T.green }]}>{successRate}%</Text>
                 </View>
               </View>
-              <Text style={[styles.cardSub, { color: T.textMuted }]}>Rate today</Text>
+              <Text style={[styles.cardSub, { color: T.textMuted }]}>Success rate</Text>
             </Animated.View>
 
           </View>
@@ -292,7 +346,7 @@ export default function HomeDashboard() {
           <Animated.View entering={FadeInDown.delay(300).duration(500).springify()} style={styles.sectionRow}>
             <View style={styles.sectionLeft}>
               <Text style={styles.sectionEmoji}>✨</Text>
-              <Text style={[styles.sectionTitle, { color: T.textPrimary }]}>Today's Habits</Text>
+              <Text style={[styles.sectionTitle, { color: T.textPrimary }]}>{getSectionTitle()}</Text>
             </View>
             <Link href="/new" asChild>
               <Pressable>
@@ -314,13 +368,13 @@ export default function HomeDashboard() {
             </Animated.View>
           )}
 
-          {todayHabits.length === 0 ? (
+          {activeHabits.length === 0 ? (
             <Animated.View entering={FadeInDown.delay(340).duration(400)}>
-              <EmptyState />
+              <EmptyState title="No active habits" description="Try selecting another day or create a new habit." />
             </Animated.View>
           ) : (
-            todayHabits.map((habit, i) => (
-              <HabitCard key={habit.id} habit={habit} onToggleComplete={toggleCompleteHabit} index={i} />
+            activeHabits.map((habit, i) => (
+              <HabitCard key={habit.id} habit={habit} onToggleComplete={toggleCompleteHabit} index={i} dateStr={selectedDateStr} />
             ))
           )}
 
