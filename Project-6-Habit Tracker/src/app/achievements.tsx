@@ -1,7 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, BackHandler } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import Animated, {
   FadeInDown,
   useAnimatedStyle,
@@ -17,6 +17,17 @@ export default function AchievementsScreen() {
   const router = useRouter();
   const { T } = useTheme();
   const { habits } = useHabits();
+
+  useFocusEffect(
+    React.useCallback(() => {
+      const onBackPress = () => {
+        router.replace('/');
+        return true;
+      };
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => subscription.remove();
+    }, [])
+  );
 
   const bestStreak  = habits.reduce((max, h) => Math.max(max, getActiveStreak(h)), 0);
   const totalLogs   = habits.reduce((a, h) => a + h.completedDates.length, 0);
@@ -120,11 +131,11 @@ export default function AchievementsScreen() {
 
         {/* Tab Bar */}
         <View style={[T.neo, styles.tabBar, { backgroundColor: T.tabBg }]}>
-          <Pressable style={styles.tabItem} onPressIn={() => pt(s0)} onPress={() => router.push('/')}>
+          <Pressable style={styles.tabItem} onPressIn={() => pt(s0)} onPress={() => router.replace('/')}>
             <Animated.View style={a0}><Text style={styles.tabIcon}>🏠</Text></Animated.View>
             <Text style={[styles.tabLabel, { color: T.textMuted }]}>Home</Text>
           </Pressable>
-          <Pressable style={styles.tabItem} onPressIn={() => pt(s1)} onPress={() => router.push('/analytics')}>
+          <Pressable style={styles.tabItem} onPressIn={() => pt(s1)} onPress={() => router.replace('/analytics')}>
             <Animated.View style={a1}><Text style={styles.tabIcon}>📊</Text></Animated.View>
             <Text style={[styles.tabLabel, { color: T.textMuted }]}>Analytics</Text>
           </Pressable>
@@ -140,7 +151,7 @@ export default function AchievementsScreen() {
             </Animated.View>
             <Text style={[styles.tabLabel, { color: T.teal }]}>Badges</Text>
           </Pressable>
-          <Pressable style={styles.tabItem} onPressIn={() => pt(s3)} onPress={() => router.push('/settings')}>
+          <Pressable style={styles.tabItem} onPressIn={() => pt(s3)} onPress={() => router.replace('/settings')}>
             <Animated.View style={a3}><Text style={styles.tabIcon}>⚙️</Text></Animated.View>
             <Text style={[styles.tabLabel, { color: T.textMuted }]}>Settings</Text>
           </Pressable>

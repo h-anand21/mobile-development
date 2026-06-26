@@ -391,7 +391,7 @@ export default function HomeDashboard() {
             <Text style={[styles.tabLabel, { color: T.teal }]}>Home</Text>
           </Pressable>
 
-          <Pressable style={styles.tabItem} onPressIn={() => pressTab(1)} onPress={() => router.push('/analytics')}>
+          <Pressable style={styles.tabItem} onPressIn={() => pressTab(1)} onPress={() => router.replace('/analytics')}>
             <Animated.View style={tabStyles[1]}><Text style={styles.tabIcon}>📊</Text></Animated.View>
             <Text style={[styles.tabLabel, { color: T.textMuted }]}>Analytics</Text>
           </Pressable>
@@ -403,12 +403,12 @@ export default function HomeDashboard() {
             <Text style={[styles.tabLabel, { color: T.textMuted }]}>Add</Text>
           </Pressable>
 
-          <Pressable style={styles.tabItem} onPressIn={() => pressTab(2)} onPress={() => router.push('/achievements')}>
+          <Pressable style={styles.tabItem} onPressIn={() => pressTab(2)} onPress={() => router.replace('/achievements')}>
             <Animated.View style={tabStyles[2]}><Text style={styles.tabIcon}>🏆</Text></Animated.View>
             <Text style={[styles.tabLabel, { color: T.textMuted }]}>Badges</Text>
           </Pressable>
 
-          <Pressable style={styles.tabItem} onPressIn={() => pressTab(3)} onPress={() => router.push('/settings')}>
+          <Pressable style={styles.tabItem} onPressIn={() => pressTab(3)} onPress={() => router.replace('/settings')}>
             <Animated.View style={tabStyles[3]}><Text style={styles.tabIcon}>⚙️</Text></Animated.View>
             <Text style={[styles.tabLabel, { color: T.textMuted }]}>Settings</Text>
           </Pressable>

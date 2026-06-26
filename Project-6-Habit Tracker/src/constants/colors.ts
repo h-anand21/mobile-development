@@ -142,16 +142,16 @@ export function getTheme(isDark: boolean): Theme {
   }
 
   // ─── LIGHT NEUMORPHISM ───
-  const bg = '#E8EDF5';
+  const bg = '#D5DCE6';
   return {
     isDark: false,
     bg,
     bgCard:  bg,
-    bgPress: '#DDE4EE',
+    bgPress: '#C6CFDC',
 
     neo: {
       backgroundColor: bg,
-      shadowColor:     '#B8C4D2',
+      shadowColor:     '#ACBACD',
       shadowOffset:    { width: 5, height: 5 },
       shadowOpacity:   0.8,
       shadowRadius:    10,
@@ -167,8 +167,8 @@ export function getTheme(isDark: boolean): Theme {
     },
 
     neoPressed: {
-      backgroundColor: '#DDE4EE',
-      shadowColor:     '#B8C4D2',
+      backgroundColor: '#C6CFDC',
+      shadowColor:     '#ACBACD',
       shadowOffset:    { width: 2, height: 2 },
       shadowOpacity:   0.6,
       shadowRadius:    4,
@@ -185,7 +185,7 @@ export function getTheme(isDark: boolean): Theme {
 
     textPrimary: '#1C2E44',
     textSub:     '#4A6A8A',
-    textMuted:   '#8BA3BC',
+    textMuted:   '#7E98B3',
 
     border:    'rgba(0,0,0,0.06)',
     borderMid: 'rgba(0,0,0,0.1)',
@@ -203,6 +203,6 @@ export function getTheme(isDark: boolean): Theme {
     greenDim:   'rgba(40,168,74,0.12)',
     red:        '#D44040',
 
-    tabBg: 'rgba(225,232,242,0.96)',
+    tabBg: 'rgba(213,220,230,0.96)',
   };
 }

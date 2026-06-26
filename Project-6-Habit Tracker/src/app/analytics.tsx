@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Dimensions, BackHandler } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import Animated, {
   FadeInDown,
   FadeInRight,
@@ -77,6 +77,17 @@ export default function AnalyticsScreen() {
   const { T }    = useTheme();
   const { habits } = useHabits();
 
+  useFocusEffect(
+    React.useCallback(() => {
+      const onBackPress = () => {
+        router.replace('/');
+        return true;
+      };
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => subscription.remove();
+    }, [])
+  );
+
   const todayStr    = getLocalDateString();
   const total       = habits.length;
   const doneToday   = habits.filter(h => h.lastCompletedISO === todayStr).length;
@@ -130,7 +141,7 @@ export default function AnalyticsScreen() {
 
         {/* Header */}
         <Animated.View entering={FadeInDown.duration(400).springify()} style={styles.header}>
-          <Pressable onPress={() => router.back()} style={({ pressed }) => [T.neo, styles.backBtn, pressed && { opacity: 0.7 }]}>
+          <Pressable onPress={() => router.replace('/')} style={({ pressed }) => [T.neo, styles.backBtn, pressed && { opacity: 0.7 }]}>
             <Text style={[styles.backArrow, { color: T.textPrimary }]}>←</Text>
           </Pressable>
           <View style={styles.headerCenter}>
@@ -256,7 +267,7 @@ export default function AnalyticsScreen() {
 
         {/* Tab Bar */}
         <View style={[T.neo, styles.tabBar, { backgroundColor: T.tabBg }]}>
-          <Pressable style={styles.tabItem} onPressIn={() => pt(s0)} onPress={() => router.push('/')}>
+          <Pressable style={styles.tabItem} onPressIn={() => pt(s0)} onPress={() => router.replace('/')}>
             <Animated.View style={a0}><Text style={styles.tabIcon}>🏠</Text></Animated.View>
             <Text style={[styles.tabLabel, { color: T.textMuted }]}>Home</Text>
           </Pressable>
@@ -272,11 +283,11 @@ export default function AnalyticsScreen() {
             </Animated.View>
             <Text style={[styles.tabLabel, { color: T.textMuted }]}>Add</Text>
           </Pressable>
-          <Pressable style={styles.tabItem} onPressIn={() => pt(s2)} onPress={() => router.push('/achievements')}>
+          <Pressable style={styles.tabItem} onPressIn={() => pt(s2)} onPress={() => router.replace('/achievements')}>
             <Animated.View style={a2}><Text style={styles.tabIcon}>🏆</Text></Animated.View>
             <Text style={[styles.tabLabel, { color: T.textMuted }]}>Badges</Text>
           </Pressable>
-          <Pressable style={styles.tabItem} onPressIn={() => pt(s3)} onPress={() => router.push('/settings')}>
+          <Pressable style={styles.tabItem} onPressIn={() => pt(s3)} onPress={() => router.replace('/settings')}>
             <Animated.View style={a3}><Text style={styles.tabIcon}>⚙️</Text></Animated.View>
             <Text style={[styles.tabLabel, { color: T.textMuted }]}>Settings</Text>
           </Pressable>
