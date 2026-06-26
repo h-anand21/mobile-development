@@ -14,14 +14,15 @@ import { useTheme } from '../context/ThemeContext';
 
 interface HabitCardProps {
   habit: Habit;
-  onToggleComplete: (id: string) => void;
+  onToggleComplete: (id: string, dateStr?: string) => void;
   index?: number;
+  dateStr?: string;
 }
 
-export default function HabitCard({ habit, onToggleComplete, index = 0 }: HabitCardProps) {
+export default function HabitCard({ habit, onToggleComplete, index = 0, dateStr }: HabitCardProps) {
   const { T } = useTheme();
-  const today = getLocalDateString();
-  const isCompletedToday = habit.lastCompletedISO === today;
+  const targetDate = dateStr || getLocalDateString();
+  const isCompleted = habit.completedDates.includes(targetDate);
   const activeStreak = getActiveStreak(habit);
 
   const formatTime = (hour: number, minute: number) => {
@@ -58,7 +59,7 @@ export default function HabitCard({ habit, onToggleComplete, index = 0 }: HabitC
       withSpring(1.3, { damping: 8, stiffness: 300 }),
       withSpring(1, { damping: 10, stiffness: 200 })
     );
-    onToggleComplete(habit.id);
+    onToggleComplete(habit.id, targetDate);
   };
 
   return (
@@ -69,12 +70,12 @@ export default function HabitCard({ habit, onToggleComplete, index = 0 }: HabitC
       >
         <Animated.View style={[T.neo, styles.card, cardStyle]}>
           {/* Completed glow overlay */}
-          {isCompletedToday && (
+          {isCompleted && (
             <View style={[styles.glowOverlay, { backgroundColor: T.greenDim }]} />
           )}
 
           {/* Left accent bar */}
-          <View style={[styles.accentBar, { backgroundColor: isCompletedToday ? T.green : T.teal }]} />
+          <View style={[styles.accentBar, { backgroundColor: isCompleted ? T.green : T.teal }]} />
 
           {/* Emoji */}
           <Animated.View style={[T.neo, styles.emojiBox, emojiStyle]}>
@@ -83,8 +84,8 @@ export default function HabitCard({ habit, onToggleComplete, index = 0 }: HabitC
 
           {/* Details */}
           <View style={styles.details}>
-            <Text style={[styles.name, { color: isCompletedToday ? T.textMuted : T.textPrimary },
-              isCompletedToday && styles.nameDone]} numberOfLines={1}>
+            <Text style={[styles.name, { color: isCompleted ? T.textMuted : T.textPrimary },
+              isCompleted && styles.nameDone]} numberOfLines={1}>
               {habit.name}
             </Text>
             <Text style={[styles.freq, { color: T.textMuted }]} numberOfLines={1}>
@@ -102,12 +103,12 @@ export default function HabitCard({ habit, onToggleComplete, index = 0 }: HabitC
           <Pressable onPress={handleCheck} hitSlop={14}>
             <Animated.View style={[
               styles.checkBtn,
-              isCompletedToday
+              isCompleted
                 ? { backgroundColor: T.teal, shadowColor: T.teal, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 8, elevation: 6 }
                 : [T.neo, styles.checkBtnEmpty],
               checkStyle,
             ]}>
-              {isCompletedToday
+              {isCompleted
                 ? <Text style={[styles.checkMark, { color: T.bg }]}>✓</Text>
                 : <View style={[styles.checkDot, { backgroundColor: T.teal }]} />
               }

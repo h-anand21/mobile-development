@@ -13,6 +13,7 @@ import {
 import {
   completeHabitToday,
   undoHabitCompletion,
+  recalculateStreak,
 } from '../lib/habits/streak';
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
@@ -24,7 +25,7 @@ interface HabitsState {
   createHabit: (name: string, emoji: string, frequency: Frequency) => Promise<Habit>;
   updateHabit: (id: string, name: string, emoji: string, frequency: Frequency) => Promise<Habit>;
   deleteHabit: (id: string) => Promise<void>;
-  toggleCompleteHabit: (id: string) => Promise<void>;
+  toggleCompleteHabit: (id: string, dateStr?: string) => Promise<void>;
 }
 
 export const useHabits = create<HabitsState>((set, get) => ({
@@ -121,33 +122,29 @@ export const useHabits = create<HabitsState>((set, get) => ({
     }));
   },
 
-  toggleCompleteHabit: async id => {
+  toggleCompleteHabit: async (id, dateStr) => {
     const { habits } = get();
     const habit = habits.find(h => h.id === id);
     if (!habit) return;
 
-    const today = new Date().toISOString().split('T')[0];
-    let updatedHabit: Habit;
+    const targetDate = dateStr || new Date().toISOString().split('T')[0];
+    const isCompleted = habit.completedDates.includes(targetDate);
+    let newCompletedDates: string[];
 
-    if (habit.lastCompletedISO === today) {
-      // Revert completion
-      const reverted = undoHabitCompletion(habit);
-      updatedHabit = {
-        ...habit,
-        streak: reverted.streak,
-        lastCompletedISO: reverted.lastCompletedISO,
-        completedDates: habit.completedDates.filter(d => d !== today),
-      };
+    if (isCompleted) {
+      newCompletedDates = habit.completedDates.filter(d => d !== targetDate);
     } else {
-      // Complete habit
-      const completed = completeHabitToday(habit);
-      updatedHabit = {
-        ...habit,
-        streak: completed.streak,
-        lastCompletedISO: completed.lastCompletedISO,
-        completedDates: [...habit.completedDates.filter(d => d !== today), today],
-      };
+      newCompletedDates = [...habit.completedDates, targetDate];
     }
+
+    const { streak, lastCompletedISO } = recalculateStreak(newCompletedDates);
+
+    const updatedHabit: Habit = {
+      ...habit,
+      streak,
+      lastCompletedISO,
+      completedDates: newCompletedDates,
+    };
 
     // Persist and update state
     await saveHabitStorage(updatedHabit);
