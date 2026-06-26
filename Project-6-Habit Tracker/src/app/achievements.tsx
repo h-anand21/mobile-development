@@ -31,11 +31,12 @@ export default function AchievementsScreen() {
   ];
 
   // Tab anims
-  const s0 = useSharedValue(1), s1 = useSharedValue(1), s2 = useSharedValue(1), s3 = useSharedValue(1);
+  const s0 = useSharedValue(1), s1 = useSharedValue(1), s2 = useSharedValue(1), s3 = useSharedValue(1), s4 = useSharedValue(1);
   const a0 = useAnimatedStyle(() => ({ transform: [{ scale: s0.value }] }));
   const a1 = useAnimatedStyle(() => ({ transform: [{ scale: s1.value }] }));
   const a2 = useAnimatedStyle(() => ({ transform: [{ scale: s2.value }] }));
   const a3 = useAnimatedStyle(() => ({ transform: [{ scale: s3.value }] }));
+  const a4 = useAnimatedStyle(() => ({ transform: [{ scale: s4.value }] }));
   const pt = (v: any) => { v.value = withSequence(withSpring(0.8), withSpring(1, { damping: 10 })); };
 
   return (
@@ -127,6 +128,12 @@ export default function AchievementsScreen() {
             <Animated.View style={a1}><Text style={styles.tabIcon}>📊</Text></Animated.View>
             <Text style={[styles.tabLabel, { color: T.textMuted }]}>Analytics</Text>
           </Pressable>
+          <Pressable style={styles.tabItem} onPressIn={() => pt(s4)} onPress={() => router.push('/new')}>
+            <Animated.View style={[T.neo, styles.tabAddBtn, a4]}>
+              <Text style={[styles.tabIcon, { color: T.teal, fontWeight: 'bold' }]}>＋</Text>
+            </Animated.View>
+            <Text style={[styles.tabLabel, { color: T.textMuted }]}>Add</Text>
+          </Pressable>
           <Pressable style={styles.tabItem} onPressIn={() => pt(s2)} onPress={() => {}}>
             <Animated.View style={[styles.tabActive, { backgroundColor: T.tealDim, borderColor: T.tealBorder }, a2]}>
               <Text style={styles.tabIcon}>🏆</Text>
@@ -173,8 +180,13 @@ const styles = StyleSheet.create({
   progressText: { fontSize: 11, fontWeight: '700', minWidth: 40 },
 
   tabBar: { position: 'absolute', bottom: 18, left: 14, right: 14, height: 68, borderRadius: 28, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around' },
-  tabItem: { alignItems: 'center', justifyContent: 'center', width: 68 },
+  tabItem: { alignItems: 'center', justifyContent: 'center', flex: 1 },
   tabActive: { borderRadius: 14, width: 44, height: 32, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
+  tabAddBtn: {
+    borderRadius: 14, width: 44, height: 32,
+    alignItems: 'center', justifyContent: 'center', borderWidth: 1,
+    borderColor: 'rgba(148,163,184,0.1)',
+  },
   tabIcon:   { fontSize: 18 },
   tabLabel:  { fontSize: 9, fontWeight: '700', marginTop: 4, textTransform: 'uppercase' },
 });

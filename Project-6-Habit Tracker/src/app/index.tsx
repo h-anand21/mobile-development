@@ -151,7 +151,7 @@ export default function HomeDashboard() {
   const pulseStyle = useAnimatedStyle(() => ({ transform: [{ scale: pulse.value }] }));
 
   // Tab anims
-  const tabScales = [useSharedValue(1), useSharedValue(1), useSharedValue(1), useSharedValue(1)];
+  const tabScales = [useSharedValue(1), useSharedValue(1), useSharedValue(1), useSharedValue(1), useSharedValue(1)];
   const tabStyles = tabScales.map(v => useAnimatedStyle(() => ({ transform: [{ scale: v.value }] })));
   const pressTab = (i: number) => {
     tabScales[i].value = withSequence(withSpring(0.8), withSpring(1, { damping: 10 }));
@@ -342,6 +342,13 @@ export default function HomeDashboard() {
             <Text style={[styles.tabLabel, { color: T.textMuted }]}>Analytics</Text>
           </Pressable>
 
+          <Pressable style={styles.tabItem} onPressIn={() => pressTab(4)} onPress={() => router.push('/new')}>
+            <Animated.View style={[T.neo, styles.tabAddBtn, tabStyles[4]]}>
+              <Text style={[styles.tabIcon, { color: T.teal, fontWeight: 'bold' }]}>＋</Text>
+            </Animated.View>
+            <Text style={[styles.tabLabel, { color: T.textMuted }]}>Add</Text>
+          </Pressable>
+
           <Pressable style={styles.tabItem} onPressIn={() => pressTab(2)} onPress={() => router.push('/achievements')}>
             <Animated.View style={tabStyles[2]}><Text style={styles.tabIcon}>🏆</Text></Animated.View>
             <Text style={[styles.tabLabel, { color: T.textMuted }]}>Badges</Text>
@@ -423,10 +430,15 @@ const styles = StyleSheet.create({
     position: 'absolute', bottom: 18, left: 14, right: 14, height: 68,
     borderRadius: 28, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around',
   },
-  tabItem: { alignItems: 'center', justifyContent: 'center', width: 68 },
+  tabItem: { alignItems: 'center', justifyContent: 'center', flex: 1 },
   tabActivePill: {
     borderRadius: 14, width: 44, height: 32,
     alignItems: 'center', justifyContent: 'center', borderWidth: 1,
+  },
+  tabAddBtn: {
+    borderRadius: 14, width: 44, height: 32,
+    alignItems: 'center', justifyContent: 'center', borderWidth: 1,
+    borderColor: 'rgba(148,163,184,0.1)',
   },
   tabIcon:  { fontSize: 18 },
   tabLabel: { fontSize: 9, fontWeight: '700', marginTop: 4, textTransform: 'uppercase' },
