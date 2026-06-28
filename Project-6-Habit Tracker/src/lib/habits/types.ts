@@ -21,4 +21,7 @@ export type Habit = {
   lastCompletedISO: string | null; // Stores ISO date string representing completion (YYYY-MM-DD)
   completedDates: string[]; // List of YYYY-MM-DD strings when completed
   createdAtISO: string;
+  category?: 'health' | 'work' | 'mind' | 'body' | 'other';
+  streakShields?: number;
+  shieldedDates?: string[];
 };

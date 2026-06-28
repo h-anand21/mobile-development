@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Dimensions, Animated as RNAnimated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link, useRouter, useFocusEffect } from 'expo-router';
 import Animated, {
@@ -11,6 +11,7 @@ import Animated, {
   withSpring,
   withTiming,
   Easing,
+  LinearTransition,
 } from 'react-native-reanimated';
 import Svg, { Circle, Rect } from 'react-native-svg';
 import { useHabits } from '../hooks/use-habits';
@@ -18,9 +19,80 @@ import { usePushNotifications } from '../hooks/use-push-notifications';
 import { useTheme } from '../context/ThemeContext';
 import HabitCard from '../components/HabitCard';
 import EmptyState from '../components/EmptyState';
+import SpringPressable from '../components/SpringPressable';
 import { getLocalDateString, getActiveStreak, getYesterdayDateString } from '../lib/habits/streak';
 
 const { width: SW } = Dimensions.get('window');
+
+const MOTIVATIONAL_QUOTES = [
+  { text: "Small daily improvements over time lead to stunning results.", author: "Robin Sharma" },
+  { text: "We are what we repeatedly do. Excellence, then, is not an act, but a habit.", author: "Aristotle" },
+  { text: "Your habits will determine your future.", author: "Jack Canfield" },
+  { text: "It is easier to prevent bad habits than to break them.", author: "Benjamin Franklin" },
+  { text: "First we make our habits, then our habits make us.", author: "John Dryden" },
+  { text: "Motivation is what gets you started. Habit is what keeps you going.", author: "Jim Ryun" },
+  { text: "Success is the sum of small efforts, repeated day in and day out.", author: "Robert Collier" },
+  { text: "The secret of your future is hidden in your daily routine.", author: "Mike Murdock" },
+];
+
+function ConfettiParticle({ index }: { index: number }) {
+  const animY = React.useRef(new RNAnimated.Value(-30)).current;
+  const animX = React.useRef(new RNAnimated.Value(Math.random() * SW)).current;
+  const rotation = React.useRef(new RNAnimated.Value(0)).current;
+
+  React.useEffect(() => {
+    RNAnimated.loop(
+      RNAnimated.parallel([
+        RNAnimated.timing(animY, {
+          toValue: Dimensions.get('window').height,
+          duration: 2000 + Math.random() * 1500,
+          useNativeDriver: true,
+        }),
+        RNAnimated.timing(rotation, {
+          toValue: 1,
+          duration: 1500 + Math.random() * 1000,
+          useNativeDriver: true,
+        })
+      ])
+    ).start();
+  }, []);
+
+  const color = ['#5EEAD4', '#EAD45E', '#C45EEA', '#EA875E', '#5EEA87', '#EA5E5E'][index % 6];
+  const size = 6 + Math.random() * 8;
+  const rotate = rotation.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
+
+  return (
+    <RNAnimated.View
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: size,
+        height: size,
+        backgroundColor: color,
+        borderRadius: index % 2 === 0 ? 0 : size / 2,
+        transform: [
+          { translateY: animY },
+          { translateX: animX },
+          { rotate: rotate }
+        ],
+        opacity: 0.8,
+      }}
+    />
+  );
+}
+
+function ConfettiRain({ active }: { active: boolean }) {
+  if (!active) return null;
+
+  return (
+    <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
+      {Array.from({ length: 40 }).map((_, i) => (
+        <ConfettiParticle key={i} index={i} />
+      ))}
+    </View>
+  );
+}
 
 // ─── Animated SVG Ring ───
 function AnimatedRing({ percent, size, strokeWidth, color, bgColor }:
@@ -124,6 +196,9 @@ export default function HomeDashboard() {
 
   const todayStr   = getLocalDateString();
   const [selectedDateStr, setSelectedDateStr] = React.useState(todayStr);
+  const [selectedCategory, setSelectedCategory] = React.useState<'all' | 'health' | 'work' | 'mind' | 'body' | 'other'>('all');
+  const [quoteIndex, setQuoteIndex] = React.useState(0);
+  const [showConfetti, setShowConfetti] = React.useState(false);
 
   const selectedDate = new Date(selectedDateStr);
   const selectedWD   = selectedDate.getDay();
@@ -132,6 +207,8 @@ export default function HomeDashboard() {
   const greetEmoji   = hour < 12 ? '🌅' : hour < 17 ? '☀️' : '🌙';
 
   const activeHabits   = habits.filter(h => h.frequency.kind === 'daily' || h.frequency.weekdays.includes(selectedWD));
+  const categoryFilteredHabits = activeHabits.filter(h => selectedCategory === 'all' || h.category === selectedCategory);
+  
   const completedCount = activeHabits.filter(h => h.completedDates.includes(selectedDateStr)).length;
   const total          = activeHabits.length;
   const pct            = total > 0 ? Math.round((completedCount / total) * 100) : 0;
@@ -142,21 +219,42 @@ export default function HomeDashboard() {
 
   const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
-  // Scrollable calendar strip (last 30 days, today on far left)
-  const calendarDays = Array.from({ length: 30 }, (_, i) => {
+  useEffect(() => {
+    setQuoteIndex(new Date().getDate() % MOTIVATIONAL_QUOTES.length);
+  }, []);
+
+  const prevPct = React.useRef(pct);
+  useEffect(() => {
+    if (pct === 100 && prevPct.current < 100 && total > 0 && selectedDateStr === todayStr) {
+      setShowConfetti(true);
+      const t = setTimeout(() => setShowConfetti(false), 4000);
+      return () => clearTimeout(t);
+    }
+    prevPct.current = pct;
+  }, [pct, total, selectedDateStr]);
+
+  const getTomorrowDateString = () => {
     const d = new Date();
-    d.setDate(d.getDate() - i);
+    d.setDate(d.getDate() + 1);
+    return getLocalDateString(d);
+  };
+
+  // Scrollable calendar strip (7 days, Today in the center)
+  const calendarDays = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - 3 + i); // 3 days ago up to 3 days later
     const iso = getLocalDateString(d);
     let displayLabel = dayNames[d.getDay()];
-    if (i === 0) displayLabel = 'Today';
-    else if (i === 1) displayLabel = 'Yest';
+    if (iso === todayStr) displayLabel = 'Today';
+    else if (iso === getYesterdayDateString()) displayLabel = 'Yest';
+    else if (iso === getTomorrowDateString()) displayLabel = 'Tomw';
 
     return {
       label: displayLabel,
       date: d.getDate(),
       iso,
-      isToday: i === 0,
-      count: habits.filter(h => h.completedDates.includes(iso)).length,
+      isToday: iso === todayStr,
+      count: habits.filter(h => h.completedDates.includes(iso) || h.shieldedDates?.includes(iso)).length,
       total: habits.length,
     };
   });
@@ -175,6 +273,7 @@ export default function HomeDashboard() {
   const getSectionTitle = () => {
     if (selectedDateStr === todayStr) return "Today's Habits";
     if (selectedDateStr === getYesterdayDateString()) return "Yesterday's Habits";
+    if (selectedDateStr === getTomorrowDateString()) return "Tomorrow's Preview";
 
     try {
       const parts = selectedDateStr.split('-');
@@ -197,8 +296,20 @@ export default function HomeDashboard() {
   const pulseStyle = useAnimatedStyle(() => ({ transform: [{ scale: pulse.value }] }));
 
   // Tab anims
-  const tabScales = [useSharedValue(1), useSharedValue(1), useSharedValue(1), useSharedValue(1), useSharedValue(1)];
-  const tabStyles = tabScales.map(v => useAnimatedStyle(() => ({ transform: [{ scale: v.value }] })));
+  const ts0 = useSharedValue(1);
+  const ts1 = useSharedValue(1);
+  const ts2 = useSharedValue(1);
+  const ts3 = useSharedValue(1);
+  const ts4 = useSharedValue(1);
+
+  const ta0 = useAnimatedStyle(() => ({ transform: [{ scale: ts0.value }] }));
+  const ta1 = useAnimatedStyle(() => ({ transform: [{ scale: ts1.value }] }));
+  const ta2 = useAnimatedStyle(() => ({ transform: [{ scale: ts2.value }] }));
+  const ta3 = useAnimatedStyle(() => ({ transform: [{ scale: ts3.value }] }));
+  const ta4 = useAnimatedStyle(() => ({ transform: [{ scale: ts4.value }] }));
+
+  const tabScales = [ts0, ts1, ts2, ts3, ts4];
+  const tabStyles = [ta0, ta1, ta2, ta3, ta4];
   const pressTab = (i: number) => {
     tabScales[i].value = withSequence(withSpring(0.8), withSpring(1, { damping: 10 }));
   };
@@ -224,21 +335,21 @@ export default function HomeDashboard() {
           </View>
 
           {/* Theme toggle */}
-          <Pressable onPress={toggleTheme} style={{ marginRight: 8 }}>
+          <SpringPressable onPress={toggleTheme} style={{ marginRight: 8 }}>
             <Animated.View style={[T.neo, styles.neoBtnCircle]}>
               <Text style={{ fontSize: 16 }}>{isDark ? '☀️' : '🌙'}</Text>
             </Animated.View>
-          </Pressable>
+          </SpringPressable>
 
           <NeoBtn icon="🔔" size={17} onPress={() => router.push('/notifications')} T={T} />
         </Animated.View>
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
 
-          {/* ═══ MONTHLY SCROLLABLE CALENDAR ═══ */}
+          {/* ═══ CHRONOLOGICAL CENTURED CALENDAR ═══ */}
           <Animated.View entering={FadeInDown.delay(80).duration(500).springify()}
             style={[T.neo, styles.calCard, { paddingVertical: 12, paddingHorizontal: 4 }]}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ flexDirection: 'row', gap: 12, paddingHorizontal: 12 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-around', width: '100%', paddingHorizontal: 4 }}>
               {calendarDays.map((day) => (
                 <DayCell
                   key={day.iso}
@@ -248,7 +359,26 @@ export default function HomeDashboard() {
                   T={T}
                 />
               ))}
-            </ScrollView>
+            </View>
+          </Animated.View>
+
+          {/* ═══ DAILY MOTIVATION WIDGET ═══ */}
+          <Animated.View entering={FadeInDown.delay(100).duration(500).springify()}
+            style={[T.neo, styles.quoteCard]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <Text style={{ fontSize: 24 }}>💡</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.quoteText, { color: T.textPrimary }]}>
+                  "{MOTIVATIONAL_QUOTES[quoteIndex]?.text}"
+                </Text>
+                <Text style={[styles.quoteAuthor, { color: T.textMuted }]}>
+                  — {MOTIVATIONAL_QUOTES[quoteIndex]?.author}
+                </Text>
+              </View>
+              <SpringPressable onPress={() => setQuoteIndex(prev => (prev + 1) % MOTIVATIONAL_QUOTES.length)} style={[T.neo, styles.quoteRefresh]}>
+                <Text style={{ fontSize: 13, color: T.teal }}>🔄</Text>
+              </SpringPressable>
+            </View>
           </Animated.View>
 
           {/* ═══ STATS GRID ═══ */}
@@ -342,6 +472,36 @@ export default function HomeDashboard() {
 
           </View>
 
+          {/* ═══ CATEGORY FILTER STRIP ═══ */}
+          <Animated.View entering={FadeInDown.delay(280).duration(500).springify()}
+            style={{ marginBottom: 14 }}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ flexDirection: 'row', gap: 8, paddingHorizontal: 16 }}>
+              {[
+                { value: 'all', label: 'All', emoji: '✨' },
+                { value: 'health', label: 'Health', emoji: '🌿' },
+                { value: 'work', label: 'Work', emoji: '💼' },
+                { value: 'mind', label: 'Mind', emoji: '🧠' },
+                { value: 'body', label: 'Body', emoji: '🏃' },
+                { value: 'other', label: 'Other', emoji: '🌟' }
+              ].map(cat => {
+                const active = selectedCategory === cat.value;
+                return (
+                  <SpringPressable key={cat.value} onPress={() => setSelectedCategory(cat.value as any)}
+                    style={[
+                      T.neo,
+                      styles.catFilterBtn,
+                      active && { backgroundColor: T.tealDim, borderColor: T.tealBorder, borderWidth: 1 }
+                    ]}>
+                    <Text style={{ fontSize: 13 }}>{cat.emoji}</Text>
+                    <Text style={[styles.catFilterText, { color: active ? T.teal : T.textSub }, active && { fontWeight: '700' }]}>
+                      {cat.label}
+                    </Text>
+                  </SpringPressable>
+                );
+              })}
+            </ScrollView>
+          </Animated.View>
+
           {/* ═══ TODAY'S HABITS ═══ */}
           <Animated.View entering={FadeInDown.delay(300).duration(500).springify()} style={styles.sectionRow}>
             <View style={styles.sectionLeft}>
@@ -349,11 +509,9 @@ export default function HomeDashboard() {
               <Text style={[styles.sectionTitle, { color: T.textPrimary }]}>{getSectionTitle()}</Text>
             </View>
             <Link href="/new" asChild>
-              <Pressable>
-                <View style={[T.neo, styles.addBtn]}>
-                  <Text style={[styles.addBtnText, { color: T.teal }]}>＋ Add</Text>
-                </View>
-              </Pressable>
+              <SpringPressable style={StyleSheet.flatten([T.neo, styles.addBtn])}>
+                <Text style={[styles.addBtnText, { color: T.teal }]}>＋ Add</Text>
+              </SpringPressable>
             </Link>
           </Animated.View>
 
@@ -368,18 +526,26 @@ export default function HomeDashboard() {
             </Animated.View>
           )}
 
-          {activeHabits.length === 0 ? (
+          {categoryFilteredHabits.length === 0 ? (
             <Animated.View entering={FadeInDown.delay(340).duration(400)}>
-              <EmptyState title="No active habits" description="Try selecting another day or create a new habit." />
+              <EmptyState title="No active habits" description="Try selecting another category or add a new habit." />
             </Animated.View>
           ) : (
-            activeHabits.map((habit, i) => (
-              <HabitCard key={habit.id} habit={habit} onToggleComplete={toggleCompleteHabit} index={i} dateStr={selectedDateStr} />
+            categoryFilteredHabits.map((habit, i) => (
+              <Animated.View
+                key={habit.id}
+                layout={LinearTransition.springify().damping(15)}
+              >
+                <HabitCard habit={habit} onToggleComplete={toggleCompleteHabit} index={i} dateStr={selectedDateStr} />
+              </Animated.View>
             ))
           )}
 
           <View style={{ height: 110 }} />
         </ScrollView>
+
+        {/* Confetti celebration Overlay */}
+        <ConfettiRain active={showConfetti} />
 
         {/* ═══ TAB BAR ═══ */}
         <View style={[T.neo, styles.tabBar, { backgroundColor: T.tabBg }]}>
@@ -496,4 +662,14 @@ const styles = StyleSheet.create({
   },
   tabIcon:  { fontSize: 18 },
   tabLabel: { fontSize: 9, fontWeight: '700', marginTop: 4, textTransform: 'uppercase' },
+
+  // Quotes
+  quoteCard: { marginHorizontal: 16, borderRadius: 22, padding: 14, marginBottom: 16 },
+  quoteText: { fontSize: 11, fontStyle: 'italic', fontWeight: '500', lineHeight: 16, marginBottom: 4 },
+  quoteAuthor: { fontSize: 9, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
+  quoteRefresh: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+
+  // Category filter
+  catFilterBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12 },
+  catFilterText: { fontSize: 11, fontWeight: '600' },
 });

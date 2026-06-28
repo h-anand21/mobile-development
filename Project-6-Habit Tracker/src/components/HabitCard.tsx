@@ -11,6 +11,7 @@ import Animated, {
 import { Habit } from '../lib/habits/types';
 import { getActiveStreak, getLocalDateString } from '../lib/habits/streak';
 import { useTheme } from '../context/ThemeContext';
+import { useHabits } from '../hooks/use-habits';
 
 interface HabitCardProps {
   habit: Habit;
@@ -21,9 +22,16 @@ interface HabitCardProps {
 
 export default function HabitCard({ habit, onToggleComplete, index = 0, dateStr }: HabitCardProps) {
   const { T } = useTheme();
+  const { useStreakShield } = useHabits();
   const targetDate = dateStr || getLocalDateString();
   const isCompleted = habit.completedDates.includes(targetDate);
+  const isShielded = habit.shieldedDates?.includes(targetDate) || false;
+  const shieldsLeft = habit.streakShields ?? 0;
   const activeStreak = getActiveStreak(habit);
+
+  const catEmojis = { health: '🌿', work: '💼', mind: '🧠', body: '🏃', other: '🌟' };
+  const catLabels = { health: 'Health', work: 'Work', mind: 'Mind', body: 'Body', other: 'Other' };
+  const cat = habit.category || 'other';
 
   const formatTime = (hour: number, minute: number) => {
     const ampm = hour >= 12 ? 'PM' : 'AM';
@@ -73,9 +81,12 @@ export default function HabitCard({ habit, onToggleComplete, index = 0, dateStr 
           {isCompleted && (
             <View style={[styles.glowOverlay, { backgroundColor: T.greenDim }]} />
           )}
+          {isShielded && (
+            <View style={[styles.glowOverlay, { backgroundColor: T.orangeDim }]} />
+          )}
 
           {/* Left accent bar */}
-          <View style={[styles.accentBar, { backgroundColor: isCompleted ? T.green : T.teal }]} />
+          <View style={[styles.accentBar, { backgroundColor: isCompleted ? T.green : isShielded ? T.orange : T.teal }]} />
 
           {/* Emoji */}
           <Animated.View style={[T.neo, styles.emojiBox, emojiStyle]}>
@@ -88,9 +99,18 @@ export default function HabitCard({ habit, onToggleComplete, index = 0, dateStr 
               isCompleted && styles.nameDone]} numberOfLines={1}>
               {habit.name}
             </Text>
-            <Text style={[styles.freq, { color: T.textMuted }]} numberOfLines={1}>
-              {formatFreq()}
-            </Text>
+            
+            <View style={styles.badgeRow}>
+              <Text style={[styles.freq, { color: T.textMuted }]} numberOfLines={1}>
+                {formatFreq()}
+              </Text>
+              <View style={[styles.catBadge, { backgroundColor: T.border }]}>
+                <Text style={[styles.catBadgeText, { color: T.textSub }]}>
+                  {catEmojis[cat]} {catLabels[cat]}
+                </Text>
+              </View>
+            </View>
+
             {activeStreak > 0 && (
               <View style={styles.streakRow}>
                 <Text style={styles.fireEmoji}>🔥</Text>
@@ -99,21 +119,39 @@ export default function HabitCard({ habit, onToggleComplete, index = 0, dateStr 
             )}
           </View>
 
-          {/* Check button */}
-          <Pressable onPress={handleCheck} hitSlop={14}>
-            <Animated.View style={[
-              styles.checkBtn,
-              isCompleted
-                ? { backgroundColor: T.teal, shadowColor: T.teal, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 8, elevation: 6 }
-                : [T.neo, styles.checkBtnEmpty],
-              checkStyle,
-            ]}>
-              {isCompleted
-                ? <Text style={[styles.checkMark, { color: T.bg }]}>✓</Text>
-                : <View style={[styles.checkDot, { backgroundColor: T.teal }]} />
-              }
-            </Animated.View>
-          </Pressable>
+          {/* Check button / Shield */}
+          {isShielded ? (
+            <View style={{ marginRight: 6, alignItems: 'center' }}>
+              <Text style={[styles.shieldText, { color: T.orange }]}>🛡️ Shielded</Text>
+            </View>
+          ) : isCompleted ? (
+            <Pressable onPress={handleCheck} hitSlop={14}>
+              <Animated.View style={[
+                styles.checkBtn,
+                { backgroundColor: T.teal, shadowColor: T.teal, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 8, elevation: 6 },
+                checkStyle,
+              ]}>
+                <Text style={[styles.checkMark, { color: T.bg }]}>✓</Text>
+              </Animated.View>
+            </Pressable>
+          ) : (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              {shieldsLeft > 0 && targetDate !== getLocalDateString() && (
+                <Pressable onPress={() => useStreakShield(habit.id, targetDate)} style={[T.neo, styles.shieldBtn]}>
+                  <Text style={[styles.shieldBtnText, { color: T.orange }]}>🛡️ Shield</Text>
+                </Pressable>
+              )}
+              <Pressable onPress={handleCheck} hitSlop={14}>
+                <Animated.View style={[
+                  styles.checkBtn,
+                  [T.neo, styles.checkBtnEmpty],
+                  checkStyle,
+                ]}>
+                  <View style={[styles.checkDot, { backgroundColor: T.teal }]} />
+                </Animated.View>
+              </Pressable>
+            </View>
+          )}
         </Animated.View>
       </Pressable>
     </Link>
@@ -147,7 +185,13 @@ const styles = StyleSheet.create({
   details:   { flex: 1, marginRight: 10 },
   name:      { fontSize: 15, fontWeight: '700', marginBottom: 3, letterSpacing: 0.1 },
   nameDone:  { textDecorationLine: 'line-through' },
-  freq:      { fontSize: 11, marginBottom: 5, letterSpacing: 0.2 },
+  freq:      { fontSize: 11, letterSpacing: 0.2 },
+  badgeRow:  { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2, flexWrap: 'wrap' },
+  catBadge:  { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, justifyContent: 'center' },
+  catBadgeText: { fontSize: 8, fontWeight: '700', textTransform: 'uppercase' },
+  shieldBtn: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+  shieldBtnText: { fontSize: 9, fontWeight: '800' },
+  shieldText: { fontSize: 10, fontWeight: '800', fontStyle: 'italic' },
   streakRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   fireEmoji: { fontSize: 11 },
   streakText: { fontSize: 10, fontWeight: '700', letterSpacing: 0.2 },

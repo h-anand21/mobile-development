@@ -13,6 +13,7 @@ import Animated, {
 import Svg, { Circle, Rect, Line, Text as SvgText } from 'react-native-svg';
 import { useHabits } from '../hooks/use-habits';
 import { useTheme } from '../context/ThemeContext';
+import SpringPressable from '../components/SpringPressable';
 import { getActiveStreak, getLocalDateString } from '../lib/habits/streak';
 
 const { width: SW } = Dimensions.get('window');
@@ -77,6 +78,76 @@ export default function AnalyticsScreen() {
   const { T }    = useTheme();
   const { habits } = useHabits();
 
+  const todayStr = getLocalDateString();
+  const [currentYear, setCurrentYear] = React.useState(new Date().getFullYear());
+  const [currentMonth, setCurrentMonth] = React.useState(new Date().getMonth()); // 0-11
+  const [selectedGridDateStr, setSelectedGridDateStr] = React.useState(todayStr);
+
+  const prevMonth = () => {
+    if (currentMonth === 0) {
+      setCurrentMonth(11);
+      setCurrentYear(y => y - 1);
+    } else {
+      setCurrentMonth(m => m - 1);
+    }
+  };
+
+  const nextMonth = () => {
+    if (currentMonth === 11) {
+      setCurrentMonth(0);
+      setCurrentYear(y => y + 1);
+    } else {
+      setCurrentMonth(m => m + 1);
+    }
+  };
+
+  const getDaysInMonth = (year: number, month: number) => {
+    return new Date(year, month + 1, 0).getDate();
+  };
+
+  const getStartDayOfMonth = (year: number, month: number) => {
+    return new Date(year, month, 1).getDay();
+  };
+
+  const daysInMonth = getDaysInMonth(currentYear, currentMonth);
+  const startDay = getStartDayOfMonth(currentYear, currentMonth);
+  
+  const monthNames = [
+    'January','February','March','April','May','June',
+    'July','August','September','October','November','December'
+  ];
+
+  const gridCells = [];
+  for (let i = 0; i < startDay; i++) {
+    gridCells.push({ key: `empty-${i}`, dayNum: null, dateStr: null });
+  }
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    gridCells.push({ key: `day-${d}`, dayNum: d, dateStr });
+  }
+
+  const getDayGridStatus = (dateStr: string) => {
+    const d = new Date(dateStr);
+    const wd = d.getDay();
+    const active = habits.filter(h => h.frequency.kind === 'daily' || h.frequency.weekdays.includes(wd));
+    if (active.length === 0) return { activeCount: 0, completedCount: 0, pct: 0, color: 'transparent' };
+
+    const completed = active.filter(h => h.completedDates.includes(dateStr)).length;
+    const shielded = active.filter(h => h.shieldedDates?.includes(dateStr)).length;
+    const totalDone = completed + shielded;
+    const pct = Math.round((totalDone / active.length) * 100);
+
+    let color = 'rgba(148, 163, 184, 0.08)';
+    if (totalDone > 0) {
+      if (pct === 100) color = T.teal;
+      else color = T.tealDim;
+    } else if (shielded > 0) {
+      color = T.orangeDim;
+    }
+
+    return { activeCount: active.length, completedCount: completed, shieldedCount: shielded, pct, color };
+  };
+
   useFocusEffect(
     React.useCallback(() => {
       const onBackPress = () => {
@@ -88,7 +159,6 @@ export default function AnalyticsScreen() {
     }, [])
   );
 
-  const todayStr    = getLocalDateString();
   const total       = habits.length;
   const doneToday   = habits.filter(h => h.lastCompletedISO === todayStr).length;
   const consistency = total > 0 ? Math.round((doneToday / total) * 100) : 0;
@@ -141,9 +211,9 @@ export default function AnalyticsScreen() {
 
         {/* Header */}
         <Animated.View entering={FadeInDown.duration(400).springify()} style={styles.header}>
-          <Pressable onPress={() => router.replace('/')} style={({ pressed }) => [T.neo, styles.backBtn, pressed && { opacity: 0.7 }]}>
+          <SpringPressable onPress={() => router.replace('/')} style={[T.neo, styles.backBtn]}>
             <Text style={[styles.backArrow, { color: T.textPrimary }]}>←</Text>
-          </Pressable>
+          </SpringPressable>
           <View style={styles.headerCenter}>
             <Text style={styles.headerEmoji}>📊</Text>
             <Text style={[styles.headerTitle, { color: T.textPrimary }]}>Analytics</Text>
@@ -262,6 +332,110 @@ export default function AnalyticsScreen() {
             </Animated.View>
           )}
 
+          {/* ═══ MONTHLY PROGRESS CALENDAR GRID ═══ */}
+          <Animated.View entering={FadeInDown.delay(320).duration(500).springify()} style={[T.neo, styles.chartCard, { marginBottom: 16 }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <View style={styles.chartHeader}>
+                <Text style={styles.chartEmoji}>📅</Text>
+                <View>
+                  <Text style={[styles.chartTitle, { color: T.textPrimary }]}>Calendar View</Text>
+                  <Text style={[styles.chartSub, { color: T.textMuted }]}>Monthly performance overview</Text>
+                </View>
+              </View>
+              {/* Month switcher */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <SpringPressable onPress={prevMonth} style={[T.neo, styles.switchBtn]}>
+                  <Text style={{ fontSize: 11, color: T.textPrimary }}>←</Text>
+                </SpringPressable>
+                <Text style={[styles.monthLabel, { color: T.textPrimary }]}>
+                  {monthNames[currentMonth].slice(0, 3)} {String(currentYear).slice(2)}
+                </Text>
+                <SpringPressable onPress={nextMonth} style={[T.neo, styles.switchBtn]}>
+                  <Text style={{ fontSize: 11, color: T.textPrimary }}>→</Text>
+                </SpringPressable>
+              </View>
+            </View>
+
+            {/* Week Headers */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginBottom: 6 }}>
+              {['Su','Mo','Tu','We','Th','Fr','Sa'].map(day => (
+                <Text key={day} style={[styles.weekLabel, { color: T.textMuted }]}>{day}</Text>
+              ))}
+            </View>
+
+            {/* Grid cells */}
+            <View style={styles.gridContainer}>
+              {gridCells.map((cell, idx) => {
+                if (!cell.dayNum || !cell.dateStr) {
+                  return <View key={cell.key} style={styles.gridEmptyCell} />;
+                }
+                const isSelected = cell.dateStr === selectedGridDateStr;
+                const status = getDayGridStatus(cell.dateStr);
+
+                return (
+                  <Pressable
+                    key={cell.key}
+                    onPress={() => setSelectedGridDateStr(cell.dateStr as string)}
+                    style={[
+                      styles.gridDayCell,
+                      { backgroundColor: status.color },
+                      isSelected && { borderColor: T.teal, borderWidth: 2 }
+                    ]}
+                  >
+                    <Text style={[
+                      styles.gridDayText,
+                      { color: status.pct === 100 ? T.bg : T.textPrimary },
+                      isSelected && { fontWeight: '800' }
+                    ]}>
+                      {cell.dayNum}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            {/* Selected Date Summary Details */}
+            {selectedGridDateStr && (() => {
+              const parts = selectedGridDateStr.split('-');
+              const gridDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+              const dW = gridDate.getDay();
+              const activeOnSelectedDay = habits.filter(h => h.frequency.kind === 'daily' || h.frequency.weekdays.includes(dW));
+              
+              const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+              const dateLabel = `${gridDate.getDate()} ${months[gridDate.getMonth()]} ${gridDate.getFullYear()}`;
+
+              return (
+                <View style={[T.neoPressed, styles.detailBox, { backgroundColor: T.bgPress, marginTop: 14 }]}>
+                  <Text style={[styles.detailDate, { color: T.textPrimary }]}>{dateLabel}</Text>
+                  
+                  {activeOnSelectedDay.length === 0 ? (
+                    <Text style={[styles.detailStatus, { color: T.textMuted }]}>No habits scheduled on this day.</Text>
+                  ) : (
+                    <View style={{ gap: 8, marginTop: 6 }}>
+                      {activeOnSelectedDay.map(h => {
+                        const completed = h.completedDates.includes(selectedGridDateStr);
+                        const shielded = h.shieldedDates?.includes(selectedGridDateStr);
+                        return (
+                          <View key={h.id} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <Text style={{ fontSize: 13, color: T.textPrimary }}>
+                              {h.emoji} {h.name}
+                            </Text>
+                            <Text style={[
+                              styles.statusTag,
+                              { color: completed ? T.teal : shielded ? T.orange : T.red }
+                            ]}>
+                              {completed ? '✅ Completed' : shielded ? '🛡️ Shielded' : '❌ Missed'}
+                            </Text>
+                          </View>
+                        );
+                      })}
+                    </View>
+                  )}
+                </View>
+              );
+            })()}
+          </Animated.View>
+
           <View style={{ height: 110 }} />
         </ScrollView>
 
@@ -349,4 +523,17 @@ const styles = StyleSheet.create({
   },
   tabIcon:   { fontSize: 18 },
   tabLabel:  { fontSize: 9, fontWeight: '700', marginTop: 4, textTransform: 'uppercase' },
+
+  // Calendar Switcher & Grid styles
+  switchBtn: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  monthLabel: { fontSize: 11, fontWeight: '700', width: 72, textAlign: 'center' },
+  weekLabel: { width: 34, textAlign: 'center', fontSize: 10, fontWeight: '700', textTransform: 'uppercase' },
+  gridContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'space-around' },
+  gridDayCell: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', marginVertical: 2 },
+  gridEmptyCell: { width: 34, height: 34, marginVertical: 2 },
+  gridDayText: { fontSize: 11, fontWeight: '700' },
+  detailBox: { padding: 12, borderRadius: 16, borderWidth: 0.5, borderColor: 'rgba(148,163,184,0.1)' },
+  detailDate: { fontSize: 13, fontWeight: '800', marginBottom: 4 },
+  detailStatus: { fontSize: 11, fontStyle: 'italic' },
+  statusTag: { fontSize: 11, fontWeight: '700' },
 });

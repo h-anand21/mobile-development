@@ -21,6 +21,7 @@ export default function CreateHabitScreen() {
 
   const [name,  setName]  = useState('');
   const [emoji, setEmoji] = useState('💧');
+  const [category, setCategory] = useState<'health' | 'work' | 'mind' | 'body' | 'other'>('other');
   const [kind,  setKind]  = useState<'daily' | 'weekly'>('daily');
   const [selectedWeekdays, setSelectedWeekdays] = useState<number[]>([1, 2, 3, 4, 5]);
   const [hour,   setHour]   = useState(8);
@@ -48,7 +49,7 @@ export default function CreateHabitScreen() {
       ? { kind: 'daily', hour, minute }
       : { kind: 'weekly', weekdays: selectedWeekdays, hour, minute };
     try {
-      await createHabit(name, emoji, frequency);
+      await createHabit(name, emoji, frequency, category);
       router.back();
     } catch (e) {
       Alert.alert('Error', 'Failed to save habit. Please try again.');
@@ -107,6 +108,31 @@ export default function CreateHabitScreen() {
               placeholderTextColor={T.textMuted}
               maxLength={28}
             />
+          </Animated.View>
+
+          {/* Category Selector */}
+          <Animated.View entering={FadeInDown.delay(120).springify()} style={styles.field}>
+            <Text style={[styles.fieldLabel, { color: T.textSub }]}>🏷️ Category</Text>
+            <View style={[T.neo, styles.categoryRow]}>
+              {([
+                { value: 'health', label: 'Health', emoji: '🌿' },
+                { value: 'work', label: 'Work', emoji: '💼' },
+                { value: 'mind', label: 'Mind', emoji: '🧠' },
+                { value: 'body', label: 'Body', emoji: '🏃' },
+                { value: 'other', label: 'Other', emoji: '🌟' }
+              ] as const).map(cat => {
+                const active = category === cat.value;
+                return (
+                  <Pressable key={cat.value} onPress={() => setCategory(cat.value)}
+                    style={[styles.categoryOption, active && { backgroundColor: T.teal }]}>
+                    <Text style={{ fontSize: 13 }}>{cat.emoji}</Text>
+                    <Text style={[styles.categoryText, { color: active ? T.bg : T.textMuted }, active && { fontWeight: '700' }]}>
+                      {cat.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
           </Animated.View>
 
           {/* Emoji Picker */}
@@ -256,6 +282,10 @@ const styles = StyleSheet.create({
   freqRow: { flexDirection: 'row', borderRadius: 16, padding: 5, gap: 6 },
   freqOption: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', height: 46, borderRadius: 12, gap: 6 },
   freqText:   { fontSize: 14, fontWeight: '600' },
+
+  categoryRow: { flexDirection: 'row', flexWrap: 'wrap', borderRadius: 16, padding: 6, gap: 6 },
+  categoryOption: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', height: 38, paddingHorizontal: 12, borderRadius: 10, gap: 4 },
+  categoryText:   { fontSize: 12, fontWeight: '600' },
 
   weekRow:  { flexDirection: 'row', justifyContent: 'space-between' },
   dayChip:  { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' },

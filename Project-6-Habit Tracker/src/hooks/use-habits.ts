@@ -22,10 +22,11 @@ interface HabitsState {
   habits: Habit[];
   isLoading: boolean;
   loadHabits: () => Promise<void>;
-  createHabit: (name: string, emoji: string, frequency: Frequency) => Promise<Habit>;
-  updateHabit: (id: string, name: string, emoji: string, frequency: Frequency) => Promise<Habit>;
+  createHabit: (name: string, emoji: string, frequency: Frequency, category?: 'health' | 'work' | 'mind' | 'body' | 'other') => Promise<Habit>;
+  updateHabit: (id: string, name: string, emoji: string, frequency: Frequency, category?: 'health' | 'work' | 'mind' | 'body' | 'other') => Promise<Habit>;
   deleteHabit: (id: string) => Promise<void>;
   toggleCompleteHabit: (id: string, dateStr?: string) => Promise<void>;
+  useStreakShield: (id: string, dateStr: string) => Promise<void>;
 }
 
 export const useHabits = create<HabitsState>((set, get) => ({
@@ -44,7 +45,7 @@ export const useHabits = create<HabitsState>((set, get) => ({
     }
   },
 
-  createHabit: async (name, emoji, frequency) => {
+  createHabit: async (name, emoji, frequency, category = 'other') => {
     const newHabit: Habit = {
       id: uuidv4(),
       name,
@@ -55,6 +56,9 @@ export const useHabits = create<HabitsState>((set, get) => ({
       lastCompletedISO: null,
       completedDates: [],
       createdAtISO: new Date().toISOString(),
+      category,
+      streakShields: 1, // defaults to 1 shield
+      shieldedDates: [],
     };
 
     // 1. Schedule notifications
@@ -72,7 +76,7 @@ export const useHabits = create<HabitsState>((set, get) => ({
     return newHabit;
   },
 
-  updateHabit: async (id, name, emoji, frequency) => {
+  updateHabit: async (id, name, emoji, frequency, category) => {
     const { habits } = get();
     const habit = habits.find(h => h.id === id);
     if (!habit) {
@@ -88,6 +92,7 @@ export const useHabits = create<HabitsState>((set, get) => ({
       emoji,
       frequency,
       notificationIds: [], // reset temporarily
+      category: category || habit.category || 'other',
     };
 
     // 2. Schedule new notifications
@@ -137,7 +142,7 @@ export const useHabits = create<HabitsState>((set, get) => ({
       newCompletedDates = [...habit.completedDates, targetDate];
     }
 
-    const { streak, lastCompletedISO } = recalculateStreak(newCompletedDates);
+    const { streak, lastCompletedISO } = recalculateStreak(newCompletedDates, habit.shieldedDates);
 
     const updatedHabit: Habit = {
       ...habit,
@@ -147,6 +152,34 @@ export const useHabits = create<HabitsState>((set, get) => ({
     };
 
     // Persist and update state
+    await saveHabitStorage(updatedHabit);
+    set(state => ({
+      habits: state.habits.map(h => (h.id === id ? updatedHabit : h)),
+    }));
+  },
+
+  useStreakShield: async (id, dateStr) => {
+    const { habits } = get();
+    const habit = habits.find(h => h.id === id);
+    if (!habit) return;
+
+    const shieldsAvailable = habit.streakShields ?? 1;
+    if (shieldsAvailable <= 0) return;
+
+    const shieldedDates = habit.shieldedDates || [];
+    if (shieldedDates.includes(dateStr)) return;
+
+    const newShieldedDates = [...shieldedDates, dateStr];
+    const { streak, lastCompletedISO } = recalculateStreak(habit.completedDates, newShieldedDates);
+
+    const updatedHabit: Habit = {
+      ...habit,
+      streakShields: shieldsAvailable - 1,
+      shieldedDates: newShieldedDates,
+      streak,
+      lastCompletedISO,
+    };
+
     await saveHabitStorage(updatedHabit);
     set(state => ({
       habits: state.habits.map(h => (h.id === id ? updatedHabit : h)),

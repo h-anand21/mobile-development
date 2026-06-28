@@ -91,33 +91,38 @@ export function undoHabitCompletion(habit: Habit): { streak: number; lastComplet
 }
 
 /**
- * Recalculates the streak and lastCompletedISO from a list of completed dates.
+ * Recalculates the streak and lastCompletedISO from a list of completed dates and shielded dates.
  */
-export function recalculateStreak(completedDates: string[]): { streak: number; lastCompletedISO: string | null } {
-  if (completedDates.length === 0) {
+export function recalculateStreak(completedDates: string[], shieldedDates?: string[]): { streak: number; lastCompletedISO: string | null } {
+  const combined = [...completedDates, ...(shieldedDates || [])];
+  if (combined.length === 0) {
     return { streak: 0, lastCompletedISO: null };
   }
-
-  // Sort dates in descending order
-  const sorted = [...completedDates].sort((a, b) => b.localeCompare(a));
-  const lastCompletedISO = sorted[0];
 
   const today = getLocalDateString();
   const yesterday = getYesterdayDateString();
 
-  // If the last completed date is not today or yesterday, the active streak is 0
-  if (lastCompletedISO !== today && lastCompletedISO !== yesterday) {
+  // Find the last completed date from actual completions
+  const sortedActual = [...completedDates].sort((a, b) => b.localeCompare(a));
+  const lastCompletedISO = sortedActual[0] || null;
+
+  // Check if they completed or shielded today or yesterday to see if streak is active
+  const hasActiveToday = combined.includes(today);
+  const hasActiveYesterday = combined.includes(yesterday);
+
+  if (!hasActiveToday && !hasActiveYesterday) {
     return { streak: 0, lastCompletedISO };
   }
 
-  // Count consecutive days going backwards from lastCompletedISO
+  // Start tracking streak from today if active, otherwise yesterday
+  const startPointStr = hasActiveToday ? today : yesterday;
   let streak = 0;
-  let current = new Date(lastCompletedISO);
+  let current = new Date(startPointStr);
 
   // Safeguard loop to avoid infinite execution
   for (let i = 0; i < 365; i++) {
     const expectedStr = getLocalDateString(current);
-    if (sorted.includes(expectedStr)) {
+    if (combined.includes(expectedStr)) {
       streak++;
       // Move to yesterday
       current.setDate(current.getDate() - 1);
