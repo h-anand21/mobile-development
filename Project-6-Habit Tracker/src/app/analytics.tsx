@@ -15,6 +15,7 @@ import { useHabits } from '../hooks/use-habits';
 import { useTheme } from '../context/ThemeContext';
 import SpringPressable from '../components/SpringPressable';
 import { getActiveStreak, getLocalDateString } from '../lib/habits/streak';
+import TabBar from '../components/TabBar';
 
 const { width: SW } = Dimensions.get('window');
 
@@ -440,32 +441,7 @@ export default function AnalyticsScreen() {
         </ScrollView>
 
         {/* Tab Bar */}
-        <View style={[T.neo, styles.tabBar, { backgroundColor: T.tabBg }]}>
-          <Pressable style={styles.tabItem} onPressIn={() => pt(s0)} onPress={() => router.replace('/')}>
-            <Animated.View style={a0}><Text style={styles.tabIcon}>🏠</Text></Animated.View>
-            <Text style={[styles.tabLabel, { color: T.textMuted }]}>Home</Text>
-          </Pressable>
-          <Pressable style={styles.tabItem} onPressIn={() => pt(s1)} onPress={() => {}}>
-            <Animated.View style={[styles.tabActive, { backgroundColor: T.tealDim, borderColor: T.tealBorder }, a1]}>
-              <Text style={styles.tabIcon}>📊</Text>
-            </Animated.View>
-            <Text style={[styles.tabLabel, { color: T.teal }]}>Analytics</Text>
-          </Pressable>
-          <Pressable style={styles.tabItem} onPressIn={() => pt(s4)} onPress={() => router.push('/new')}>
-            <Animated.View style={[T.neo, styles.tabAddBtn, a4]}>
-              <Text style={[styles.tabIcon, { color: T.teal, fontWeight: 'bold' }]}>＋</Text>
-            </Animated.View>
-            <Text style={[styles.tabLabel, { color: T.textMuted }]}>Add</Text>
-          </Pressable>
-          <Pressable style={styles.tabItem} onPressIn={() => pt(s2)} onPress={() => router.replace('/achievements')}>
-            <Animated.View style={a2}><Text style={styles.tabIcon}>🏆</Text></Animated.View>
-            <Text style={[styles.tabLabel, { color: T.textMuted }]}>Badges</Text>
-          </Pressable>
-          <Pressable style={styles.tabItem} onPressIn={() => pt(s3)} onPress={() => router.replace('/settings')}>
-            <Animated.View style={a3}><Text style={styles.tabIcon}>⚙️</Text></Animated.View>
-            <Text style={[styles.tabLabel, { color: T.textMuted }]}>Settings</Text>
-          </Pressable>
-        </View>
+        <TabBar activeTab="analytics" />
 
       </View>
     </SafeAreaView>
@@ -513,16 +489,6 @@ const styles = StyleSheet.create({
   habitLabelRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
   habitName: { fontSize: 13, fontWeight: '600', flex: 1 },
   habitPct:  { fontSize: 13, fontWeight: '800', marginLeft: 8 },
-  tabBar: { position: 'absolute', bottom: 18, left: 14, right: 14, height: 68, borderRadius: 28, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around' },
-  tabItem: { alignItems: 'center', justifyContent: 'center', flex: 1 },
-  tabActive: { borderRadius: 14, width: 44, height: 32, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
-  tabAddBtn: {
-    borderRadius: 14, width: 44, height: 32,
-    alignItems: 'center', justifyContent: 'center', borderWidth: 1,
-    borderColor: 'rgba(148,163,184,0.1)',
-  },
-  tabIcon:   { fontSize: 18 },
-  tabLabel:  { fontSize: 9, fontWeight: '700', marginTop: 4, textTransform: 'uppercase' },
 
   // Calendar Switcher & Grid styles
   switchBtn: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },

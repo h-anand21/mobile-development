@@ -20,6 +20,8 @@ import { useTheme } from '../context/ThemeContext';
 import HabitCard from '../components/HabitCard';
 import EmptyState from '../components/EmptyState';
 import SpringPressable from '../components/SpringPressable';
+import TabBar from '../components/TabBar';
+import { usePedometer } from '../hooks/use-pedometer';
 import { getLocalDateString, getActiveStreak, getYesterdayDateString } from '../lib/habits/streak';
 
 const { width: SW } = Dimensions.get('window');
@@ -181,6 +183,51 @@ function NeoBtn({ icon, size = 18, onPress, T }: { icon: string; size?: number; 
   );
 }
 
+// ─── Activity Mini Widget ───
+function ActivityWidget({ T, router }: { T: any; router: any }) {
+  const pd = usePedometer();
+  if (pd.loading) return null;
+
+  const steps = pd.available ? pd.steps.toLocaleString() : '—';
+  const cal   = pd.available ? String(pd.calories) : '—';
+  const dist  = pd.available ? String(pd.distanceKm) : '—';
+  const pct   = pd.progressPercent;
+
+  return (
+    <Animated.View entering={FadeInDown.delay(290).duration(400).springify()}
+      style={{ marginHorizontal: 16, marginBottom: 14 }}>
+      <Pressable onPress={() => router.replace('/activity')}>
+        <View style={[T.neo, styles.actWidget]}>
+          <View style={styles.actWidgetLeft}>
+            <Text style={[styles.actWidgetTitle, { color: T.teal }]}>🏃 Activity Today</Text>
+            <View style={styles.actWidgetStats}>
+              <View style={styles.actStat}>
+                <Text style={[styles.actStatVal, { color: T.textPrimary }]}>{steps}</Text>
+                <Text style={[styles.actStatLbl, { color: T.textMuted }]}>steps</Text>
+              </View>
+              <View style={[styles.actDivider, { backgroundColor: T.border }]} />
+              <View style={styles.actStat}>
+                <Text style={[styles.actStatVal, { color: T.orange }]}>{cal}</Text>
+                <Text style={[styles.actStatLbl, { color: T.textMuted }]}>kcal</Text>
+              </View>
+              <View style={[styles.actDivider, { backgroundColor: T.border }]} />
+              <View style={styles.actStat}>
+                <Text style={[styles.actStatVal, { color: T.purple }]}>{dist}</Text>
+                <Text style={[styles.actStatLbl, { color: T.textMuted }]}>km</Text>
+              </View>
+            </View>
+          </View>
+          <View style={styles.actWidgetRight}>
+            <Text style={[styles.actPct, { color: T.teal }]}>{pct}%</Text>
+            <Text style={[styles.actPctLbl, { color: T.textMuted }]}>of goal</Text>
+            <Text style={[styles.actChevron, { color: T.textMuted }]}>›</Text>
+          </View>
+        </View>
+      </Pressable>
+    </Animated.View>
+  );
+}
+
 export default function HomeDashboard() {
   const router = useRouter();
   const { T, isDark, toggleTheme } = useTheme();
@@ -295,24 +342,6 @@ export default function HomeDashboard() {
   }, []);
   const pulseStyle = useAnimatedStyle(() => ({ transform: [{ scale: pulse.value }] }));
 
-  // Tab anims
-  const ts0 = useSharedValue(1);
-  const ts1 = useSharedValue(1);
-  const ts2 = useSharedValue(1);
-  const ts3 = useSharedValue(1);
-  const ts4 = useSharedValue(1);
-
-  const ta0 = useAnimatedStyle(() => ({ transform: [{ scale: ts0.value }] }));
-  const ta1 = useAnimatedStyle(() => ({ transform: [{ scale: ts1.value }] }));
-  const ta2 = useAnimatedStyle(() => ({ transform: [{ scale: ts2.value }] }));
-  const ta3 = useAnimatedStyle(() => ({ transform: [{ scale: ts3.value }] }));
-  const ta4 = useAnimatedStyle(() => ({ transform: [{ scale: ts4.value }] }));
-
-  const tabScales = [ts0, ts1, ts2, ts3, ts4];
-  const tabStyles = [ta0, ta1, ta2, ta3, ta4];
-  const pressTab = (i: number) => {
-    tabScales[i].value = withSequence(withSpring(0.8), withSpring(1, { damping: 10 }));
-  };
 
   const CARD_W = (SW - 48) / 2;
 
@@ -472,6 +501,9 @@ export default function HomeDashboard() {
 
           </View>
 
+          {/* ═══ ACTIVITY WIDGET ═══ */}
+          <ActivityWidget T={T} router={router} />
+
           {/* ═══ CATEGORY FILTER STRIP ═══ */}
           <Animated.View entering={FadeInDown.delay(280).duration(500).springify()}
             style={{ marginBottom: 14 }}>
@@ -548,38 +580,8 @@ export default function HomeDashboard() {
         <ConfettiRain active={showConfetti} />
 
         {/* ═══ TAB BAR ═══ */}
-        <View style={[T.neo, styles.tabBar, { backgroundColor: T.tabBg }]}>
+        <TabBar activeTab="home" />
 
-          <Pressable style={styles.tabItem} onPressIn={() => pressTab(0)} onPress={() => {}}>
-            <Animated.View style={[styles.tabActivePill, { backgroundColor: T.tealDim, borderColor: T.tealBorder }, tabStyles[0]]}>
-              <Text style={styles.tabIcon}>🏠</Text>
-            </Animated.View>
-            <Text style={[styles.tabLabel, { color: T.teal }]}>Home</Text>
-          </Pressable>
-
-          <Pressable style={styles.tabItem} onPressIn={() => pressTab(1)} onPress={() => router.replace('/analytics')}>
-            <Animated.View style={tabStyles[1]}><Text style={styles.tabIcon}>📊</Text></Animated.View>
-            <Text style={[styles.tabLabel, { color: T.textMuted }]}>Analytics</Text>
-          </Pressable>
-
-          <Pressable style={styles.tabItem} onPressIn={() => pressTab(4)} onPress={() => router.push('/new')}>
-            <Animated.View style={[T.neo, styles.tabAddBtn, tabStyles[4]]}>
-              <Text style={[styles.tabIcon, { color: T.teal, fontWeight: 'bold' }]}>＋</Text>
-            </Animated.View>
-            <Text style={[styles.tabLabel, { color: T.textMuted }]}>Add</Text>
-          </Pressable>
-
-          <Pressable style={styles.tabItem} onPressIn={() => pressTab(2)} onPress={() => router.replace('/achievements')}>
-            <Animated.View style={tabStyles[2]}><Text style={styles.tabIcon}>🏆</Text></Animated.View>
-            <Text style={[styles.tabLabel, { color: T.textMuted }]}>Badges</Text>
-          </Pressable>
-
-          <Pressable style={styles.tabItem} onPressIn={() => pressTab(3)} onPress={() => router.replace('/settings')}>
-            <Animated.View style={tabStyles[3]}><Text style={styles.tabIcon}>⚙️</Text></Animated.View>
-            <Text style={[styles.tabLabel, { color: T.textMuted }]}>Settings</Text>
-          </Pressable>
-
-        </View>
       </View>
     </SafeAreaView>
   );
@@ -662,6 +664,20 @@ const styles = StyleSheet.create({
   },
   tabIcon:  { fontSize: 18 },
   tabLabel: { fontSize: 9, fontWeight: '700', marginTop: 4, textTransform: 'uppercase' },
+
+  // Activity widget
+  actWidget: { borderRadius: 20, padding: 14, flexDirection: 'row', alignItems: 'center' },
+  actWidgetLeft: { flex: 1 },
+  actWidgetTitle: { fontSize: 12, fontWeight: '800', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.5 },
+  actWidgetStats: { flexDirection: 'row', alignItems: 'center', gap: 0 },
+  actStat: { alignItems: 'center', paddingHorizontal: 10 },
+  actStatVal: { fontSize: 18, fontWeight: '900' },
+  actStatLbl: { fontSize: 9, fontWeight: '600', textTransform: 'uppercase' },
+  actDivider: { width: 1, height: 28 },
+  actWidgetRight: { alignItems: 'center', paddingLeft: 12 },
+  actPct: { fontSize: 20, fontWeight: '900' },
+  actPctLbl: { fontSize: 9, fontWeight: '600', textTransform: 'uppercase', marginBottom: 2 },
+  actChevron: { fontSize: 22, lineHeight: 24 },
 
   // Quotes
   quoteCard: { marginHorizontal: 16, borderRadius: 22, padding: 14, marginBottom: 16 },

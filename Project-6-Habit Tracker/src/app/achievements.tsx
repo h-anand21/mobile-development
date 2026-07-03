@@ -1,17 +1,12 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, BackHandler } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, BackHandler } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
-import Animated, {
-  FadeInDown,
-  useAnimatedStyle,
-  useSharedValue,
-  withSequence,
-  withSpring,
-} from 'react-native-reanimated';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useHabits } from '../hooks/use-habits';
 import { useTheme } from '../context/ThemeContext';
 import { getActiveStreak } from '../lib/habits/streak';
+import TabBar from '../components/TabBar';
 
 export default function AchievementsScreen() {
   const router = useRouter();
@@ -41,14 +36,7 @@ export default function AchievementsScreen() {
     { id: 'logs200', emoji: '💎', title: 'Diamond Habit',      subtitle: '200 total completions',       target: 200, totalLogs: true },
   ];
 
-  // Tab anims
-  const s0 = useSharedValue(1), s1 = useSharedValue(1), s2 = useSharedValue(1), s3 = useSharedValue(1), s4 = useSharedValue(1);
-  const a0 = useAnimatedStyle(() => ({ transform: [{ scale: s0.value }] }));
-  const a1 = useAnimatedStyle(() => ({ transform: [{ scale: s1.value }] }));
-  const a2 = useAnimatedStyle(() => ({ transform: [{ scale: s2.value }] }));
-  const a3 = useAnimatedStyle(() => ({ transform: [{ scale: s3.value }] }));
-  const a4 = useAnimatedStyle(() => ({ transform: [{ scale: s4.value }] }));
-  const pt = (v: any) => { v.value = withSequence(withSpring(0.8), withSpring(1, { damping: 10 })); };
+
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: T.bg }]}>
@@ -130,32 +118,7 @@ export default function AchievementsScreen() {
         </ScrollView>
 
         {/* Tab Bar */}
-        <View style={[T.neo, styles.tabBar, { backgroundColor: T.tabBg }]}>
-          <Pressable style={styles.tabItem} onPressIn={() => pt(s0)} onPress={() => router.replace('/')}>
-            <Animated.View style={a0}><Text style={styles.tabIcon}>🏠</Text></Animated.View>
-            <Text style={[styles.tabLabel, { color: T.textMuted }]}>Home</Text>
-          </Pressable>
-          <Pressable style={styles.tabItem} onPressIn={() => pt(s1)} onPress={() => router.replace('/analytics')}>
-            <Animated.View style={a1}><Text style={styles.tabIcon}>📊</Text></Animated.View>
-            <Text style={[styles.tabLabel, { color: T.textMuted }]}>Analytics</Text>
-          </Pressable>
-          <Pressable style={styles.tabItem} onPressIn={() => pt(s4)} onPress={() => router.push('/new')}>
-            <Animated.View style={[T.neo, styles.tabAddBtn, a4]}>
-              <Text style={[styles.tabIcon, { color: T.teal, fontWeight: 'bold' }]}>＋</Text>
-            </Animated.View>
-            <Text style={[styles.tabLabel, { color: T.textMuted }]}>Add</Text>
-          </Pressable>
-          <Pressable style={styles.tabItem} onPressIn={() => pt(s2)} onPress={() => {}}>
-            <Animated.View style={[styles.tabActive, { backgroundColor: T.tealDim, borderColor: T.tealBorder }, a2]}>
-              <Text style={styles.tabIcon}>🏆</Text>
-            </Animated.View>
-            <Text style={[styles.tabLabel, { color: T.teal }]}>Badges</Text>
-          </Pressable>
-          <Pressable style={styles.tabItem} onPressIn={() => pt(s3)} onPress={() => router.replace('/settings')}>
-            <Animated.View style={a3}><Text style={styles.tabIcon}>⚙️</Text></Animated.View>
-            <Text style={[styles.tabLabel, { color: T.textMuted }]}>Settings</Text>
-          </Pressable>
-        </View>
+        <TabBar activeTab="badges" />
 
       </View>
     </SafeAreaView>
@@ -189,15 +152,4 @@ const styles = StyleSheet.create({
   progressBg:   { flex: 1, height: 6, borderRadius: 3, overflow: 'hidden' },
   progressFill: { height: '100%', borderRadius: 3 },
   progressText: { fontSize: 11, fontWeight: '700', minWidth: 40 },
-
-  tabBar: { position: 'absolute', bottom: 18, left: 14, right: 14, height: 68, borderRadius: 28, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around' },
-  tabItem: { alignItems: 'center', justifyContent: 'center', flex: 1 },
-  tabActive: { borderRadius: 14, width: 44, height: 32, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
-  tabAddBtn: {
-    borderRadius: 14, width: 44, height: 32,
-    alignItems: 'center', justifyContent: 'center', borderWidth: 1,
-    borderColor: 'rgba(148,163,184,0.1)',
-  },
-  tabIcon:   { fontSize: 18 },
-  tabLabel:  { fontSize: 9, fontWeight: '700', marginTop: 4, textTransform: 'uppercase' },
 });

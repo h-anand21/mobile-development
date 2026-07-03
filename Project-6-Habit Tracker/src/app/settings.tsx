@@ -12,6 +12,7 @@ import Animated, {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
 import { useTheme } from '../context/ThemeContext';
+import TabBar from '../components/TabBar';
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -69,14 +70,7 @@ export default function SettingsScreen() {
     );
   };
 
-  // Tab anims
-  const s0 = useSharedValue(1), s1 = useSharedValue(1), s2 = useSharedValue(1), s3 = useSharedValue(1), s4 = useSharedValue(1);
-  const a0 = useAnimatedStyle(() => ({ transform: [{ scale: s0.value }] }));
-  const a1 = useAnimatedStyle(() => ({ transform: [{ scale: s1.value }] }));
-  const a2 = useAnimatedStyle(() => ({ transform: [{ scale: s2.value }] }));
-  const a3 = useAnimatedStyle(() => ({ transform: [{ scale: s3.value }] }));
-  const a4 = useAnimatedStyle(() => ({ transform: [{ scale: s4.value }] }));
-  const pt = (v: any) => { v.value = withSequence(withSpring(0.8), withSpring(1, { damping: 10 })); };
+  // Tab anims — removed (using TabBar component now)
 
   // Theme toggle animation
   const toggleScale = useSharedValue(1);
@@ -219,32 +213,7 @@ export default function SettingsScreen() {
         </ScrollView>
 
         {/* Tab Bar */}
-        <View style={[T.neo, styles.tabBar, { backgroundColor: T.tabBg }]}>
-          <Pressable style={styles.tabItem} onPressIn={() => pt(s0)} onPress={() => router.replace('/')}>
-            <Animated.View style={a0}><Text style={styles.tabIcon}>🏠</Text></Animated.View>
-            <Text style={[styles.tabLabel, { color: T.textMuted }]}>Home</Text>
-          </Pressable>
-          <Pressable style={styles.tabItem} onPressIn={() => pt(s1)} onPress={() => router.replace('/analytics')}>
-            <Animated.View style={a1}><Text style={styles.tabIcon}>📊</Text></Animated.View>
-            <Text style={[styles.tabLabel, { color: T.textMuted }]}>Analytics</Text>
-          </Pressable>
-          <Pressable style={styles.tabItem} onPressIn={() => pt(s4)} onPress={() => router.push('/new')}>
-            <Animated.View style={[T.neo, styles.tabAddBtn, a4]}>
-              <Text style={[styles.tabIcon, { color: T.teal, fontWeight: 'bold' }]}>＋</Text>
-            </Animated.View>
-            <Text style={[styles.tabLabel, { color: T.textMuted }]}>Add</Text>
-          </Pressable>
-          <Pressable style={styles.tabItem} onPressIn={() => pt(s2)} onPress={() => router.replace('/achievements')}>
-            <Animated.View style={a2}><Text style={styles.tabIcon}>🏆</Text></Animated.View>
-            <Text style={[styles.tabLabel, { color: T.textMuted }]}>Badges</Text>
-          </Pressable>
-          <Pressable style={styles.tabItem} onPressIn={() => pt(s3)} onPress={() => {}}>
-            <Animated.View style={[styles.tabActive, { backgroundColor: T.tealDim, borderColor: T.tealBorder }, a3]}>
-              <Text style={styles.tabIcon}>⚙️</Text>
-            </Animated.View>
-            <Text style={[styles.tabLabel, { color: T.teal }]}>Settings</Text>
-          </Pressable>
-        </View>
+        <TabBar activeTab="settings" />
 
       </View>
     </SafeAreaView>
@@ -288,15 +257,4 @@ const styles = StyleSheet.create({
   aboutApp:  { fontSize: 16, fontWeight: '800', marginBottom: 4 },
   aboutVer:  { fontSize: 12, marginBottom: 4 },
   aboutMode: { fontSize: 11, fontStyle: 'italic' },
-
-  tabBar: { position: 'absolute', bottom: 18, left: 14, right: 14, height: 68, borderRadius: 28, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around' },
-  tabItem: { alignItems: 'center', justifyContent: 'center', flex: 1 },
-  tabActive: { borderRadius: 14, width: 44, height: 32, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
-  tabAddBtn: {
-    borderRadius: 14, width: 44, height: 32,
-    alignItems: 'center', justifyContent: 'center', borderWidth: 1,
-    borderColor: 'rgba(148,163,184,0.1)',
-  },
-  tabIcon:   { fontSize: 18 },
-  tabLabel:  { fontSize: 9, fontWeight: '700', marginTop: 4, textTransform: 'uppercase' },
 });
