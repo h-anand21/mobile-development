@@ -28,63 +28,95 @@ export function usePedometer(): PedometerData {
   const dayKeyRef = useRef(todayKey());
 
   useEffect(() => {
-    let subscription: any = null;
+    let pedometerSubscription: any = null;
+    let accelerometerSubscription: any = null;
     let Pedometer: any = null;
+    let Accelerometer: any = null;
 
     const setup = async () => {
       try {
-        // Dynamically import to avoid crashing if expo-sensors not present
         const sensors = await import('expo-sensors');
         Pedometer = sensors.Pedometer;
+        Accelerometer = sensors.Accelerometer;
 
-        const isAvailable = await Pedometer.isAvailableAsync();
-        if (!isAvailable) {
-          setAvailable(false);
-          setLoading(false);
-          return;
-        }
-
-        // Request Pedometer Permissions (for Android Activity Recognition & iOS Motion)
-        const perm = await Pedometer.requestPermissionsAsync();
-        if (!perm.granted) {
-          setAvailable(false);
-          setLoading(false);
-          return;
-        }
-
-        setAvailable(true);
-
-        // Get steps from start of today
-        const now = new Date();
-        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
-
+        // 1. Request Pedometer permissions first so Android lists it & shows prompt
+        let pedometerGranted = false;
         try {
-          const result = await Pedometer.getStepCountAsync(startOfDay, now);
-          if (result?.steps != null) {
-            setSteps(result.steps);
-          }
-        } catch (_) {
-          // Some devices don't support historical query — fall back to live only
+          const perm = await Pedometer.requestPermissionsAsync();
+          pedometerGranted = perm.granted;
+        } catch (_) {}
+
+        // 2. Check if Pedometer is available
+        const isPedometerAvailable = await Pedometer.isAvailableAsync();
+
+        if (isPedometerAvailable && pedometerGranted) {
+          setAvailable(true);
+
+          // Get steps from start of today
+          const now = new Date();
+          const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+
+          try {
+            const result = await Pedometer.getStepCountAsync(startOfDay, now);
+            if (result?.steps != null) {
+              setSteps(result.steps);
+            }
+          } catch (_) {}
+
+          // Subscribe to live pedometer updates
+          pedometerSubscription = Pedometer.watchStepCount((result: { steps: number }) => {
+            const currentKey = todayKey();
+            if (currentKey !== dayKeyRef.current) {
+              dayKeyRef.current = currentKey;
+              setSteps(result.steps);
+            } else {
+              setSteps((prev) => prev + result.steps);
+            }
+          });
+
+          setLoading(false);
+          return;
         }
 
-        // Subscribe to live updates
-        subscription = Pedometer.watchStepCount((result: { steps: number }) => {
-          // Check for day rollover
-          const currentKey = todayKey();
-          if (currentKey !== dayKeyRef.current) {
-            dayKeyRef.current = currentKey;
-            setSteps(result.steps);
-          } else {
-            setSteps((prev) => {
-              // watchStepCount gives delta steps — add to current
-              return prev + result.steps;
-            });
-          }
-        });
+        // 3. Fallback: If Pedometer is not available or permission denied, try Accelerometer!
+        const isAccAvailable = await Accelerometer.isAvailableAsync();
+        if (isAccAvailable) {
+          setAvailable(true);
 
+          let lastStepTime = 0;
+          
+          // Set update interval (default is 100ms)
+          Accelerometer.setUpdateInterval(100);
+
+          accelerometerSubscription = Accelerometer.addListener((data: { x: number; y: number; z: number }) => {
+            const { x, y, z } = data;
+            // Calculate magnitude of acceleration vector (in Gs)
+            const magnitude = Math.sqrt(x*x + y*y + z*z);
+            const now = Date.now();
+
+            // When magnitude goes above 1.28 Gs, it indicates a step (foot strike)
+            // Minimum time between steps is 350ms to filter noise
+            if (magnitude > 1.28 && (now - lastStepTime > 350)) {
+              lastStepTime = now;
+              setSteps((prev) => {
+                const currentKey = todayKey();
+                if (currentKey !== dayKeyRef.current) {
+                  dayKeyRef.current = currentKey;
+                  return 1;
+                }
+                return prev + 1;
+              });
+            }
+          });
+
+          setLoading(false);
+          return;
+        }
+
+        // If no sensors are available (e.g. simulator)
+        setAvailable(false);
         setLoading(false);
       } catch (err) {
-        // expo-sensors not available or permission denied
         setAvailable(false);
         setLoading(false);
       }
@@ -93,9 +125,8 @@ export function usePedometer(): PedometerData {
     setup();
 
     return () => {
-      if (subscription) {
-        subscription.remove();
-      }
+      if (pedometerSubscription) pedometerSubscription.remove();
+      if (accelerometerSubscription) accelerometerSubscription.remove();
     };
   }, []);
 
