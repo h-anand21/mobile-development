@@ -8,6 +8,7 @@ import Animated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
+import { Ionicons } from '@expo/vector-icons';
 import { Habit } from '../lib/habits/types';
 import { getActiveStreak, getLocalDateString } from '../lib/habits/streak';
 import { useTheme } from '../context/ThemeContext';
@@ -113,7 +114,7 @@ export default function HabitCard({ habit, onToggleComplete, index = 0, dateStr 
 
             {activeStreak > 0 && (
               <View style={styles.streakRow}>
-                <Text style={styles.fireEmoji}>🔥</Text>
+                <Ionicons name="flame" size={12} color="#F59E0B" />
                 <Text style={[styles.streakText, { color: '#F59E0B' }]}>{activeStreak}d streak</Text>
               </View>
             )}
@@ -121,8 +122,9 @@ export default function HabitCard({ habit, onToggleComplete, index = 0, dateStr 
 
           {/* Check button / Shield */}
           {isShielded ? (
-            <View style={{ marginRight: 6, alignItems: 'center' }}>
-              <Text style={[styles.shieldText, { color: T.orange }]}>🛡️ Shielded</Text>
+            <View style={{ marginRight: 6, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <Ionicons name="shield-checkmark" size={14} color={T.orange} />
+              <Text style={[styles.shieldText, { color: T.orange }]}>Shielded</Text>
             </View>
           ) : isCompleted ? (
             <Pressable onPress={handleCheck} hitSlop={14}>
@@ -131,14 +133,17 @@ export default function HabitCard({ habit, onToggleComplete, index = 0, dateStr 
                 { backgroundColor: T.teal, shadowColor: T.teal, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 8, elevation: 6 },
                 checkStyle,
               ]}>
-                <Text style={[styles.checkMark, { color: T.bg }]}>✓</Text>
+                <Ionicons name="checkmark" size={20} color={T.bg} style={{ fontWeight: 'bold' }} />
               </Animated.View>
             </Pressable>
           ) : (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               {shieldsLeft > 0 && targetDate !== getLocalDateString() && (
                 <Pressable onPress={() => useStreakShield(habit.id, targetDate)} style={[T.neo, styles.shieldBtn]}>
-                  <Text style={[styles.shieldBtnText, { color: T.orange }]}>🛡️ Shield</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                    <Ionicons name="shield-outline" size={10} color={T.orange} />
+                    <Text style={[styles.shieldBtnText, { color: T.orange }]}>Shield</Text>
+                  </View>
                 </Pressable>
               )}
               <Pressable onPress={handleCheck} hitSlop={14}>

@@ -13,6 +13,7 @@ import Animated, {
   Easing,
   LinearTransition,
 } from 'react-native-reanimated';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import Svg, { Circle, Rect } from 'react-native-svg';
 import { useHabits } from '../hooks/use-habits';
 import { usePushNotifications } from '../hooks/use-push-notifications';
@@ -199,7 +200,10 @@ function ActivityWidget({ T, router }: { T: any; router: any }) {
       <Pressable onPress={() => router.replace('/activity')}>
         <View style={[T.neo, styles.actWidget]}>
           <View style={styles.actWidgetLeft}>
-            <Text style={[styles.actWidgetTitle, { color: T.teal }]}>🏃 Activity Today</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+              <Ionicons name="fitness-outline" size={16} color={T.teal} />
+              <Text style={[styles.actWidgetTitle, { color: T.teal, marginBottom: 0 }]}>Activity Today</Text>
+            </View>
             <View style={styles.actWidgetStats}>
               <View style={styles.actStat}>
                 <Text style={[styles.actStatVal, { color: T.textPrimary }]}>{steps}</Text>
@@ -220,7 +224,7 @@ function ActivityWidget({ T, router }: { T: any; router: any }) {
           <View style={styles.actWidgetRight}>
             <Text style={[styles.actPct, { color: T.teal }]}>{pct}%</Text>
             <Text style={[styles.actPctLbl, { color: T.textMuted }]}>of goal</Text>
-            <Text style={[styles.actChevron, { color: T.textMuted }]}>›</Text>
+            <Ionicons name="chevron-forward" size={16} color={T.textMuted} style={{ marginTop: 2 }} />
           </View>
         </View>
       </Pressable>
@@ -395,7 +399,9 @@ export default function HomeDashboard() {
           <Animated.View entering={FadeInDown.delay(100).duration(500).springify()}
             style={[T.neo, styles.quoteCard]}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-              <Text style={{ fontSize: 24 }}>💡</Text>
+              <View style={[styles.quoteIconBg, { backgroundColor: T.yellow + '22' }]}>
+                <Ionicons name="bulb-outline" size={20} color={T.yellow} />
+              </View>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.quoteText, { color: T.textPrimary }]}>
                   "{MOTIVATIONAL_QUOTES[quoteIndex]?.text}"
@@ -405,7 +411,7 @@ export default function HomeDashboard() {
                 </Text>
               </View>
               <SpringPressable onPress={() => setQuoteIndex(prev => (prev + 1) % MOTIVATIONAL_QUOTES.length)} style={[T.neo, styles.quoteRefresh]}>
-                <Text style={{ fontSize: 13, color: T.teal }}>🔄</Text>
+                <Ionicons name="shuffle-outline" size={14} color={T.teal} />
               </SpringPressable>
             </View>
           </Animated.View>
@@ -417,8 +423,8 @@ export default function HomeDashboard() {
             <Animated.View entering={FadeInDown.delay(140).duration(500).springify()}
               style={[T.neo, { width: CARD_W, borderRadius: 22, padding: 15 }]}>
               <View style={styles.cardIconRow}>
-                <View style={[T.neo, styles.iconBubble, { backgroundColor: T.bg }]}>
-                  <Text style={styles.bubbleEmoji}>🎯</Text>
+                <View style={[styles.iconBubble, { backgroundColor: T.teal + '22' }]}>
+                  <Ionicons name="checkmark-done-outline" size={18} color={T.teal} />
                 </View>
                 <Text style={[styles.cardLabel, { color: T.textMuted }]}>Habit Score</Text>
               </View>
@@ -439,8 +445,8 @@ export default function HomeDashboard() {
             <Animated.View entering={FadeInDown.delay(180).duration(500).springify()}
               style={[T.neo, { width: CARD_W, borderRadius: 22, padding: 15 }]}>
               <View style={styles.cardIconRow}>
-                <View style={[T.neo, styles.iconBubble, { backgroundColor: T.bg }]}>
-                  <Text style={styles.bubbleEmoji}>⚡</Text>
+                <View style={[styles.iconBubble, { backgroundColor: T.purple + '22' }]}>
+                  <Ionicons name="trending-up-outline" size={18} color={T.purple} />
                 </View>
                 <Text style={[styles.cardLabel, { color: T.textMuted }]}>Progress</Text>
               </View>
@@ -458,8 +464,8 @@ export default function HomeDashboard() {
             <Animated.View entering={FadeInDown.delay(220).duration(500).springify()}
               style={[T.neo, { width: CARD_W, borderRadius: 22, padding: 15 }]}>
               <View style={styles.cardIconRow}>
-                <View style={[T.neo, styles.iconBubble, { backgroundColor: T.bg }]}>
-                  <Text style={styles.bubbleEmoji}>🔥</Text>
+                <View style={[styles.iconBubble, { backgroundColor: T.orange + '22' }]}>
+                  <Ionicons name="flame-outline" size={18} color={T.orange} />
                 </View>
                 <Text style={[styles.cardLabel, { color: T.textMuted }]}>Streak</Text>
               </View>
@@ -484,8 +490,8 @@ export default function HomeDashboard() {
             <Animated.View entering={FadeInDown.delay(260).duration(500).springify()}
               style={[T.neo, { width: CARD_W, borderRadius: 22, padding: 15 }]}>
               <View style={styles.cardIconRow}>
-                <View style={[T.neo, styles.iconBubble, { backgroundColor: T.bg }]}>
-                  <Text style={styles.bubbleEmoji}>🏆</Text>
+                <View style={[styles.iconBubble, { backgroundColor: T.green + '22' }]}>
+                  <Ionicons name="ribbon-outline" size={18} color={T.green} />
                 </View>
                 <Text style={[styles.cardLabel, { color: T.textMuted }]}>Success</Text>
               </View>
@@ -508,14 +514,14 @@ export default function HomeDashboard() {
           <Animated.View entering={FadeInDown.delay(280).duration(500).springify()}
             style={{ marginBottom: 14 }}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ flexDirection: 'row', gap: 8, paddingHorizontal: 16 }}>
-              {[
-                { value: 'all', label: 'All', emoji: '✨' },
-                { value: 'health', label: 'Health', emoji: '🌿' },
-                { value: 'work', label: 'Work', emoji: '💼' },
-                { value: 'mind', label: 'Mind', emoji: '🧠' },
-                { value: 'body', label: 'Body', emoji: '🏃' },
-                { value: 'other', label: 'Other', emoji: '🌟' }
-              ].map(cat => {
+              {([
+                { value: 'all',    label: 'All',    icon: 'apps-outline' as const,           lib: 'ion' },
+                { value: 'health', label: 'Health', icon: 'heart-outline' as const,          lib: 'ion' },
+                { value: 'work',   label: 'Work',   icon: 'briefcase-outline' as const,      lib: 'ion' },
+                { value: 'mind',   label: 'Mind',   icon: 'bulb-outline' as const,           lib: 'ion' },
+                { value: 'body',   label: 'Body',   icon: 'barbell-outline' as const,        lib: 'ion' },
+                { value: 'other',  label: 'Other',  icon: 'ellipsis-horizontal-circle-outline' as const, lib: 'ion' },
+              ] as const).map(cat => {
                 const active = selectedCategory === cat.value;
                 return (
                   <SpringPressable key={cat.value} onPress={() => setSelectedCategory(cat.value as any)}
@@ -524,7 +530,7 @@ export default function HomeDashboard() {
                       styles.catFilterBtn,
                       active && { backgroundColor: T.tealDim, borderColor: T.tealBorder, borderWidth: 1 }
                     ]}>
-                    <Text style={{ fontSize: 13 }}>{cat.emoji}</Text>
+                    <Ionicons name={cat.icon} size={14} color={active ? T.teal : T.textMuted} />
                     <Text style={[styles.catFilterText, { color: active ? T.teal : T.textSub }, active && { fontWeight: '700' }]}>
                       {cat.label}
                     </Text>
@@ -537,12 +543,13 @@ export default function HomeDashboard() {
           {/* ═══ TODAY'S HABITS ═══ */}
           <Animated.View entering={FadeInDown.delay(300).duration(500).springify()} style={styles.sectionRow}>
             <View style={styles.sectionLeft}>
-              <Text style={styles.sectionEmoji}>✨</Text>
+              <Ionicons name="list-outline" size={18} color={T.teal} />
               <Text style={[styles.sectionTitle, { color: T.textPrimary }]}>{getSectionTitle()}</Text>
             </View>
             <Link href="/new" asChild>
               <SpringPressable style={StyleSheet.flatten([T.neo, styles.addBtn])}>
-                <Text style={[styles.addBtnText, { color: T.teal }]}>＋ Add</Text>
+                <Ionicons name="add" size={14} color={T.teal} />
+                <Text style={[styles.addBtnText, { color: T.teal }]}>Add</Text>
               </SpringPressable>
             </Link>
           </Animated.View>
@@ -550,7 +557,7 @@ export default function HomeDashboard() {
           {permissionStatus === 'denied' && (
             <Animated.View entering={FadeInDown.delay(320).duration(400)}
               style={[T.neo, styles.permBanner, { borderTopColor: T.orangeDim, borderLeftColor: T.orangeDim }]}>
-              <Text style={styles.permEmoji}>🔕</Text>
+              <Ionicons name="notifications-off-outline" size={16} color={T.orange} />
               <Text style={[styles.permText, { color: T.textSub }]}>Enable notifications for reminders</Text>
               <Pressable onPress={() => router.push('/notifications')}>
                 <Text style={[styles.permAction, { color: T.orange }]}>Fix →</Text>
@@ -681,6 +688,7 @@ const styles = StyleSheet.create({
 
   // Quotes
   quoteCard: { marginHorizontal: 16, borderRadius: 22, padding: 14, marginBottom: 16 },
+  quoteIconBg: { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   quoteText: { fontSize: 11, fontStyle: 'italic', fontWeight: '500', lineHeight: 16, marginBottom: 4 },
   quoteAuthor: { fontSize: 9, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
   quoteRefresh: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
