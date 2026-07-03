@@ -189,45 +189,82 @@ function ActivityWidget({ T, router }: { T: any; router: any }) {
   const pd = usePedometer();
   if (pd.loading) return null;
 
-  const steps = pd.available ? pd.steps.toLocaleString() : '—';
-  const cal   = pd.available ? String(pd.calories) : '—';
-  const dist  = pd.available ? String(pd.distanceKm) : '—';
+  const steps = pd.available ? pd.steps.toLocaleString() : '0';
+  const cal   = pd.available ? String(pd.calories) : '0';
+  const dist  = pd.available ? String(pd.distanceKm) : '0';
   const pct   = pd.progressPercent;
+
+  const CARD_WIDTH = 138;
 
   return (
     <Animated.View entering={FadeInDown.delay(290).duration(400).springify()}
-      style={{ marginHorizontal: 16, marginBottom: 14 }}>
-      <Pressable onPress={() => router.replace('/activity')}>
-        <View style={[T.neo, styles.actWidget]}>
-          <View style={styles.actWidgetLeft}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-              <Ionicons name="fitness-outline" size={16} color={T.teal} />
-              <Text style={[styles.actWidgetTitle, { color: T.teal, marginBottom: 0 }]}>Activity Today</Text>
-            </View>
-            <View style={styles.actWidgetStats}>
-              <View style={styles.actStat}>
-                <Text style={[styles.actStatVal, { color: T.textPrimary }]}>{steps}</Text>
-                <Text style={[styles.actStatLbl, { color: T.textMuted }]}>steps</Text>
-              </View>
-              <View style={[styles.actDivider, { backgroundColor: T.border }]} />
-              <View style={styles.actStat}>
-                <Text style={[styles.actStatVal, { color: T.orange }]}>{cal}</Text>
-                <Text style={[styles.actStatLbl, { color: T.textMuted }]}>kcal</Text>
-              </View>
-              <View style={[styles.actDivider, { backgroundColor: T.border }]} />
-              <View style={styles.actStat}>
-                <Text style={[styles.actStatVal, { color: T.purple }]}>{dist}</Text>
-                <Text style={[styles.actStatLbl, { color: T.textMuted }]}>km</Text>
-              </View>
-            </View>
-          </View>
-          <View style={styles.actWidgetRight}>
-            <Text style={[styles.actPct, { color: T.teal }]}>{pct}%</Text>
-            <Text style={[styles.actPctLbl, { color: T.textMuted }]}>of goal</Text>
-            <Ionicons name="chevron-forward" size={16} color={T.textMuted} style={{ marginTop: 2 }} />
-          </View>
+      style={{ marginBottom: 14 }}>
+      {/* Title Header with Link */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, marginBottom: 10 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <Ionicons name="fitness-outline" size={18} color={T.teal} />
+          <Text style={{ fontSize: 15, fontWeight: '800', color: T.textPrimary }}>Activity Today</Text>
         </View>
-      </Pressable>
+        <Pressable onPress={() => router.replace('/activity')} style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+          <Text style={{ fontSize: 11, fontWeight: '700', color: T.teal }}>View Details</Text>
+          <Ionicons name="chevron-forward" size={12} color={T.teal} />
+        </Pressable>
+      </View>
+
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 12, paddingVertical: 4 }}>
+        
+        {/* Card 1: Steps */}
+        <Pressable onPress={() => router.replace('/activity')}>
+          <View style={[T.neo, { width: CARD_WIDTH, borderRadius: 20, padding: 14, backgroundColor: T.bg }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+              <View style={{ width: 28, height: 28, borderRadius: 10, backgroundColor: T.teal + '22', alignItems: 'center', justifyContent: 'center' }}>
+                <Ionicons name="walk-outline" size={16} color={T.teal} />
+              </View>
+              <Text style={{ fontSize: 10, fontWeight: '800', color: T.teal }}>{pct}%</Text>
+            </View>
+            <Text style={{ fontSize: 18, fontWeight: '900', color: T.textPrimary, marginBottom: 2 }}>{steps}</Text>
+            <Text style={{ fontSize: 9, fontWeight: '700', color: T.textMuted, textTransform: 'uppercase', letterSpacing: 0.3 }}>Steps</Text>
+            <View style={{ height: 4, backgroundColor: T.tealDim, borderRadius: 2, overflow: 'hidden', marginTop: 8 }}>
+              <View style={{ height: '100%', width: `${Math.min(100, pct)}%`, backgroundColor: T.teal, borderRadius: 2 }} />
+            </View>
+          </View>
+        </Pressable>
+
+        {/* Card 2: Calories */}
+        <Pressable onPress={() => router.replace('/activity')}>
+          <View style={[T.neo, { width: CARD_WIDTH, borderRadius: 20, padding: 14, backgroundColor: T.bg }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+              <View style={{ width: 28, height: 28, borderRadius: 10, backgroundColor: T.orange + '22', alignItems: 'center', justifyContent: 'center' }}>
+                <Ionicons name="flame-outline" size={16} color={T.orange} />
+              </View>
+              <Text style={{ fontSize: 9, fontWeight: '700', color: T.textMuted }}>KCAL</Text>
+            </View>
+            <Text style={{ fontSize: 18, fontWeight: '900', color: T.textPrimary, marginBottom: 2 }}>{cal}</Text>
+            <Text style={{ fontSize: 9, fontWeight: '700', color: T.textMuted, textTransform: 'uppercase', letterSpacing: 0.3 }}>Calories</Text>
+            <View style={{ height: 4, backgroundColor: T.orange + '22', borderRadius: 2, overflow: 'hidden', marginTop: 8 }}>
+              <View style={{ height: '100%', width: `${Math.min(100, (Number(cal) / 300) * 100)}%`, backgroundColor: T.orange, borderRadius: 2 }} />
+            </View>
+          </View>
+        </Pressable>
+
+        {/* Card 3: Distance */}
+        <Pressable onPress={() => router.replace('/activity')}>
+          <View style={[T.neo, { width: CARD_WIDTH, borderRadius: 20, padding: 14, backgroundColor: T.bg }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+              <View style={{ width: 28, height: 28, borderRadius: 10, backgroundColor: T.purple + '22', alignItems: 'center', justifyContent: 'center' }}>
+                <Ionicons name="navigate-outline" size={16} color={T.purple} />
+              </View>
+              <Text style={{ fontSize: 9, fontWeight: '700', color: T.textMuted }}>KM</Text>
+            </View>
+            <Text style={{ fontSize: 18, fontWeight: '900', color: T.textPrimary, marginBottom: 2 }}>{dist}</Text>
+            <Text style={{ fontSize: 9, fontWeight: '700', color: T.textMuted, textTransform: 'uppercase', letterSpacing: 0.3 }}>Distance</Text>
+            <View style={{ height: 4, backgroundColor: T.purple + '22', borderRadius: 2, overflow: 'hidden', marginTop: 8 }}>
+              <View style={{ height: '100%', width: `${Math.min(100, (Number(dist) / 5) * 100)}%`, backgroundColor: T.purple, borderRadius: 2 }} />
+            </View>
+          </View>
+        </Pressable>
+
+      </ScrollView>
     </Animated.View>
   );
 }

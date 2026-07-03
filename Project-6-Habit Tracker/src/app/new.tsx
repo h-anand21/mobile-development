@@ -6,6 +6,7 @@ import { useHabits } from '../hooks/use-habits';
 import { useTheme } from '../context/ThemeContext';
 import { Frequency } from '../lib/habits/types';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { Ionicons } from '@expo/vector-icons';
 
 const POPULAR_EMOJIS = ['💧','📖','💪','🧘','🍎','💻','🚶','🏃','🎵','✏️','💊','🧹','🌿','🛌','🧠'];
 const WEEKDAYS = [
@@ -68,9 +69,12 @@ export default function CreateHabitScreen() {
         {/* Header */}
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} style={[T.neo, styles.closeBtn]}>
-            <Text style={[styles.closeText, { color: T.textPrimary }]}>✕</Text>
+            <Ionicons name="close" size={18} color={T.textPrimary} />
           </Pressable>
-          <Text style={[styles.headerTitle, { color: T.textPrimary }]}>✨ New Habit</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Ionicons name="sparkles-outline" size={18} color={T.teal} />
+            <Text style={[styles.headerTitle, { color: T.textPrimary }]}>New Habit</Text>
+          </View>
           <View style={{ width: 40 }} />
         </View>
 
@@ -99,7 +103,10 @@ export default function CreateHabitScreen() {
 
           {/* Name Input */}
           <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.field}>
-            <Text style={[styles.fieldLabel, { color: T.textSub }]}>📝 Habit Name</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+              <Ionicons name="pencil-outline" size={14} color={T.textSub} />
+              <Text style={[styles.fieldLabel, { color: T.textSub, marginBottom: 0 }]}>Habit Name</Text>
+            </View>
             <TextInput
               style={[T.neo, styles.input, { color: T.textPrimary }]}
               value={name}
@@ -112,32 +119,42 @@ export default function CreateHabitScreen() {
 
           {/* Category Selector */}
           <Animated.View entering={FadeInDown.delay(120).springify()} style={styles.field}>
-            <Text style={[styles.fieldLabel, { color: T.textSub }]}>🏷️ Category</Text>
-            <View style={[T.neo, styles.categoryRow]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+              <Ionicons name="pricetag-outline" size={14} color={T.textSub} />
+              <Text style={[styles.fieldLabel, { color: T.textSub, marginBottom: 0 }]}>Category</Text>
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ flexDirection: 'row', gap: 8, paddingVertical: 4 }}>
               {([
-                { value: 'health', label: 'Health', emoji: '🌿' },
-                { value: 'work', label: 'Work', emoji: '💼' },
-                { value: 'mind', label: 'Mind', emoji: '🧠' },
-                { value: 'body', label: 'Body', emoji: '🏃' },
-                { value: 'other', label: 'Other', emoji: '🌟' }
+                { value: 'health', label: 'Health', icon: 'heart-outline' as const },
+                { value: 'work',   label: 'Work',   icon: 'briefcase-outline' as const },
+                { value: 'mind',   label: 'Mind',   icon: 'bulb-outline' as const },
+                { value: 'body',   label: 'Body',   icon: 'barbell-outline' as const },
+                { value: 'other',  label: 'Other',  icon: 'ellipsis-horizontal-circle-outline' as const }
               ] as const).map(cat => {
                 const active = category === cat.value;
                 return (
                   <Pressable key={cat.value} onPress={() => setCategory(cat.value)}
-                    style={[styles.categoryOption, active && { backgroundColor: T.teal }]}>
-                    <Text style={{ fontSize: 13 }}>{cat.emoji}</Text>
-                    <Text style={[styles.categoryText, { color: active ? T.bg : T.textMuted }, active && { fontWeight: '700' }]}>
+                    style={[
+                      T.neo,
+                      styles.categoryOption,
+                      active && { backgroundColor: T.tealDim, borderColor: T.tealBorder, borderWidth: 1 }
+                    ]}>
+                    <Ionicons name={cat.icon} size={14} color={active ? T.teal : T.textMuted} />
+                    <Text style={[styles.categoryText, { color: active ? T.teal : T.textSub }, active && { fontWeight: '700' }]}>
                       {cat.label}
                     </Text>
                   </Pressable>
                 );
               })}
-            </View>
+            </ScrollView>
           </Animated.View>
 
           {/* Emoji Picker */}
           <Animated.View entering={FadeInDown.delay(140).springify()} style={styles.field}>
-            <Text style={[styles.fieldLabel, { color: T.textSub }]}>😊 Pick an Icon</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+              <Ionicons name="happy-outline" size={14} color={T.textSub} />
+              <Text style={[styles.fieldLabel, { color: T.textSub, marginBottom: 0 }]}>Pick an Icon</Text>
+            </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.emojiList}>
               {POPULAR_EMOJIS.map(em => (
                 <Pressable key={em} onPress={() => setEmoji(em)}
@@ -150,7 +167,10 @@ export default function CreateHabitScreen() {
 
           {/* Reminder Time */}
           <Animated.View entering={FadeInDown.delay(180).springify()} style={styles.field}>
-            <Text style={[styles.fieldLabel, { color: T.textSub }]}>⏰ Reminder Time</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+              <Ionicons name="alarm-outline" size={14} color={T.textSub} />
+              <Text style={[styles.fieldLabel, { color: T.textSub, marginBottom: 0 }]}>Reminder Time</Text>
+            </View>
             <View style={[T.neo, styles.timePicker]}>
               {/* Hour */}
               <View style={styles.timeCol}>
@@ -191,12 +211,15 @@ export default function CreateHabitScreen() {
 
           {/* Frequency */}
           <Animated.View entering={FadeInDown.delay(220).springify()} style={styles.field}>
-            <Text style={[styles.fieldLabel, { color: T.textSub }]}>🔄 Frequency</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+              <Ionicons name="repeat-outline" size={14} color={T.textSub} />
+              <Text style={[styles.fieldLabel, { color: T.textSub, marginBottom: 0 }]}>Frequency</Text>
+            </View>
             <View style={[T.neo, styles.freqRow]}>
               {(['daily','weekly'] as const).map(k => (
                 <Pressable key={k} onPress={() => setKind(k)}
                   style={[styles.freqOption, kind === k && { backgroundColor: T.teal }]}>
-                  <Text style={{ fontSize: 14 }}>{k === 'daily' ? '📅' : '🗓️'}</Text>
+                  <Ionicons name={k === 'daily' ? 'calendar-outline' : 'calendar-number-outline'} size={14} color={kind === k ? T.bg : T.textMuted} style={{ marginRight: 4 }} />
                   <Text style={[styles.freqText, { color: kind === k ? T.bg : T.textMuted },
                     kind === k && { fontWeight: '700' }]}>
                     {k === 'daily' ? 'Daily' : 'Weekly'}
@@ -209,7 +232,10 @@ export default function CreateHabitScreen() {
           {/* Weekday picker */}
           {kind === 'weekly' && (
             <Animated.View entering={FadeInDown.delay(260).springify()} style={styles.field}>
-              <Text style={[styles.fieldLabel, { color: T.textSub }]}>📆 Select Days</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                <Ionicons name="calendar-outline" size={14} color={T.textSub} />
+                <Text style={[styles.fieldLabel, { color: T.textSub, marginBottom: 0 }]}>Select Days</Text>
+              </View>
               <View style={styles.weekRow}>
                 {WEEKDAYS.map(day => {
                   const active = selectedWeekdays.includes(day.value);

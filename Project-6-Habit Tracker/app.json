@@ -19,7 +19,17 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.ACTIVITY_RECOGNITION"
+      ]
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.himanshu.habitflow",
+      "infoPlist": {
+        "NSMotionUsageDescription": "This app uses your motion sensor data to track your daily steps, distance, and calories burned."
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"

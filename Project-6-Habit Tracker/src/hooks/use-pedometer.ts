@@ -38,12 +38,21 @@ export function usePedometer(): PedometerData {
         Pedometer = sensors.Pedometer;
 
         const isAvailable = await Pedometer.isAvailableAsync();
-        setAvailable(isAvailable);
-
         if (!isAvailable) {
+          setAvailable(false);
           setLoading(false);
           return;
         }
+
+        // Request Pedometer Permissions (for Android Activity Recognition & iOS Motion)
+        const perm = await Pedometer.requestPermissionsAsync();
+        if (!perm.granted) {
+          setAvailable(false);
+          setLoading(false);
+          return;
+        }
+
+        setAvailable(true);
 
         // Get steps from start of today
         const now = new Date();
