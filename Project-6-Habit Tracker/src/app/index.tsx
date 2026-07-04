@@ -550,6 +550,10 @@ export default function HomeDashboard() {
           {/* ═══ CATEGORY FILTER STRIP ═══ */}
           <Animated.View entering={FadeInDown.delay(280).duration(500).springify()}
             style={{ marginBottom: 14 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 20, marginBottom: 8 }}>
+              <Ionicons name="pricetag-outline" size={14} color={T.textSub} />
+              <Text style={{ fontSize: 13, fontWeight: '700', color: T.textSub, letterSpacing: 0.3 }}>Category</Text>
+            </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingVertical: 4 }}>
               {([
                 { value: 'all',    label: 'All',    icon: 'apps-outline' as const },
