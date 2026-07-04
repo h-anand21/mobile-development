@@ -566,11 +566,11 @@ export default function HomeDashboard() {
                 const active = selectedCategory === cat.value;
                 return (
                   <SpringPressable key={cat.value} onPress={() => setSelectedCategory(cat.value as any)}
-                    style={[
+                    style={StyleSheet.flatten([
                       T.neo,
                       styles.catFilterBtn,
                       active && { backgroundColor: T.tealDim, borderColor: T.tealBorder, borderWidth: 1 }
-                    ]}>
+                    ])}>
                     <Ionicons name={cat.icon} size={14} color={active ? T.teal : T.textMuted} />
                     <Text style={[styles.catFilterText, { color: active ? T.teal : T.textSub }, active && { fontWeight: '700' }]}>
                       {cat.label}
