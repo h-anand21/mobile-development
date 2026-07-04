@@ -550,20 +550,24 @@ export default function HomeDashboard() {
           {/* ═══ CATEGORY FILTER STRIP ═══ */}
           <Animated.View entering={FadeInDown.delay(280).duration(500).springify()}
             style={{ marginBottom: 14 }}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ flexDirection: 'row', gap: 12, paddingHorizontal: 16 }}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingVertical: 4 }}>
               {([
-                { value: 'all',    label: 'All',    icon: 'apps-outline' as const,           lib: 'ion' },
-                { value: 'health', label: 'Health', icon: 'heart-outline' as const,          lib: 'ion' },
-                { value: 'work',   label: 'Work',   icon: 'briefcase-outline' as const,      lib: 'ion' },
-                { value: 'mind',   label: 'Mind',   icon: 'bulb-outline' as const,           lib: 'ion' },
-                { value: 'body',   label: 'Body',   icon: 'barbell-outline' as const,        lib: 'ion' },
-                { value: 'other',  label: 'Other',  icon: 'ellipsis-horizontal-circle-outline' as const, lib: 'ion' },
+                { value: 'all',    label: 'All',    icon: 'apps-outline' as const },
+                { value: 'health', label: 'Health', icon: 'heart-outline' as const },
+                { value: 'work',   label: 'Work',   icon: 'briefcase-outline' as const },
+                { value: 'mind',   label: 'Mind',   icon: 'bulb-outline' as const },
+                { value: 'body',   label: 'Body',   icon: 'barbell-outline' as const },
+                { value: 'other',  label: 'Other',  icon: 'ellipsis-horizontal-circle-outline' as const },
               ] as const).map(cat => {
                 const active = selectedCategory === cat.value;
                 return (
                   <SpringPressable key={cat.value} onPress={() => setSelectedCategory(cat.value as any)}
-                    style={styles.catFilterBtn}>
-                    <Ionicons name={cat.icon} size={20} color={active ? T.teal : T.textMuted} />
+                    style={[
+                      T.neo,
+                      styles.catFilterBtn,
+                      active && { backgroundColor: T.tealDim, borderColor: T.tealBorder, borderWidth: 1 }
+                    ]}>
+                    <Ionicons name={cat.icon} size={14} color={active ? T.teal : T.textMuted} />
                     <Text style={[styles.catFilterText, { color: active ? T.teal : T.textSub }, active && { fontWeight: '700' }]}>
                       {cat.label}
                     </Text>
@@ -727,6 +731,6 @@ const styles = StyleSheet.create({
   quoteRefresh: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
 
   // Category filter
-  catFilterBtn: { alignItems: 'center', justifyContent: 'center', minWidth: 55, paddingVertical: 4 },
-  catFilterText: { fontSize: 11, fontWeight: '600', marginTop: 4 },
+  catFilterBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', height: 38, paddingHorizontal: 12, borderRadius: 10, gap: 4 },
+  catFilterText: { fontSize: 12, fontWeight: '600' },
 });
