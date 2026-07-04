@@ -549,12 +549,12 @@ export default function HomeDashboard() {
 
           {/* ═══ CATEGORY FILTER STRIP ═══ */}
           <Animated.View entering={FadeInDown.delay(280).duration(500).springify()}
-            style={{ marginBottom: 14 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 20, marginBottom: 8 }}>
+            style={{ marginBottom: 18 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 20, marginBottom: 10 }}>
               <Ionicons name="pricetag-outline" size={14} color={T.textSub} />
               <Text style={{ fontSize: 13, fontWeight: '700', color: T.textSub, letterSpacing: 0.3 }}>Category</Text>
             </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingVertical: 4 }}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ flexDirection: 'row', gap: 12, paddingHorizontal: 16, paddingVertical: 8 }}>
               {([
                 { value: 'all',    label: 'All',    icon: 'apps-outline' as const },
                 { value: 'health', label: 'Health', icon: 'heart-outline' as const },
@@ -735,6 +735,6 @@ const styles = StyleSheet.create({
   quoteRefresh: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
 
   // Category filter
-  catFilterBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', height: 38, paddingHorizontal: 12, borderRadius: 10, gap: 4 },
+  catFilterBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', height: 38, paddingHorizontal: 14, borderRadius: 12, gap: 6 },
   catFilterText: { fontSize: 12, fontWeight: '600' },
 });
