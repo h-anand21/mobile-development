@@ -213,7 +213,7 @@ export default function SettingsScreen() {
         </ScrollView>
 
         {/* Tab Bar */}
-        <TabBar activeTab="settings" />
+        <TabBar activeTab="profile" />
 
       </View>
     </SafeAreaView>

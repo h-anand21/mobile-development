@@ -90,8 +90,26 @@ function IconGear({ color, size = 22 }: { color: string; size?: number }) {
   );
 }
 
+// Profile / Person icon
+function IconProfile({ color, size = 22 }: { color: string; size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      {/* Head circle */}
+      <Path
+        d="M12 11C14.2091 11 16 9.20914 16 7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7C8 9.20914 9.79086 11 12 11Z"
+        stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"
+      />
+      {/* Shoulders */}
+      <Path
+        d="M4 21C4 17.134 7.58172 14 12 14C16.4183 14 20 17.134 20 21"
+        stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
 // ─── Tab Definitions ───
-export type TabId = 'home' | 'activity' | 'add' | 'analytics' | 'badges' | 'settings';
+export type TabId = 'home' | 'activity' | 'add' | 'analytics' | 'badges' | 'settings' | 'profile';
 
 interface Tab {
   id: TabId;
@@ -128,10 +146,10 @@ const TABS: Tab[] = [
     icon: (c, s) => <IconBarChart color={c} size={s} />,
   },
   {
-    id: 'settings',
-    label: 'Settings',
+    id: 'profile',
+    label: 'Profile',
     route: '/settings',
-    icon: (c, s) => <IconGear color={c} size={s} />,
+    icon: (c, s) => <IconProfile color={c} size={s} />,
   },
 ];
 
