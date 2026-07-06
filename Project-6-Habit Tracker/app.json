@@ -21,21 +21,31 @@
       },
       "predictiveBackGestureEnabled": false,
       "permissions": [
-        "android.permission.ACTIVITY_RECOGNITION"
+        "android.permission.ACTIVITY_RECOGNITION",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.READ_MEDIA_IMAGES"
       ]
     },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.himanshu.habitflow",
       "infoPlist": {
-        "NSMotionUsageDescription": "This app uses your motion sensor data to track your daily steps, distance, and calories burned."
+        "NSMotionUsageDescription": "This app uses your motion sensor data to track your daily steps, distance, and calories burned.",
+        "NSPhotoLibraryUsageDescription": "Allow HabitFlow to access your photo library to set your profile picture.",
+        "NSPhotoLibraryAddUsageDescription": "Allow HabitFlow to save photos to your library."
       }
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow HabitFlow to access your photos to set your profile picture."
+        }
+      ]
     ]
   }
 }
