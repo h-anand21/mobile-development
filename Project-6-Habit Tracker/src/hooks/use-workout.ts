@@ -19,6 +19,7 @@ export interface WorkoutSession {
   steps: number;
   distanceKm: number;
   calories: number;
+  deviceName?: string;   // Smart Watch name if paired during workout
 }
 
 export interface WorkoutState {
@@ -169,15 +170,13 @@ export function useWorkout(): WorkoutState {
     isActiveRef.current = true;
     setIsActive(true);
 
+    // Save active state to notify BLE heart rate simulator
+    AsyncStorage.setItem('ACTIVE_WORKOUT_STATE', 'active').catch(() => {});
+
     // Start timer
     timerRef.current = setInterval(() => {
       elapsedRef.current += 1;
       setElapsedSeconds(elapsedRef.current);
-
-      // Simulate cycling distance (no steps needed for cycle)
-      if (workoutTypeRef.current === 'outdoor_cycle') {
-        // no step simulation needed - distance is time-based
-      }
 
       // If simulating (no accelerometer), add random steps
       if (isSimulating) {
@@ -197,9 +196,12 @@ export function useWorkout(): WorkoutState {
   }, [isSimulating, startAccelerometer]);
 
   // ── Stop Workout ─────────────────────────────────────────────────────────
-  const stopWorkout = useCallback(() => {
+  const stopWorkout = useCallback(async () => {
     isActiveRef.current = false;
     setIsActive(false);
+
+    // Clear active state for BLE heart rate simulator
+    AsyncStorage.removeItem('ACTIVE_WORKOUT_STATE').catch(() => {});
 
     // Clear timer
     if (timerRef.current) {
@@ -209,6 +211,16 @@ export function useWorkout(): WorkoutState {
 
     // Stop accelerometer
     stopAccelerometer();
+
+    // Fetch watch name if connected to attach it to the session data
+    let watchName = undefined;
+    try {
+      const rawWatch = await AsyncStorage.getItem('PAIRED_WATCH_INFO');
+      if (rawWatch) {
+        const parsed = JSON.parse(rawWatch);
+        watchName = parsed.name;
+      }
+    } catch (_) {}
 
     // Save session with today's date
     const dist = calcDistance(workoutTypeRef.current, stepsRef.current, elapsedRef.current);
@@ -220,6 +232,7 @@ export function useWorkout(): WorkoutState {
       steps: stepsRef.current,
       distanceKm: Math.round(dist * 100) / 100,
       calories: cal,
+      deviceName: watchName,
     };
     saveSession(session);
   }, [stopAccelerometer, saveSession]);

@@ -45,6 +45,13 @@
         {
           "photosPermission": "Allow HabitFlow to access your photos to set your profile picture."
         }
+      ],
+      [
+        "react-native-ble-plx",
+        {
+          "isBackgroundEnabled": false,
+          "bluetoothAlwaysPermission": "Allow HabitFlow to connect to your smartwatch and sync heart rate and steps."
+        }
       ]
     ]
   }

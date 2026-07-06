@@ -14,6 +14,8 @@ import * as Notifications from 'expo-notifications';
 import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../context/ThemeContext';
 import TabBar from '../components/TabBar';
+import { useWatchSync } from '../hooks/use-watch-sync';
+import WatchPairingModal from '../components/WatchPairingModal';
 
 // 5 default habit-based avatar stickers
 const DEFAULT_AVATARS = ['🧘', '🏃', '💧', '📖', '💪'];
@@ -21,7 +23,8 @@ const DEFAULT_AVATARS = ['🧘', '🏃', '💧', '📖', '💪'];
 export default function SettingsScreen() {
   const router = useRouter();
   const { T, isDark, toggleTheme } = useTheme();
-
+  const { pairedDevice, disconnectDevice } = useWatchSync();
+  const [pairingModalVisible, setPairingModalVisible] = useState(false);
   useFocusEffect(
     React.useCallback(() => {
       const onBackPress = () => {
@@ -289,6 +292,52 @@ export default function SettingsScreen() {
             </View>
           </Animated.View>
 
+          {/* ── DEVICE CONNECTIONS ── */}
+          <Animated.View entering={FadeInDown.delay(230).springify()}>
+            <Text style={[styles.sectionLabel, { color: T.textMuted }]}>Device Connections</Text>
+            <View style={[T.neo, styles.group]}>
+              {pairedDevice ? (
+                <View style={styles.row}>
+                  <View style={[T.neo, styles.rowIcon, { backgroundColor: T.bg }]}>
+                    <Text style={styles.rowEmoji}>⌚</Text>
+                  </View>
+                  <View style={styles.rowText}>
+                    <Text style={[styles.rowTitle, { color: T.teal }]}>
+                      {pairedDevice.name}
+                    </Text>
+                    <Text style={[styles.rowDesc, { color: T.textMuted }]}>
+                      Connected 🟢  ·  Battery: {pairedDevice.battery}%  ·  Last Sync: {pairedDevice.lastSync}
+                    </Text>
+                  </View>
+                  <Pressable
+                    onPress={disconnectDevice}
+                    style={({ pressed }) => [
+                      styles.disconnectBtn,
+                      { backgroundColor: T.isDark ? 'rgba(234,94,94,0.15)' : 'rgba(212,64,64,0.12)' },
+                      pressed && { opacity: 0.7 },
+                    ]}
+                  >
+                    <Text style={[styles.disconnectBtnText, { color: T.red }]}>Disconnect</Text>
+                  </Pressable>
+                </View>
+              ) : (
+                <Pressable
+                  style={({ pressed }) => [styles.row, pressed && { opacity: 0.7 }]}
+                  onPress={() => setPairingModalVisible(true)}
+                >
+                  <View style={[T.neo, styles.rowIcon, { backgroundColor: T.bg }]}>
+                    <Text style={styles.rowEmoji}>🔌</Text>
+                  </View>
+                  <View style={styles.rowText}>
+                    <Text style={[styles.rowTitle, { color: T.textPrimary }]}>Pair Smart Watch</Text>
+                    <Text style={[styles.rowDesc, { color: T.textMuted }]}>Connect Fitbit, Apple Watch, Garmin or Noise</Text>
+                  </View>
+                  <Text style={[styles.chevron, { color: T.textMuted }]}>›</Text>
+                </Pressable>
+              )}
+            </View>
+          </Animated.View>
+
           {/* ── APP CONFIG ── */}
           <Animated.View entering={FadeInDown.delay(260).springify()}>
             <Text style={[styles.sectionLabel, { color: T.textMuted }]}>App Configuration</Text>
@@ -336,6 +385,11 @@ export default function SettingsScreen() {
         </ScrollView>
 
         <TabBar activeTab="profile" />
+
+        <WatchPairingModal
+          visible={pairingModalVisible}
+          onClose={() => setPairingModalVisible(false)}
+        />
 
       </View>
     </SafeAreaView>
@@ -399,4 +453,16 @@ const styles = StyleSheet.create({
   aboutApp:  { fontSize: 16, fontWeight: '800', marginBottom: 4 },
   aboutVer:  { fontSize: 12, marginBottom: 4 },
   aboutMode: { fontSize: 11, fontStyle: 'italic' },
+
+  disconnectBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  disconnectBtnText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
 });

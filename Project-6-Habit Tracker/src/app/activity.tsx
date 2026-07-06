@@ -10,12 +10,13 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
-import Animated, { FadeInDown, useAnimatedStyle, useSharedValue, withTiming, Easing } from 'react-native-reanimated';
+import Animated, { FadeInDown, useAnimatedStyle, useSharedValue, withTiming, Easing, withRepeat, withSequence } from 'react-native-reanimated';
 import Svg, { Circle } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import { usePedometer } from '../hooks/use-pedometer';
 import { useWorkout } from '../hooks/use-workout';
+import { useWatchSync } from '../hooks/use-watch-sync';
 import TabBar from '../components/TabBar';
 
 const { width: SW } = Dimensions.get('window');
@@ -126,8 +127,28 @@ export default function ActivityScreen() {
   const pd = usePedometer();
   const workout = useWorkout();
 
-  // Mode tab: 'summary' or 'workout'
+  const { pairedDevice, heartRate } = useWatchSync();
   const [activeMode, setActiveMode] = useState<'summary' | 'workout'>('summary');
+
+  // Heartbeat pulse animation
+  const heartScale = useSharedValue(1);
+  useEffect(() => {
+    if (pairedDevice) {
+      heartScale.value = withRepeat(
+        withSequence(
+          withTiming(1.2, { duration: 200, easing: Easing.bezier(0.25, 0.1, 0.25, 1) }),
+          withTiming(1.0, { duration: 150 }),
+          withTiming(1.15, { duration: 150 }),
+          withTiming(1.0, { duration: 500 })
+        ),
+        -1,
+        false
+      );
+    } else {
+      heartScale.value = 1;
+    }
+  }, [pairedDevice]);
+  const beatingHeartStyle = useAnimatedStyle(() => ({ transform: [{ scale: heartScale.value }] }));
 
   useFocusEffect(
     React.useCallback(() => {
@@ -195,7 +216,14 @@ export default function ActivityScreen() {
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
             {/* ── Main Rings Card ── */}
             <Animated.View entering={FadeInDown.delay(80).springify()} style={[T.neo, styles.ringsCard]}>
-              <Text style={[styles.cardTitle, { color: T.textMuted }]}>TODAY'S RINGS</Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <Text style={[styles.cardTitle, { color: T.textMuted, marginBottom: 0 }]}>TODAY'S RINGS</Text>
+                {pairedDevice && (
+                  <View style={[styles.syncBadge, { backgroundColor: T.tealDim }]}>
+                    <Text style={[styles.syncBadgeText, { color: T.teal }]}>⌚ Synced from {pairedDevice.name}</Text>
+                  </View>
+                )}
+              </View>
               <View style={styles.ringsRow}>
                 <ArcRing percent={pct} size={ringSize} strokeWidth={10} color={T.teal} bgColor={T.tealDim}
                   label="Steps" value={pd.available ? (pd.steps > 999 ? (pd.steps/1000).toFixed(1)+'k' : String(pd.steps)) : '—'} unit="steps" />
@@ -214,6 +242,26 @@ export default function ActivityScreen() {
               <Text style={[styles.pctLabel, { color: T.textMuted }]}>{pct}% complete</Text>
             </Animated.View>
 
+            {/* ── Live Heart Rate Card ── */}
+            {pairedDevice && (
+              <Animated.View entering={FadeInDown.delay(120).springify()} style={[T.neo, styles.heartRateCard]}>
+                <View style={styles.cardIconRow}>
+                  <View style={[styles.iconBubble, { backgroundColor: T.red + '22' }]}>
+                    <Animated.Text style={[{ fontSize: 16 }, beatingHeartStyle]}>❤️</Animated.Text>
+                  </View>
+                  <Text style={[styles.cardTitle, { color: T.textPrimary, marginBottom: 0 }]}>LIVE HEART RATE</Text>
+                </View>
+                <View style={styles.hrRow}>
+                  <Text style={[styles.hrNum, { color: T.textPrimary }]}>{heartRate || '—'}</Text>
+                  <Text style={[styles.hrUnit, { color: T.textMuted }]}>BPM</Text>
+                  <View style={{ flex: 1 }} />
+                  <View style={[styles.watchBadge, { backgroundColor: T.tealDim }]}>
+                    <Text style={[styles.watchBadgeText, { color: T.teal }]}>⌚ {pairedDevice.name}</Text>
+                  </View>
+                </View>
+              </Animated.View>
+            )}
+
             {/* ── Stat Cards Row ── */}
             <View style={styles.statsGrid}>
               <StatCard icon="🚶" label="Steps"    value={stepLabel} unit="today" color={T.teal}   T={T} delay={160} />
@@ -228,8 +276,13 @@ export default function ActivityScreen() {
                 <Text style={[styles.tipsTitle, { color: T.textPrimary }]}>🏃 Today's Workouts</Text>
                 {workout.todaysSessions.map((s, i) => (
                   <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8, paddingTop: 8, borderTopWidth: i > 0 ? 0.5 : 0, borderTopColor: T.border }}>
-                    <Text style={{ fontSize: 12, fontWeight: '700', color: T.textPrimary }}>{workoutLabels[s.type]}</Text>
-                    <View style={{ flexDirection: 'row', gap: 12 }}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: 12, fontWeight: '700', color: T.textPrimary }}>{workoutLabels[s.type]}</Text>
+                      {s.deviceName && (
+                        <Text style={{ fontSize: 9, color: T.teal, fontWeight: '600', marginTop: 1 }}>⌚ {s.deviceName}</Text>
+                      )}
+                    </View>
+                    <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
                       <Text style={{ fontSize: 11, color: T.teal }}>{formatWorkoutTime(s.durationSeconds)}</Text>
                       <Text style={{ fontSize: 11, color: T.orange }}>{s.calories} kcal</Text>
                       <Text style={{ fontSize: 11, color: T.purple }}>{s.distanceKm} km</Text>
@@ -390,9 +443,14 @@ export default function ActivityScreen() {
                 {workout.todaysSessions.map((s, i) => (
                   <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
                     marginTop: 8, paddingTop: 8, borderTopWidth: i > 0 ? 0.5 : 0, borderTopColor: T.border }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
                       <Ionicons name={s.type === 'outdoor_cycle' ? 'bicycle-outline' : s.type === 'brisk_walk' ? 'footsteps-outline' : 'walk-outline'} size={14} color={T.teal} />
-                      <Text style={{ fontSize: 12, fontWeight: '700', color: T.textPrimary }}>{workoutLabels[s.type]}</Text>
+                      <View>
+                        <Text style={{ fontSize: 12, fontWeight: '700', color: T.textPrimary }}>{workoutLabels[s.type]}</Text>
+                        {s.deviceName && (
+                          <Text style={{ fontSize: 9, color: T.teal, fontWeight: '600', marginTop: 1 }}>⌚ {s.deviceName}</Text>
+                        )}
+                      </View>
                     </View>
                     <View style={{ flexDirection: 'row', gap: 10 }}>
                       <Text style={{ fontSize: 11, color: T.teal }}>{formatWorkoutTime(s.durationSeconds)}</Text>
@@ -539,4 +597,59 @@ const styles = StyleSheet.create({
   tipRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 10 },
   tipIcon: { fontSize: 16, marginTop: 1 },
   tipText: { flex: 1, fontSize: 12, lineHeight: 18 },
+
+  // Heart Rate & Sync Badges
+  heartRateCard: {
+    borderRadius: 24,
+    padding: 18,
+    marginBottom: 16,
+  },
+  cardIconRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  iconBubble: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  hrRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 6,
+    paddingLeft: 4,
+  },
+  hrNum: {
+    fontSize: 34,
+    fontWeight: '900',
+    letterSpacing: -1,
+  },
+  hrUnit: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  watchBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 10,
+  },
+  watchBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  syncBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  syncBadgeText: {
+    fontSize: 9,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
 });
