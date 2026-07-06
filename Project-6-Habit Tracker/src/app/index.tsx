@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Dimensions, Animated as RNAnimated } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Dimensions, Animated as RNAnimated, Image } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link, useRouter, useFocusEffect } from 'expo-router';
 import Animated, {
@@ -275,10 +276,20 @@ export default function HomeDashboard() {
   const { habits, loadHabits, toggleCompleteHabit } = useHabits();
   const { permissionStatus, checkPermissions } = usePushNotifications();
 
+  const [profileUri, setProfileUri] = React.useState<string | null>(null);
+  const [profileEmoji, setProfileEmoji] = React.useState('🧘');
+  const [profileName, setProfileName] = React.useState('Himanshu');
+
   useFocusEffect(
     React.useCallback(() => {
       loadHabits();
       checkPermissions();
+
+      AsyncStorage.multiGet(['PROFILE_URI', 'PROFILE_EMOJI', 'PROFILE_NAME']).then(pairs => {
+        setProfileUri(pairs[0][1] || null);
+        setProfileEmoji(pairs[1][1] || '🧘');
+        setProfileName(pairs[2][1] || 'Himanshu');
+      }).catch(() => {});
     }, [])
   );
 
@@ -392,17 +403,23 @@ export default function HomeDashboard() {
 
         {/* ═══ HEADER ═══ */}
         <Animated.View entering={FadeInDown.duration(500).springify()} style={styles.header}>
-          <View style={styles.avatarWrap}>
-            <Animated.View style={[styles.avatarRing, { borderColor: T.teal }, pulseStyle]} />
-            <View style={[T.neo, styles.avatar]}>
-              <Text style={styles.avatarEmoji}>🧘</Text>
+          <Pressable onPress={() => router.push('/settings')} style={{ flexDirection: 'row', alignItems: 'center', flex: 1, gap: 10 }}>
+            <View style={styles.avatarWrap}>
+              <Animated.View style={[styles.avatarRing, { borderColor: T.teal }, pulseStyle]} />
+              <View style={[T.neo, styles.avatar, { overflow: 'hidden' }]}>
+                {profileUri ? (
+                  <Image source={{ uri: profileUri }} style={{ width: 44, height: 44, borderRadius: 22 }} />
+                ) : (
+                  <Text style={styles.avatarEmoji}>{profileEmoji}</Text>
+                )}
+              </View>
             </View>
-          </View>
 
-          <View style={styles.headerText}>
-            <Text style={[styles.greetSmall, { color: T.textMuted }]}>{greetEmoji} {greeting}</Text>
-            <Text style={[styles.greetName, { color: T.textPrimary }]}>Himanshu</Text>
-          </View>
+            <View style={styles.headerText}>
+              <Text style={[styles.greetSmall, { color: T.textMuted }]}>{greetEmoji} {greeting}</Text>
+              <Text style={[styles.greetName, { color: T.textPrimary }]}>{profileName}</Text>
+            </View>
+          </Pressable>
 
           {/* Theme toggle */}
           <SpringPressable onPress={toggleTheme}>
