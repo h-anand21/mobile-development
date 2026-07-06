@@ -132,8 +132,31 @@ function DayCell({ label, date, isToday, isSelected, count, total, onPress, T }:
   }, []);
   const aStyle = useAnimatedStyle(() => ({ transform: [{ scale: s.value }], opacity: o.value }));
 
-  const filled  = total > 0 && count >= total;
-  const partial = total > 0 && count > 0 && count < total;
+  // Calculate percentage of habits completed
+  const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+
+  // Determine green shade color based on completion percentage
+  const getGreenShade = () => {
+    if (pct === 0) {
+      return T.isDark ? 'rgba(148, 163, 184, 0.08)' : 'rgba(0, 0, 0, 0.05)';
+    }
+    const r = T.isDark ? 94 : 46;
+    const g = T.isDark ? 234 : 196;
+    const b = T.isDark ? 212 : 168;
+
+    if (pct === 100) return T.teal; // Full deep green
+    if (pct >= 80) return `rgba(${r}, ${g}, ${b}, 0.70)`; // 80% green
+    if (pct >= 50) return `rgba(${r}, ${g}, ${b}, 0.45)`; // 50% green
+    if (pct >= 25) return `rgba(${r}, ${g}, ${b}, 0.25)`; // 25% green
+    return `rgba(${r}, ${g}, ${b}, 0.12)`; // >0% green
+  };
+
+  // Determine text color based on background intensity
+  const getTextColor = () => {
+    if (pct === 0) return T.textMuted;
+    if (pct >= 80) return T.isDark ? T.bg : '#ffffff'; // light text on dark background
+    return T.textPrimary;
+  };
 
   return (
     <Pressable onPress={onPress}>
@@ -147,21 +170,20 @@ function DayCell({ label, date, isToday, isSelected, count, total, onPress, T }:
         </Text>
         <View style={[
           styles.dayCircle,
-          isSelected && { backgroundColor: T.tealDim, borderWidth: 2, borderColor: T.teal },
-          isToday && !isSelected && { backgroundColor: T.teal },
-          filled && !isToday && !isSelected && { backgroundColor: T.tealDim, borderWidth: 1, borderColor: T.tealBorder },
-          partial && !isToday && !isSelected && { backgroundColor: T.yellowDim, borderWidth: 1, borderColor: 'rgba(234,212,94,0.25)' },
+          { backgroundColor: getGreenShade() },
+          isSelected && { borderWidth: 2, borderColor: T.teal },
+          isToday && !isSelected && { borderWidth: 2, borderColor: T.tealBorder },
         ]}>
           <Text style={[
             styles.dayNum,
-            { color: isSelected ? T.teal : isToday ? T.bg : filled ? T.teal : T.textSub },
+            { color: getTextColor() },
             (isToday || isSelected) && { fontWeight: '900' },
           ]}>
             {date}
           </Text>
         </View>
         <View style={[styles.dayDot, {
-          backgroundColor: count > 0 ? (filled ? T.teal : T.yellow) : 'transparent'
+          backgroundColor: pct > 0 ? T.teal : 'transparent'
         }]} />
       </Animated.View>
     </Pressable>
@@ -348,13 +370,17 @@ export default function HomeDashboard() {
     else if (iso === getYesterdayDateString()) displayLabel = 'Yest';
     else if (iso === getTomorrowDateString()) displayLabel = 'Tomw';
 
+    // Get active habits for this day to compute progress correctly
+    const activeForDay = habits.filter(h => h.frequency.kind === 'daily' || h.frequency.weekdays.includes(d.getDay()));
+    const completedForDay = activeForDay.filter(h => h.completedDates.includes(iso) || h.shieldedDates?.includes(iso)).length;
+
     return {
       label: displayLabel,
       date: d.getDate(),
       iso,
       isToday: iso === todayStr,
-      count: habits.filter(h => h.completedDates.includes(iso) || h.shieldedDates?.includes(iso)).length,
-      total: habits.length,
+      count: completedForDay,
+      total: activeForDay.length,
     };
   });
 

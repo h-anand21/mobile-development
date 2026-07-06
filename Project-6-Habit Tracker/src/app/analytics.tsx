@@ -138,10 +138,17 @@ export default function AnalyticsScreen() {
     const totalDone = completed + shielded;
     const pct = Math.round((totalDone / active.length) * 100);
 
-    let color = 'rgba(148, 163, 184, 0.08)';
+    let color = T.isDark ? 'rgba(148, 163, 184, 0.08)' : 'rgba(0, 0, 0, 0.05)';
     if (totalDone > 0) {
+      const r = T.isDark ? 94 : 46;
+      const g = T.isDark ? 234 : 196;
+      const b = T.isDark ? 212 : 168;
+
       if (pct === 100) color = T.teal;
-      else color = T.tealDim;
+      else if (pct >= 80) color = `rgba(${r}, ${g}, ${b}, 0.70)`;
+      else if (pct >= 50) color = `rgba(${r}, ${g}, ${b}, 0.45)`;
+      else if (pct >= 25) color = `rgba(${r}, ${g}, ${b}, 0.25)`;
+      else color = `rgba(${r}, ${g}, ${b}, 0.12)`;
     } else if (shielded > 0) {
       color = T.orangeDim;
     }
@@ -385,7 +392,7 @@ export default function AnalyticsScreen() {
                   >
                     <Text style={[
                       styles.gridDayText,
-                      { color: status.pct === 100 ? T.bg : T.textPrimary },
+                      { color: status.pct >= 80 ? (T.isDark ? T.bg : '#ffffff') : (status.pct === 0 ? T.textMuted : T.textPrimary) },
                       isSelected && { fontWeight: '800' }
                     ]}>
                       {cell.dayNum}
