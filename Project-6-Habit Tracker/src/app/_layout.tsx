@@ -31,6 +31,16 @@ function AppLayout() {
             router.replace('/onboarding/screen1');
           }, 100);
         }
+
+        // 3. Cold-start: check if app was opened by tapping a notification
+        // This handles the case where app was completely closed when user tapped the notification.
+        // addNotificationResponseReceivedListener (below) only fires when app is already running.
+        const lastResponse = await Notifications.getLastNotificationResponseAsync();
+        if (lastResponse) {
+          const data = lastResponse.notification.request.content.data;
+          handleNotificationTap(data as any);
+        }
+
       } catch (error) {
         console.error('App preparation failed:', error);
       } finally {
