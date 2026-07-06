@@ -395,6 +395,27 @@ export default function HomeDashboard() {
   const weekBars = weekStrip.map(d => d.count);
   const maxBar   = Math.max(1, ...weekBars);
 
+  // Generate completion percentages for the past 35 days chronologically (oldest to today)
+  const miniHeatmapData = React.useMemo(() => {
+    return Array.from({ length: 35 }, (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - 34 + i); // 34 days ago up to today
+      const iso = getLocalDateString(d);
+      
+      const activeForDay = habits.filter(h => h.frequency.kind === 'daily' || h.frequency.weekdays.includes(d.getDay()));
+      if (activeForDay.length === 0) {
+        return { pct: 0, shielded: false };
+      }
+      
+      const completed = activeForDay.filter(h => h.completedDates.includes(iso)).length;
+      const shielded = activeForDay.filter(h => h.shieldedDates?.includes(iso)).length;
+      const totalDone = completed + shielded;
+      const pct = Math.round((totalDone / activeForDay.length) * 100);
+
+      return { pct, shielded: shielded > 0 && completed === 0 };
+    });
+  }, [habits]);
+
   const getSectionTitle = () => {
     if (selectedDateStr === todayStr) return "Today's Habits";
     if (selectedDateStr === getYesterdayDateString()) return "Yesterday's Habits";
@@ -513,11 +534,32 @@ export default function HomeDashboard() {
               </Text>
               <Text style={[styles.cardSub, { color: T.textMuted }]}>Today's completions</Text>
               <View style={styles.heatmap}>
-                {Array.from({ length: 35 }, (_, i) => (
-                  <View key={i} style={[styles.heatDot, {
-                    backgroundColor: i < totalLogs % 36 ? T.teal : T.tealDim
-                  }]} />
-                ))}
+                {miniHeatmapData.map((item, i) => {
+                  // Determine green intensity color
+                  const getDotColor = () => {
+                    if (item.pct === 0) {
+                      return T.isDark ? 'rgba(148, 163, 184, 0.08)' : 'rgba(0, 0, 0, 0.05)';
+                    }
+                    if (item.shielded) {
+                      return T.orangeDim;
+                    }
+                    const r = T.isDark ? 94 : 46;
+                    const g = T.isDark ? 234 : 196;
+                    const b = T.isDark ? 212 : 168;
+
+                    if (item.pct === 100) return T.teal;
+                    if (item.pct >= 80) return `rgba(${r}, ${g}, ${b}, 0.70)`;
+                    if (item.pct >= 50) return `rgba(${r}, ${g}, ${b}, 0.45)`;
+                    if (item.pct >= 25) return `rgba(${r}, ${g}, ${b}, 0.25)`;
+                    return `rgba(${r}, ${g}, ${b}, 0.12)`;
+                  };
+
+                  return (
+                    <View key={i} style={[styles.heatDot, {
+                      backgroundColor: getDotColor()
+                    }]} />
+                  );
+                })}
               </View>
             </Animated.View>
 
