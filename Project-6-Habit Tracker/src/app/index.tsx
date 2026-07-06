@@ -405,7 +405,7 @@ export default function HomeDashboard() {
           </View>
 
           {/* Theme toggle */}
-          <SpringPressable onPress={toggleTheme} style={{ marginRight: 8 }}>
+          <SpringPressable onPress={toggleTheme}>
             <Animated.View style={[T.neo, styles.neoBtnCircle]}>
               <Text style={{ fontSize: 16 }}>{isDark ? '☀️' : '🌙'}</Text>
             </Animated.View>
@@ -639,10 +639,10 @@ const styles = StyleSheet.create({
   safe:  { flex: 1 },
   root:  { flex: 1 },
   header: {
-    flexDirection: 'row', alignItems: 'center',
+    flexDirection: 'row', alignItems: 'center', gap: 10,
     paddingHorizontal: 20, paddingTop: 8, paddingBottom: 14,
   },
-  avatarWrap: { alignItems: 'center', justifyContent: 'center', marginRight: 14 },
+  avatarWrap: { alignItems: 'center', justifyContent: 'center' },
   avatarRing: {
     position: 'absolute', width: 50, height: 50, borderRadius: 25,
     borderWidth: 2, opacity: 0.35,
