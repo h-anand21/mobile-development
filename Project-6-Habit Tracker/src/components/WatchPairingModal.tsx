@@ -85,10 +85,20 @@ export default function WatchPairingModal({ visible, onClose }: WatchPairingModa
     }
   }, [visible]);
 
+  // Auto-close modal when watch is connected
+  useEffect(() => {
+    if (status === 'connected' && visible) {
+      const timer = setTimeout(() => {
+        onClose();
+      }, 1200); // Wait 1.2s so user sees the success state
+      return () => clearTimeout(timer);
+    }
+  }, [status, visible]);
+
   const handlePairCustom = () => {
     if (customName.trim()) {
       connectCustomDevice(customName);
-      setCustomName('');
+      // Wait to clear the name, or clear it upon connection so they see what name they wrote
     }
   };
 
@@ -109,6 +119,20 @@ export default function WatchPairingModal({ visible, onClose }: WatchPairingModa
               <Text style={[styles.closeText, { color: T.textPrimary }]}>✕</Text>
             </Pressable>
           </View>
+
+          {/* Connected Success State */}
+          {status === 'connected' && (
+            <View style={styles.radarContainer}>
+              <View style={styles.radarWrapper}>
+                <View style={[T.neo, styles.radarCenter, { backgroundColor: T.tealDim, borderColor: T.teal, borderWidth: 2 }]}>
+                  <Text style={{ fontSize: 26 }}>🎉</Text>
+                </View>
+              </View>
+              <Text style={[styles.radarStatus, { color: T.teal, fontWeight: '800', fontSize: 15 }]}>
+                Watch Paired Successfully!
+              </Text>
+            </View>
+          )}
 
           {/* Scanning Radar Area */}
           {(status === 'scanning' || status === 'connecting') && (
@@ -133,7 +157,7 @@ export default function WatchPairingModal({ visible, onClose }: WatchPairingModa
 
           {/* Devices Scroll List */}
           <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollList}>
-            {status !== 'connecting' && (
+            {status !== 'connecting' && status !== 'connected' && (
               <>
                 <Text style={[styles.sectionLabel, { color: T.textMuted }]}>
                   {bleDevices.length > 0 ? 'Discovered Devices' : ''}

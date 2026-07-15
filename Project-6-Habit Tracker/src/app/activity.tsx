@@ -161,10 +161,27 @@ export default function ActivityScreen() {
     }, [])
   );
 
-  const stepLabel = pd.loading ? '—' : !pd.available ? '—' : pd.steps.toLocaleString();
-  const calLabel  = pd.loading || !pd.available ? '—' : String(pd.calories);
-  const distLabel = pd.loading || !pd.available ? '—' : String(pd.distanceKm);
-  const pct = pd.available ? pd.progressPercent : 0;
+  const hasWatch = pairedDevice !== null;
+  const watchSteps = pairedDevice?.steps || 0;
+  const watchCalories = pairedDevice?.calories || 0;
+  const watchDistance = Math.round((watchSteps * 0.762) / 10) / 100;
+
+  const stepLabel = hasWatch 
+    ? watchSteps.toLocaleString()
+    : (pd.loading ? '—' : !pd.available ? '—' : pd.steps.toLocaleString());
+
+  const calLabel = hasWatch
+    ? String(watchCalories)
+    : (pd.loading || !pd.available ? '—' : String(pd.calories));
+
+  const distLabel = hasWatch
+    ? String(watchDistance)
+    : (pd.loading || !pd.available ? '—' : String(pd.distanceKm));
+
+  const pct = hasWatch
+    ? Math.min(100, Math.round((watchSteps / pd.goalSteps) * 100))
+    : (pd.available ? pd.progressPercent : 0);
+
   const ringSize = 110;
 
   const formatWorkoutTime = (sec: number) => {
@@ -258,6 +275,35 @@ export default function ActivityScreen() {
                   <View style={[styles.watchBadge, { backgroundColor: T.tealDim }]}>
                     <Text style={[styles.watchBadgeText, { color: T.teal }]}>⌚ {pairedDevice.name}</Text>
                   </View>
+                </View>
+              </Animated.View>
+            )}
+
+            {/* ── Watch Health Metrics (Sleep & SpO2) ── */}
+            {pairedDevice && (
+              <Animated.View entering={FadeInDown.delay(140).springify()} style={styles.watchMetricsGrid}>
+                {/* Sleep Card */}
+                <View style={[T.neo, styles.halfCard]}>
+                  <View style={styles.cardIconRow}>
+                    <View style={[styles.iconBubble, { backgroundColor: T.purple + '22' }]}>
+                      <Text style={{ fontSize: 14 }}>🛌</Text>
+                    </View>
+                    <Text style={[styles.cardTitle, { color: T.textPrimary, marginBottom: 0 }]}>SLEEP</Text>
+                  </View>
+                  <Text style={[styles.metricMainText, { color: T.purple }]}>{pairedDevice.sleepDuration}</Text>
+                  <Text style={[styles.metricSubText, { color: T.textMuted }]}>Score: {pairedDevice.sleepScore}/100</Text>
+                </View>
+
+                {/* SpO2 Card */}
+                <View style={[T.neo, styles.halfCard]}>
+                  <View style={styles.cardIconRow}>
+                    <View style={[styles.iconBubble, { backgroundColor: T.teal + '22' }]}>
+                      <Text style={{ fontSize: 14 }}>🩸</Text>
+                    </View>
+                    <Text style={[styles.cardTitle, { color: T.textPrimary, marginBottom: 0 }]}>SPO2</Text>
+                  </View>
+                  <Text style={[styles.metricMainText, { color: T.teal }]}>{pairedDevice.spo2}%</Text>
+                  <Text style={[styles.metricSubText, { color: T.textMuted }]}>Blood Oxygen - Normal</Text>
                 </View>
               </Animated.View>
             )}
@@ -651,5 +697,29 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+  },
+
+  // Watch Health Metrics Grid (Sleep & SpO2)
+  watchMetricsGrid: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 16,
+    justifyContent: 'space-between',
+  },
+  halfCard: {
+    width: (SW - 44) / 2,
+    borderRadius: 24,
+    padding: 16,
+  },
+  metricMainText: {
+    fontSize: 24,
+    fontWeight: '900',
+    marginBottom: 2,
+    marginTop: 4,
+  },
+  metricSubText: {
+    fontSize: 10,
+    fontWeight: '600',
+    lineHeight: 14,
   },
 });
