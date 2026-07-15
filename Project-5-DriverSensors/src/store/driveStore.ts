@@ -92,7 +92,7 @@ export const useDriveStore = create<DriveState>((set) => ({
               },
             };
           });
-          console.log(`[SafeDrive] Score recovered to ${newScore} after 30s clean driving.`);
+          console.log(`[SyncDrive] Score recovered to ${newScore} after 30s clean driving.`);
         }
         lastEventTime = now;
       }

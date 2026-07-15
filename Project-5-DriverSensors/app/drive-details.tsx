@@ -195,7 +195,7 @@ export default function DriveDetailsScreen() {
 
   const handleShare = async () => {
     try {
-      const shareMessage = `🚗 SafeDrive Trip Summary Report\n\n` +
+      const shareMessage = `🚗 SyncDrive Trip Summary Report\n\n` +
         `Date: ${driveDateStr} at ${driveTimeStr}\n` +
         `Distance: ${distanceKm} km\n` +
         `Duration: ${durationText}\n` +
@@ -205,11 +205,11 @@ export default function DriveDetailsScreen() {
         `• Harsh Accelerations: ${harshAccelCount}\n` +
         `• Sharp Turns: ${sharpTurnCount}\n` +
         `• Phone Usage: ${phoneUsageCount} time(s)\n\n` +
-        `Shared via SafeDrive App 📱`;
+        `Shared via SyncDrive App 📱`;
 
       await Share.share({
         message: shareMessage,
-        title: 'SafeDrive Trip Report',
+        title: 'SyncDrive Trip Report',
       });
     } catch (error: any) {
       Alert.alert('Error', 'Unable to share this drive details.');

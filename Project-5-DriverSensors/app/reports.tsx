@@ -381,7 +381,7 @@ export default function ReportsScreen() {
 
       const reportText = `
 =============================================
-SAFEDRIVE DRIVE REPORT (${reportType.toUpperCase()})
+SYNCDRIVE DRIVE REPORT (${reportType.toUpperCase()})
 =============================================
 Report Range: ${reportData.dateRange}
 Overall Driving Score: ${reportData.avgScore} / 100
@@ -399,7 +399,7 @@ AI COACH SAFETY TIPS:
 1. ${safetyTips[0]}
 2. ${safetyTips[1]}
 
-Telemetry data processed locally. SafeDrive v1.0.0.
+Telemetry data processed locally. SyncDrive v1.0.0.
 =============================================
       `;
 

@@ -39,7 +39,7 @@ try {
     }
   };
 } catch (error) {
-  console.warn('[SafeDrive] MMKV native JSI module not found (likely running on Expo Go). Falling back to AsyncStorage-backed sync memory store.');
+  console.warn('[SyncDrive] MMKV native JSI module not found (likely running on Expo Go). Falling back to AsyncStorage-backed sync memory store.');
   
   const memStore: Record<string, string> = {};
   let isLoaded = false;
@@ -55,17 +55,17 @@ try {
         }
       });
       isLoaded = true;
-      console.log('[SafeDrive] AsyncStorage cache initialized successfully.');
+      console.log('[SyncDrive] AsyncStorage cache initialized successfully.');
       loadListeners.forEach(listener => {
         try {
           listener();
         } catch (err) {
-          console.error('[SafeDrive] Error in storage onLoad callback', err);
+          console.error('[SyncDrive] Error in storage onLoad callback', err);
         }
       });
     })
     .catch((err) => {
-      console.error('[SafeDrive] Failed to prefetch keys from AsyncStorage', err);
+      console.error('[SyncDrive] Failed to prefetch keys from AsyncStorage', err);
     });
 
   storageInstance = {
@@ -85,7 +85,7 @@ try {
       const stringValue = String(value);
       memStore[key] = stringValue;
       AsyncStorage.setItem(key, stringValue).catch(err => {
-        console.error(`[SafeDrive] Failed to save key "${key}" to AsyncStorage`, err);
+        console.error(`[SyncDrive] Failed to save key "${key}" to AsyncStorage`, err);
       });
       return true;
     },
@@ -101,14 +101,14 @@ try {
     delete: (key: string) => {
       delete memStore[key];
       AsyncStorage.removeItem(key).catch(err => {
-        console.error(`[SafeDrive] Failed to delete key "${key}" from AsyncStorage`, err);
+        console.error(`[SyncDrive] Failed to delete key "${key}" from AsyncStorage`, err);
       });
       return true;
     },
     clearAll: () => {
       Object.keys(memStore).forEach(key => delete memStore[key]);
       AsyncStorage.multiRemove(initKeys).catch(err => {
-        console.error('[SafeDrive] Failed to clear keys from AsyncStorage', err);
+        console.error('[SyncDrive] Failed to clear keys from AsyncStorage', err);
       });
       return true;
     }

@@ -111,7 +111,7 @@ export default function SettingsScreen() {
   const handlePermissionPress = (name: string, description: string) => {
     Alert.alert(
       name,
-      `${description}\n\nDo you want to open device Settings to configure permissions for SafeDrive?`,
+      `${description}\n\nDo you want to open device Settings to configure permissions for SyncDrive?`,
       [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Open Settings', onPress: () => Linking.openSettings() }
@@ -607,7 +607,7 @@ export default function SettingsScreen() {
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <MaterialCommunityIcons name="information-outline" size={24} color="#00f5ff" />
-              <Text style={styles.modalTitle}>About SafeDrive</Text>
+              <Text style={styles.modalTitle}>About SyncDrive</Text>
               <TouchableOpacity onPress={() => setShowAboutModal(false)} style={styles.modalCloseBtn}>
                 <Feather name="x" size={20} color="#94a3b8" />
               </TouchableOpacity>
@@ -617,27 +617,27 @@ export default function SettingsScreen() {
               <View style={styles.modalBody}>
                 <View style={styles.aboutBranding}>
                   <MaterialCommunityIcons name="shield-car" size={60} color="#00f5ff" />
-                  <Text style={styles.aboutVersionTitle}>SafeDrive Telemetry System</Text>
+                  <Text style={styles.aboutVersionTitle}>SyncDrive Telemetry System</Text>
                   <Text style={styles.aboutVersionSub}>Version 1.0.0 (Build 104)</Text>
                 </View>
 
                 <Text style={styles.aboutSectionHeader}>Telemetry Processor</Text>
                 <Text style={styles.aboutText}>
-                  SafeDrive continuously monitors vehicle movement and driver actions using on-device high-frequency sensors. It runs background analysis for harsh acceleration, aggressive braking, cornering forces, and phone handling.
+                  SyncDrive continuously monitors vehicle movement and driver actions using on-device high-frequency sensors. It runs background analysis for harsh acceleration, aggressive braking, cornering forces, and phone handling.
                 </Text>
 
                 <Text style={styles.aboutSectionHeader}>Privacy Policy</Text>
                 <Text style={styles.aboutText}>
-                  SafeDrive respects your data privacy. All sensor sampling, telemetry calculation, scoring engine deductions, and AI safety coach insights are processed locally on your physical device. No location coordinate traces or distraction telemetry logs are sent to remote servers without explicit user command action.
+                  SyncDrive respects your data privacy. All sensor sampling, telemetry calculation, scoring engine deductions, and AI safety coach insights are processed locally on your physical device. No location coordinate traces or distraction telemetry logs are sent to remote servers without explicit user command action.
                 </Text>
 
                 <Text style={styles.aboutSectionHeader}>Terms of Service</Text>
                 <Text style={styles.aboutText}>
-                  By using SafeDrive, you agree to drive responsibly. SafeDrive provides estimated safety scores and is not a replacement for proper driver focus and road precautions. Safe scoring is a metric calculated for telemetry tracking and self-coaching purposes.
+                  By using SyncDrive, you agree to drive responsibly. SyncDrive provides estimated safety scores and is not a replacement for proper driver focus and road precautions. Safe scoring is a metric calculated for telemetry tracking and self-coaching purposes.
                 </Text>
 
                 <View style={styles.divider} />
-                <Text style={styles.aboutCopyright}>© 2026 SafeDrive Systems. All rights reserved.</Text>
+                <Text style={styles.aboutCopyright}>© 2026 SyncDrive Systems. All rights reserved.</Text>
               </View>
             </ScrollView>
 

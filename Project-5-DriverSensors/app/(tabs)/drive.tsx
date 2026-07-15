@@ -588,7 +588,7 @@ export default function DriveScreen() {
             </View>
             <View style={styles.headerTitleCol}>
               <Text style={styles.headerLogoText}>
-                Safe<Text style={styles.headerLogoTextHighlight}>Drive</Text>
+                Sync<Text style={styles.headerLogoTextHighlight}>Drive</Text>
               </Text>
               <Text style={styles.headerSubtitle}>Engine</Text>
             </View>

@@ -1,25 +1,21 @@
 {
   "expo": {
-    "name": "Safe Drive",
+    "name": "SyncDrive",
     "slug": "Project-5-DriverSensors",
     "version": "1.0.0",
     "orientation": "portrait",
-    "scheme": "project5driversensors",
+    "scheme": "syncdrive",
     "icon": "./assets/icon/black -icon.png",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.driversensors.app",
+      "bundleIdentifier": "com.syncdrive.app",
       "buildNumber": "1",
       "icon": "./assets/icon/black -icon.png"
     },
     "android": {
-      "package": "com.driversensors.app",
+      "package": "com.syncdrive.app",
       "versionCode": 1,
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/icon/black -icon.png",
-        "backgroundColor": "#000000"
-      },
       "predictiveBackGestureEnabled": false
     },
     "web": {
@@ -45,7 +41,7 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Allow SafeDrive to access your location to track driving safety."
+          "locationAlwaysAndWhenInUsePermission": "Allow SyncDrive to access your location to track driving safety."
         }
       ]
     ],

@@ -187,7 +187,7 @@ export default function DashboardScreen() {
       },
       insight: {
         title: totalWkDrives > 0 ? 'Great work, Himanshu! 🎉' : 'No Drives Recorded 🚗',
-        desc: totalWkDrives > 0 ? 'Your driving profile is generated based on recent trips.' : 'Start driving with SafeDrive tracking to see weekly safety breakdown and insights.',
+        desc: totalWkDrives > 0 ? 'Your driving profile is generated based on recent trips.' : 'Start driving with SyncDrive tracking to see weekly safety breakdown and insights.',
         topPerformance: topWkDate,
         topScore: topWkScore > 0 ? topWkScore : '--',
         topDriveId: topWkDrive ? topWkDrive.id : null,

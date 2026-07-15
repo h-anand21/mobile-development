@@ -322,7 +322,7 @@ export default function OnboardingScreen() {
               <Text style={styles.titleHighlight}>Live Safe.</Text>
             </Text>
             <Text style={styles.subtitle}>
-              SafeDrive monitors your driving behavior and helps you build safer driving habits.
+              SyncDrive monitors your driving behavior and helps you build safer driving habits.
             </Text>
           </View>
 

@@ -148,7 +148,7 @@ export default function DriveSummaryScreen() {
     try {
       const distanceKm = (displaySession.distance / 1000).toFixed(1);
       const durationText = formatDuration(durationSec);
-      const shareMessage = `🚗 SafeDrive Trip Summary Report\n\n` +
+      const shareMessage = `🚗 SyncDrive Trip Summary Report\n\n` +
         `Date: ${driveDateStr} at ${driveTimeStr}\n` +
         `Distance: ${distanceKm} km\n` +
         `Duration: ${durationText}\n` +
@@ -158,11 +158,11 @@ export default function DriveSummaryScreen() {
         `• Harsh Accelerations: ${harshAccelCount}\n` +
         `• Sharp Turns: ${sharpTurnCount}\n` +
         `• Phone Usage: ${phoneUsageCount} time(s)\n\n` +
-        `Shared via SafeDrive App 📱`;
+        `Shared via SyncDrive App 📱`;
 
       await Share.share({
         message: shareMessage,
-        title: 'SafeDrive Trip Report',
+        title: 'SyncDrive Trip Report',
       });
     } catch (error: any) {
       Alert.alert('Error', 'Unable to share this drive details.');
