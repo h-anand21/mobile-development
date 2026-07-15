@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Dimensions, Image, ScrollView, TouchableOpacity, TextInput, Switch, Modal, FlatList, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather, MaterialCommunityIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
@@ -6,6 +6,8 @@ import Svg, { Circle, Path, Line, Defs, Stop, Rect, LinearGradient as SvgLinearG
 import { useRouter } from 'expo-router';
 import { storage } from '../src/database/storage';
 import * as ImagePicker from 'expo-image-picker';
+import * as Location from 'expo-location';
+import { DeviceMotion } from 'expo-sensors';
 
 const { width, height } = Dimensions.get('window');
 const isSmallDevice = height < 750;
@@ -68,7 +70,83 @@ export default function ProfileCreationScreen() {
   const [showExpModal, setShowExpModal] = useState(false);
   const expOptions = ['Less than 1 Year', '1-3 Years', '3-5 Years', '5+ Years'];
 
-  const handleCreateProfile = () => {
+  // Permission States
+  const [locationGranted, setLocationGranted] = useState(false);
+  const [motionGranted, setMotionGranted] = useState(false);
+  const [alertsGranted, setAlertsGranted] = useState(true);
+  const [backgroundGranted, setBackgroundGranted] = useState(false);
+
+  const checkPermissions = async () => {
+    try {
+      const locStatus = await Location.getForegroundPermissionsAsync();
+      setLocationGranted(locStatus.granted);
+      setBackgroundGranted(locStatus.granted);
+
+      const motionStatus = await DeviceMotion.getPermissionsAsync();
+      setMotionGranted(motionStatus.granted);
+    } catch (e) {
+      console.warn('Error checking permissions:', e);
+    }
+  };
+
+  const requestLocation = async () => {
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    const granted = status === 'granted';
+    setLocationGranted(granted);
+    setBackgroundGranted(granted);
+    return granted;
+  };
+
+  const requestMotion = async () => {
+    const { status } = await DeviceMotion.requestPermissionsAsync();
+    const granted = status === 'granted';
+    setMotionGranted(granted);
+    return granted;
+  };
+
+  // Check and prompt permissions on mount
+  useEffect(() => {
+    const initPermissions = async () => {
+      await checkPermissions();
+      // Prompt user automatically for both permissions
+      const loc = await requestLocation();
+      if (loc) {
+        await requestMotion();
+      } else {
+        await requestMotion();
+      }
+    };
+    initPermissions();
+  }, []);
+
+  const handleCreateProfile = async () => {
+    // Validate that permissions are granted before proceeding
+    if (!locationGranted || !motionGranted) {
+      Alert.alert(
+        'Permissions Required',
+        'SyncDrive needs Location and Motion permissions to track your driving safety and sensor telemetry. Please grant them to continue.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Grant Permissions',
+            onPress: async () => {
+              const loc = await requestLocation();
+              const mot = await requestMotion();
+              if (loc && mot) {
+                // If both are granted after clicking, save and redirect
+                saveProfileAndRedirect();
+              }
+            }
+          }
+        ]
+      );
+      return;
+    }
+
+    saveProfileAndRedirect();
+  };
+
+  const saveProfileAndRedirect = () => {
     // Save profile details to database/MMKV storage
     storage.set('user_full_name', fullName);
     storage.set('user_age', age);
@@ -443,31 +521,37 @@ export default function ProfileCreationScreen() {
 
           <View style={styles.permissionsRow}>
             {/* Location */}
-            <View style={styles.permissionItem}>
-              <Ionicons name="location-outline" size={20} color="#64748b" style={styles.permissionIcon} />
-              <Text style={styles.permissionLabel}>Location</Text>
-              <Ionicons name="checkmark-circle" size={16} color="#22c55e" />
-            </View>
+            <TouchableOpacity 
+              style={[styles.permissionItem, { borderWidth: 1, borderColor: locationGranted ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.2)' }]} 
+              onPress={requestLocation}
+            >
+              <Ionicons name="location-outline" size={20} color={locationGranted ? "#22c55e" : "#ef4444"} style={styles.permissionIcon} />
+              <Text style={[styles.permissionLabel, { color: locationGranted ? "#22c55e" : "#ef4444" }]}>Location</Text>
+              <Ionicons name={locationGranted ? "checkmark-circle" : "close-circle"} size={16} color={locationGranted ? "#22c55e" : "#ef4444"} />
+            </TouchableOpacity>
 
             {/* Motion */}
-            <View style={styles.permissionItem}>
-              <MaterialCommunityIcons name="gesture-double-tap" size={20} color="#64748b" style={styles.permissionIcon} />
-              <Text style={styles.permissionLabel}>Motion</Text>
-              <Ionicons name="checkmark-circle" size={16} color="#22c55e" />
-            </View>
+            <TouchableOpacity 
+              style={[styles.permissionItem, { borderWidth: 1, borderColor: motionGranted ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.2)' }]} 
+              onPress={requestMotion}
+            >
+              <MaterialCommunityIcons name="gesture-double-tap" size={20} color={motionGranted ? "#22c55e" : "#ef4444"} style={styles.permissionIcon} />
+              <Text style={[styles.permissionLabel, { color: motionGranted ? "#22c55e" : "#ef4444" }]}>Motion</Text>
+              <Ionicons name={motionGranted ? "checkmark-circle" : "close-circle"} size={16} color={motionGranted ? "#22c55e" : "#ef4444"} />
+            </TouchableOpacity>
 
-            {/* Notifications */}
-            <View style={styles.permissionItem}>
-              <Ionicons name="notifications-outline" size={20} color="#64748b" style={styles.permissionIcon} />
-              <Text style={styles.permissionLabel}>Alerts</Text>
-              <Ionicons name="checkmark-circle" size={16} color="#22c55e" />
+            {/* Alerts */}
+            <View style={[styles.permissionItem, { borderWidth: 1, borderColor: alertsGranted ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.2)' }]}>
+              <Ionicons name="notifications-outline" size={20} color={alertsGranted ? "#22c55e" : "#ef4444"} style={styles.permissionIcon} />
+              <Text style={[styles.permissionLabel, { color: alertsGranted ? "#22c55e" : "#ef4444" }]}>Alerts</Text>
+              <Ionicons name={alertsGranted ? "checkmark-circle" : "close-circle"} size={16} color={alertsGranted ? "#22c55e" : "#ef4444"} />
             </View>
 
             {/* Background */}
-            <View style={styles.permissionItem}>
-              <MaterialCommunityIcons name="sync" size={20} color="#64748b" style={styles.permissionIcon} />
-              <Text style={styles.permissionLabel}>Background</Text>
-              <Ionicons name="checkmark-circle" size={16} color="#22c55e" />
+            <View style={[styles.permissionItem, { borderWidth: 1, borderColor: backgroundGranted ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.2)' }]}>
+              <MaterialCommunityIcons name="sync" size={20} color={backgroundGranted ? "#22c55e" : "#ef4444"} style={styles.permissionIcon} />
+              <Text style={[styles.permissionLabel, { color: backgroundGranted ? "#22c55e" : "#ef4444" }]}>Background</Text>
+              <Ionicons name={backgroundGranted ? "checkmark-circle" : "close-circle"} size={16} color={backgroundGranted ? "#22c55e" : "#ef4444"} />
             </View>
           </View>
         </View>
