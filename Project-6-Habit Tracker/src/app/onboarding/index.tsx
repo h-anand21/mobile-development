@@ -68,7 +68,7 @@ export default function OnboardingScreen() {
   };
 
   const handleNext = () => {
-    if (activeIndex < 2) {
+    if (activeIndex < 4) { // 5 slides (index 0, 1, 2, 3, 4)
       scrollViewRef.current?.scrollTo({ x: (activeIndex + 1) * SW, animated: true });
       setActiveIndex(activeIndex + 1);
     } else {
@@ -114,7 +114,7 @@ export default function OnboardingScreen() {
         scrollEventThrottle={16}
         style={styles.scrollView}
       >
-        {/* ================= SLIDE 1 ================= */}
+        {/* ================= SLIDE 1: Welcome ================= */}
         <View style={styles.page}>
           <View style={styles.content}>
             <Animated.View entering={FadeInUp.duration(600).delay(100)} style={styles.illustrationContainer}>
@@ -132,7 +132,7 @@ export default function OnboardingScreen() {
           </View>
         </View>
 
-        {/* ================= SLIDE 2 ================= */}
+        {/* ================= SLIDE 2: Reminders ================= */}
         <View style={styles.page}>
           <View style={styles.content}>
             <View style={styles.illustrationContainer}>
@@ -185,7 +185,7 @@ export default function OnboardingScreen() {
           </View>
         </View>
 
-        {/* ================= SLIDE 3 ================= */}
+        {/* ================= SLIDE 3: Streaks ================= */}
         <View style={styles.page}>
           <View style={styles.content}>
             <Animated.View style={[styles.streakCard, flameAnimatedStyle, { borderColor: T.yellowDim, shadowColor: T.yellow }, T.neo]} entering={FadeInUp.duration(600).delay(100)}>
@@ -216,13 +216,63 @@ export default function OnboardingScreen() {
             </Animated.View>
           </View>
         </View>
+
+        {/* ================= SLIDE 4: Smart Watch Sync ================= */}
+        <View style={styles.page}>
+          <View style={styles.content}>
+            <Animated.View style={[styles.streakCard, { borderColor: T.tealBorder, shadowColor: T.teal }, T.neo]} entering={FadeInUp.duration(600).delay(100)}>
+              <View style={[styles.fireCircle, { backgroundColor: T.tealDim, borderColor: 'rgba(94, 234, 212, 0.15)' }]}>
+                <Ionicons name="watch-outline" size={60} color={T.teal} />
+              </View>
+              <Text style={[styles.streakNumber, { color: T.textPrimary, fontSize: 32 }]}>Watch Sync</Text>
+              <Text style={[styles.streakLabel, { color: T.textSub, fontSize: 12 }]}>Bluetooth Connected 🟢</Text>
+
+              <View style={[styles.miniStatsRow, { borderTopColor: T.border }]}>
+                <View style={styles.miniStat}>
+                  <Text style={[styles.miniStatVal, { color: T.teal }]}>❤️ 72</Text>
+                  <Text style={[styles.miniStatLabel, { color: T.textSub }]}>Live BPM</Text>
+                </View>
+                <View style={[styles.verticalDivider, { backgroundColor: T.border }]} />
+                <View style={styles.miniStat}>
+                  <Text style={[styles.miniStatVal, { color: T.teal }]}>🔋 98%</Text>
+                  <Text style={[styles.miniStatLabel, { color: T.textSub }]}>Battery</Text>
+                </View>
+              </View>
+            </Animated.View>
+
+            <Animated.View entering={FadeInDown.duration(600).delay(300)} style={styles.textContainer}>
+              <Text style={[styles.title, { color: T.textPrimary }]}>⌚ Watch Connection</Text>
+              <Text style={[styles.subtitle, { color: T.textSub }]}>
+                Connect your smartwatch to automatically sync steps, workouts, and live heart rate.
+              </Text>
+            </Animated.View>
+          </View>
+        </View>
+
+        {/* ================= SLIDE 5: Alerts & Action ================= */}
+        <View style={styles.page}>
+          <View style={styles.content}>
+            <Animated.View entering={FadeInUp.duration(600).delay(100)} style={styles.illustrationContainer}>
+              <View style={[styles.illustrationCircle, { backgroundColor: T.purpleDim, borderColor: 'rgba(196, 94, 234, 0.15)' }]}>
+                <Ionicons name="notifications-outline" size={72} color={T.purple} />
+              </View>
+            </Animated.View>
+
+            <Animated.View entering={FadeInDown.duration(600).delay(300)} style={styles.textContainer}>
+              <Text style={[styles.title, { color: T.textPrimary }]}>🔔 Smart Alerts</Text>
+              <Text style={[styles.subtitle, { color: T.textSub }]}>
+                Receive timely reminders to protect your streak, build routines, and keep your flow alive.
+              </Text>
+            </Animated.View>
+          </View>
+        </View>
       </ScrollView>
 
       {/* Footer Navigation */}
       <View style={styles.footer}>
         {/* Navigation Dot Indicators */}
         <View style={styles.dotsContainer}>
-          {[0, 1, 2].map((idx) => (
+          {[0, 1, 2, 3, 4].map((idx) => (
             <View
               key={idx}
               style={[
@@ -245,7 +295,7 @@ export default function OnboardingScreen() {
           onPress={handleNext}
         >
           <Text style={[styles.buttonText, { color: T.teal }]}>
-            {activeIndex === 2 ? "Let's Flow →" : 'Continue →'}
+            {activeIndex === 4 ? "Let's Flow →" : 'Continue →'}
           </Text>
         </Pressable>
       </View>
