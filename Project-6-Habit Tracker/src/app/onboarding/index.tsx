@@ -24,27 +24,125 @@ export default function OnboardingScreen() {
   const scrollViewRef = useRef<ScrollView>(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
-  // Reanimated shared values for Slide 3 flame breathing animation
+  // ── Shared Values for Micro-Animations ──────────────────────────
+
+  // Slide 1: Leaf float bounce
+  const leafBounce = useSharedValue(0);
+  
+  // Slide 2: Cards float drift
+  const cardsFloat = useSharedValue(0);
+  
+  // Slide 3: Flame breathing scale
   const flameScale = useSharedValue(1);
+  
+  // Slide 4: Smartwatch heart beating & watch float
+  const heartBeat = useSharedValue(1);
+  const watchFloat = useSharedValue(0);
+  
+  // Slide 5: Bell wiggle rotation
+  const bellWiggle = useSharedValue(0);
 
   useEffect(() => {
+    // 1. Leaf Float
+    leafBounce.value = withRepeat(
+      withSequence(
+        withTiming(-8, { duration: 2000 }),
+        withTiming(0, { duration: 2000 })
+      ),
+      -1,
+      true
+    );
+
+    // 2. Notification Cards drift
+    cardsFloat.value = withRepeat(
+      withSequence(
+        withTiming(-5, { duration: 1800 }),
+        withTiming(5, { duration: 1800 })
+      ),
+      -1,
+      true
+    );
+
+    // 3. Flame breathing
     flameScale.value = withRepeat(
       withSequence(
         withTiming(1.05, { duration: 1500 }),
         withTiming(1, { duration: 1500 })
       ),
-      -1, // Infinite loop
+      -1,
+      true
+    );
+
+    // 4. Watch Heartbeat & float
+    heartBeat.value = withRepeat(
+      withSequence(
+        withTiming(1.2, { duration: 200 }),
+        withTiming(1, { duration: 150 }),
+        withTiming(1.15, { duration: 150 }),
+        withTiming(1, { duration: 700 })
+      ),
+      -1,
+      true
+    );
+
+    watchFloat.value = withRepeat(
+      withSequence(
+        withTiming(-6, { duration: 2200 }),
+        withTiming(0, { duration: 2200 })
+      ),
+      -1,
+      true
+    );
+
+    // 5. Bell Wiggle
+    bellWiggle.value = withRepeat(
+      withSequence(
+        withTiming(-12, { duration: 120 }),
+        withTiming(12, { duration: 120 }),
+        withTiming(-8, { duration: 120 }),
+        withTiming(8, { duration: 120 }),
+        withTiming(0, { duration: 900 })
+      ),
+      -1,
       true
     );
   }, []);
 
-  const flameAnimatedStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ scale: flameScale.value }],
-    };
-  });
+  // ── Animated Style Definitions ──────────────────────────────────
+  
+  const leafAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: leafBounce.value }],
+  }));
 
-  // Handle hardware back press to go to previous slide
+  const card1AnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: cardsFloat.value }, { rotate: '-2deg' }],
+  }));
+
+  const card2AnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: -cardsFloat.value }, { scale: 1.03 }, { rotate: '1deg' }],
+  }));
+
+  const card3AnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: cardsFloat.value * 0.8 }, { rotate: '-1deg' }],
+  }));
+
+  const flameAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: flameScale.value }],
+  }));
+
+  const watchCardAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: watchFloat.value }],
+  }));
+
+  const heartAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: heartBeat.value }],
+  }));
+
+  const bellAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${bellWiggle.value}deg` }],
+  }));
+
+  // Handle hardware back press
   useFocusEffect(
     React.useCallback(() => {
       const onBackPress = () => {
@@ -117,7 +215,7 @@ export default function OnboardingScreen() {
         {/* ================= SLIDE 1: Welcome ================= */}
         <View style={styles.page}>
           <View style={styles.content}>
-            <Animated.View entering={FadeInUp.duration(600).delay(100)} style={styles.illustrationContainer}>
+            <Animated.View style={[styles.illustrationContainer, leafAnimatedStyle]} entering={FadeInUp.duration(600).delay(100)}>
               <View style={[styles.illustrationCircle, { backgroundColor: T.tealDim, borderColor: T.tealBorder }]}>
                 <Ionicons name="leaf-outline" size={72} color={T.teal} />
               </View>
@@ -139,7 +237,7 @@ export default function OnboardingScreen() {
               {/* Notification Card 1 */}
               <Animated.View
                 entering={FadeInUp.duration(500).delay(100)}
-                style={[styles.floatingCard, styles.floatCard1, { backgroundColor: T.bg, borderColor: T.borderMid }, T.neo]}
+                style={[styles.floatingCard, styles.floatCard1, { backgroundColor: T.bg, borderColor: T.borderMid }, T.neo, card1AnimatedStyle]}
               >
                 <Text style={styles.floatEmoji}>💧</Text>
                 <View style={styles.floatTextContainer}>
@@ -152,7 +250,7 @@ export default function OnboardingScreen() {
               {/* Notification Card 2 */}
               <Animated.View
                 entering={FadeInUp.duration(500).delay(300)}
-                style={[styles.floatingCard, styles.floatCard2, { backgroundColor: T.bgPress, borderColor: T.tealBorder }, T.neoPressed]}
+                style={[styles.floatingCard, styles.floatCard2, { backgroundColor: T.bgPress, borderColor: T.tealBorder }, T.neoPressed, card2AnimatedStyle]}
               >
                 <Text style={styles.floatEmoji}>📖</Text>
                 <View style={styles.floatTextContainer}>
@@ -165,7 +263,7 @@ export default function OnboardingScreen() {
               {/* Notification Card 3 */}
               <Animated.View
                 entering={FadeInUp.duration(500).delay(500)}
-                style={[styles.floatingCard, styles.floatCard3, { backgroundColor: T.bg, borderColor: T.borderMid }, T.neo]}
+                style={[styles.floatingCard, styles.floatCard3, { backgroundColor: T.bg, borderColor: T.borderMid }, T.neo, card3AnimatedStyle]}
               >
                 <Text style={styles.floatEmoji}>💪</Text>
                 <View style={styles.floatTextContainer}>
@@ -220,7 +318,7 @@ export default function OnboardingScreen() {
         {/* ================= SLIDE 4: Smart Watch Sync ================= */}
         <View style={styles.page}>
           <View style={styles.content}>
-            <Animated.View style={[styles.streakCard, { borderColor: T.tealBorder, shadowColor: T.teal }, T.neo]} entering={FadeInUp.duration(600).delay(100)}>
+            <Animated.View style={[styles.streakCard, watchCardAnimatedStyle, { borderColor: T.tealBorder, shadowColor: T.teal }, T.neo]} entering={FadeInUp.duration(600).delay(100)}>
               <View style={[styles.fireCircle, { backgroundColor: T.tealDim, borderColor: 'rgba(94, 234, 212, 0.15)' }]}>
                 <Ionicons name="watch-outline" size={60} color={T.teal} />
               </View>
@@ -229,7 +327,7 @@ export default function OnboardingScreen() {
 
               <View style={[styles.miniStatsRow, { borderTopColor: T.border }]}>
                 <View style={styles.miniStat}>
-                  <Text style={[styles.miniStatVal, { color: T.teal }]}>❤️ 72</Text>
+                  <Animated.Text style={[styles.miniStatVal, { color: T.teal }, heartAnimatedStyle]}>❤️ 72</Animated.Text>
                   <Text style={[styles.miniStatLabel, { color: T.textSub }]}>Live BPM</Text>
                 </View>
                 <View style={[styles.verticalDivider, { backgroundColor: T.border }]} />
@@ -252,7 +350,7 @@ export default function OnboardingScreen() {
         {/* ================= SLIDE 5: Alerts & Action ================= */}
         <View style={styles.page}>
           <View style={styles.content}>
-            <Animated.View entering={FadeInUp.duration(600).delay(100)} style={styles.illustrationContainer}>
+            <Animated.View style={[styles.illustrationContainer, bellAnimatedStyle]} entering={FadeInUp.duration(600).delay(100)}>
               <View style={[styles.illustrationCircle, { backgroundColor: T.purpleDim, borderColor: 'rgba(196, 94, 234, 0.15)' }]}>
                 <Ionicons name="notifications-outline" size={72} color={T.purple} />
               </View>
