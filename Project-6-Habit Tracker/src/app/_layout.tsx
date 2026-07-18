@@ -28,7 +28,7 @@ function AppLayout() {
         
         if (onboardingCompleted !== 'true') {
           setTimeout(() => {
-            router.replace('/onboarding/screen1');
+            router.replace('/onboarding');
           }, 100);
         }
 
@@ -86,9 +86,7 @@ function AppLayout() {
         }}
       >
         <Stack.Screen name="index" />
-        <Stack.Screen name="onboarding/screen1" />
-        <Stack.Screen name="onboarding/screen2" />
-        <Stack.Screen name="onboarding/screen3" />
+        <Stack.Screen name="onboarding/index" />
         <Stack.Screen name="new" options={{ presentation: 'modal' }} />
         <Stack.Screen name="edit" options={{ presentation: 'modal' }} />
         <Stack.Screen name="habit/[id]" />
