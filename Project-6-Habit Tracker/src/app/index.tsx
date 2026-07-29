@@ -113,10 +113,12 @@ function AnimatedRing({ percent, size, strokeWidth, color, bgColor }:
 
   return (
     <Svg width={size} height={size}>
-      <Circle cx={cx} cy={cy} r={r} stroke={bgColor} strokeWidth={strokeWidth} fill="transparent" />
-      <Circle cx={cx} cy={cy} r={r} stroke={color} strokeWidth={strokeWidth} fill="transparent"
-        strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round"
-        transform={`rotate(-90 ${cx} ${cy})`} />
+      <Circle cx={cx} cy={cy} r={r} stroke={bgColor || 'rgba(255,255,255,0.06)'} strokeWidth={strokeWidth} fill="transparent" />
+      {percent > 0 && (
+        <Circle cx={cx} cy={cy} r={r} stroke={color} strokeWidth={strokeWidth} fill="transparent"
+          strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round"
+          transform={`rotate(-90 ${cx} ${cy})`} />
+      )}
     </Svg>
   );
 }
@@ -505,29 +507,30 @@ export default function HomeDashboard() {
 
           {/* ═══ MAIN HERO TODAY'S PROGRESS CARD ═══ */}
           <Animated.View entering={FadeInDown.delay(100).duration(500).springify()}
-            style={[T.neo, { marginHorizontal: 16, borderRadius: 28, padding: 20, marginBottom: 16, backgroundColor: T.bgCard }]}>
+            style={[T.neo, { marginHorizontal: 16, borderRadius: 28, padding: 22, marginBottom: 16, backgroundColor: T.bgCard }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               {/* Left Column: Stats & Progress Bar & Streak Button */}
-              <View style={{ flex: 1, paddingRight: 12 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 }}>
+              <View style={{ flex: 1, paddingRight: 14 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 14 }}>
                   <Ionicons name="trending-up" size={16} color={T.teal} />
                   <Text style={{ fontSize: 13, fontWeight: '700', color: T.textSub }}>Today's Progress</Text>
                 </View>
 
-                <View style={{ flexDirection: 'row', alignItems: 'baseline', marginBottom: 2 }}>
-                  <Text style={{ fontSize: 42, fontWeight: '900', color: T.teal, letterSpacing: -1 }}>{completedCount}</Text>
-                  <Text style={{ fontSize: 24, fontWeight: '700', color: T.textMuted }}> / {total}</Text>
+                {/* Big Counter with Baseline Flush Alignment */}
+                <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 4, marginBottom: 4 }}>
+                  <Text style={{ fontSize: 46, fontWeight: '900', color: T.teal, lineHeight: 50, letterSpacing: -1 }}>{completedCount}</Text>
+                  <Text style={{ fontSize: 26, fontWeight: '700', color: T.textMuted, lineHeight: 38, marginBottom: 2 }}>/ {total}</Text>
                 </View>
                 <Text style={{ fontSize: 12, fontWeight: '600', color: T.textMuted, marginBottom: 14 }}>Habits Completed</Text>
 
                 {/* Progress bar line */}
-                <View style={{ height: 6, backgroundColor: T.tealDim, borderRadius: 3, overflow: 'hidden', marginBottom: 16, width: '100%' }}>
-                  <View style={{ height: '100%', width: `${pct}%`, backgroundColor: T.teal, borderRadius: 3 }} />
+                <View style={{ height: 6, backgroundColor: 'rgba(45,212,191,0.12)', borderRadius: 3, overflow: 'hidden', marginBottom: 16, width: '100%' }}>
+                  <View style={{ height: '100%', width: `${Math.max(0, pct)}%`, backgroundColor: T.teal, borderRadius: 3 }} />
                 </View>
 
-                {/* Streak Pill Button */}
+                {/* Streak Pill Button (Neumorphic Inset) */}
                 <Pressable onPress={() => router.push('/analytics')}
-                  style={[T.neo, { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, alignSelf: 'flex-start' }]}>
+                  style={[T.neoPressed, { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, alignSelf: 'flex-start', backgroundColor: T.bgPress }]}>
                   <Text style={{ fontSize: 13 }}>🔥</Text>
                   <Text style={{ fontSize: 12, fontWeight: '800', color: T.textPrimary }}>{bestStreak} Day Streak</Text>
                   <Ionicons name="chevron-forward" size={12} color={T.textMuted} />
@@ -536,10 +539,10 @@ export default function HomeDashboard() {
 
               {/* Right Column: Large Circular Progress Ring */}
               <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-                <AnimatedRing percent={pct} size={114} strokeWidth={11} color={T.teal} bgColor={T.tealDim} />
+                <AnimatedRing percent={pct} size={118} strokeWidth={12} color={T.teal} bgColor="rgba(45,212,191,0.12)" />
                 <View style={{ position: 'absolute', alignItems: 'center', justifyContent: 'center' }}>
-                  <Text style={{ fontSize: 28, fontWeight: '900', color: T.textPrimary }}>{pct}<Text style={{ fontSize: 16, fontWeight: '700' }}>%</Text></Text>
-                  <Text style={{ fontSize: 10, fontWeight: '700', color: T.textMuted, textTransform: 'uppercase', letterSpacing: 0.5 }}>Completed</Text>
+                  <Text style={{ fontSize: 30, fontWeight: '900', color: T.textPrimary }}>{pct}<Text style={{ fontSize: 17, fontWeight: '700' }}>%</Text></Text>
+                  <Text style={{ fontSize: 10, fontWeight: '800', color: T.textMuted, textTransform: 'uppercase', letterSpacing: 0.8, marginTop: 2 }}>COMPLETED</Text>
                 </View>
               </View>
             </View>
