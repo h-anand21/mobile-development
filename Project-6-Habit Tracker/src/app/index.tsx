@@ -516,10 +516,10 @@ export default function HomeDashboard() {
                   <Text style={{ fontSize: 13, fontWeight: '700', color: T.textSub }}>Today's Progress</Text>
                 </View>
 
-                {/* Big Counter with Baseline Flush Alignment */}
-                <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 4, marginBottom: 4 }}>
-                  <Text style={{ fontSize: 46, fontWeight: '900', color: T.teal, lineHeight: 50, letterSpacing: -1 }}>{completedCount}</Text>
-                  <Text style={{ fontSize: 26, fontWeight: '700', color: T.textMuted, lineHeight: 38, marginBottom: 2 }}>/ {total}</Text>
+                {/* Big Counter tightly grouped */}
+                <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 3, marginBottom: 4 }}>
+                  <Text style={{ fontSize: 44, fontWeight: '900', color: T.teal, letterSpacing: -1 }}>{completedCount}</Text>
+                  <Text style={{ fontSize: 22, fontWeight: '700', color: T.textMuted }}>/{total}</Text>
                 </View>
                 <Text style={{ fontSize: 12, fontWeight: '600', color: T.textMuted, marginBottom: 14 }}>Habits Completed</Text>
 
@@ -541,8 +541,11 @@ export default function HomeDashboard() {
               <View style={{ alignItems: 'center', justifyContent: 'center' }}>
                 <AnimatedRing percent={pct} size={118} strokeWidth={12} color={T.teal} bgColor="rgba(45,212,191,0.12)" />
                 <View style={{ position: 'absolute', alignItems: 'center', justifyContent: 'center' }}>
-                  <Text style={{ fontSize: 30, fontWeight: '900', color: T.textPrimary }}>{pct}<Text style={{ fontSize: 17, fontWeight: '700' }}>%</Text></Text>
-                  <Text style={{ fontSize: 10, fontWeight: '800', color: T.textMuted, textTransform: 'uppercase', letterSpacing: 0.8, marginTop: 2 }}>COMPLETED</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 1 }}>
+                    <Text style={{ fontSize: 32, fontWeight: '900', color: T.textPrimary, letterSpacing: -0.5 }}>{pct}</Text>
+                    <Text style={{ fontSize: 15, fontWeight: '800', color: T.teal, marginTop: 4 }}>%</Text>
+                  </View>
+                  <Text style={{ fontSize: 10, fontWeight: '800', color: T.textMuted, textTransform: 'uppercase', letterSpacing: 0.8, marginTop: 1 }}>COMPLETED</Text>
                 </View>
               </View>
             </View>
