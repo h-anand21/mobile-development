@@ -76,34 +76,34 @@ export interface Theme {
 
 export function getTheme(isDark: boolean): Theme {
   if (isDark) {
-    const bg = '#0D1525';
-    const bgCard = '#182235';
+    const bg = '#111723';
+    const bgCard = '#1B2333';
     return {
       isDark: true,
       bg,
       bgCard,
-      bgPress: '#121A2A',
+      bgPress: '#141B28',
 
       neo: {
         backgroundColor: bgCard,
-        shadowColor:     '#050912',
+        shadowColor:     '#060A12',
         shadowOffset:    { width: 6, height: 6 },
-        shadowOpacity:   0.9,
+        shadowOpacity:   0.85,
         shadowRadius:    12,
         elevation:       8,
         borderTopWidth:    1,
         borderLeftWidth:   1,
         borderBottomWidth: 1,
         borderRightWidth:  1,
-        borderTopColor:    'rgba(255,255,255,0.08)',
-        borderLeftColor:   'rgba(255,255,255,0.08)',
-        borderBottomColor: 'rgba(0,0,0,0.45)',
-        borderRightColor:  'rgba(0,0,0,0.45)',
+        borderTopColor:    'rgba(255,255,255,0.07)',
+        borderLeftColor:   'rgba(255,255,255,0.07)',
+        borderBottomColor: 'rgba(0,0,0,0.5)',
+        borderRightColor:  'rgba(0,0,0,0.5)',
       },
 
       neoPressed: {
-        backgroundColor: '#121A2A',
-        shadowColor:     '#050912',
+        backgroundColor: '#141B28',
+        shadowColor:     '#060A12',
         shadowOffset:    { width: 2, height: 2 },
         shadowOpacity:   0.8,
         shadowRadius:    4,
@@ -112,33 +112,33 @@ export function getTheme(isDark: boolean): Theme {
         borderLeftWidth:   1,
         borderBottomWidth: 1,
         borderRightWidth:  1,
-        borderTopColor:    'rgba(0,0,0,0.45)',
-        borderLeftColor:   'rgba(0,0,0,0.45)',
+        borderTopColor:    'rgba(0,0,0,0.5)',
+        borderLeftColor:   'rgba(0,0,0,0.5)',
         borderBottomColor: 'rgba(255,255,255,0.05)',
         borderRightColor:  'rgba(255,255,255,0.05)',
       },
 
-      textPrimary: '#F1F5F9',
+      textPrimary: '#FFFFFF',
       textSub:     '#94A3B8',
-      textMuted:   '#475569',
+      textMuted:   '#64748B',
 
       border:    'rgba(255,255,255,0.05)',
       borderMid: 'rgba(255,255,255,0.09)',
 
-      teal:       '#4FE3D5',
-      tealDim:    'rgba(79,227,213,0.12)',
-      tealBorder: 'rgba(79,227,213,0.25)',
+      teal:       '#2DD4BF',
+      tealDim:    'rgba(45,212,191,0.14)',
+      tealBorder: 'rgba(45,212,191,0.25)',
       yellow:     '#F59E0B',
-      yellowDim:  'rgba(245,158,11,0.12)',
-      purple:     '#8B5CF6',
-      purpleDim:  'rgba(139,92,246,0.12)',
+      yellowDim:  'rgba(245,158,11,0.14)',
+      purple:     '#A855F7',
+      purpleDim:  'rgba(168,85,247,0.14)',
       orange:     '#F97316',
-      orangeDim:  'rgba(249,115,22,0.12)',
-      green:      '#5EEAD4',
-      greenDim:   'rgba(94,234,212,0.12)',
+      orangeDim:  'rgba(249,115,22,0.14)',
+      green:      '#2DD4BF',
+      greenDim:   'rgba(45,212,191,0.14)',
       red:        '#EF4444',
 
-      tabBg: 'rgba(24, 34, 53, 0.94)',
+      tabBg: 'rgba(27, 35, 51, 0.96)',
     };
   }
 

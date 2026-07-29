@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import Animated, {
   useAnimatedStyle,
@@ -179,8 +180,15 @@ function TabItem({
   if (tab.isAdd) {
     return (
       <Pressable style={styles.tabItemWrap} onPress={handlePress}>
-        <Animated.View style={[styles.addBubble, { backgroundColor: T.teal, shadowColor: T.teal }, aStyle]}>
-          {tab.icon(T.bg, 20)}
+        <Animated.View style={[styles.addBubble, { shadowColor: T.teal }, aStyle]}>
+          <LinearGradient
+            colors={['#2DD4BF', '#38BDF8']}
+            style={{ width: '100%', height: '100%', borderRadius: 24, alignItems: 'center', justifyContent: 'center' }}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            {tab.icon('#0F172A', 22)}
+          </LinearGradient>
         </Animated.View>
       </Pressable>
     );
@@ -266,14 +274,14 @@ const styles = StyleSheet.create({
     letterSpacing: 0.4,
   },
   addBubble: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
     elevation: 8,
     marginBottom: 2,
   },
