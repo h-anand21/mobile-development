@@ -551,23 +551,7 @@ export default function HomeDashboard() {
             </View>
           </Animated.View>
 
-          {/* ═══ DAILY INSIGHT CARD ═══ */}
-          <Animated.View entering={FadeInDown.delay(140).duration(500).springify()}
-            style={[T.neo, { marginHorizontal: 16, borderRadius: 24, padding: 18, marginBottom: 18, backgroundColor: T.bgCard }]}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-              <View style={[T.neo, { width: 46, height: 46, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: T.bgCard }]}>
-                <Ionicons name="bulb" size={22} color={T.yellow} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 14, fontWeight: '800', color: T.teal, marginBottom: 3 }}>Daily Insight</Text>
-                <Text style={{ fontSize: 12, fontWeight: '600', color: T.textSub, lineHeight: 18 }}>
-                  {total - completedCount > 0 
-                    ? `You're only ${total - completedCount} habit${total - completedCount > 1 ? 's' : ''} away from keeping your streak!`
-                    : "Outstanding work! You've completed all active habits today! 🎉"}
-                </Text>
-              </View>
-            </View>
-          </Animated.View>
+
 
           {/* ═══ ACTIVITY WIDGET ═══ */}
           <ActivityWidget T={T} router={router} />
