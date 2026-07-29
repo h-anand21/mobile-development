@@ -7,16 +7,21 @@ import {
   BackHandler,
   Dimensions,
   Pressable,
+  Alert,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
-import Animated, { FadeInDown, useAnimatedStyle, useSharedValue, withTiming, Easing, withRepeat, withSequence } from 'react-native-reanimated';
+import Animated, { FadeInDown, useAnimatedStyle, useSharedValue, withTiming, Easing, withRepeat, withSequence, LinearTransition } from 'react-native-reanimated';
 import Svg, { Circle } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import { usePedometer } from '../hooks/use-pedometer';
 import { useWorkout } from '../hooks/use-workout';
 import { useWatchSync } from '../hooks/use-watch-sync';
+import { useHabits } from '../hooks/use-habits';
+import { getLocalDateString, getActiveStreak } from '../lib/habits/streak';
+import HabitCard from '../components/HabitCard';
 import TabBar from '../components/TabBar';
 
 const { width: SW } = Dimensions.get('window');
@@ -126,9 +131,14 @@ export default function ActivityScreen() {
   const { T } = useTheme();
   const pd = usePedometer();
   const workout = useWorkout();
+  const { habits, loadHabits, toggleCompleteHabit, deleteHabit } = useHabits();
 
   const { pairedDevice, heartRate } = useWatchSync();
-  const [activeMode, setActiveMode] = useState<'summary' | 'workout'>('summary');
+  const [activeMode, setActiveMode] = useState<'summary' | 'habits' | 'workout'>('summary');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCat, setSelectedCat] = useState<'all' | 'health' | 'work' | 'mind' | 'body' | 'other'>('all');
+
+  const todayStr = getLocalDateString();
 
   // Heartbeat pulse animation
   const heartScale = useSharedValue(1);
@@ -152,6 +162,7 @@ export default function ActivityScreen() {
 
   useFocusEffect(
     React.useCallback(() => {
+      loadHabits();
       const onBackPress = () => {
         router.replace('/');
         return true;
@@ -198,6 +209,12 @@ export default function ActivityScreen() {
     outdoor_cycle: 'Outdoor Cycle',
   };
 
+  const filteredHabits = habits.filter(h => {
+    const matchesCat = selectedCat === 'all' || h.category === selectedCat;
+    const matchesSearch = h.name.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCat && matchesSearch;
+  });
+
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: T.bg }]}>
       <View style={[styles.root, { backgroundColor: T.bg }]}>
@@ -205,24 +222,28 @@ export default function ActivityScreen() {
         {/* Header */}
         <Animated.View entering={FadeInDown.duration(400).springify()} style={styles.header}>
           <View>
-            <Text style={[styles.headerTitle, { color: T.textPrimary }]}>Activity</Text>
+            <Text style={[styles.headerTitle, { color: T.textPrimary }]}>Activity Hub</Text>
             <Text style={[styles.headerSub, { color: T.textMuted }]}>
-              {workout.isActive ? `${workoutLabels[workout.workoutType]} in progress` : "Today's movement"}
+              {activeMode === 'habits' ? `Managing ${habits.length} habits` : workout.isActive ? `${workoutLabels[workout.workoutType]} in progress` : "Today's movement & habit control"}
             </Text>
           </View>
           {(workout.isActive || (pd.available && !pd.loading)) && <LiveBadge T={T} />}
         </Animated.View>
 
-        {/* Toggle Mode Segmented Control */}
+        {/* ── 3-Tab Segmented Control ── */}
         <View style={{ flexDirection: 'row', paddingHorizontal: 16, marginBottom: 12 }}>
           <View style={[T.neoPressed, { flexDirection: 'row', flex: 1, borderRadius: 16, padding: 4, backgroundColor: T.bgPress }]}>
             <Pressable onPress={() => setActiveMode('summary')}
               style={[{ flex: 1, paddingVertical: 10, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }, activeMode === 'summary' && { backgroundColor: T.teal }]}>
-              <Text style={{ fontSize: 13, fontWeight: '800', color: activeMode === 'summary' ? T.bg : T.textMuted }}>Daily Summary</Text>
+              <Text style={{ fontSize: 12, fontWeight: '800', color: activeMode === 'summary' ? '#0D1525' : T.textMuted }}>Summary</Text>
+            </Pressable>
+            <Pressable onPress={() => setActiveMode('habits')}
+              style={[{ flex: 1, paddingVertical: 10, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }, activeMode === 'habits' && { backgroundColor: T.teal }]}>
+              <Text style={{ fontSize: 12, fontWeight: '800', color: activeMode === 'habits' ? '#0D1525' : T.textMuted }}>All Habits ({habits.length})</Text>
             </Pressable>
             <Pressable onPress={() => setActiveMode('workout')}
               style={[{ flex: 1, paddingVertical: 10, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }, activeMode === 'workout' && { backgroundColor: T.teal }]}>
-              <Text style={{ fontSize: 13, fontWeight: '800', color: activeMode === 'workout' ? T.bg : T.textMuted }}>
+              <Text style={{ fontSize: 12, fontWeight: '800', color: activeMode === 'workout' ? '#0D1525' : T.textMuted }}>
                 Workouts {workout.isActive ? '🟢' : ''}
               </Text>
             </Pressable>
@@ -361,6 +382,180 @@ export default function ActivityScreen() {
                 </View>
               ))}
             </Animated.View>
+
+            <View style={{ height: 110 }} />
+          </ScrollView>
+        ) : activeMode === 'habits' ? (
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+            
+            {/* ── Control Hub Stats Banner ── */}
+            <Animated.View entering={FadeInDown.delay(80).springify()} style={{ flexDirection: 'row', gap: 10, paddingHorizontal: 16, marginBottom: 16 }}>
+              {/* Total Habits */}
+              <View style={[T.neo, { flex: 1, borderRadius: 20, padding: 14, backgroundColor: T.bgCard, alignItems: 'center' }]}>
+                <Text style={{ fontSize: 24, fontWeight: '900', color: T.teal }}>{habits.length}</Text>
+                <Text style={{ fontSize: 10, fontWeight: '700', color: T.textMuted, textTransform: 'uppercase', marginTop: 2 }}>Total Habits</Text>
+              </View>
+
+              {/* Completed Today */}
+              <View style={[T.neo, { flex: 1, borderRadius: 20, padding: 14, backgroundColor: T.bgCard, alignItems: 'center' }]}>
+                <Text style={{ fontSize: 24, fontWeight: '900', color: T.green }}>
+                  {habits.filter(h => h.completedDates.includes(todayStr)).length}
+                </Text>
+                <Text style={{ fontSize: 10, fontWeight: '700', color: T.textMuted, textTransform: 'uppercase', marginTop: 2 }}>Done Today</Text>
+              </View>
+
+              {/* Best Streak */}
+              <View style={[T.neo, { flex: 1, borderRadius: 20, padding: 14, backgroundColor: T.bgCard, alignItems: 'center' }]}>
+                <Text style={{ fontSize: 24, fontWeight: '900', color: T.orange }}>
+                  {habits.reduce((m, h) => Math.max(m, getActiveStreak(h)), 0)}d
+                </Text>
+                <Text style={{ fontSize: 10, fontWeight: '700', color: T.textMuted, textTransform: 'uppercase', marginTop: 2 }}>Max Streak</Text>
+              </View>
+            </Animated.View>
+
+            {/* ── Search & Add Bar ── */}
+            <Animated.View entering={FadeInDown.delay(100).springify()} style={{ paddingHorizontal: 16, marginBottom: 14, flexDirection: 'row', gap: 10, alignItems: 'center' }}>
+              <View style={[T.neoPressed, { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: T.bgPress, borderRadius: 16, paddingHorizontal: 14, height: 46 }]}>
+                <Ionicons name="search-outline" size={18} color={T.textMuted} style={{ marginRight: 8 }} />
+                <TextInput
+                  placeholder="Search created habits..."
+                  placeholderTextColor={T.textMuted}
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  style={{ flex: 1, color: T.textPrimary, fontSize: 14, fontWeight: '600' }}
+                />
+                {searchQuery.length > 0 && (
+                  <Pressable onPress={() => setSearchQuery('')}>
+                    <Ionicons name="close-circle" size={16} color={T.textMuted} />
+                  </Pressable>
+                )}
+              </View>
+
+              <Pressable onPress={() => router.push('/new')}
+                style={[T.neo, { height: 46, paddingHorizontal: 16, borderRadius: 16, backgroundColor: T.teal, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 4 }]}>
+                <Ionicons name="add" size={18} color="#0D1525" />
+                <Text style={{ fontSize: 13, fontWeight: '900', color: '#0D1525' }}>Add</Text>
+              </Pressable>
+            </Animated.View>
+
+            {/* ── Category Chips Filter ── */}
+            <View style={{ marginBottom: 16 }}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
+                {([
+                  { value: 'all', label: 'All', icon: 'grid-outline' as const },
+                  { value: 'health', label: 'Health', icon: 'heart-outline' as const },
+                  { value: 'work', label: 'Work', icon: 'briefcase-outline' as const },
+                  { value: 'mind', label: 'Mind', icon: 'bulb-outline' as const },
+                  { value: 'body', label: 'Body', icon: 'barbell-outline' as const },
+                  { value: 'other', label: 'Other', icon: 'ellipsis-horizontal-circle-outline' as const },
+                ] as const).map(cat => {
+                  const active = selectedCat === cat.value;
+                  return (
+                    <Pressable key={cat.value} onPress={() => setSelectedCat(cat.value as any)}
+                      style={[
+                        T.neo,
+                        { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 14, backgroundColor: active ? T.teal : T.bgCard }
+                      ]}>
+                      <Ionicons name={cat.icon} size={14} color={active ? '#0D1525' : T.textMuted} />
+                      <Text style={{ fontSize: 12, fontWeight: active ? '900' : '600', color: active ? '#0D1525' : T.textSub }}>
+                        {cat.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            </View>
+
+            {/* ── Habits List with Full Management Controls ── */}
+            <View style={{ paddingHorizontal: 16 }}>
+              {filteredHabits.length === 0 ? (
+                <View style={[T.neo, { padding: 28, borderRadius: 24, alignItems: 'center', justifyContent: 'center', backgroundColor: T.bgCard, marginTop: 10 }]}>
+                  <Text style={{ fontSize: 36, marginBottom: 12 }}>✨</Text>
+                  <Text style={{ fontSize: 18, fontWeight: '800', color: T.textPrimary, marginBottom: 6 }}>No Habits Found</Text>
+                  <Text style={{ fontSize: 13, color: T.textMuted, textAlign: 'center', marginBottom: 20 }}>
+                    {searchQuery ? `No habits matching "${searchQuery}"` : "You haven't created any habits in this category."}
+                  </Text>
+                  <Pressable onPress={() => router.push('/new')} style={[T.neo, { paddingHorizontal: 20, paddingVertical: 12, borderRadius: 16, backgroundColor: T.teal }]}>
+                    <Text style={{ fontSize: 14, fontWeight: '900', color: '#0D1525' }}>+ Create New Habit</Text>
+                  </Pressable>
+                </View>
+              ) : (
+                filteredHabits.map((habit, i) => {
+                  const isDoneToday = habit.completedDates.includes(todayStr);
+                  const streak = getActiveStreak(habit);
+
+                  const handleDelete = () => {
+                    Alert.alert(
+                      'Delete Habit',
+                      `Are you sure you want to delete "${habit.name}"? This action cannot be undone.`,
+                      [
+                        { text: 'Cancel', style: 'cancel' },
+                        { text: 'Delete', style: 'destructive', onPress: () => deleteHabit(habit.id) },
+                      ]
+                    );
+                  };
+
+                  return (
+                    <Animated.View key={habit.id} entering={FadeInDown.delay(120 + i * 40).springify()} layout={LinearTransition.springify()}
+                      style={[T.neo, { borderRadius: 22, padding: 16, marginBottom: 14, backgroundColor: T.bgCard }]}>
+                      
+                      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
+                          <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: T.tealDim, alignItems: 'center', justifyContent: 'center' }}>
+                            <Text style={{ fontSize: 22 }}>{habit.emoji}</Text>
+                          </View>
+                          <View style={{ flex: 1 }}>
+                            <Text style={{ fontSize: 16, fontWeight: '800', color: T.textPrimary, marginBottom: 2 }}>{habit.name}</Text>
+                            <Text style={{ fontSize: 11, fontWeight: '600', color: T.textMuted }}>
+                              {(habit.category || 'other').toUpperCase()} • {habit.frequency.kind === 'daily' ? 'Daily' : `${habit.frequency.weekdays.length} days/wk`}
+                            </Text>
+                          </View>
+                        </View>
+
+                        {/* Streak Badge */}
+                        <View style={[T.neoPressed, { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 14, backgroundColor: T.bgPress }]}>
+                          <Text style={{ fontSize: 12 }}>🔥</Text>
+                          <Text style={{ fontSize: 12, fontWeight: '800', color: T.orange }}>{streak}d</Text>
+                        </View>
+                      </View>
+
+                      {/* Divider */}
+                      <View style={{ height: 1, backgroundColor: T.border, marginBottom: 12 }} />
+
+                      {/* Controls Action Row */}
+                      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                        {/* Toggle Completion Button */}
+                        <Pressable onPress={() => toggleCompleteHabit(habit.id, todayStr)}
+                          style={[
+                            T.neo,
+                            { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 14, backgroundColor: isDoneToday ? T.teal : T.bgCard }
+                          ]}>
+                          <Ionicons name={isDoneToday ? 'checkmark-circle' : 'ellipse-outline'} size={18} color={isDoneToday ? '#0D1525' : T.teal} />
+                          <Text style={{ fontSize: 13, fontWeight: '900', color: isDoneToday ? '#0D1525' : T.teal }}>
+                            {isDoneToday ? 'Completed Today' : 'Mark Done'}
+                          </Text>
+                        </Pressable>
+
+                        <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+                          {/* Edit Button */}
+                          <Pressable onPress={() => router.push('/new')}
+                            style={[T.neo, { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: T.bgCard }]}>
+                            <Ionicons name="create-outline" size={18} color={T.textSub} />
+                          </Pressable>
+
+                          {/* Delete Button */}
+                          <Pressable onPress={handleDelete}
+                            style={[T.neo, { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: T.bgCard }]}>
+                            <Ionicons name="trash-outline" size={18} color={T.red} />
+                          </Pressable>
+                        </View>
+                      </View>
+
+                    </Animated.View>
+                  );
+                })
+              )}
+            </View>
 
             <View style={{ height: 110 }} />
           </ScrollView>

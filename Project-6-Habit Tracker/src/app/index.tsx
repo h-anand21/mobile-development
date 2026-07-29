@@ -580,9 +580,49 @@ export default function HomeDashboard() {
           {/* ═══ ACTIVITY WIDGET ═══ */}
           <ActivityWidget T={T} router={router} />
 
+          {/* ═══ TODAY'S HABITS ═══ */}
+          <Animated.View entering={FadeInDown.delay(280).duration(500).springify()} style={styles.sectionRow}>
+            <View style={styles.sectionLeft}>
+              <Ionicons name="list-outline" size={18} color={T.teal} />
+              <Text style={[styles.sectionTitle, { color: T.textPrimary }]}>{getSectionTitle()}</Text>
+            </View>
+            <Link href="/new" asChild>
+              <Pressable style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: T.teal }}>+ Add Habit</Text>
+                <Ionicons name="chevron-forward" size={12} color={T.teal} />
+              </Pressable>
+            </Link>
+          </Animated.View>
+
+          {permissionStatus === 'denied' && (
+            <Animated.View entering={FadeInDown.delay(300).duration(400)}
+              style={[T.neo, styles.permBanner, { borderTopColor: T.orangeDim, borderLeftColor: T.orangeDim }]}>
+              <Ionicons name="notifications-off-outline" size={16} color={T.orange} />
+              <Text style={[styles.permText, { color: T.textSub }]}>Enable notifications for reminders</Text>
+              <Pressable onPress={() => router.push('/notifications')}>
+                <Text style={[styles.permAction, { color: T.orange }]}>Fix →</Text>
+              </Pressable>
+            </Animated.View>
+          )}
+
+          {categoryFilteredHabits.length === 0 ? (
+            <Animated.View entering={FadeInDown.delay(320).duration(400)}>
+              <EmptyState title="No active habits" description="Try selecting another category or add a new habit." />
+            </Animated.View>
+          ) : (
+            categoryFilteredHabits.map((habit, i) => (
+              <Animated.View
+                key={habit.id}
+                layout={LinearTransition.springify().damping(15)}
+              >
+                <HabitCard habit={habit} onToggleComplete={toggleCompleteHabit} index={i} dateStr={selectedDateStr} />
+              </Animated.View>
+            ))
+          )}
+
           {/* ═══ CATEGORY FILTER STRIP ═══ */}
-          <Animated.View entering={FadeInDown.delay(280).duration(500).springify()}
-            style={{ marginBottom: 18 }}>
+          <Animated.View entering={FadeInDown.delay(340).duration(500).springify()}
+            style={{ marginBottom: 18, marginTop: 10 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 20, marginBottom: 8 }}>
               <Ionicons name="pricetag-outline" size={14} color={T.textSub} />
               <Text style={{ fontSize: 13, fontWeight: '700', color: T.textSub, letterSpacing: 0.3 }}>Category</Text>
@@ -613,46 +653,6 @@ export default function HomeDashboard() {
               })}
             </ScrollView>
           </Animated.View>
-
-          {/* ═══ TODAY'S HABITS ═══ */}
-          <Animated.View entering={FadeInDown.delay(300).duration(500).springify()} style={styles.sectionRow}>
-            <View style={styles.sectionLeft}>
-              <Ionicons name="list-outline" size={18} color={T.teal} />
-              <Text style={[styles.sectionTitle, { color: T.textPrimary }]}>{getSectionTitle()}</Text>
-            </View>
-            <Link href="/new" asChild>
-              <SpringPressable style={StyleSheet.flatten([T.neo, styles.addBtn])}>
-                <Ionicons name="add" size={14} color={T.teal} />
-                <Text style={[styles.addBtnText, { color: T.teal }]}>Add</Text>
-              </SpringPressable>
-            </Link>
-          </Animated.View>
-
-          {permissionStatus === 'denied' && (
-            <Animated.View entering={FadeInDown.delay(320).duration(400)}
-              style={[T.neo, styles.permBanner, { borderTopColor: T.orangeDim, borderLeftColor: T.orangeDim }]}>
-              <Ionicons name="notifications-off-outline" size={16} color={T.orange} />
-              <Text style={[styles.permText, { color: T.textSub }]}>Enable notifications for reminders</Text>
-              <Pressable onPress={() => router.push('/notifications')}>
-                <Text style={[styles.permAction, { color: T.orange }]}>Fix →</Text>
-              </Pressable>
-            </Animated.View>
-          )}
-
-          {categoryFilteredHabits.length === 0 ? (
-            <Animated.View entering={FadeInDown.delay(340).duration(400)}>
-              <EmptyState title="No active habits" description="Try selecting another category or add a new habit." />
-            </Animated.View>
-          ) : (
-            categoryFilteredHabits.map((habit, i) => (
-              <Animated.View
-                key={habit.id}
-                layout={LinearTransition.springify().damping(15)}
-              >
-                <HabitCard habit={habit} onToggleComplete={toggleCompleteHabit} index={i} dateStr={selectedDateStr} />
-              </Animated.View>
-            ))
-          )}
 
           <View style={{ height: 110 }} />
         </ScrollView>
