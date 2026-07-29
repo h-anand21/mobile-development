@@ -539,13 +539,13 @@ export default function HomeDashboard() {
 
               {/* Right Column: Large Circular Progress Ring */}
               <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-                <AnimatedRing percent={pct} size={118} strokeWidth={12} color={T.teal} bgColor="rgba(45,212,191,0.12)" />
+                <AnimatedRing percent={pct} size={124} strokeWidth={11} color={T.teal} bgColor="rgba(45,212,191,0.12)" />
                 <View style={{ position: 'absolute', alignItems: 'center', justifyContent: 'center' }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 2 }}>
-                    <Text style={{ fontSize: 34, fontWeight: '900', color: '#FFFFFF', letterSpacing: 0 }}>{pct}</Text>
-                    <Text style={{ fontSize: 18, fontWeight: '800', color: T.teal }}>%</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+                    <Text style={{ fontSize: pct >= 100 ? 28 : 33, fontWeight: '900', color: '#FFFFFF', letterSpacing: -0.5 }}>{pct}</Text>
+                    <Text style={{ fontSize: pct >= 100 ? 15 : 17, fontWeight: '800', color: T.teal, marginLeft: 3 }}>%</Text>
                   </View>
-                  <Text style={{ fontSize: 10, fontWeight: '800', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 1, marginTop: 2 }}>COMPLETED</Text>
+                  <Text style={{ fontSize: 9.5, fontWeight: '800', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 1, marginTop: 3 }}>COMPLETED</Text>
                 </View>
               </View>
             </View>
@@ -553,28 +553,20 @@ export default function HomeDashboard() {
 
           {/* ═══ DAILY INSIGHT CARD ═══ */}
           <Animated.View entering={FadeInDown.delay(140).duration(500).springify()}
-            style={[T.neo, { marginHorizontal: 16, borderRadius: 24, padding: 16, marginBottom: 18, backgroundColor: T.bgCard, overflow: 'hidden' }]}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, zIndex: 2 }}>
-              <View style={[T.neo, { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: T.bgCard }]}>
+            style={[T.neo, { marginHorizontal: 16, borderRadius: 24, padding: 18, marginBottom: 18, backgroundColor: T.bgCard }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+              <View style={[T.neo, { width: 46, height: 46, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: T.bgCard }]}>
                 <Ionicons name="bulb" size={22} color={T.yellow} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 13, fontWeight: '800', color: T.teal, marginBottom: 2 }}>Daily Insight</Text>
-                <Text style={{ fontSize: 12, fontWeight: '600', color: T.textSub, lineHeight: 17, maxWidth: 210 }}>
+                <Text style={{ fontSize: 14, fontWeight: '800', color: T.teal, marginBottom: 3 }}>Daily Insight</Text>
+                <Text style={{ fontSize: 12, fontWeight: '600', color: T.textSub, lineHeight: 18 }}>
                   {total - completedCount > 0 
                     ? `You're only ${total - completedCount} habit${total - completedCount > 1 ? 's' : ''} away from keeping your streak!`
                     : "Outstanding work! You've completed all active habits today! 🎉"}
                 </Text>
               </View>
             </View>
-            {/* Background SVG Mountain graphics */}
-            <Svg width={120} height={70} viewBox="0 0 120 70" style={{ position: 'absolute', right: -10, bottom: -5, opacity: 0.35 }}>
-              <Path d="M 10 70 L 45 25 L 80 70 Z" fill="#475569" />
-              <Path d="M 40 70 L 80 15 L 120 70 Z" fill="#334155" />
-              <Path d="M 80 15 L 86 19 L 80 23 Z" fill="#F59E0B" />
-              <Circle cx="20" cy="15" r="1.5" fill="#F1F5F9" />
-              <Circle cx="95" cy="10" r="1.5" fill="#F1F5F9" />
-            </Svg>
           </Animated.View>
 
           {/* ═══ ACTIVITY WIDGET ═══ */}
