@@ -15,7 +15,7 @@ import Animated, {
   LinearTransition,
 } from 'react-native-reanimated';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import Svg, { Circle, Rect } from 'react-native-svg';
+import Svg, { Circle, Rect, Path } from 'react-native-svg';
 import { useHabits } from '../hooks/use-habits';
 import { usePushNotifications } from '../hooks/use-push-notifications';
 import { useTheme } from '../context/ThemeContext';
@@ -465,6 +465,7 @@ export default function HomeDashboard() {
             <View style={styles.headerText}>
               <Text style={[styles.greetSmall, { color: T.textMuted }]}>{greetEmoji} {greeting}</Text>
               <Text style={[styles.greetName, { color: T.textPrimary }]}>{profileName}</Text>
+              <Text style={{ fontSize: 11, fontWeight: '600', color: T.textSub, marginTop: 1 }}>Keep going, you're doing great! ✨</Text>
             </View>
           </Pressable>
 
@@ -475,7 +476,13 @@ export default function HomeDashboard() {
             </Animated.View>
           </SpringPressable>
 
-          <NeoBtn icon="🔔" size={17} onPress={() => router.push('/notifications')} T={T} />
+          {/* Notification bell with dot indicator */}
+          <Pressable onPress={() => router.push('/notifications')} style={{ position: 'relative' }}>
+            <Animated.View style={[T.neo, styles.neoBtnCircle]}>
+              <Ionicons name="notifications-outline" size={18} color={T.textPrimary} />
+            </Animated.View>
+            <View style={{ position: 'absolute', top: 3, right: 3, width: 8, height: 8, borderRadius: 4, backgroundColor: T.teal, borderWidth: 1.5, borderColor: T.bgCard }} />
+          </Pressable>
         </Animated.View>
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
@@ -496,138 +503,73 @@ export default function HomeDashboard() {
             </View>
           </Animated.View>
 
-          {/* ═══ DAILY MOTIVATION WIDGET ═══ */}
+          {/* ═══ MAIN HERO TODAY'S PROGRESS CARD ═══ */}
           <Animated.View entering={FadeInDown.delay(100).duration(500).springify()}
-            style={[T.neo, styles.quoteCard]}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-              <View style={[styles.quoteIconBg, { backgroundColor: T.yellow + '22' }]}>
-                <Ionicons name="bulb-outline" size={20} color={T.yellow} />
+            style={[T.neo, { marginHorizontal: 16, borderRadius: 28, padding: 20, marginBottom: 16, backgroundColor: T.bgCard }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              {/* Left Column: Stats & Progress Bar & Streak Button */}
+              <View style={{ flex: 1, paddingRight: 12 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 }}>
+                  <Ionicons name="trending-up" size={16} color={T.teal} />
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: T.textSub }}>Today's Progress</Text>
+                </View>
+
+                <View style={{ flexDirection: 'row', alignItems: 'baseline', marginBottom: 2 }}>
+                  <Text style={{ fontSize: 42, fontWeight: '900', color: T.teal, letterSpacing: -1 }}>{completedCount}</Text>
+                  <Text style={{ fontSize: 24, fontWeight: '700', color: T.textMuted }}> / {total}</Text>
+                </View>
+                <Text style={{ fontSize: 12, fontWeight: '600', color: T.textMuted, marginBottom: 14 }}>Habits Completed</Text>
+
+                {/* Progress bar line */}
+                <View style={{ height: 6, backgroundColor: T.tealDim, borderRadius: 3, overflow: 'hidden', marginBottom: 16, width: '100%' }}>
+                  <View style={{ height: '100%', width: `${pct}%`, backgroundColor: T.teal, borderRadius: 3 }} />
+                </View>
+
+                {/* Streak Pill Button */}
+                <Pressable onPress={() => router.push('/analytics')}
+                  style={[T.neo, { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, alignSelf: 'flex-start' }]}>
+                  <Text style={{ fontSize: 13 }}>🔥</Text>
+                  <Text style={{ fontSize: 12, fontWeight: '800', color: T.textPrimary }}>{bestStreak} Day Streak</Text>
+                  <Ionicons name="chevron-forward" size={12} color={T.textMuted} />
+                </Pressable>
               </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.quoteText, { color: T.textPrimary }]}>
-                  "{MOTIVATIONAL_QUOTES[quoteIndex]?.text}"
-                </Text>
-                <Text style={[styles.quoteAuthor, { color: T.textMuted }]}>
-                  — {MOTIVATIONAL_QUOTES[quoteIndex]?.author}
-                </Text>
+
+              {/* Right Column: Large Circular Progress Ring */}
+              <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+                <AnimatedRing percent={pct} size={114} strokeWidth={11} color={T.teal} bgColor={T.tealDim} />
+                <View style={{ position: 'absolute', alignItems: 'center', justifyContent: 'center' }}>
+                  <Text style={{ fontSize: 28, fontWeight: '900', color: T.textPrimary }}>{pct}<Text style={{ fontSize: 16, fontWeight: '700' }}>%</Text></Text>
+                  <Text style={{ fontSize: 10, fontWeight: '700', color: T.textMuted, textTransform: 'uppercase', letterSpacing: 0.5 }}>Completed</Text>
+                </View>
               </View>
-              <SpringPressable onPress={() => setQuoteIndex(prev => (prev + 1) % MOTIVATIONAL_QUOTES.length)} style={[T.neo, styles.quoteRefresh]}>
-                <Ionicons name="shuffle-outline" size={14} color={T.teal} />
-              </SpringPressable>
             </View>
           </Animated.View>
 
-          {/* ═══ STATS GRID ═══ */}
-          <View style={[styles.grid, { width: SW }]}>
-
-            {/* Card 1: Habit Score */}
-            <Animated.View entering={FadeInDown.delay(140).duration(500).springify()}
-              style={[T.neo, { width: CARD_W, borderRadius: 22, padding: 15 }]}>
-              <View style={styles.cardIconRow}>
-                <View style={[styles.iconBubble, { backgroundColor: T.teal + '22' }]}>
-                  <Ionicons name="checkmark-done-outline" size={18} color={T.teal} />
-                </View>
-                <Text style={[styles.cardLabel, { color: T.textMuted }]}>Habit Score</Text>
+          {/* ═══ DAILY INSIGHT CARD ═══ */}
+          <Animated.View entering={FadeInDown.delay(140).duration(500).springify()}
+            style={[T.neo, { marginHorizontal: 16, borderRadius: 24, padding: 16, marginBottom: 18, backgroundColor: T.bgCard, overflow: 'hidden' }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, zIndex: 2 }}>
+              <View style={[T.neo, { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: T.bgCard }]}>
+                <Ionicons name="bulb" size={22} color={T.yellow} />
               </View>
-              <Text style={[styles.bigNum, { color: T.teal }]}>
-                {completedCount}<Text style={[styles.bigNumSub, { color: T.textMuted }]}>/{total}</Text>
-              </Text>
-              <Text style={[styles.cardSub, { color: T.textMuted }]}>Today's completions</Text>
-              <View style={styles.heatmap}>
-                {miniHeatmapData.map((item, i) => {
-                  // Determine green intensity color
-                  const getDotColor = () => {
-                    if (item.pct === 0) {
-                      return T.isDark ? 'rgba(148, 163, 184, 0.08)' : 'rgba(0, 0, 0, 0.05)';
-                    }
-                    if (item.shielded) {
-                      return T.orangeDim;
-                    }
-                    const r = T.isDark ? 94 : 46;
-                    const g = T.isDark ? 234 : 196;
-                    const b = T.isDark ? 212 : 168;
-
-                    if (item.pct === 100) return T.teal;
-                    if (item.pct >= 80) return `rgba(${r}, ${g}, ${b}, 0.70)`;
-                    if (item.pct >= 50) return `rgba(${r}, ${g}, ${b}, 0.45)`;
-                    if (item.pct >= 25) return `rgba(${r}, ${g}, ${b}, 0.25)`;
-                    return `rgba(${r}, ${g}, ${b}, 0.12)`;
-                  };
-
-                  return (
-                    <View key={i} style={[styles.heatDot, {
-                      backgroundColor: getDotColor()
-                    }]} />
-                  );
-                })}
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 13, fontWeight: '800', color: T.teal, marginBottom: 2 }}>Daily Insight</Text>
+                <Text style={{ fontSize: 12, fontWeight: '600', color: T.textSub, lineHeight: 17, maxWidth: 210 }}>
+                  {total - completedCount > 0 
+                    ? `You're only ${total - completedCount} habit${total - completedCount > 1 ? 's' : ''} away from keeping your streak!`
+                    : "Outstanding work! You've completed all active habits today! 🎉"}
+                </Text>
               </View>
-            </Animated.View>
-
-            {/* Card 2: Progress */}
-            <Animated.View entering={FadeInDown.delay(180).duration(500).springify()}
-              style={[T.neo, { width: CARD_W, borderRadius: 22, padding: 15 }]}>
-              <View style={styles.cardIconRow}>
-                <View style={[styles.iconBubble, { backgroundColor: T.purple + '22' }]}>
-                  <Ionicons name="trending-up-outline" size={18} color={T.purple} />
-                </View>
-                <Text style={[styles.cardLabel, { color: T.textMuted }]}>Progress</Text>
-              </View>
-              <View style={styles.ringWrap}>
-                <AnimatedRing percent={pct} size={80} strokeWidth={8}
-                  color={T.purple} bgColor={T.purpleDim} />
-                <View style={styles.ringCenter}>
-                  <Text style={[styles.ringPct, { color: T.purple }]}>{pct}%</Text>
-                </View>
-              </View>
-              <Text style={[styles.cardSub, { color: T.textMuted }]}>Done today</Text>
-            </Animated.View>
-
-            {/* Card 3: Streak */}
-            <Animated.View entering={FadeInDown.delay(220).duration(500).springify()}
-              style={[T.neo, { width: CARD_W, borderRadius: 22, padding: 15 }]}>
-              <View style={styles.cardIconRow}>
-                <View style={[styles.iconBubble, { backgroundColor: T.orange + '22' }]}>
-                  <Ionicons name="flame-outline" size={18} color={T.orange} />
-                </View>
-                <Text style={[styles.cardLabel, { color: T.textMuted }]}>Streak</Text>
-              </View>
-              <Text style={[styles.bigNum, { color: T.orange }]}>{bestStreak}</Text>
-              <Text style={[styles.cardSub, { color: T.textMuted }]}>Best days</Text>
-              <View style={[styles.miniBar]}>
-                {weekBars.map((v, i) => {
-                  const h = Math.max(v > 0 ? 6 : 0, (v / maxBar) * 32);
-                  return (
-                    <View key={i} style={styles.miniBarSlot}>
-                      <View style={[styles.miniBarFill, {
-                        height: h,
-                        backgroundColor: i === 6 ? T.orange : T.orangeDim,
-                      }]} />
-                    </View>
-                  );
-                })}
-              </View>
-            </Animated.View>
-
-            {/* Card 4: Success Rate */}
-            <Animated.View entering={FadeInDown.delay(260).duration(500).springify()}
-              style={[T.neo, { width: CARD_W, borderRadius: 22, padding: 15 }]}>
-              <View style={styles.cardIconRow}>
-                <View style={[styles.iconBubble, { backgroundColor: T.green + '22' }]}>
-                  <Ionicons name="ribbon-outline" size={18} color={T.green} />
-                </View>
-                <Text style={[styles.cardLabel, { color: T.textMuted }]}>Success</Text>
-              </View>
-              <View style={styles.ringWrap}>
-                <AnimatedRing percent={successRate} size={68} strokeWidth={7}
-                  color={T.green} bgColor={T.greenDim} />
-                <View style={styles.ringCenter}>
-                  <Text style={[styles.ringPct, { fontSize: 13, color: T.green }]}>{successRate}%</Text>
-                </View>
-              </View>
-              <Text style={[styles.cardSub, { color: T.textMuted }]}>Success rate</Text>
-            </Animated.View>
-
-          </View>
+            </View>
+            {/* Background SVG Mountain graphics */}
+            <Svg width={120} height={70} viewBox="0 0 120 70" style={{ position: 'absolute', right: -10, bottom: -5, opacity: 0.35 }}>
+              <Path d="M 10 70 L 45 25 L 80 70 Z" fill="#475569" />
+              <Path d="M 40 70 L 80 15 L 120 70 Z" fill="#334155" />
+              <Path d="M 80 15 L 86 19 L 80 23 Z" fill="#F59E0B" />
+              <Circle cx="20" cy="15" r="1.5" fill="#F1F5F9" />
+              <Circle cx="95" cy="10" r="1.5" fill="#F1F5F9" />
+            </Svg>
+          </Animated.View>
 
           {/* ═══ ACTIVITY WIDGET ═══ */}
           <ActivityWidget T={T} router={router} />
@@ -641,7 +583,7 @@ export default function HomeDashboard() {
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ flexDirection: 'row', gap: 8, paddingVertical: 4, paddingHorizontal: 16 }}>
               {([
-                { value: 'all',    label: 'All',    icon: 'apps-outline' as const },
+                { value: 'all',    label: 'All',    icon: 'grid-outline' as const },
                 { value: 'health', label: 'Health', icon: 'heart-outline' as const },
                 { value: 'work',   label: 'Work',   icon: 'briefcase-outline' as const },
                 { value: 'mind',   label: 'Mind',   icon: 'bulb-outline' as const },
@@ -654,10 +596,10 @@ export default function HomeDashboard() {
                     style={[
                       T.neo,
                       styles.catFilterBtn,
-                      active && { backgroundColor: T.tealDim, borderColor: T.tealBorder, borderWidth: 1 }
+                      active && { backgroundColor: T.teal, borderColor: T.teal, borderWidth: 1 }
                     ]}>
-                    <Ionicons name={cat.icon} size={14} color={active ? T.teal : T.textMuted} />
-                    <Text style={[styles.catFilterText, { color: active ? T.teal : T.textSub }, active && { fontWeight: '700' }]}>
+                    <Ionicons name={cat.icon} size={14} color={active ? '#0D1525' : T.textMuted} />
+                    <Text style={[styles.catFilterText, { color: active ? '#0D1525' : T.textSub }, active && { fontWeight: '900' }]}>
                       {cat.label}
                     </Text>
                   </Pressable>
