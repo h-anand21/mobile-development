@@ -240,15 +240,15 @@ function ActivityWidget({ T, router }: { T: any; router: any }) {
         
         {/* Card 1: Steps */}
         <Pressable onPress={() => router.replace('/activity')}>
-          <View style={[T.neo, { width: CARD_WIDTH, borderRadius: 20, padding: 14, backgroundColor: T.bg }]}>
+          <View style={[T.neo, { width: CARD_WIDTH, borderRadius: 20, padding: 14, backgroundColor: T.bgCard }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
               <View style={{ width: 28, height: 28, borderRadius: 10, backgroundColor: T.teal + '22', alignItems: 'center', justifyContent: 'center' }}>
                 <Ionicons name="walk-outline" size={16} color={T.teal} />
               </View>
               <Text style={{ fontSize: 10, fontWeight: '800', color: T.teal }}>{pct}%</Text>
             </View>
-            <Text style={{ fontSize: 18, fontWeight: '900', color: T.textPrimary, marginBottom: 2 }}>{steps}</Text>
-            <Text style={{ fontSize: 9, fontWeight: '700', color: T.textMuted, textTransform: 'uppercase', letterSpacing: 0.3 }}>Steps</Text>
+            <Text style={{ fontSize: 22, fontWeight: '900', color: '#FFFFFF', marginBottom: 2 }}>{steps}</Text>
+            <Text style={{ fontSize: 9, fontWeight: '700', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 0.3 }}>Steps</Text>
             <View style={{ height: 4, backgroundColor: T.tealDim, borderRadius: 2, overflow: 'hidden', marginTop: 8 }}>
               <View style={{ height: '100%', width: `${Math.min(100, pct)}%`, backgroundColor: T.teal, borderRadius: 2 }} />
             </View>
@@ -257,15 +257,15 @@ function ActivityWidget({ T, router }: { T: any; router: any }) {
 
         {/* Card 2: Calories */}
         <Pressable onPress={() => router.replace('/activity')}>
-          <View style={[T.neo, { width: CARD_WIDTH, borderRadius: 20, padding: 14, backgroundColor: T.bg }]}>
+          <View style={[T.neo, { width: CARD_WIDTH, borderRadius: 20, padding: 14, backgroundColor: T.bgCard }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
               <View style={{ width: 28, height: 28, borderRadius: 10, backgroundColor: T.orange + '22', alignItems: 'center', justifyContent: 'center' }}>
                 <Ionicons name="flame-outline" size={16} color={T.orange} />
               </View>
-              <Text style={{ fontSize: 9, fontWeight: '700', color: T.textMuted }}>KCAL</Text>
+              <Text style={{ fontSize: 9, fontWeight: '700', color: '#94A3B8' }}>KCAL</Text>
             </View>
-            <Text style={{ fontSize: 18, fontWeight: '900', color: T.textPrimary, marginBottom: 2 }}>{cal}</Text>
-            <Text style={{ fontSize: 9, fontWeight: '700', color: T.textMuted, textTransform: 'uppercase', letterSpacing: 0.3 }}>Calories</Text>
+            <Text style={{ fontSize: 22, fontWeight: '900', color: '#FFFFFF', marginBottom: 2 }}>{cal}</Text>
+            <Text style={{ fontSize: 9, fontWeight: '700', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 0.3 }}>Calories</Text>
             <View style={{ height: 4, backgroundColor: T.orange + '22', borderRadius: 2, overflow: 'hidden', marginTop: 8 }}>
               <View style={{ height: '100%', width: `${Math.min(100, (Number(cal) / 300) * 100)}%`, backgroundColor: T.orange, borderRadius: 2 }} />
             </View>
@@ -274,15 +274,15 @@ function ActivityWidget({ T, router }: { T: any; router: any }) {
 
         {/* Card 3: Distance */}
         <Pressable onPress={() => router.replace('/activity')}>
-          <View style={[T.neo, { width: CARD_WIDTH, borderRadius: 20, padding: 14, backgroundColor: T.bg }]}>
+          <View style={[T.neo, { width: CARD_WIDTH, borderRadius: 20, padding: 14, backgroundColor: T.bgCard }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
               <View style={{ width: 28, height: 28, borderRadius: 10, backgroundColor: T.purple + '22', alignItems: 'center', justifyContent: 'center' }}>
                 <Ionicons name="navigate-outline" size={16} color={T.purple} />
               </View>
-              <Text style={{ fontSize: 9, fontWeight: '700', color: T.textMuted }}>KM</Text>
+              <Text style={{ fontSize: 9, fontWeight: '700', color: '#94A3B8' }}>KM</Text>
             </View>
-            <Text style={{ fontSize: 18, fontWeight: '900', color: T.textPrimary, marginBottom: 2 }}>{dist}</Text>
-            <Text style={{ fontSize: 9, fontWeight: '700', color: T.textMuted, textTransform: 'uppercase', letterSpacing: 0.3 }}>Distance</Text>
+            <Text style={{ fontSize: 22, fontWeight: '900', color: '#FFFFFF', marginBottom: 2 }}>{dist}</Text>
+            <Text style={{ fontSize: 9, fontWeight: '700', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 0.3 }}>Distance</Text>
             <View style={{ height: 4, backgroundColor: T.purple + '22', borderRadius: 2, overflow: 'hidden', marginTop: 8 }}>
               <View style={{ height: '100%', width: `${Math.min(100, (Number(dist) / 5) * 100)}%`, backgroundColor: T.purple, borderRadius: 2 }} />
             </View>
@@ -516,12 +516,12 @@ export default function HomeDashboard() {
                   <Text style={{ fontSize: 13, fontWeight: '700', color: T.textSub }}>Today's Progress</Text>
                 </View>
 
-                {/* Big Counter cleanly spaced */}
+                {/* Big Counter cleanly spaced with high contrast */}
                 <View style={{ flexDirection: 'row', alignItems: 'baseline', marginBottom: 4 }}>
-                  <Text style={{ fontSize: 44, fontWeight: '900', color: T.teal, letterSpacing: -0.5 }}>{completedCount}</Text>
-                  <Text style={{ fontSize: 24, fontWeight: '700', color: T.textMuted, marginLeft: 6 }}>/ {total}</Text>
+                  <Text style={{ fontSize: 46, fontWeight: '900', color: T.teal, letterSpacing: 0 }}>{completedCount}</Text>
+                  <Text style={{ fontSize: 24, fontWeight: '800', color: '#94A3B8', marginLeft: 8 }}>/ {total}</Text>
                 </View>
-                <Text style={{ fontSize: 12, fontWeight: '600', color: T.textMuted, marginBottom: 14 }}>Habits Completed</Text>
+                <Text style={{ fontSize: 12, fontWeight: '600', color: T.textSub, marginBottom: 14 }}>Habits Completed</Text>
 
                 {/* Progress bar line */}
                 <View style={{ height: 6, backgroundColor: 'rgba(45,212,191,0.12)', borderRadius: 3, overflow: 'hidden', marginBottom: 16, width: '100%' }}>
@@ -541,10 +541,11 @@ export default function HomeDashboard() {
               <View style={{ alignItems: 'center', justifyContent: 'center' }}>
                 <AnimatedRing percent={pct} size={118} strokeWidth={12} color={T.teal} bgColor="rgba(45,212,191,0.12)" />
                 <View style={{ position: 'absolute', alignItems: 'center', justifyContent: 'center' }}>
-                  <Text style={{ fontSize: 34, fontWeight: '900', color: T.textPrimary }}>
-                    {pct}<Text style={{ fontSize: 20, fontWeight: '700', color: T.teal }}>%</Text>
-                  </Text>
-                  <Text style={{ fontSize: 10, fontWeight: '800', color: T.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginTop: 2 }}>COMPLETED</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 2 }}>
+                    <Text style={{ fontSize: 34, fontWeight: '900', color: '#FFFFFF', letterSpacing: 0 }}>{pct}</Text>
+                    <Text style={{ fontSize: 18, fontWeight: '800', color: T.teal }}>%</Text>
+                  </View>
+                  <Text style={{ fontSize: 10, fontWeight: '800', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 1, marginTop: 2 }}>COMPLETED</Text>
                 </View>
               </View>
             </View>
