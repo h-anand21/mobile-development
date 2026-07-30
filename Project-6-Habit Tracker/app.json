@@ -5,19 +5,18 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#111723"
+    },
     "userInterfaceStyle": "dark",
     "scheme": "habitflow",
-    "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.himanshu.habitflow"
-    },
     "android": {
       "package": "com.himanshu.habitflow",
       "adaptiveIcon": {
-        "backgroundColor": "#0B0F14",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "backgroundColor": "#111723",
+        "foregroundImage": "./assets/android-icon-foreground.png"
       },
       "predictiveBackGestureEnabled": false,
       "permissions": [
