@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Dimensions, BackHandler } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Dimensions, BackHandler, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import Animated, {
@@ -447,32 +447,34 @@ export default function AnalyticsScreen() {
                 {/* Day Header */}
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
                   {['SU','MO','TU','WE','TH','FR','SA'].map(day => (
-                    <Text key={day} style={{ fontSize: 9, fontWeight: '800', color: '#64748B', width: 26, textAlign: 'center' }}>{day}</Text>
+                    <Text key={day} style={{ fontSize: 9, fontWeight: '800', color: '#64748B', width: 28, textAlign: 'center' }}>{day}</Text>
                   ))}
                 </View>
 
                 {/* Days Grid */}
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4 }}>
-                  {gridCells.map((cell, idx) => {
+                  {gridCells.map((cell) => {
                     if (!cell.dayNum || !cell.dateStr) {
-                      return <View key={cell.key} style={{ width: 26, height: 26, margin: 1 }} />;
+                      return <View key={cell.key} style={{ width: 28, height: 28, margin: 1 }} />;
                     }
                     const isSelected = cell.dateStr === selectedGridDateStr;
                     const status = getDayGridStatus(cell.dateStr);
+                    const isTodayCell = cell.dateStr === todayStr;
 
                     return (
                       <Pressable
                         key={cell.key}
                         onPress={() => setSelectedGridDateStr(cell.dateStr as string)}
                         style={[
-                          { width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center', margin: 1 },
+                          { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', margin: 1 },
                           { backgroundColor: status.color || 'rgba(255,255,255,0.04)' },
-                          isSelected && { borderColor: T.teal, borderWidth: 2 }
+                          isSelected && { backgroundColor: T.teal, transform: [{ scale: 1.08 }] },
+                          isTodayCell && !isSelected && { borderWidth: 1.5, borderColor: T.teal }
                         ]}
                       >
                         <Text style={[
-                          { fontSize: 10, fontWeight: '700', color: '#FFFFFF' },
-                          isSelected && { fontWeight: '900', color: T.teal }
+                          { fontSize: 11, fontWeight: '700', color: '#FFFFFF' },
+                          isSelected && { fontWeight: '900', color: '#0D1525' }
                         ]}>
                           {cell.dayNum}
                         </Text>
@@ -482,41 +484,57 @@ export default function AnalyticsScreen() {
                 </View>
               </View>
 
-              {/* Right Side Detail Card */}
-              <View style={[T.neoPressed, { flex: 1, borderRadius: 20, padding: 14, backgroundColor: T.bgPress, alignItems: 'center', justifyContent: 'center' }]}>
+              {/* Right Side Detail Card for Selected Date */}
+              <View style={[T.neoPressed, { flex: 1, borderRadius: 20, padding: 12, backgroundColor: T.bgPress, alignItems: 'center', justifyContent: 'center' }]}>
                 {selectedGridDateStr ? (() => {
                   const parts = selectedGridDateStr.split('-');
                   const gridDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
                   const dW = gridDate.getDay();
                   const activeOnSelectedDay = habits.filter(h => h.frequency.kind === 'daily' || h.frequency.weekdays.includes(dW));
-                  const firstHabit = activeOnSelectedDay[0] || habits[0];
-                  const isCompleted = firstHabit ? firstHabit.completedDates.includes(selectedGridDateStr) : false;
+                  const displayHabit = activeOnSelectedDay[0] || habits[0];
+                  const isCompleted = displayHabit ? displayHabit.completedDates.includes(selectedGridDateStr) : false;
 
                   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
                   const dateLabel = `${gridDate.getDate()} ${months[gridDate.getMonth()]} ${gridDate.getFullYear()}`;
 
                   return (
                     <View style={{ alignItems: 'center', width: '100%' }}>
-                      {/* Emoji Ring Bubble with Checkmark */}
-                      <View style={{ position: 'relative', marginBottom: 10 }}>
-                        <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: 'rgba(45,212,191,0.12)', alignItems: 'center', justifyContent: 'center' }}>
-                          <Text style={{ fontSize: 26 }}>{firstHabit ? firstHabit.emoji : '🥤'}</Text>
+                      {/* Emoji / Image Ring Bubble with Checkmark Badge */}
+                      <View style={{ position: 'relative', marginBottom: 8 }}>
+                        <View style={{ width: 52, height: 52, borderRadius: 26, backgroundColor: 'rgba(45,212,191,0.12)', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                          {displayHabit && (displayHabit.emoji?.startsWith('file:') || displayHabit.emoji?.startsWith('content:') || displayHabit.emoji?.startsWith('http') || displayHabit.emoji?.startsWith('data:')) ? (
+                            <Image source={{ uri: displayHabit.emoji }} style={{ width: 52, height: 52, borderRadius: 26 }} resizeMode="cover" />
+                          ) : (
+                            <Text style={{ fontSize: 24 }}>{displayHabit ? displayHabit.emoji : '🥤'}</Text>
+                          )}
                         </View>
-                        <View style={{ position: 'absolute', bottom: -2, right: -2, width: 18, height: 18, borderRadius: 9, backgroundColor: T.teal, alignItems: 'center', justifyContent: 'center' }}>
-                          <Ionicons name="checkmark" size={12} color="#0D1525" />
+                        <View style={{ position: 'absolute', bottom: -2, right: -2, width: 18, height: 18, borderRadius: 9, backgroundColor: isCompleted ? T.teal : T.red, alignItems: 'center', justifyContent: 'center' }}>
+                          <Ionicons name={isCompleted ? "checkmark" : "close"} size={11} color="#0D1525" />
                         </View>
                       </View>
 
-                      {/* Date & Habit Name */}
-                      <Text style={{ fontSize: 13, fontWeight: '900', color: '#FFFFFF', textAlign: 'center', marginBottom: 2 }}>{dateLabel}</Text>
-                      <Text style={{ fontSize: 11, fontWeight: '600', color: '#94A3B8', textAlign: 'center', marginBottom: 10 }}>
-                        {firstHabit ? firstHabit.name : 'Drink water'}
+                      {/* Date & Habit Title */}
+                      <Text style={{ fontSize: 13, fontWeight: '900', color: '#FFFFFF', textAlign: 'center', marginBottom: 2 }}>
+                        {dateLabel}
+                      </Text>
+                      <Text style={{ fontSize: 11, fontWeight: '600', color: '#94A3B8', textAlign: 'center', marginBottom: 8 }} numberOfLines={1}>
+                        {displayHabit ? displayHabit.name : 'No habits'}
                       </Text>
 
-                      {/* Completed Status Pill */}
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14, backgroundColor: isCompleted ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)', borderWidth: 1, borderColor: isCompleted ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)' }}>
-                        <Ionicons name={isCompleted ? "checkmark-circle" : "close-circle"} size={14} color={isCompleted ? T.green : T.red} />
-                        <Text style={{ fontSize: 11, fontWeight: '900', color: isCompleted ? T.green : T.red }}>
+                      {/* Status Pill */}
+                      <View style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 4,
+                        paddingHorizontal: 10,
+                        paddingVertical: 5,
+                        borderRadius: 12,
+                        backgroundColor: isCompleted ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)',
+                        borderWidth: 1,
+                        borderColor: isCompleted ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'
+                      }}>
+                        <Ionicons name={isCompleted ? "checkmark-circle" : "close-circle"} size={13} color={isCompleted ? T.green : T.red} />
+                        <Text style={{ fontSize: 10, fontWeight: '900', color: isCompleted ? T.green : T.red }}>
                           {isCompleted ? 'Completed' : 'Missed'}
                         </Text>
                       </View>
