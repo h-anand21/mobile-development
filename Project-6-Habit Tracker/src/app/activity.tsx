@@ -443,32 +443,52 @@ export default function ActivityScreen() {
         ) : activeMode === 'habits' ? (
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
             
-            {/* ── Control Hub Stats Banner ── */}
+            {/* ── 3 Top Control Hub Metric Cards ── */}
             <Animated.View entering={FadeInDown.delay(80).springify()} style={{ flexDirection: 'row', gap: 10, paddingHorizontal: 16, marginBottom: 16 }}>
-              {/* Total Habits */}
-              <View style={[T.neo, { flex: 1, borderRadius: 20, padding: 14, backgroundColor: T.bgCard, alignItems: 'center' }]}>
-                <Text style={{ fontSize: 24, fontWeight: '900', color: T.teal }}>{habits.length}</Text>
-                <Text style={{ fontSize: 10, fontWeight: '700', color: T.textMuted, textTransform: 'uppercase', marginTop: 2 }}>Total Habits</Text>
+              
+              {/* Card 1: TOTAL HABITS */}
+              <View style={[T.neo, { flex: 1, borderRadius: 20, padding: 14, backgroundColor: T.bgCard, overflow: 'hidden', position: 'relative' }]}>
+                <View style={{ width: 34, height: 34, borderRadius: 12, backgroundColor: 'rgba(45,212,191,0.15)', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
+                  <Ionicons name="clipboard-outline" size={18} color={T.teal} />
+                </View>
+                <Text style={{ fontSize: 28, fontWeight: '900', color: T.teal, marginBottom: 2 }}>{habits.length}</Text>
+                <Text style={{ fontSize: 9, fontWeight: '800', color: '#64748B', textTransform: 'uppercase', letterSpacing: 0.5 }}>TOTAL HABITS</Text>
+                <Svg width={60} height={30} viewBox="0 0 60 30" style={{ position: 'absolute', right: -5, bottom: -5, opacity: 0.2 }}>
+                  <Path d="M 0 25 Q 15 10 30 20 T 60 5" stroke={T.teal} strokeWidth="3" fill="none" />
+                </Svg>
               </View>
 
-              {/* Completed Today */}
-              <View style={[T.neo, { flex: 1, borderRadius: 20, padding: 14, backgroundColor: T.bgCard, alignItems: 'center' }]}>
-                <Text style={{ fontSize: 24, fontWeight: '900', color: T.green }}>
+              {/* Card 2: DONE TODAY */}
+              <View style={[T.neo, { flex: 1, borderRadius: 20, padding: 14, backgroundColor: T.bgCard, overflow: 'hidden', position: 'relative' }]}>
+                <View style={{ width: 34, height: 34, borderRadius: 12, backgroundColor: 'rgba(56,189,248,0.15)', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
+                  <Ionicons name="checkmark-circle-outline" size={18} color="#38BDF8" />
+                </View>
+                <Text style={{ fontSize: 28, fontWeight: '900', color: '#38BDF8', marginBottom: 2 }}>
                   {habits.filter(h => h.completedDates.includes(todayStr)).length}
                 </Text>
-                <Text style={{ fontSize: 10, fontWeight: '700', color: T.textMuted, textTransform: 'uppercase', marginTop: 2 }}>Done Today</Text>
+                <Text style={{ fontSize: 9, fontWeight: '800', color: '#64748B', textTransform: 'uppercase', letterSpacing: 0.5 }}>DONE TODAY</Text>
+                <Svg width={60} height={30} viewBox="0 0 60 30" style={{ position: 'absolute', right: -5, bottom: -5, opacity: 0.2 }}>
+                  <Path d="M 0 20 Q 20 28 40 10 T 60 15" stroke="#38BDF8" strokeWidth="3" fill="none" />
+                </Svg>
               </View>
 
-              {/* Best Streak */}
-              <View style={[T.neo, { flex: 1, borderRadius: 20, padding: 14, backgroundColor: T.bgCard, alignItems: 'center' }]}>
-                <Text style={{ fontSize: 24, fontWeight: '900', color: T.orange }}>
+              {/* Card 3: MAX STREAK */}
+              <View style={[T.neo, { flex: 1, borderRadius: 20, padding: 14, backgroundColor: T.bgCard, overflow: 'hidden', position: 'relative' }]}>
+                <View style={{ width: 34, height: 34, borderRadius: 12, backgroundColor: 'rgba(249,115,22,0.15)', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
+                  <Ionicons name="flame" size={18} color={T.orange} />
+                </View>
+                <Text style={{ fontSize: 28, fontWeight: '900', color: T.orange, marginBottom: 2 }}>
                   {habits.reduce((m, h) => Math.max(m, getActiveStreak(h)), 0)}d
                 </Text>
-                <Text style={{ fontSize: 10, fontWeight: '700', color: T.textMuted, textTransform: 'uppercase', marginTop: 2 }}>Max Streak</Text>
+                <Text style={{ fontSize: 9, fontWeight: '800', color: '#64748B', textTransform: 'uppercase', letterSpacing: 0.5 }}>MAX STREAK</Text>
+                <Svg width={60} height={30} viewBox="0 0 60 30" style={{ position: 'absolute', right: -5, bottom: -5, opacity: 0.2 }}>
+                  <Path d="M 0 25 Q 15 28 35 12 T 60 8" stroke={T.orange} strokeWidth="3" fill="none" />
+                </Svg>
               </View>
+
             </Animated.View>
 
-            {/* ── Search & Add Bar ── */}
+            {/* ── Search & Add Habit Bar ── */}
             <Animated.View entering={FadeInDown.delay(100).springify()} style={{ paddingHorizontal: 16, marginBottom: 14, flexDirection: 'row', gap: 10, alignItems: 'center' }}>
               <View style={[T.neoPressed, { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: T.bgPress, borderRadius: 16, paddingHorizontal: 14, height: 46 }]}>
                 <Ionicons name="search-outline" size={18} color={T.textMuted} style={{ marginRight: 8 }} />
@@ -486,10 +506,11 @@ export default function ActivityScreen() {
                 )}
               </View>
 
+              {/* + Add Habit Pill Button */}
               <Pressable onPress={() => router.push('/new')}
-                style={[T.neo, { height: 46, paddingHorizontal: 16, borderRadius: 16, backgroundColor: T.teal, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 4 }]}>
+                style={[T.neo, { height: 46, paddingHorizontal: 18, borderRadius: 23, backgroundColor: T.teal, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 4 }]}>
                 <Ionicons name="add" size={18} color="#0D1525" />
-                <Text style={{ fontSize: 13, fontWeight: '900', color: '#0D1525' }}>Add</Text>
+                <Text style={{ fontSize: 13, fontWeight: '900', color: '#0D1525' }}>Add Habit</Text>
               </Pressable>
             </Animated.View>
 
@@ -509,7 +530,7 @@ export default function ActivityScreen() {
                     <Pressable key={cat.value} onPress={() => setSelectedCat(cat.value as any)}
                       style={[
                         T.neo,
-                        { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 14, backgroundColor: active ? T.teal : T.bgCard }
+                        { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 14, backgroundColor: active ? T.teal : T.bgCard, borderColor: active ? T.teal : 'transparent', borderWidth: active ? 1 : 0 }
                       ]}>
                       <Ionicons name={cat.icon} size={14} color={active ? '#0D1525' : T.textMuted} />
                       <Text style={{ fontSize: 12, fontWeight: active ? '900' : '600', color: active ? '#0D1525' : T.textSub }}>
@@ -521,7 +542,7 @@ export default function ActivityScreen() {
               </ScrollView>
             </View>
 
-            {/* ── Habits List with Full Management Controls ── */}
+            {/* ── Habits List with Management Controls ── */}
             <View style={{ paddingHorizontal: 16 }}>
               {filteredHabits.length === 0 ? (
                 <View style={[T.neo, { padding: 28, borderRadius: 24, alignItems: 'center', justifyContent: 'center', backgroundColor: T.bgCard, marginTop: 10 }]}>
@@ -552,20 +573,21 @@ export default function ActivityScreen() {
 
                   return (
                     <Animated.View key={habit.id} entering={FadeInDown.delay(120 + i * 40).springify()} layout={LinearTransition.springify()}
-                      style={[T.neo, { borderRadius: 22, padding: 16, marginBottom: 14, backgroundColor: T.bgCard }]}>
+                      style={[T.neo, { borderRadius: 22, padding: 16, marginBottom: 14, backgroundColor: T.bgCard, borderLeftWidth: 3, borderLeftColor: T.teal }]}>
                       
-                      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
+                      {/* Top Info Row */}
+                      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                        <Pressable onPress={() => router.push(`/new?id=${habit.id}`)} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
                           <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: T.tealDim, alignItems: 'center', justifyContent: 'center' }}>
                             <Text style={{ fontSize: 22 }}>{habit.emoji}</Text>
                           </View>
                           <View style={{ flex: 1 }}>
                             <Text style={{ fontSize: 16, fontWeight: '800', color: T.textPrimary, marginBottom: 2 }}>{habit.name}</Text>
-                            <Text style={{ fontSize: 11, fontWeight: '600', color: T.textMuted }}>
-                              {(habit.category || 'other').toUpperCase()} • {habit.frequency.kind === 'daily' ? 'Daily' : `${habit.frequency.weekdays.length} days/wk`}
+                            <Text style={{ fontSize: 11, fontWeight: '700', color: T.textMuted }}>
+                              <Text style={{ color: T.teal }}>{(habit.category || 'health').toUpperCase()}</Text> • {habit.frequency.kind === 'daily' ? 'Daily' : `${habit.frequency.weekdays.length} days/wk`}
                             </Text>
                           </View>
-                        </View>
+                        </Pressable>
 
                         {/* Streak Badge */}
                         <View style={[T.neoPressed, { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 14, backgroundColor: T.bgPress }]}>
@@ -574,33 +596,30 @@ export default function ActivityScreen() {
                         </View>
                       </View>
 
-                      {/* Divider */}
-                      <View style={{ height: 1, backgroundColor: T.border, marginBottom: 12 }} />
-
                       {/* Controls Action Row */}
                       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                         {/* Toggle Completion Button */}
                         <Pressable onPress={() => toggleCompleteHabit(habit.id, todayStr)}
                           style={[
                             T.neo,
-                            { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 14, backgroundColor: isDoneToday ? T.teal : T.bgCard }
+                            { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 14, backgroundColor: isDoneToday ? T.teal : T.bgCard, borderColor: isDoneToday ? T.teal : T.border, borderWidth: 1 }
                           ]}>
                           <Ionicons name={isDoneToday ? 'checkmark-circle' : 'ellipse-outline'} size={18} color={isDoneToday ? '#0D1525' : T.teal} />
                           <Text style={{ fontSize: 13, fontWeight: '900', color: isDoneToday ? '#0D1525' : T.teal }}>
-                            {isDoneToday ? 'Completed Today' : 'Mark Done'}
+                            {isDoneToday ? 'Completed Today' : 'Mark as Done'}
                           </Text>
                         </Pressable>
 
                         <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
-                          {/* Edit Button */}
-                          <Pressable onPress={() => router.push('/new')}
-                            style={[T.neo, { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: T.bgCard }]}>
+                          {/* Edit Button — Direct open editor on click */}
+                          <Pressable onPress={() => router.push(`/new?id=${habit.id}`)}
+                            style={[T.neo, { width: 40, height: 40, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: T.bgCard }]}>
                             <Ionicons name="create-outline" size={18} color={T.textSub} />
                           </Pressable>
 
                           {/* Delete Button */}
                           <Pressable onPress={handleDelete}
-                            style={[T.neo, { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: T.bgCard }]}>
+                            style={[T.neo, { width: 40, height: 40, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: T.bgCard }]}>
                             <Ionicons name="trash-outline" size={18} color={T.red} />
                           </Pressable>
                         </View>
