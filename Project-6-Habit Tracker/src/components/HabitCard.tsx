@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Image } from 'react-native';
 import { Link } from 'expo-router';
 import Animated, {
   useAnimatedStyle,
@@ -89,9 +89,13 @@ export default function HabitCard({ habit, onToggleComplete, index = 0, dateStr 
           {/* Left accent bar */}
           <View style={[styles.accentBar, { backgroundColor: isCompleted ? T.green : isShielded ? T.orange : T.teal }]} />
 
-          {/* Emoji */}
-          <Animated.View style={[T.neo, styles.emojiBox, emojiStyle]}>
-            <Text style={styles.emojiText}>{habit.emoji}</Text>
+          {/* Emoji / Custom Image */}
+          <Animated.View style={[T.neo, styles.emojiBox, emojiStyle, { overflow: 'hidden' }]}>
+            {habit.emoji?.startsWith('file:') || habit.emoji?.startsWith('content:') || habit.emoji?.startsWith('http') || habit.emoji?.startsWith('data:') ? (
+              <Image source={{ uri: habit.emoji }} style={{ width: 44, height: 44, borderRadius: 14 }} resizeMode="cover" />
+            ) : (
+              <Text style={styles.emojiText}>{habit.emoji}</Text>
+            )}
           </Animated.View>
 
           {/* Details */}

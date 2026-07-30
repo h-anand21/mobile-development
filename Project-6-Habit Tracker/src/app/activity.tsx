@@ -9,6 +9,7 @@ import {
   Pressable,
   Alert,
   TextInput,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -633,8 +634,12 @@ export default function ActivityScreen() {
                       {/* Top Info Row */}
                       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
                         <Pressable onPress={() => router.push(`/new?id=${habit.id}`)} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
-                          <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: T.tealDim, alignItems: 'center', justifyContent: 'center' }}>
-                            <Text style={{ fontSize: 22 }}>{habit.emoji}</Text>
+                          <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: T.tealDim, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                            {habit.emoji?.startsWith('file:') || habit.emoji?.startsWith('content:') || habit.emoji?.startsWith('http') || habit.emoji?.startsWith('data:') ? (
+                              <Image source={{ uri: habit.emoji }} style={{ width: 44, height: 44, borderRadius: 14 }} resizeMode="cover" />
+                            ) : (
+                              <Text style={{ fontSize: 22 }}>{habit.emoji}</Text>
+                            )}
                           </View>
                           <View style={{ flex: 1 }}>
                             <Text style={{ fontSize: 16, fontWeight: '800', color: T.textPrimary, marginBottom: 2 }}>{habit.name}</Text>
