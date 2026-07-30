@@ -20,6 +20,8 @@ import TabBar from '../components/TabBar';
 
 const { width: SW } = Dimensions.get('window');
 
+const isImageUri = (str?: string) => Boolean(str && (str.startsWith('file:') || str.startsWith('content:') || str.startsWith('http:') || str.startsWith('https:') || str.startsWith('data:')));
+
 // ─── Multi-Ring Donut ───
 function NeoDonut({ rings, size }: {
   rings: { percent: number; color: string; strokeW: number; radius: number }[];
@@ -261,28 +263,38 @@ export default function AnalyticsScreen() {
             {/* Vertical Divider */}
             <View style={{ width: 1, height: '80%', backgroundColor: 'rgba(255,255,255,0.08)', marginHorizontal: 14 }} />
 
-            {/* Right Top Habit Progress */}
+            {/* Right Top Habit Progress (Renders ALL User Habits) */}
             <View style={{ flex: 1, justifyContent: 'center' }}>
               {habits.length > 0 ? (
-                <View style={{ gap: 8 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                    <View style={{ width: 40, height: 40, borderRadius: 14, backgroundColor: 'rgba(45,212,191,0.12)', alignItems: 'center', justifyContent: 'center' }}>
-                      <Text style={{ fontSize: 20 }}>{habits[0].emoji}</Text>
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ fontSize: 15, fontWeight: '800', color: '#FFFFFF' }} numberOfLines={1}>
-                        {habits[0].name}
-                      </Text>
-                      <Text style={{ fontSize: 11, fontWeight: '700', color: T.teal, marginTop: 2 }}>
-                        {getRate(habits[0])}% <Text style={{ color: '#64748B', fontWeight: '600' }}>Goal Progress</Text>
-                      </Text>
-                    </View>
+                <ScrollView nestedScrollEnabled showsVerticalScrollIndicator={false} style={{ maxHeight: 115 }}>
+                  <View style={{ gap: 10 }}>
+                    {habits.map((h, i) => {
+                      const rate = getRate(h);
+                      const color = ringColors[i % ringColors.length];
+                      return (
+                        <View key={h.id}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
+                              {isImageUri(h.emoji) ? (
+                                <Image source={{ uri: h.emoji }} style={{ width: 20, height: 20, borderRadius: 6 }} />
+                              ) : (
+                                <Text style={{ fontSize: 15 }}>{h.emoji}</Text>
+                              )}
+                              <Text style={{ fontSize: 13, fontWeight: '800', color: '#FFFFFF', flex: 1 }} numberOfLines={1}>
+                                {h.name}
+                              </Text>
+                            </View>
+                            <Text style={{ fontSize: 11, fontWeight: '800', color }}>{rate}%</Text>
+                          </View>
+                          <ProgressBar pct={rate} color={color} />
+                        </View>
+                      );
+                    })}
                   </View>
-                  <ProgressBar pct={getRate(habits[0])} color={T.teal} />
-                </View>
+                </ScrollView>
               ) : (
                 <View style={{ alignItems: 'center', paddingVertical: 10 }}>
-                  <Text style={{ fontSize: 12, fontWeight: '700', color: T.textMuted }}>No habits tracked yet</Text>
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: T.textMuted }}>No habits created yet</Text>
                 </View>
               )}
             </View>
@@ -439,110 +451,140 @@ export default function AnalyticsScreen() {
               </View>
             </View>
 
-            {/* Split Row: Left Calendar Grid + Right Detail Card */}
-            <View style={{ flexDirection: 'row', gap: 12 }}>
-              
-              {/* Left Calendar Grid */}
-              <View style={{ flex: 1.3 }}>
-                {/* Day Header */}
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                  {['SU','MO','TU','WE','TH','FR','SA'].map(day => (
-                    <Text key={day} style={{ fontSize: 9, fontWeight: '800', color: '#64748B', width: 28, textAlign: 'center' }}>{day}</Text>
-                  ))}
-                </View>
-
-                {/* Days Grid */}
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4 }}>
-                  {gridCells.map((cell) => {
-                    if (!cell.dayNum || !cell.dateStr) {
-                      return <View key={cell.key} style={{ width: 28, height: 28, margin: 1 }} />;
-                    }
-                    const isSelected = cell.dateStr === selectedGridDateStr;
-                    const status = getDayGridStatus(cell.dateStr);
-                    const isTodayCell = cell.dateStr === todayStr;
-
-                    return (
-                      <Pressable
-                        key={cell.key}
-                        onPress={() => setSelectedGridDateStr(cell.dateStr as string)}
-                        style={[
-                          { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', margin: 1 },
-                          { backgroundColor: status.color || 'rgba(255,255,255,0.04)' },
-                          isSelected && { backgroundColor: T.teal, transform: [{ scale: 1.08 }] },
-                          isTodayCell && !isSelected && { borderWidth: 1.5, borderColor: T.teal }
-                        ]}
-                      >
-                        <Text style={[
-                          { fontSize: 11, fontWeight: '700', color: '#FFFFFF' },
-                          isSelected && { fontWeight: '900', color: '#0D1525' }
-                        ]}>
-                          {cell.dayNum}
-                        </Text>
-                      </Pressable>
-                    );
-                  })}
-                </View>
+            {/* ── 1. Full-Width Monthly Calendar Grid ── */}
+            <View style={{ marginBottom: 16 }}>
+              {/* Day Header Row */}
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10, paddingHorizontal: 4 }}>
+                {['SU','MO','TU','WE','TH','FR','SA'].map(day => (
+                  <Text key={day} style={{ fontSize: 11, fontWeight: '800', color: '#64748B', width: (SW - 68) / 7, textAlign: 'center' }}>
+                    {day}
+                  </Text>
+                ))}
               </View>
 
-              {/* Right Side Detail Card for Selected Date */}
-              <View style={[T.neoPressed, { flex: 1, borderRadius: 20, padding: 12, backgroundColor: T.bgPress, alignItems: 'center', justifyContent: 'center' }]}>
-                {selectedGridDateStr ? (() => {
-                  const parts = selectedGridDateStr.split('-');
-                  const gridDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-                  const dW = gridDate.getDay();
-                  const activeOnSelectedDay = habits.filter(h => h.frequency.kind === 'daily' || h.frequency.weekdays.includes(dW));
-                  const displayHabit = activeOnSelectedDay[0] || habits[0];
-                  const isCompleted = displayHabit ? displayHabit.completedDates.includes(selectedGridDateStr) : false;
-
-                  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-                  const dateLabel = `${gridDate.getDate()} ${months[gridDate.getMonth()]} ${gridDate.getFullYear()}`;
+              {/* Days Grid */}
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, justifyContent: 'flex-start' }}>
+                {gridCells.map((cell) => {
+                  const cellWidth = Math.floor((SW - 68 - 24) / 7);
+                  if (!cell.dayNum || !cell.dateStr) {
+                    return <View key={cell.key} style={{ width: cellWidth, height: 40 }} />;
+                  }
+                  const isSelected = cell.dateStr === selectedGridDateStr;
+                  const status = getDayGridStatus(cell.dateStr);
+                  const isTodayCell = cell.dateStr === todayStr;
 
                   return (
-                    <View style={{ alignItems: 'center', width: '100%' }}>
-                      {/* Emoji / Image Ring Bubble with Checkmark Badge */}
-                      <View style={{ position: 'relative', marginBottom: 8 }}>
-                        <View style={{ width: 52, height: 52, borderRadius: 26, backgroundColor: 'rgba(45,212,191,0.12)', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                          {displayHabit && (displayHabit.emoji?.startsWith('file:') || displayHabit.emoji?.startsWith('content:') || displayHabit.emoji?.startsWith('http') || displayHabit.emoji?.startsWith('data:')) ? (
-                            <Image source={{ uri: displayHabit.emoji }} style={{ width: 52, height: 52, borderRadius: 26 }} resizeMode="cover" />
-                          ) : (
-                            <Text style={{ fontSize: 24 }}>{displayHabit ? displayHabit.emoji : '🥤'}</Text>
-                          )}
-                        </View>
-                        <View style={{ position: 'absolute', bottom: -2, right: -2, width: 18, height: 18, borderRadius: 9, backgroundColor: isCompleted ? T.teal : T.red, alignItems: 'center', justifyContent: 'center' }}>
-                          <Ionicons name={isCompleted ? "checkmark" : "close"} size={11} color="#0D1525" />
-                        </View>
-                      </View>
-
-                      {/* Date & Habit Title */}
-                      <Text style={{ fontSize: 13, fontWeight: '900', color: '#FFFFFF', textAlign: 'center', marginBottom: 2 }}>
-                        {dateLabel}
+                    <Pressable
+                      key={cell.key}
+                      onPress={() => setSelectedGridDateStr(cell.dateStr as string)}
+                      style={[
+                        { width: cellWidth, height: 40, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginVertical: 2 },
+                        { backgroundColor: status.color || 'rgba(255,255,255,0.03)' },
+                        isSelected && { backgroundColor: T.teal, transform: [{ scale: 1.05 }], shadowColor: T.teal, shadowOpacity: 0.5, shadowRadius: 8, elevation: 4 },
+                        isTodayCell && !isSelected && { borderWidth: 2, borderColor: T.teal }
+                      ]}
+                    >
+                      <Text style={[
+                        { fontSize: 13, fontWeight: '700', color: '#FFFFFF' },
+                        isSelected && { fontWeight: '900', color: '#0D1525', fontSize: 14 }
+                      ]}>
+                        {cell.dayNum}
                       </Text>
-                      <Text style={{ fontSize: 11, fontWeight: '600', color: '#94A3B8', textAlign: 'center', marginBottom: 8 }} numberOfLines={1}>
-                        {displayHabit ? displayHabit.name : 'No habits'}
-                      </Text>
+                      {status.completedCount > 0 && !isSelected && (
+                        <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: T.teal, position: 'absolute', bottom: 4 }} />
+                      )}
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
 
-                      {/* Status Pill */}
-                      <View style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        gap: 4,
-                        paddingHorizontal: 10,
-                        paddingVertical: 5,
-                        borderRadius: 12,
-                        backgroundColor: isCompleted ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)',
-                        borderWidth: 1,
-                        borderColor: isCompleted ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'
-                      }}>
-                        <Ionicons name={isCompleted ? "checkmark-circle" : "close-circle"} size={13} color={isCompleted ? T.green : T.red} />
-                        <Text style={{ fontSize: 10, fontWeight: '900', color: isCompleted ? T.green : T.red }}>
-                          {isCompleted ? 'Completed' : 'Missed'}
+            {/* ── 2. Full-Width Selected Date Detail Card ── */}
+            <View style={[T.neoPressed, { borderRadius: 20, padding: 16, backgroundColor: T.bgPress }]}>
+              {selectedGridDateStr ? (() => {
+                const parts = selectedGridDateStr.split('-');
+                const gridDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+                const dW = gridDate.getDay();
+                const activeOnSelectedDay = habits.filter(h => h.frequency.kind === 'daily' || h.frequency.weekdays.includes(dW));
+                
+                const daysOfWeek = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+                const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+                const fullDateLabel = `${daysOfWeek[gridDate.getDay()]}, ${gridDate.getDate()} ${months[gridDate.getMonth()]} ${gridDate.getFullYear()}`;
+
+                return (
+                  <View style={{ width: '100%' }}>
+                    {/* Header Row */}
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)' }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <Ionicons name="calendar-outline" size={16} color={T.teal} />
+                        <Text style={{ fontSize: 13, fontWeight: '900', color: '#FFFFFF' }}>
+                          {fullDateLabel}
                         </Text>
                       </View>
+                      <Text style={{ fontSize: 11, fontWeight: '700', color: T.teal }}>
+                        {activeOnSelectedDay.filter(h => h.completedDates.includes(selectedGridDateStr)).length} / {activeOnSelectedDay.length} Completed
+                      </Text>
                     </View>
-                  );
-                })() : null}
-              </View>
 
+                    {/* Habit Items List */}
+                    {activeOnSelectedDay.length === 0 ? (
+                      <View style={{ alignItems: 'center', paddingVertical: 14 }}>
+                        <Text style={{ fontSize: 12, fontWeight: '600', color: '#94A3B8', fontStyle: 'italic' }}>
+                          No habits scheduled for this day
+                        </Text>
+                      </View>
+                    ) : (
+                      <View style={{ gap: 10 }}>
+                        {activeOnSelectedDay.map(h => {
+                          const isDone = h.completedDates.includes(selectedGridDateStr);
+                          const isShielded = h.shieldedDates?.includes(selectedGridDateStr);
+                          return (
+                            <View key={h.id} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 4 }}>
+                              
+                              {/* Left Icon & Name */}
+                              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+                                <View style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: 'rgba(45,212,191,0.12)', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                                  {isImageUri(h.emoji) ? (
+                                    <Image source={{ uri: h.emoji }} style={{ width: 36, height: 36, borderRadius: 12 }} resizeMode="cover" />
+                                  ) : (
+                                    <Text style={{ fontSize: 20 }}>{h.emoji}</Text>
+                                  )}
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                  <Text style={{ fontSize: 14, fontWeight: '800', color: '#FFFFFF' }} numberOfLines={1}>
+                                    {h.name}
+                                  </Text>
+                                  <Text style={{ fontSize: 10, fontWeight: '600', color: '#64748B', marginTop: 1 }}>
+                                    {h.frequency.kind === 'daily' ? 'Daily' : 'Weekly'}
+                                  </Text>
+                                </View>
+                              </View>
+
+                              {/* Right Status Pill */}
+                              <View style={{
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                gap: 5,
+                                paddingHorizontal: 12,
+                                paddingVertical: 6,
+                                borderRadius: 14,
+                                backgroundColor: isDone ? 'rgba(34,197,94,0.15)' : isShielded ? 'rgba(249,115,22,0.15)' : 'rgba(239,68,68,0.15)',
+                                borderWidth: 1,
+                                borderColor: isDone ? 'rgba(34,197,94,0.3)' : isShielded ? 'rgba(249,115,22,0.3)' : 'rgba(239,68,68,0.3)'
+                              }}>
+                                <Ionicons name={isDone ? "checkmark-circle" : isShielded ? "shield-checkmark" : "close-circle"} size={14} color={isDone ? T.green : isShielded ? T.orange : T.red} />
+                                <Text style={{ fontSize: 11, fontWeight: '900', color: isDone ? T.green : isShielded ? T.orange : T.red }}>
+                                  {isDone ? 'Completed' : isShielded ? 'Shielded' : 'Missed'}
+                                </Text>
+                              </View>
+                            </View>
+                          );
+                        })}
+                      </View>
+                    )}
+                  </View>
+                );
+              })() : null}
             </View>
 
           </Animated.View>
