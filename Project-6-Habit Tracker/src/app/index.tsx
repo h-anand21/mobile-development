@@ -247,8 +247,14 @@ function ActivityWidget({ T, router }: { T: any; router: any }) {
               </View>
               <Text style={{ fontSize: 10, fontWeight: '800', color: T.teal }}>{pct}%</Text>
             </View>
-            <Text style={{ fontSize: 22, fontWeight: '900', color: '#FFFFFF', marginBottom: 2 }}>{steps}</Text>
-            <Text style={{ fontSize: 9, fontWeight: '700', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 0.3 }}>Steps</Text>
+            <Text
+              style={{ fontSize: 22, fontWeight: '900', color: '#FFFFFF', letterSpacing: 0.5, marginBottom: 3, paddingHorizontal: 2, includeFontPadding: false }}
+              adjustsFontSizeToFit={true}
+              numberOfLines={1}
+            >
+              {steps}
+            </Text>
+            <Text style={{ fontSize: 9, fontWeight: '700', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 0.5 }}>Steps</Text>
             <View style={{ height: 4, backgroundColor: T.tealDim, borderRadius: 2, overflow: 'hidden', marginTop: 8 }}>
               <View style={{ height: '100%', width: `${Math.min(100, pct)}%`, backgroundColor: T.teal, borderRadius: 2 }} />
             </View>
@@ -264,8 +270,14 @@ function ActivityWidget({ T, router }: { T: any; router: any }) {
               </View>
               <Text style={{ fontSize: 9, fontWeight: '700', color: '#94A3B8' }}>KCAL</Text>
             </View>
-            <Text style={{ fontSize: 22, fontWeight: '900', color: '#FFFFFF', marginBottom: 2 }}>{cal}</Text>
-            <Text style={{ fontSize: 9, fontWeight: '700', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 0.3 }}>Calories</Text>
+            <Text
+              style={{ fontSize: 22, fontWeight: '900', color: '#FFFFFF', letterSpacing: 0.5, marginBottom: 3, paddingHorizontal: 2, includeFontPadding: false }}
+              adjustsFontSizeToFit={true}
+              numberOfLines={1}
+            >
+              {cal}
+            </Text>
+            <Text style={{ fontSize: 9, fontWeight: '700', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 0.5 }}>Calories</Text>
             <View style={{ height: 4, backgroundColor: T.orange + '22', borderRadius: 2, overflow: 'hidden', marginTop: 8 }}>
               <View style={{ height: '100%', width: `${Math.min(100, (Number(cal) / 300) * 100)}%`, backgroundColor: T.orange, borderRadius: 2 }} />
             </View>
@@ -281,8 +293,14 @@ function ActivityWidget({ T, router }: { T: any; router: any }) {
               </View>
               <Text style={{ fontSize: 9, fontWeight: '700', color: '#94A3B8' }}>KM</Text>
             </View>
-            <Text style={{ fontSize: 22, fontWeight: '900', color: '#FFFFFF', marginBottom: 2 }}>{dist}</Text>
-            <Text style={{ fontSize: 9, fontWeight: '700', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 0.3 }}>Distance</Text>
+            <Text
+              style={{ fontSize: 22, fontWeight: '900', color: '#FFFFFF', letterSpacing: 0.5, marginBottom: 3, paddingHorizontal: 2, includeFontPadding: false }}
+              adjustsFontSizeToFit={true}
+              numberOfLines={1}
+            >
+              {dist}
+            </Text>
+            <Text style={{ fontSize: 9, fontWeight: '700', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 0.5 }}>Distance</Text>
             <View style={{ height: 4, backgroundColor: T.purple + '22', borderRadius: 2, overflow: 'hidden', marginTop: 8 }}>
               <View style={{ height: '100%', width: `${Math.min(100, (Number(dist) / 5) * 100)}%`, backgroundColor: T.purple, borderRadius: 2 }} />
             </View>

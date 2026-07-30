@@ -67,7 +67,11 @@ function OverviewArcRing({
       </View>
 
       {/* Big Number with explicit vertical spacing */}
-      <Text style={{ color: '#FFFFFF', fontSize: 19, fontWeight: '900', letterSpacing: -0.5, marginBottom: 3, textAlign: 'center' }}>
+      <Text
+        style={{ color: '#FFFFFF', fontSize: 19, fontWeight: '900', letterSpacing: 0.5, marginBottom: 3, paddingHorizontal: 2, includeFontPadding: false, textAlign: 'center' }}
+        adjustsFontSizeToFit={true}
+        numberOfLines={1}
+      >
         {value}
       </Text>
       
@@ -89,32 +93,42 @@ function SparklineWave({ color }: { color: string }) {
   );
 }
 
-// ─── Grid Metric Card (2x2 Grid) ─────────────────────────────────────────────
+// ─── Grid Metric Card (Horizontal Layout) ───────────────────────────────────
 function GridMetricCard({ icon, iconBg, color, value, label, trend, T, delay }:
   { icon: string; iconBg: string; color: string; value: string; label: string; trend: string; T: any; delay: number }) {
   const CARD_W = (SW - 42) / 2;
   return (
     <Animated.View entering={FadeInDown.delay(delay).springify()}
-      style={[T.neo, { width: CARD_W, borderRadius: 22, padding: 16, backgroundColor: T.bgCard, marginBottom: 14 }]}>
+      style={[T.neo, { width: CARD_W, borderRadius: 22, padding: 14, backgroundColor: T.bgCard, marginBottom: 14 }]}>
       
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 }}>
         {/* Icon Bubble */}
-        <View style={[T.neo, { width: 44, height: 44, borderRadius: 14, backgroundColor: iconBg, alignItems: 'center', justifyContent: 'center' }]}>
-          <Text style={{ fontSize: 20 }}>{icon}</Text>
+        <View style={[T.neo, { width: 40, height: 40, borderRadius: 12, backgroundColor: iconBg, alignItems: 'center', justifyContent: 'center' }]}>
+          <Text style={{ fontSize: 18 }}>{icon}</Text>
         </View>
         
-        {/* Right Values */}
+        {/* Right Horizontal Values: Number + Label side-by-side */}
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 21, fontWeight: '900', color: '#FFFFFF', letterSpacing: -0.5, marginBottom: 3 }}>{value}</Text>
-          <Text style={{ fontSize: 10, fontWeight: '800', color: '#64748B', textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 4 }}>
+            <Text
+              style={{ fontSize: 18, fontWeight: '900', color: '#FFFFFF', letterSpacing: 0.5, includeFontPadding: false }}
+              adjustsFontSizeToFit={true}
+              numberOfLines={1}
+            >
+              {value}
+            </Text>
+            <Text style={{ fontSize: 10, fontWeight: '800', color: color, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+              {label}
+            </Text>
+          </View>
         </View>
       </View>
 
       {/* Sparkline & Trend Footer */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingTop: 10, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)' }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingTop: 8, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)' }}>
         <SparklineWave color={color} />
-        <Text style={{ fontSize: 11, fontWeight: '800', color }}>{trend}</Text>
-        <Text style={{ fontSize: 10, fontWeight: '600', color: '#64748B' }}>vs yest</Text>
+        <Text style={{ fontSize: 10, fontWeight: '800', color }}>{trend}</Text>
+        <Text style={{ fontSize: 9, fontWeight: '600', color: '#64748B' }}>vs yest</Text>
       </View>
 
     </Animated.View>
