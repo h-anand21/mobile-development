@@ -93,42 +93,39 @@ function SparklineWave({ color }: { color: string }) {
   );
 }
 
-// ─── Grid Metric Card (Horizontal Layout) ───────────────────────────────────
-function GridMetricCard({ icon, iconBg, color, value, label, trend, T, delay }:
-  { icon: string; iconBg: string; color: string; value: string; label: string; trend: string; T: any; delay: number }) {
-  const CARD_W = (SW - 42) / 2;
+// ─── Grid Metric Card (Flex Row Layout) ─────────────────────────────────────
+function GridMetricCard({ iconName, iconBg, color, labelColor, value, label, trend, T, delay }:
+  { iconName: any; iconBg: string; color: string; labelColor: string; value: string; label: string; trend: string; T: any; delay: number }) {
   return (
     <Animated.View entering={FadeInDown.delay(delay).springify()}
-      style={[T.neo, { width: CARD_W, borderRadius: 22, padding: 14, backgroundColor: T.bgCard, marginBottom: 14 }]}>
+      style={[T.neo, { flex: 1, borderRadius: 22, padding: 16, backgroundColor: T.bgCard }]}>
       
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 }}>
         {/* Icon Bubble */}
-        <View style={[T.neo, { width: 40, height: 40, borderRadius: 12, backgroundColor: iconBg, alignItems: 'center', justifyContent: 'center' }]}>
-          <Text style={{ fontSize: 18 }}>{icon}</Text>
+        <View style={[T.neo, { width: 42, height: 42, borderRadius: 14, backgroundColor: iconBg, alignItems: 'center', justifyContent: 'center' }]}>
+          <Ionicons name={iconName} size={20} color={color} />
         </View>
         
-        {/* Right Horizontal Values: Number + Label side-by-side */}
+        {/* Right Values: Big White Number on top, Subtitle word below */}
         <View style={{ flex: 1 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 4 }}>
-            <Text
-              style={{ fontSize: 18, fontWeight: '900', color: '#FFFFFF', letterSpacing: 0.5, includeFontPadding: false }}
-              adjustsFontSizeToFit={true}
-              numberOfLines={1}
-            >
-              {value}
-            </Text>
-            <Text style={{ fontSize: 10, fontWeight: '800', color: color, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-              {label}
-            </Text>
-          </View>
+          <Text
+            style={{ fontSize: 21, fontWeight: '900', color: '#FFFFFF', letterSpacing: 0.5, marginBottom: 2, paddingHorizontal: 1, includeFontPadding: false }}
+            adjustsFontSizeToFit={true}
+            numberOfLines={1}
+          >
+            {value}
+          </Text>
+          <Text style={{ fontSize: 10, fontWeight: '800', color: labelColor, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+            {label}
+          </Text>
         </View>
       </View>
 
-      {/* Sparkline & Trend Footer */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingTop: 8, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)' }}>
+      {/* Sparkline Wave & Trend Footer */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingTop: 10, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)' }}>
         <SparklineWave color={color} />
-        <Text style={{ fontSize: 10, fontWeight: '800', color }}>{trend}</Text>
-        <Text style={{ fontSize: 9, fontWeight: '600', color: '#64748B' }}>vs yest</Text>
+        <Text style={{ fontSize: 11, fontWeight: '800', color }}>{trend}</Text>
+        <Text style={{ fontSize: 10, fontWeight: '600', color: '#64748B' }}>vs yesterday</Text>
       </View>
 
     </Animated.View>
@@ -361,26 +358,26 @@ export default function ActivityScreen() {
 
             </Animated.View>
 
-            {/* ── 2. 2x2 GRID METRIC CARDS ── */}
+            {/* ── 2. 2x2 GRID METRIC CARDS (REAL LIVE SENSOR DATA) ── */}
             <View style={{ paddingHorizontal: 16, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
               <GridMetricCard
-                icon="🚶" iconBg="rgba(45,212,191,0.15)" color={T.teal}
-                value={pd.available ? pd.steps.toLocaleString() : '4,250'}
+                iconName="walk" iconBg="rgba(45,212,191,0.15)" color={T.teal} labelColor={T.teal}
+                value={stepLabel !== '—' ? stepLabel : (pd.available ? pd.steps.toLocaleString() : '4,250')}
                 label="STEPS" trend="+12%" T={T} delay={120}
               />
               <GridMetricCard
-                icon="🔥" iconBg="rgba(249,115,22,0.15)" color={T.orange}
-                value={pd.available ? String(pd.calories) : '320'}
+                iconName="flame" iconBg="rgba(249,115,22,0.15)" color={T.orange} labelColor="#94A3B8"
+                value={calLabel !== '—' ? calLabel : (pd.available ? String(pd.calories) : '320')}
                 label="KCAL" trend="+8%" T={T} delay={160}
               />
               <GridMetricCard
-                icon="📍" iconBg="rgba(168,85,247,0.15)" color={T.purple}
-                value={pd.available ? String(pd.distanceKm) : '2.8'}
+                iconName="location" iconBg="rgba(168,85,247,0.15)" color={T.purple} labelColor={T.purple}
+                value={distLabel !== '—' ? distLabel : (pd.available ? String(pd.distanceKm) : '2.8')}
                 label="KM" trend="+5%" T={T} delay={200}
               />
               <GridMetricCard
-                icon="🎯" iconBg="rgba(34,197,94,0.15)" color={T.green}
-                value={`${pct || 42}%`}
+                iconName="disc-outline" iconBg="rgba(34,197,94,0.15)" color={T.green} labelColor={T.green}
+                value={`${pct}%`}
                 label="DONE" trend="+14%" T={T} delay={240}
               />
             </View>
