@@ -10,7 +10,8 @@ import Animated, {
   withSpring,
   withSequence,
 } from 'react-native-reanimated';
-import Svg, { Circle, Rect, Line, Text as SvgText } from 'react-native-svg';
+import Svg, { Circle, Rect, Line, Path, Text as SvgText } from 'react-native-svg';
+import { Ionicons } from '@expo/vector-icons';
 import { useHabits } from '../hooks/use-habits';
 import { useTheme } from '../context/ThemeContext';
 import SpringPressable from '../components/SpringPressable';
@@ -217,90 +218,148 @@ export default function AnalyticsScreen() {
     <SafeAreaView style={[styles.safe, { backgroundColor: T.bg }]}>
       <View style={[styles.root, { backgroundColor: T.bg }]}>
 
-        {/* Header */}
+        {/* ── 1. Header Bar ── */}
         <Animated.View entering={FadeInDown.duration(400).springify()} style={styles.header}>
           <SpringPressable onPress={() => router.replace('/')} style={[T.neo, styles.backBtn]}>
-            <Text style={[styles.backArrow, { color: T.textPrimary }]}>←</Text>
+            <Ionicons name="arrow-back" size={20} color={T.textPrimary} />
           </SpringPressable>
           <View style={styles.headerCenter}>
-            <Text style={styles.headerEmoji}>📊</Text>
-            <Text style={[styles.headerTitle, { color: T.textPrimary }]}>Analytics</Text>
+            <Ionicons name="bar-chart" size={22} color={T.teal} style={{ marginRight: 6 }} />
+            <View>
+              <Text style={[styles.headerTitle, { color: T.textPrimary }]}>Analytics</Text>
+              <Text style={{ fontSize: 11, fontWeight: '600', color: T.textMuted }}>Insights into your habits</Text>
+            </View>
           </View>
-          <View style={{ width: 40 }} />
+          <View style={{ width: 44 }} />
         </Animated.View>
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
 
-          {/* ── Multi-ring card ── */}
-          <Animated.View entering={FadeInDown.delay(80).duration(500).springify()} style={[T.neo, styles.topCard]}>
-            <View style={styles.ringArea}>
-              <NeoDonut rings={displayRings} size={140} />
-              <View style={styles.ringCenterBox}>
-                <Text style={[styles.ringBig, { color: T.textPrimary }]}>{consistency}%</Text>
-                <Text style={[styles.ringSmall, { color: T.textMuted }]}>Today</Text>
-              </View>
+          {/* ── 2. Top Summary Card (Dual Widget: Ring + Top Habit Progress) ── */}
+          <Animated.View entering={FadeInDown.delay(80).duration(500).springify()}
+            style={[T.neo, { marginHorizontal: 16, borderRadius: 24, padding: 18, backgroundColor: T.bgCard, marginBottom: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
+            
+            {/* Left Circular Ring */}
+            <View style={{ alignItems: 'center', justifyContent: 'center', width: 110, height: 110, position: 'relative' }}>
+              <Svg width={110} height={110} style={{ position: 'absolute' }}>
+                <Circle cx={55} cy={55} r={46} stroke="rgba(255,255,255,0.06)" strokeWidth={9} fill="transparent" />
+                <Circle
+                  cx={55} cy={55} r={46}
+                  stroke={T.teal}
+                  strokeWidth={9}
+                  fill="transparent"
+                  strokeDasharray={2 * Math.PI * 46}
+                  strokeDashoffset={(2 * Math.PI * 46) * (1 - (consistency / 100))}
+                  strokeLinecap="round"
+                  transform="rotate(-90 55 55)"
+                />
+              </Svg>
+              <Text style={{ fontSize: 24, fontWeight: '900', color: '#FFFFFF', includeFontPadding: false }}>{consistency}%</Text>
+              <Text style={{ fontSize: 10, fontWeight: '700', color: '#94A3B8', marginTop: 1 }}>Today</Text>
             </View>
-            <View style={styles.legend}>
-              {habits.slice(0, 3).map((h, i) => (
-                <Animated.View key={h.id} entering={FadeInRight.delay(200 + i * 80).duration(400)} style={styles.legendRow}>
-                  <Text style={styles.legendEmoji}>{h.emoji}</Text>
-                  <View style={styles.legendMid}>
-                    <Text style={[styles.legendName, { color: T.textSub }]} numberOfLines={1}>{h.name}</Text>
-                    <ProgressBar pct={getRate(h)} color={ringColors[i % 3]} />
+
+            {/* Vertical Divider */}
+            <View style={{ width: 1, height: '80%', backgroundColor: 'rgba(255,255,255,0.08)', marginHorizontal: 14 }} />
+
+            {/* Right Top Habit Progress */}
+            <View style={{ flex: 1, justifyContent: 'center' }}>
+              {habits.length > 0 ? (
+                <View style={{ gap: 8 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                    <View style={{ width: 40, height: 40, borderRadius: 14, backgroundColor: 'rgba(45,212,191,0.12)', alignItems: 'center', justifyContent: 'center' }}>
+                      <Text style={{ fontSize: 20 }}>{habits[0].emoji}</Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: 15, fontWeight: '800', color: '#FFFFFF' }} numberOfLines={1}>
+                        {habits[0].name}
+                      </Text>
+                      <Text style={{ fontSize: 11, fontWeight: '700', color: T.teal, marginTop: 2 }}>
+                        {getRate(habits[0])}% <Text style={{ color: '#64748B', fontWeight: '600' }}>Goal Progress</Text>
+                      </Text>
+                    </View>
                   </View>
-                  <Text style={[styles.legendPct, { color: ringColors[i % 3] }]}>{getRate(h)}%</Text>
-                </Animated.View>
-              ))}
-              {habits.length === 0 && <Text style={[styles.emptyHint, { color: T.textMuted }]}>💡 Add habits to see analytics</Text>}
+                  <ProgressBar pct={getRate(habits[0])} color={T.teal} />
+                </View>
+              ) : (
+                <View style={{ alignItems: 'center', paddingVertical: 10 }}>
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: T.textMuted }}>No habits tracked yet</Text>
+                </View>
+              )}
+            </View>
+
+          </Animated.View>
+
+          {/* ── 3. Three Metric Stat Cards ── */}
+          <Animated.View entering={FadeInDown.delay(160).duration(500).springify()} style={{ flexDirection: 'row', paddingHorizontal: 16, gap: 10, marginBottom: 14 }}>
+            {/* Card 1: Best Streak */}
+            <View style={[T.neo, { flex: 1, borderRadius: 20, padding: 12, backgroundColor: T.bgCard }]}>
+              <View style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: 'rgba(249,115,22,0.15)', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
+                <Ionicons name="flame" size={18} color={T.orange} />
+              </View>
+              <Text style={{ fontSize: 22, fontWeight: '900', color: T.orange, marginBottom: 2 }}>{bestStreak}</Text>
+              <Text style={{ fontSize: 11, fontWeight: '800', color: '#FFFFFF', marginBottom: 2 }}>Best Streak</Text>
+              <Text style={{ fontSize: 9, fontWeight: '600', color: '#64748B' }}>Keep going!</Text>
+            </View>
+
+            {/* Card 2: Total Logs */}
+            <View style={[T.neo, { flex: 1, borderRadius: 20, padding: 12, backgroundColor: T.bgCard }]}>
+              <View style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: 'rgba(34,197,94,0.15)', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
+                <Ionicons name="checkbox-outline" size={18} color={T.green} />
+              </View>
+              <Text style={{ fontSize: 22, fontWeight: '900', color: T.green, marginBottom: 2 }}>{totalLogs}</Text>
+              <Text style={{ fontSize: 11, fontWeight: '800', color: '#FFFFFF', marginBottom: 2 }}>Total Logs</Text>
+              <Text style={{ fontSize: 9, fontWeight: '600', color: '#64748B' }}>This week</Text>
+            </View>
+
+            {/* Card 3: Habits Tracked */}
+            <View style={[T.neo, { flex: 1, borderRadius: 20, padding: 12, backgroundColor: T.bgCard }]}>
+              <View style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: 'rgba(168,85,247,0.15)', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
+                <Ionicons name="disc-outline" size={18} color={T.purple} />
+              </View>
+              <Text style={{ fontSize: 22, fontWeight: '900', color: T.purple, marginBottom: 2 }}>{total}</Text>
+              <Text style={{ fontSize: 11, fontWeight: '800', color: '#FFFFFF', marginBottom: 2 }}>Habits Tracked</Text>
+              <Text style={{ fontSize: 9, fontWeight: '600', color: '#64748B' }}>Keep it up!</Text>
             </View>
           </Animated.View>
 
-          {/* ── Metric Pills ── */}
-          <Animated.View entering={FadeInDown.delay(160).duration(500).springify()} style={styles.metricRow}>
-            {[
-              { emoji: '🔥', val: bestStreak, label: 'Best Streak', color: T.orange },
-              { emoji: '✅', val: totalLogs,  label: 'Total Logs',  color: T.green },
-              { emoji: '🎯', val: total,       label: 'Habits',      color: T.purple },
-            ].map((m, i) => (
-              <Animated.View key={i} entering={FadeInDown.delay(200 + i * 50).springify()} style={[T.neo, styles.metricCard]}>
-                <View style={[T.neo, styles.metricBubble, { backgroundColor: T.bg }]}>
-                  <Text style={styles.metricEmoji}>{m.emoji}</Text>
+          {/* ── 4. Weekly Activity Bar Chart ── */}
+          <Animated.View entering={FadeInDown.delay(220).duration(500).springify()} style={[T.neo, { marginHorizontal: 16, borderRadius: 24, padding: 18, backgroundColor: T.bgCard, marginBottom: 14 }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: 'rgba(45,212,191,0.15)', alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name="calendar-outline" size={18} color={T.teal} />
                 </View>
-                <Text style={[styles.metricVal, { color: m.color }]}>{m.val}</Text>
-                <Text style={[styles.metricLabel, { color: T.textMuted }]}>{m.label}</Text>
-              </Animated.View>
-            ))}
-          </Animated.View>
+                <View>
+                  <Text style={{ fontSize: 15, fontWeight: '800', color: '#FFFFFF' }}>Weekly Activity</Text>
+                  <Text style={{ fontSize: 11, fontWeight: '600', color: '#64748B', marginTop: 1 }}>Past 7 days</Text>
+                </View>
+              </View>
 
-          {/* ── Weekly Bar Chart ── */}
-          <Animated.View entering={FadeInDown.delay(220).duration(500).springify()} style={[T.neo, styles.chartCard]}>
-            <View style={styles.chartHeader}>
-              <Text style={styles.chartEmoji}>📅</Text>
-              <View>
-                <Text style={[styles.chartTitle, { color: T.textPrimary }]}>Weekly Activity</Text>
-                <Text style={[styles.chartSub, { color: T.textMuted }]}>Past 7 days</Text>
+              {/* Dropdown Pill */}
+              <View style={[T.neoPressed, { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14, backgroundColor: T.bgPress }]}>
+                <Text style={{ fontSize: 11, fontWeight: '800', color: T.textPrimary }}>This Week</Text>
+                <Ionicons name="chevron-down" size={12} color={T.textMuted} />
               </View>
             </View>
+
             <View style={styles.barArea}>
               <Svg width={chartW} height={130}>
                 {[20, 70, 110].map(y => (
-                  <Line key={y} x1="0" y1={y} x2={chartW} y2={y}
-                    stroke={T.isDark ? 'rgba(148,163,184,0.05)' : 'rgba(0,0,0,0.05)'} strokeWidth="1" />
+                  <Line key={y} x1="0" y1={y} x2={chartW} y2={y} stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
                 ))}
                 {weekData.map((d, idx) => {
-                  const x  = idx * (barW + 7) + 2;
-                  const bH = Math.max(d.count > 0 ? 10 : 0, (d.count / maxBar) * 80);
+                  const x  = idx * (barW + 8) + 4;
+                  const bH = Math.max(d.count > 0 ? 16 : 8, (d.count / maxBar) * 80);
                   const y  = 110 - bH;
-                  const barColor = d.isToday ? T.teal : T.tealDim;
+                  const barColor = d.isToday ? T.teal : 'rgba(45,212,191,0.3)';
                   return (
                     <React.Fragment key={idx}>
-                      <Rect x={x} y={20} width={barW} height={90} rx={8}
-                        fill={T.isDark ? 'rgba(148,163,184,0.04)' : 'rgba(0,0,0,0.04)'} />
-                      {d.count > 0 && <Rect x={x} y={y} width={barW} height={bH} rx={8} fill={barColor} />}
+                      <Rect x={x} y={20} width={barW} height={90} rx={10} fill="rgba(255,255,255,0.04)" />
+                      <Rect x={x} y={y} width={barW} height={bH} rx={10} fill={barColor} />
                       <SvgText x={x + barW / 2} y={126}
-                        fill={d.isToday ? T.teal : T.textMuted}
-                        fontSize="10" fontWeight="700" textAnchor="middle">
-                        {d.label}
+                        fill={d.isToday ? T.teal : '#64748B'}
+                        fontSize="10" fontWeight={d.isToday ? "900" : "700"} textAnchor="middle">
+                        {d.isToday ? 'Today' : d.label}
                       </SvgText>
                     </React.Fragment>
                   );
@@ -309,16 +368,27 @@ export default function AnalyticsScreen() {
             </View>
           </Animated.View>
 
-          {/* ── Habit Progress Bars ── */}
+          {/* ── 5. Habit Progress Sparkline Graph ── */}
           {habits.length > 0 && (
-            <Animated.View entering={FadeInDown.delay(280).duration(500).springify()} style={[T.neo, styles.chartCard]}>
-              <View style={styles.chartHeader}>
-                <Text style={styles.chartEmoji}>⚡</Text>
-                <View>
-                  <Text style={[styles.chartTitle, { color: T.textPrimary }]}>Habit Progress</Text>
-                  <Text style={[styles.chartSub, { color: T.textMuted }]}>7-day completion rate</Text>
+            <Animated.View entering={FadeInDown.delay(280).duration(500).springify()} style={[T.neo, { marginHorizontal: 16, borderRadius: 24, padding: 18, backgroundColor: T.bgCard, marginBottom: 14 }]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                  <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: 'rgba(234,179,8,0.15)', alignItems: 'center', justifyContent: 'center' }}>
+                    <Ionicons name="flash-outline" size={18} color="#EAB308" />
+                  </View>
+                  <View>
+                    <Text style={{ fontSize: 15, fontWeight: '800', color: '#FFFFFF' }}>Habit Progress</Text>
+                    <Text style={{ fontSize: 11, fontWeight: '600', color: '#64748B', marginTop: 1 }}>7-day completion rate</Text>
+                  </View>
                 </View>
+
+                {/* Sparkline Graph Vector on Right */}
+                <Svg width={80} height={35} viewBox="0 0 80 35">
+                  <Path d="M 5 28 L 20 20 L 35 25 L 50 10 L 65 18 L 75 5" stroke={T.teal} strokeWidth="2.5" fill="none" strokeLinecap="round" />
+                  <Circle cx="75" cy="5" r="3" fill={T.teal} />
+                </Svg>
               </View>
+
               {habits.map((h, i) => {
                 const rate  = getRate(h);
                 const color = ringColors[i % ringColors.length];
@@ -329,7 +399,7 @@ export default function AnalyticsScreen() {
                     </View>
                     <View style={styles.habitRight}>
                       <View style={styles.habitLabelRow}>
-                        <Text style={[styles.habitName, { color: T.textSub }]} numberOfLines={1}>{h.name}</Text>
+                        <Text style={[styles.habitName, { color: '#FFFFFF' }]} numberOfLines={1}>{h.name}</Text>
                         <Text style={[styles.habitPct, { color }]}>{rate}%</Text>
                       </View>
                       <ProgressBar pct={rate} color={color} />
@@ -340,108 +410,123 @@ export default function AnalyticsScreen() {
             </Animated.View>
           )}
 
-          {/* ═══ MONTHLY PROGRESS CALENDAR GRID ═══ */}
-          <Animated.View entering={FadeInDown.delay(320).duration(500).springify()} style={[T.neo, styles.chartCard, { marginBottom: 16 }]}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-              <View style={styles.chartHeader}>
-                <Text style={styles.chartEmoji}>📅</Text>
+          {/* ── 6. Calendar View (Monthly Performance Overview) ── */}
+          <Animated.View entering={FadeInDown.delay(320).duration(500).springify()} style={[T.neo, { marginHorizontal: 16, borderRadius: 24, padding: 18, backgroundColor: T.bgCard, marginBottom: 16 }]}>
+            
+            {/* Header with Switcher */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: 'rgba(168,85,247,0.15)', alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name="calendar" size={18} color={T.purple} />
+                </View>
                 <View>
-                  <Text style={[styles.chartTitle, { color: T.textPrimary }]}>Calendar View</Text>
-                  <Text style={[styles.chartSub, { color: T.textMuted }]}>Monthly performance overview</Text>
+                  <Text style={{ fontSize: 15, fontWeight: '800', color: '#FFFFFF' }}>Calendar View</Text>
+                  <Text style={{ fontSize: 11, fontWeight: '600', color: '#64748B', marginTop: 1 }}>Monthly performance overview</Text>
                 </View>
               </View>
+
               {/* Month switcher */}
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 <SpringPressable onPress={prevMonth} style={[T.neo, styles.switchBtn]}>
-                  <Text style={{ fontSize: 11, color: T.textPrimary }}>←</Text>
+                  <Ionicons name="chevron-back" size={14} color={T.textPrimary} />
                 </SpringPressable>
-                <Text style={[styles.monthLabel, { color: T.textPrimary }]}>
-                  {monthNames[currentMonth].slice(0, 3)} {String(currentYear).slice(2)}
+                <Text style={{ fontSize: 12, fontWeight: '800', color: T.textPrimary, paddingHorizontal: 4 }}>
+                  {monthNames[currentMonth].slice(0, 3)} {currentYear}
                 </Text>
                 <SpringPressable onPress={nextMonth} style={[T.neo, styles.switchBtn]}>
-                  <Text style={{ fontSize: 11, color: T.textPrimary }}>→</Text>
+                  <Ionicons name="chevron-forward" size={14} color={T.textPrimary} />
                 </SpringPressable>
               </View>
             </View>
 
-            {/* Week Headers */}
-            <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginBottom: 6 }}>
-              {['Su','Mo','Tu','We','Th','Fr','Sa'].map(day => (
-                <Text key={day} style={[styles.weekLabel, { color: T.textMuted }]}>{day}</Text>
-              ))}
-            </View>
-
-            {/* Grid cells */}
-            <View style={styles.gridContainer}>
-              {gridCells.map((cell, idx) => {
-                if (!cell.dayNum || !cell.dateStr) {
-                  return <View key={cell.key} style={styles.gridEmptyCell} />;
-                }
-                const isSelected = cell.dateStr === selectedGridDateStr;
-                const status = getDayGridStatus(cell.dateStr);
-
-                return (
-                  <Pressable
-                    key={cell.key}
-                    onPress={() => setSelectedGridDateStr(cell.dateStr as string)}
-                    style={[
-                      styles.gridDayCell,
-                      { backgroundColor: status.color },
-                      isSelected && { borderColor: T.teal, borderWidth: 2 }
-                    ]}
-                  >
-                    <Text style={[
-                      styles.gridDayText,
-                      { color: status.pct >= 80 ? (T.isDark ? T.bg : '#ffffff') : (status.pct === 0 ? T.textMuted : T.textPrimary) },
-                      isSelected && { fontWeight: '800' }
-                    ]}>
-                      {cell.dayNum}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-
-            {/* Selected Date Summary Details */}
-            {selectedGridDateStr && (() => {
-              const parts = selectedGridDateStr.split('-');
-              const gridDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-              const dW = gridDate.getDay();
-              const activeOnSelectedDay = habits.filter(h => h.frequency.kind === 'daily' || h.frequency.weekdays.includes(dW));
+            {/* Split Row: Left Calendar Grid + Right Detail Card */}
+            <View style={{ flexDirection: 'row', gap: 12 }}>
               
-              const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-              const dateLabel = `${gridDate.getDate()} ${months[gridDate.getMonth()]} ${gridDate.getFullYear()}`;
-
-              return (
-                <View style={[T.neoPressed, styles.detailBox, { backgroundColor: T.bgPress, marginTop: 14 }]}>
-                  <Text style={[styles.detailDate, { color: T.textPrimary }]}>{dateLabel}</Text>
-                  
-                  {activeOnSelectedDay.length === 0 ? (
-                    <Text style={[styles.detailStatus, { color: T.textMuted }]}>No habits scheduled on this day.</Text>
-                  ) : (
-                    <View style={{ gap: 8, marginTop: 6 }}>
-                      {activeOnSelectedDay.map(h => {
-                        const completed = h.completedDates.includes(selectedGridDateStr);
-                        const shielded = h.shieldedDates?.includes(selectedGridDateStr);
-                        return (
-                          <View key={h.id} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <Text style={{ fontSize: 13, color: T.textPrimary }}>
-                              {h.emoji} {h.name}
-                            </Text>
-                            <Text style={[
-                              styles.statusTag,
-                              { color: completed ? T.teal : shielded ? T.orange : T.red }
-                            ]}>
-                              {completed ? '✅ Completed' : shielded ? '🛡️ Shielded' : '❌ Missed'}
-                            </Text>
-                          </View>
-                        );
-                      })}
-                    </View>
-                  )}
+              {/* Left Calendar Grid */}
+              <View style={{ flex: 1.3 }}>
+                {/* Day Header */}
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                  {['SU','MO','TU','WE','TH','FR','SA'].map(day => (
+                    <Text key={day} style={{ fontSize: 9, fontWeight: '800', color: '#64748B', width: 26, textAlign: 'center' }}>{day}</Text>
+                  ))}
                 </View>
-              );
-            })()}
+
+                {/* Days Grid */}
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4 }}>
+                  {gridCells.map((cell, idx) => {
+                    if (!cell.dayNum || !cell.dateStr) {
+                      return <View key={cell.key} style={{ width: 26, height: 26, margin: 1 }} />;
+                    }
+                    const isSelected = cell.dateStr === selectedGridDateStr;
+                    const status = getDayGridStatus(cell.dateStr);
+
+                    return (
+                      <Pressable
+                        key={cell.key}
+                        onPress={() => setSelectedGridDateStr(cell.dateStr as string)}
+                        style={[
+                          { width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center', margin: 1 },
+                          { backgroundColor: status.color || 'rgba(255,255,255,0.04)' },
+                          isSelected && { borderColor: T.teal, borderWidth: 2 }
+                        ]}
+                      >
+                        <Text style={[
+                          { fontSize: 10, fontWeight: '700', color: '#FFFFFF' },
+                          isSelected && { fontWeight: '900', color: T.teal }
+                        ]}>
+                          {cell.dayNum}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </View>
+
+              {/* Right Side Detail Card */}
+              <View style={[T.neoPressed, { flex: 1, borderRadius: 20, padding: 14, backgroundColor: T.bgPress, alignItems: 'center', justifyContent: 'center' }]}>
+                {selectedGridDateStr ? (() => {
+                  const parts = selectedGridDateStr.split('-');
+                  const gridDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+                  const dW = gridDate.getDay();
+                  const activeOnSelectedDay = habits.filter(h => h.frequency.kind === 'daily' || h.frequency.weekdays.includes(dW));
+                  const firstHabit = activeOnSelectedDay[0] || habits[0];
+                  const isCompleted = firstHabit ? firstHabit.completedDates.includes(selectedGridDateStr) : false;
+
+                  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                  const dateLabel = `${gridDate.getDate()} ${months[gridDate.getMonth()]} ${gridDate.getFullYear()}`;
+
+                  return (
+                    <View style={{ alignItems: 'center', width: '100%' }}>
+                      {/* Emoji Ring Bubble with Checkmark */}
+                      <View style={{ position: 'relative', marginBottom: 10 }}>
+                        <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: 'rgba(45,212,191,0.12)', alignItems: 'center', justifyContent: 'center' }}>
+                          <Text style={{ fontSize: 26 }}>{firstHabit ? firstHabit.emoji : '🥤'}</Text>
+                        </View>
+                        <View style={{ position: 'absolute', bottom: -2, right: -2, width: 18, height: 18, borderRadius: 9, backgroundColor: T.teal, alignItems: 'center', justifyContent: 'center' }}>
+                          <Ionicons name="checkmark" size={12} color="#0D1525" />
+                        </View>
+                      </View>
+
+                      {/* Date & Habit Name */}
+                      <Text style={{ fontSize: 13, fontWeight: '900', color: '#FFFFFF', textAlign: 'center', marginBottom: 2 }}>{dateLabel}</Text>
+                      <Text style={{ fontSize: 11, fontWeight: '600', color: '#94A3B8', textAlign: 'center', marginBottom: 10 }}>
+                        {firstHabit ? firstHabit.name : 'Drink water'}
+                      </Text>
+
+                      {/* Completed Status Pill */}
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14, backgroundColor: isCompleted ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)', borderWidth: 1, borderColor: isCompleted ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)' }}>
+                        <Ionicons name={isCompleted ? "checkmark-circle" : "close-circle"} size={14} color={isCompleted ? T.green : T.red} />
+                        <Text style={{ fontSize: 11, fontWeight: '900', color: isCompleted ? T.green : T.red }}>
+                          {isCompleted ? 'Completed' : 'Missed'}
+                        </Text>
+                      </View>
+                    </View>
+                  );
+                })() : null}
+              </View>
+
+            </View>
+
           </Animated.View>
 
           <View style={{ height: 110 }} />
