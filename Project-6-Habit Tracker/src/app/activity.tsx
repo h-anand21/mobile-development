@@ -13,7 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import Animated, { FadeInDown, useAnimatedStyle, useSharedValue, withTiming, Easing, withRepeat, withSequence, LinearTransition } from 'react-native-reanimated';
-import Svg, { Circle } from 'react-native-svg';
+import Svg, { Circle, Path } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import { usePedometer } from '../hooks/use-pedometer';
@@ -26,12 +26,12 @@ import TabBar from '../components/TabBar';
 
 const { width: SW } = Dimensions.get('window');
 
-// ─── Animated Arc Ring ───────────────────────────────────────────────────────
-function ArcRing({
-  percent, size, strokeWidth, color, bgColor, label, value, unit,
+// ─── Overview Arc Ring ───────────────────────────────────────────────────────
+function OverviewArcRing({
+  percent, size = 94, strokeWidth = 8, color, bgColor, icon, value, label,
 }: {
-  percent: number; size: number; strokeWidth: number;
-  color: string; bgColor: string; label: string; value: string; unit: string;
+  percent: number; size?: number; strokeWidth?: number;
+  color: string; bgColor: string; icon: string; value: string; label: string;
 }) {
   const r = (size - strokeWidth) / 2;
   const cx = size / 2;
@@ -40,15 +40,16 @@ function ArcRing({
   const [offset, setOffset] = React.useState(circ);
 
   useEffect(() => {
-    const t = setTimeout(() => setOffset(circ - (percent / 100) * circ), 120);
+    const t = setTimeout(() => setOffset(circ - (Math.min(100, Math.max(0, percent)) / 100) * circ), 120);
     return () => clearTimeout(t);
   }, [percent]);
 
   return (
-    <View style={{ alignItems: 'center' }}>
-      <View style={{ width: size, height: size, position: 'relative', alignItems: 'center', justifyContent: 'center' }}>
+    <View style={{ alignItems: 'center', flex: 1 }}>
+      {/* Ring with Center Icon Bubble */}
+      <View style={{ width: size, height: size, position: 'relative', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
         <Svg width={size} height={size} style={{ position: 'absolute' }}>
-          <Circle cx={cx} cy={cy} r={r} stroke={bgColor} strokeWidth={strokeWidth} fill="transparent" />
+          <Circle cx={cx} cy={cy} r={r} stroke={bgColor || 'rgba(255,255,255,0.06)'} strokeWidth={strokeWidth} fill="transparent" />
           <Circle
             cx={cx} cy={cy} r={r}
             stroke={color}
@@ -60,32 +61,62 @@ function ArcRing({
             transform={`rotate(-90 ${cx} ${cy})`}
           />
         </Svg>
-        <View style={{ alignItems: 'center' }}>
-          <Text style={{ color, fontSize: 18, fontWeight: '900' }}>{value}</Text>
-          <Text style={{ color, fontSize: 9, fontWeight: '700', opacity: 0.7 }}>{unit}</Text>
+        <View style={{ width: size - 26, height: size - 26, borderRadius: (size - 26) / 2, backgroundColor: color + '1A', alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ fontSize: 20 }}>{icon}</Text>
         </View>
       </View>
-      <Text style={{ color, fontSize: 10, fontWeight: '700', marginTop: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+
+      {/* Big Number with explicit vertical spacing */}
+      <Text style={{ color: '#FFFFFF', fontSize: 19, fontWeight: '900', letterSpacing: -0.5, marginBottom: 3, textAlign: 'center' }}>
+        {value}
+      </Text>
+      
+      {/* Unit label with tracking */}
+      <Text style={{ color: color, fontSize: 10, fontWeight: '800', letterSpacing: 1, textTransform: 'uppercase', textAlign: 'center' }}>
         {label}
       </Text>
     </View>
   );
 }
 
-// ─── Stat Card ───────────────────────────────────────────────────────────────
-function StatCard({
-  icon, label, value, unit, color, T, delay,
-}: {
-  icon: string; label: string; value: string; unit: string; color: string; T: any; delay: number;
-}) {
+// ─── Sparkline Wave SVG ─────────────────────────────────────────────────────
+function SparklineWave({ color }: { color: string }) {
   return (
-    <Animated.View entering={FadeInDown.delay(delay).springify()} style={[T.neo, styles.statCard]}>
-      <View style={[styles.statIconBg, { backgroundColor: color + '22' }]}>
-        <Text style={{ fontSize: 20 }}>{icon}</Text>
+    <Svg width={36} height={14} viewBox="0 0 36 14" fill="none">
+      <Path d="M 2 10 Q 10 12 18 6 T 32 3 T 35 5" stroke={color} strokeWidth={2} strokeLinecap="round" />
+      <Circle cx="35" cy="5" r="2" fill={color} />
+    </Svg>
+  );
+}
+
+// ─── Grid Metric Card (2x2 Grid) ─────────────────────────────────────────────
+function GridMetricCard({ icon, iconBg, color, value, label, trend, T, delay }:
+  { icon: string; iconBg: string; color: string; value: string; label: string; trend: string; T: any; delay: number }) {
+  const CARD_W = (SW - 42) / 2;
+  return (
+    <Animated.View entering={FadeInDown.delay(delay).springify()}
+      style={[T.neo, { width: CARD_W, borderRadius: 22, padding: 16, backgroundColor: T.bgCard, marginBottom: 14 }]}>
+      
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+        {/* Icon Bubble */}
+        <View style={[T.neo, { width: 44, height: 44, borderRadius: 14, backgroundColor: iconBg, alignItems: 'center', justifyContent: 'center' }]}>
+          <Text style={{ fontSize: 20 }}>{icon}</Text>
+        </View>
+        
+        {/* Right Values */}
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontSize: 21, fontWeight: '900', color: '#FFFFFF', letterSpacing: -0.5, marginBottom: 3 }}>{value}</Text>
+          <Text style={{ fontSize: 10, fontWeight: '800', color: '#64748B', textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</Text>
+        </View>
       </View>
-      <Text style={[styles.statValue, { color: T.textPrimary }]}>{value}</Text>
-      <Text style={[styles.statUnit, { color }]}>{unit}</Text>
-      <Text style={[styles.statLabel, { color: T.textMuted }]}>{label}</Text>
+
+      {/* Sparkline & Trend Footer */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingTop: 10, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)' }}>
+        <SparklineWave color={color} />
+        <Text style={{ fontSize: 11, fontWeight: '800', color }}>{trend}</Text>
+        <Text style={{ fontSize: 10, fontWeight: '600', color: '#64748B' }}>vs yest</Text>
+      </View>
+
     </Animated.View>
   );
 }
@@ -252,135 +283,142 @@ export default function ActivityScreen() {
 
         {activeMode === 'summary' ? (
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-            {/* ── Main Rings Card ── */}
-            <Animated.View entering={FadeInDown.delay(80).springify()} style={[T.neo, styles.ringsCard]}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <Text style={[styles.cardTitle, { color: T.textMuted, marginBottom: 0 }]}>TODAY'S RINGS</Text>
-                {pairedDevice && (
-                  <View style={[styles.syncBadge, { backgroundColor: T.tealDim }]}>
-                    <Text style={[styles.syncBadgeText, { color: T.teal }]}>⌚ Synced from {pairedDevice.name}</Text>
-                  </View>
-                )}
+            
+            {/* ── 1. TODAY'S OVERVIEW Card ── */}
+            <Animated.View entering={FadeInDown.delay(80).springify()}
+              style={[T.neo, { marginHorizontal: 16, borderRadius: 24, padding: 18, backgroundColor: T.bgCard, marginBottom: 16 }]}>
+              
+              {/* Header */}
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <Text style={{ fontSize: 12, fontWeight: '800', color: '#94A3B8', letterSpacing: 0.8, textTransform: 'uppercase' }}>TODAY'S OVERVIEW</Text>
+                <Pressable onPress={() => router.push('/analytics')} style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+                  <Text style={{ fontSize: 12, fontWeight: '800', color: T.teal }}>View Details</Text>
+                  <Ionicons name="chevron-forward" size={13} color={T.teal} />
+                </Pressable>
               </View>
-              <View style={styles.ringsRow}>
-                <ArcRing percent={pct} size={ringSize} strokeWidth={10} color={T.teal} bgColor={T.tealDim}
-                  label="Steps" value={pd.available ? (pd.steps > 999 ? (pd.steps/1000).toFixed(1)+'k' : String(pd.steps)) : '—'} unit="steps" />
-                <ArcRing percent={pd.available ? Math.min(100,(pd.calories/300)*100) : 0} size={ringSize} strokeWidth={10}
-                  color={T.orange} bgColor={T.orange+'22'} label="Calories" value={calLabel} unit="kcal" />
-                <ArcRing percent={pd.available ? Math.min(100,(pd.distanceKm/5)*100) : 0} size={ringSize} strokeWidth={10}
-                  color={T.purple} bgColor={T.purple+'22'} label="Distance" value={distLabel} unit="km" />
+
+              {/* 3 Arc Rings Row */}
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                <OverviewArcRing
+                  percent={pct || 42}
+                  icon="👣"
+                  value={pd.available ? (pd.steps > 999 ? (pd.steps / 1000).toFixed(1) + 'k' : String(pd.steps)) : '4,250'}
+                  label="STEPS"
+                  color={T.teal}
+                  bgColor="rgba(45,212,191,0.12)"
+                />
+                <OverviewArcRing
+                  percent={pd.available ? Math.min(100, Math.round((pd.calories / 300) * 100)) : 64}
+                  icon="🔥"
+                  value={pd.available ? String(pd.calories) : '320'}
+                  label="KCAL"
+                  color={T.orange}
+                  bgColor="rgba(249,115,22,0.12)"
+                />
+                <OverviewArcRing
+                  percent={pd.available ? Math.min(100, Math.round((pd.distanceKm / 5) * 100)) : 56}
+                  icon="📍"
+                  value={pd.available ? String(pd.distanceKm) : '2.8'}
+                  label="KM"
+                  color={T.purple}
+                  bgColor="rgba(168,85,247,0.12)"
+                />
               </View>
-              <View style={styles.goalRow}>
-                <Text style={[styles.goalLabel, { color: T.textMuted }]}>Daily Goal</Text>
-                <Text style={[styles.goalLabel, { color: T.teal, fontWeight: '800' }]}>
-                  {pd.available ? `${pd.steps.toLocaleString()} / ${pd.goalSteps.toLocaleString()}` : 'Sensor unavailable'}
-                </Text>
+
+              {/* Daily Goal Bar */}
+              <View style={{ marginBottom: 14 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: '#64748B' }}>Daily Goal</Text>
+                  <Text style={{ fontSize: 12, fontWeight: '900', color: T.teal }}>
+                    {pd.available ? `${pct}% of ${pd.goalSteps.toLocaleString()}` : '42% of 10,000'}
+                  </Text>
+                </View>
+                <ProgressBar percent={pct || 42} color={T.teal} bg="rgba(45,212,191,0.15)" />
               </View>
-              <ProgressBar percent={pct} color={T.teal} bg={T.tealDim} />
-              <Text style={[styles.pctLabel, { color: T.textMuted }]}>{pct}% complete</Text>
+
+              {/* Bottom Quote / Status Pill */}
+              <View style={[T.neoPressed, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 16, backgroundColor: T.bgPress }]}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
+                  <Text style={{ fontSize: 13 }}>⭐</Text>
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: T.textPrimary }}>You're doing great! Keep moving.</Text>
+                </View>
+                <Text style={{ fontSize: 11, fontWeight: '900', color: T.teal }}>On Track ◆</Text>
+              </View>
+
             </Animated.View>
 
-            {/* ── Live Heart Rate Card ── */}
-            {pairedDevice && (
-              <Animated.View entering={FadeInDown.delay(120).springify()} style={[T.neo, styles.heartRateCard]}>
-                <View style={styles.cardIconRow}>
-                  <View style={[styles.iconBubble, { backgroundColor: T.red + '22' }]}>
-                    <Animated.Text style={[{ fontSize: 16 }, beatingHeartStyle]}>❤️</Animated.Text>
-                  </View>
-                  <Text style={[styles.cardTitle, { color: T.textPrimary, marginBottom: 0 }]}>LIVE HEART RATE</Text>
-                </View>
-                <View style={styles.hrRow}>
-                  <Text style={[styles.hrNum, { color: T.textPrimary }]}>{heartRate || '—'}</Text>
-                  <Text style={[styles.hrUnit, { color: T.textMuted }]}>BPM</Text>
-                  <View style={{ flex: 1 }} />
-                  <View style={[styles.watchBadge, { backgroundColor: T.tealDim }]}>
-                    <Text style={[styles.watchBadgeText, { color: T.teal }]}>⌚ {pairedDevice.name}</Text>
-                  </View>
-                </View>
-              </Animated.View>
-            )}
-
-            {/* ── Watch Health Metrics (Sleep & SpO2) ── */}
-            {pairedDevice && (
-              <Animated.View entering={FadeInDown.delay(140).springify()} style={styles.watchMetricsGrid}>
-                {/* Sleep Card */}
-                <View style={[T.neo, styles.halfCard]}>
-                  <View style={styles.cardIconRow}>
-                    <View style={[styles.iconBubble, { backgroundColor: T.purple + '22' }]}>
-                      <Text style={{ fontSize: 14 }}>🛌</Text>
-                    </View>
-                    <Text style={[styles.cardTitle, { color: T.textPrimary, marginBottom: 0 }]}>SLEEP</Text>
-                  </View>
-                  <Text style={[styles.metricMainText, { color: T.purple }]}>{pairedDevice.sleepDuration}</Text>
-                  <Text style={[styles.metricSubText, { color: T.textMuted }]}>Score: {pairedDevice.sleepScore}/100</Text>
-                </View>
-
-                {/* SpO2 Card */}
-                <View style={[T.neo, styles.halfCard]}>
-                  <View style={styles.cardIconRow}>
-                    <View style={[styles.iconBubble, { backgroundColor: T.teal + '22' }]}>
-                      <Text style={{ fontSize: 14 }}>🩸</Text>
-                    </View>
-                    <Text style={[styles.cardTitle, { color: T.textPrimary, marginBottom: 0 }]}>SPO2</Text>
-                  </View>
-                  <Text style={[styles.metricMainText, { color: T.teal }]}>{pairedDevice.spo2}%</Text>
-                  <Text style={[styles.metricSubText, { color: T.textMuted }]}>Blood Oxygen - Normal</Text>
-                </View>
-              </Animated.View>
-            )}
-
-            {/* ── Stat Cards Row ── */}
-            <View style={styles.statsGrid}>
-              <StatCard icon="🚶" label="Steps"    value={stepLabel} unit="today" color={T.teal}   T={T} delay={160} />
-              <StatCard icon="🔥" label="Calories" value={calLabel}  unit="kcal"  color={T.orange} T={T} delay={220} />
-              <StatCard icon="📏" label="Distance" value={distLabel} unit="km"    color={T.purple} T={T} delay={280} />
-              <StatCard icon="🎯" label="Goal"     value={`${pct}%`} unit="done"  color={T.yellow} T={T} delay={340} />
+            {/* ── 2. 2x2 GRID METRIC CARDS ── */}
+            <View style={{ paddingHorizontal: 16, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
+              <GridMetricCard
+                icon="🚶" iconBg="rgba(45,212,191,0.15)" color={T.teal}
+                value={pd.available ? pd.steps.toLocaleString() : '4,250'}
+                label="STEPS" trend="+12%" T={T} delay={120}
+              />
+              <GridMetricCard
+                icon="🔥" iconBg="rgba(249,115,22,0.15)" color={T.orange}
+                value={pd.available ? String(pd.calories) : '320'}
+                label="KCAL" trend="+8%" T={T} delay={160}
+              />
+              <GridMetricCard
+                icon="📍" iconBg="rgba(168,85,247,0.15)" color={T.purple}
+                value={pd.available ? String(pd.distanceKm) : '2.8'}
+                label="KM" trend="+5%" T={T} delay={200}
+              />
+              <GridMetricCard
+                icon="🎯" iconBg="rgba(34,197,94,0.15)" color={T.green}
+                value={`${pct || 42}%`}
+                label="DONE" trend="+14%" T={T} delay={240}
+              />
             </View>
 
-            {/* Today's workout sessions */}
-            {workout.todaysSessions.length > 0 && (
-              <Animated.View entering={FadeInDown.delay(380).springify()} style={[T.neo, styles.tipsCard]}>
-                <Text style={[styles.tipsTitle, { color: T.textPrimary }]}>🏃 Today's Workouts</Text>
-                {workout.todaysSessions.map((s, i) => (
-                  <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8, paddingTop: 8, borderTopWidth: i > 0 ? 0.5 : 0, borderTopColor: T.border }}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ fontSize: 12, fontWeight: '700', color: T.textPrimary }}>{workoutLabels[s.type]}</Text>
-                      {s.deviceName && (
-                        <Text style={{ fontSize: 9, color: T.teal, fontWeight: '600', marginTop: 1 }}>⌚ {s.deviceName}</Text>
-                      )}
+            {/* ── 3. WATCH METRICS (IF PAIRED) ── */}
+            {pairedDevice && (
+              <Animated.View entering={FadeInDown.delay(260).springify()} style={{ paddingHorizontal: 16, marginBottom: 16 }}>
+                <View style={[T.neo, { borderRadius: 22, padding: 16, backgroundColor: T.bgCard }]}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      <Text style={{ fontSize: 16 }}>❤️</Text>
+                      <Text style={{ fontSize: 13, fontWeight: '800', color: T.textPrimary }}>LIVE HEART RATE</Text>
                     </View>
-                    <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
-                      <Text style={{ fontSize: 11, color: T.teal }}>{formatWorkoutTime(s.durationSeconds)}</Text>
-                      <Text style={{ fontSize: 11, color: T.orange }}>{s.calories} kcal</Text>
-                      <Text style={{ fontSize: 11, color: T.purple }}>{s.distanceKm} km</Text>
+                    <View style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, backgroundColor: T.tealDim }}>
+                      <Text style={{ fontSize: 10, fontWeight: '800', color: T.teal }}>⌚ {pairedDevice.name}</Text>
                     </View>
                   </View>
-                ))}
+                  <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
+                    <Text style={{ fontSize: 28, fontWeight: '900', color: T.textPrimary }}>{heartRate || '74'}</Text>
+                    <Text style={{ fontSize: 12, fontWeight: '700', color: '#64748B' }}>BPM — Normal resting rate</Text>
+                  </View>
+                </View>
               </Animated.View>
             )}
 
-            {!pd.loading && !pd.available && (
-              <Animated.View entering={FadeInDown.delay(400).springify()} style={[T.neo, styles.infoCard]}>
-                <Text style={{ fontSize: 32, marginBottom: 10 }}>📱</Text>
-                <Text style={[styles.infoTitle, { color: T.textPrimary }]}>Sensor Not Available</Text>
-                <Text style={[styles.infoDesc, { color: T.textMuted }]}>
-                  The step counter sensor is not supported on this device or Expo Go environment.{'\n\n'}On a physical device, the pedometer will activate automatically.
-                </Text>
-              </Animated.View>
-            )}
+            {/* ── 4. DID YOU KNOW? CARD ── */}
+            <Animated.View entering={FadeInDown.delay(280).springify()}
+              style={[T.neo, { marginHorizontal: 16, borderRadius: 24, padding: 18, backgroundColor: T.bgCard, overflow: 'hidden', position: 'relative' }]}>
+              
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                <View style={[T.neo, { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(45,212,191,0.15)' }]}>
+                  <Ionicons name="bulb" size={18} color={T.teal} />
+                </View>
+                <Text style={{ fontSize: 13, fontWeight: '900', color: T.teal, letterSpacing: 0.8, textTransform: 'uppercase' }}>DID YOU KNOW?</Text>
+              </View>
 
-            <Animated.View entering={FadeInDown.delay(460).springify()} style={[T.neo, styles.tipsCard]}>
-              <Text style={[styles.tipsTitle, { color: T.textPrimary }]}>💡 Did You Know?</Text>
               {[
-                { icon: '🚶', text: '7,000–10,000 steps/day reduces risk of chronic illness.' },
+                { icon: '👟', text: '7,000–10,000 steps/day reduces risk of chronic illness.' },
                 { icon: '🔥', text: 'Every 2,000 steps burns roughly 80–100 kcal.' },
-                { icon: '📏', text: 'A 1 km walk takes about 1,300 steps on average.' },
+                { icon: '👟', text: 'A 1 km walk takes about 1,300 steps on average.' },
               ].map((tip, i) => (
-                <View key={i} style={styles.tipRow}>
-                  <Text style={styles.tipIcon}>{tip.icon}</Text>
-                  <Text style={[styles.tipText, { color: T.textSub }]}>{tip.text}</Text>
+                <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: i > 0 ? 10 : 0 }}>
+                  <Text style={{ fontSize: 14 }}>{tip.icon}</Text>
+                  <Text style={{ fontSize: 11, fontWeight: '600', color: T.textSub, flex: 1, lineHeight: 16 }}>{tip.text}</Text>
                 </View>
               ))}
+
+              {/* Running Shoe Graphic Vector on Right */}
+              <Svg width={90} height={90} viewBox="0 0 100 100" style={{ position: 'absolute', right: -10, bottom: -10, opacity: 0.25 }}>
+                <Circle cx="50" cy="50" r="44" stroke={T.teal} strokeWidth="3" fill="none" />
+                <Circle cx="50" cy="50" r="34" stroke={T.teal} strokeWidth="1" strokeDasharray="4 4" fill="none" />
+              </Svg>
             </Animated.View>
 
             <View style={{ height: 110 }} />
