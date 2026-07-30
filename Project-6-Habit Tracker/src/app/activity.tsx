@@ -13,7 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import Animated, { FadeInDown, useAnimatedStyle, useSharedValue, withTiming, Easing, withRepeat, withSequence, LinearTransition } from 'react-native-reanimated';
-import Svg, { Circle, Path } from 'react-native-svg';
+import Svg, { Circle, Path, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import { usePedometer } from '../hooks/use-pedometer';
@@ -231,6 +231,7 @@ export default function ActivityScreen() {
   const pctLabel = `${realPct}%`;
 
   const ringSize = 110;
+  const CARD_3_W = Math.floor((SW - 52) / 3);
 
   const formatWorkoutTime = (sec: number) => {
     const hrs  = Math.floor(sec / 3600);
@@ -443,46 +444,100 @@ export default function ActivityScreen() {
         ) : activeMode === 'habits' ? (
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
             
-            {/* ── 3 Top Control Hub Metric Cards ── */}
-            <Animated.View entering={FadeInDown.delay(80).springify()} style={{ flexDirection: 'row', gap: 10, paddingHorizontal: 16, marginBottom: 16 }}>
+            {/* ── 3 Top Control Hub Metric Cards (Spacious Breathing Layout) ── */}
+            <Animated.View entering={FadeInDown.delay(80).springify()} style={{ flexDirection: 'row', gap: 10, paddingHorizontal: 16, marginBottom: 20 }}>
               
               {/* Card 1: TOTAL HABITS */}
-              <View style={[T.neo, { flex: 1, borderRadius: 20, padding: 14, backgroundColor: T.bgCard, overflow: 'hidden', position: 'relative' }]}>
-                <View style={{ width: 34, height: 34, borderRadius: 12, backgroundColor: 'rgba(45,212,191,0.15)', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
-                  <Ionicons name="clipboard-outline" size={18} color={T.teal} />
+              <View style={[T.neo, { width: CARD_3_W, height: 146, borderRadius: 22, padding: 14, backgroundColor: T.bgCard, overflow: 'hidden', position: 'relative', justifyContent: 'space-between' }]}>
+                {/* Circular Icon Bubble */}
+                <View style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: 'rgba(45,212,191,0.12)', borderWidth: 1, borderColor: 'rgba(45,212,191,0.25)', alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name="clipboard-outline" size={20} color={T.teal} />
                 </View>
-                <Text style={{ fontSize: 28, fontWeight: '900', color: T.teal, marginBottom: 2 }}>{habits.length}</Text>
-                <Text style={{ fontSize: 9, fontWeight: '800', color: '#64748B', textTransform: 'uppercase', letterSpacing: 0.5 }}>TOTAL HABITS</Text>
-                <Svg width={60} height={30} viewBox="0 0 60 30" style={{ position: 'absolute', right: -5, bottom: -5, opacity: 0.2 }}>
-                  <Path d="M 0 25 Q 15 10 30 20 T 60 5" stroke={T.teal} strokeWidth="3" fill="none" />
+                {/* Numbers & Two-Line Label */}
+                <View style={{ marginTop: 6 }}>
+                  <Text style={{ fontSize: 30, fontWeight: '900', color: T.teal, marginBottom: 3, includeFontPadding: false }}>{habits.length}</Text>
+                  <Text
+                    style={{ fontSize: 9.5, fontWeight: '800', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 0.4, lineHeight: 13 }}
+                    numberOfLines={2}
+                    adjustsFontSizeToFit={true}
+                  >
+                    TOTAL{'\n'}HABITS
+                  </Text>
+                </View>
+                {/* Bottom Right Cyan Wave Gradient */}
+                <Svg width={80} height={48} viewBox="0 0 100 50" style={{ position: 'absolute', right: -2, bottom: -2, opacity: 0.45 }}>
+                  <Defs>
+                    <LinearGradient id="waveCyanGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <Stop offset="0%" stopColor={T.teal} stopOpacity="0.5" />
+                      <Stop offset="100%" stopColor={T.teal} stopOpacity="0.02" />
+                    </LinearGradient>
+                  </Defs>
+                  <Path d="M 0 50 Q 25 22 55 35 T 100 8 L 100 50 Z" fill="url(#waveCyanGrad)" />
+                  <Path d="M 0 50 Q 25 22 55 35 T 100 8" stroke={T.teal} strokeWidth="2.5" fill="none" strokeLinecap="round" />
                 </Svg>
               </View>
 
               {/* Card 2: DONE TODAY */}
-              <View style={[T.neo, { flex: 1, borderRadius: 20, padding: 14, backgroundColor: T.bgCard, overflow: 'hidden', position: 'relative' }]}>
-                <View style={{ width: 34, height: 34, borderRadius: 12, backgroundColor: 'rgba(56,189,248,0.15)', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
-                  <Ionicons name="checkmark-circle-outline" size={18} color="#38BDF8" />
+              <View style={[T.neo, { width: CARD_3_W, height: 146, borderRadius: 22, padding: 14, backgroundColor: T.bgCard, overflow: 'hidden', position: 'relative', justifyContent: 'space-between' }]}>
+                {/* Circular Icon Bubble */}
+                <View style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: 'rgba(56,189,248,0.12)', borderWidth: 1, borderColor: 'rgba(56,189,248,0.25)', alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name="checkmark-circle-outline" size={20} color="#38BDF8" />
                 </View>
-                <Text style={{ fontSize: 28, fontWeight: '900', color: '#38BDF8', marginBottom: 2 }}>
-                  {habits.filter(h => h.completedDates.includes(todayStr)).length}
-                </Text>
-                <Text style={{ fontSize: 9, fontWeight: '800', color: '#64748B', textTransform: 'uppercase', letterSpacing: 0.5 }}>DONE TODAY</Text>
-                <Svg width={60} height={30} viewBox="0 0 60 30" style={{ position: 'absolute', right: -5, bottom: -5, opacity: 0.2 }}>
-                  <Path d="M 0 20 Q 20 28 40 10 T 60 15" stroke="#38BDF8" strokeWidth="3" fill="none" />
+                {/* Numbers & Two-Line Label */}
+                <View style={{ marginTop: 6 }}>
+                  <Text style={{ fontSize: 30, fontWeight: '900', color: '#38BDF8', marginBottom: 3, includeFontPadding: false }}>
+                    {habits.filter(h => h.completedDates.includes(todayStr)).length}
+                  </Text>
+                  <Text
+                    style={{ fontSize: 9.5, fontWeight: '800', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 0.4, lineHeight: 13 }}
+                    numberOfLines={2}
+                    adjustsFontSizeToFit={true}
+                  >
+                    DONE{'\n'}TODAY
+                  </Text>
+                </View>
+                {/* Bottom Right Blue Wave Gradient */}
+                <Svg width={80} height={48} viewBox="0 0 100 50" style={{ position: 'absolute', right: -2, bottom: -2, opacity: 0.45 }}>
+                  <Defs>
+                    <LinearGradient id="waveBlueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <Stop offset="0%" stopColor="#38BDF8" stopOpacity="0.5" />
+                      <Stop offset="100%" stopColor="#38BDF8" stopOpacity="0.02" />
+                    </LinearGradient>
+                  </Defs>
+                  <Path d="M 0 50 Q 30 35 60 15 T 100 25 L 100 50 Z" fill="url(#waveBlueGrad)" />
+                  <Path d="M 0 50 Q 30 35 60 15 T 100 25" stroke="#38BDF8" strokeWidth="2.5" fill="none" strokeLinecap="round" />
                 </Svg>
               </View>
 
               {/* Card 3: MAX STREAK */}
-              <View style={[T.neo, { flex: 1, borderRadius: 20, padding: 14, backgroundColor: T.bgCard, overflow: 'hidden', position: 'relative' }]}>
-                <View style={{ width: 34, height: 34, borderRadius: 12, backgroundColor: 'rgba(249,115,22,0.15)', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
-                  <Ionicons name="flame" size={18} color={T.orange} />
+              <View style={[T.neo, { width: CARD_3_W, height: 146, borderRadius: 22, padding: 14, backgroundColor: T.bgCard, overflow: 'hidden', position: 'relative', justifyContent: 'space-between' }]}>
+                {/* Circular Icon Bubble */}
+                <View style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: 'rgba(249,115,22,0.12)', borderWidth: 1, borderColor: 'rgba(249,115,22,0.25)', alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name="flame" size={20} color={T.orange} />
                 </View>
-                <Text style={{ fontSize: 28, fontWeight: '900', color: T.orange, marginBottom: 2 }}>
-                  {habits.reduce((m, h) => Math.max(m, getActiveStreak(h)), 0)}d
-                </Text>
-                <Text style={{ fontSize: 9, fontWeight: '800', color: '#64748B', textTransform: 'uppercase', letterSpacing: 0.5 }}>MAX STREAK</Text>
-                <Svg width={60} height={30} viewBox="0 0 60 30" style={{ position: 'absolute', right: -5, bottom: -5, opacity: 0.2 }}>
-                  <Path d="M 0 25 Q 15 28 35 12 T 60 8" stroke={T.orange} strokeWidth="3" fill="none" />
+                {/* Numbers & Two-Line Label */}
+                <View style={{ marginTop: 6 }}>
+                  <Text style={{ fontSize: 30, fontWeight: '900', color: T.orange, marginBottom: 3, includeFontPadding: false }}>
+                    {habits.reduce((m, h) => Math.max(m, getActiveStreak(h)), 0)}d
+                  </Text>
+                  <Text
+                    style={{ fontSize: 9.5, fontWeight: '800', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 0.4, lineHeight: 13 }}
+                    numberOfLines={2}
+                    adjustsFontSizeToFit={true}
+                  >
+                    MAX{'\n'}STREAK
+                  </Text>
+                </View>
+                {/* Bottom Right Orange Wave Gradient */}
+                <Svg width={80} height={48} viewBox="0 0 100 50" style={{ position: 'absolute', right: -2, bottom: -2, opacity: 0.45 }}>
+                  <Defs>
+                    <LinearGradient id="waveOrangeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <Stop offset="0%" stopColor={T.orange} stopOpacity="0.5" />
+                      <Stop offset="100%" stopColor={T.orange} stopOpacity="0.02" />
+                    </LinearGradient>
+                  </Defs>
+                  <Path d="M 0 50 Q 20 40 50 20 T 100 5 L 100 50 Z" fill="url(#waveOrangeGrad)" />
+                  <Path d="M 0 50 Q 20 40 50 20 T 100 5" stroke={T.orange} strokeWidth="2.5" fill="none" strokeLinecap="round" />
                 </Svg>
               </View>
 
