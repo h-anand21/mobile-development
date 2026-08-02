@@ -559,9 +559,9 @@ export default function HomeDashboard() {
               <View style={{ alignItems: 'center', justifyContent: 'center' }}>
                 <AnimatedRing percent={pct} size={124} strokeWidth={11} color={T.teal} bgColor="rgba(45,212,191,0.12)" />
                 <View style={{ position: 'absolute', alignItems: 'center', justifyContent: 'center' }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
-                    <Text style={{ fontSize: pct >= 100 ? 28 : 33, fontWeight: '900', color: '#FFFFFF', letterSpacing: -0.5 }}>{pct}</Text>
-                    <Text style={{ fontSize: pct >= 100 ? 15 : 17, fontWeight: '800', color: T.teal, marginLeft: 3 }}>%</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center' }}>
+                    <Text style={{ fontSize: pct >= 100 ? 24 : 33, fontWeight: '900', color: '#FFFFFF', letterSpacing: pct >= 100 ? -1 : -0.5 }}>{pct}</Text>
+                    <Text style={{ fontSize: pct >= 100 ? 13 : 17, fontWeight: '800', color: T.teal, marginLeft: pct >= 100 ? 1 : 3 }}>%</Text>
                   </View>
                   <Text style={{ fontSize: 9.5, fontWeight: '800', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 1, marginTop: 3 }}>COMPLETED</Text>
                 </View>
