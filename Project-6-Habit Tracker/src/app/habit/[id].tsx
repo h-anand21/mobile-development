@@ -7,7 +7,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams, Link } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, { FadeInDown } from "react-native-reanimated";
-import Svg, { Path, Circle } from "react-native-svg";
+import Svg, { Path, Circle, Text as SvgText } from "react-native-svg";
 import { useHabits } from "../../hooks/use-habits";
 import { useTheme } from "../../context/ThemeContext";
 import { getActiveStreak, getLocalDateString } from "../../lib/habits/streak";
@@ -71,6 +71,58 @@ export default function HabitDetailScreen() {
     thirtyFiveDaysAgo.setDate(thirtyFiveDaysAgo.getDate() - 35);
     return new Date(d) >= thirtyFiveDaysAgo;
   }).length / 35) * 100) : 0;
+
+  // Real 7-Day Sparkline Graph Calculation with Real Dates
+  const getReal7DaySparkline = () => {
+    const points = [];
+    const width = 135;
+    const height = 85;
+    const marginX = 12;
+    const stepX = (width - 2 * marginX) / 6;
+
+    const today = new Date();
+    let accumulatedStreak = 0;
+    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      const dateStr = `${year}-${month}-${day}`;
+
+      const isDone = habit.completedDates.includes(dateStr);
+      if (isDone) {
+        accumulatedStreak += 1;
+      } else {
+        accumulatedStreak = Math.max(0, accumulatedStreak - 1);
+      }
+
+      const x = marginX + (6 - i) * stepX;
+      // High trajectory if done, lower if missed
+      const y = isDone ? Math.max(10, 48 - accumulatedStreak * 6) : 56;
+      const dayName = i === 0 ? "Today" : dayNames[d.getDay()];
+      const dayDate = d.getDate();
+
+      points.push({ x, y, isDone, dateStr, dayName, dayDate });
+    }
+
+    // Build smooth Bezier path
+    let pathD = `M ${points[0].x} ${points[0].y}`;
+    for (let i = 1; i < points.length; i++) {
+      const prev = points[i - 1];
+      const curr = points[i];
+      const cpX = (prev.x + curr.x) / 2;
+      pathD += ` C ${cpX} ${prev.y}, ${cpX} ${curr.y}, ${curr.x} ${curr.y}`;
+    }
+
+    const areaD = `${pathD} L ${points[points.length - 1].x} 64 L ${points[0].x} 64 Z`;
+
+    return { points, pathD, areaD };
+  };
+
+  const sparkline = getReal7DaySparkline();
 
   // Calendar Grid Calculation
   const currentYear = viewDate.getFullYear();
@@ -188,7 +240,7 @@ export default function HabitDetailScreen() {
             </Pressable>
           </Animated.View>
 
-          {/* ── 3. CURRENT STREAK CARD WITH SPARKLINE GRAPH ── */}
+          {/* ── 3. CURRENT STREAK CARD WITH REAL DATED GRAPH ── */}
           <Animated.View entering={FadeInDown.delay(180).springify()} style={[styles.streakCard, { backgroundColor: T.bgCard, borderColor: T.border }]}>
             <View style={styles.streakLeftCol}>
               <View style={styles.flameGlowBubble}>
@@ -199,29 +251,51 @@ export default function HabitDetailScreen() {
                 <Text style={[styles.streakBigNum, { color: T.textPrimary }]}>{activeStreak}</Text>
                 <Text style={[styles.streakSubText, { color: T.textMuted }]}>Days in a row</Text>
                 <View style={styles.fireBadgePill}>
-                  <Text style={styles.fireBadgeText}>You're on fire! 🔥</Text>
+                  <Text style={styles.fireBadgeText}>
+                    {activeStreak > 0 ? "You're on fire! 🔥" : "Start a streak today! 🔥"}
+                  </Text>
                 </View>
               </View>
             </View>
 
-            {/* Sparkline Graph Vector */}
+            {/* Real Dynamic Dated Sparkline Graph Vector */}
             <View style={styles.streakGraphWrap}>
-              <Svg width={110} height={75} viewBox="0 0 110 75">
+              <Svg width={135} height={85} viewBox="0 0 135 85">
                 <Path
-                  d="M 10 60 Q 35 48 50 32 T 80 28 T 100 12"
+                  d={sparkline.pathD}
                   fill="none"
                   stroke="#F97316"
                   strokeWidth="3"
                   strokeLinecap="round"
                 />
                 <Path
-                  d="M 10 60 Q 35 48 50 32 T 80 28 T 100 12 L 100 75 L 10 75 Z"
+                  d={sparkline.areaD}
                   fill="rgba(249,115,22,0.14)"
                 />
-                <Circle cx="10" cy="60" r="4" fill="#F97316" />
-                <Circle cx="50" cy="32" r="4" fill="#F97316" />
-                <Circle cx="80" cy="28" r="4" fill="#F97316" />
-                <Circle cx="100" cy="12" r="5" fill="#FFA500" stroke="#FFFFFF" strokeWidth="1.5" />
+                {sparkline.points.map((p, idx) => (
+                  <React.Fragment key={idx}>
+                    {/* Node Dot */}
+                    <Circle
+                      cx={p.x}
+                      cy={p.y}
+                      r={idx === 6 ? 5 : 3.5}
+                      fill={p.isDone ? "#F97316" : T.bgCard}
+                      stroke={p.isDone ? (idx === 6 ? "#FFFFFF" : "#F97316") : "#475569"}
+                      strokeWidth={idx === 6 ? 2 : 1}
+                    />
+                    {/* Date Label Below Each Node */}
+                    <SvgText
+                      x={p.x}
+                      y={78}
+                      fill={p.isDone ? "#F97316" : "#64748B"}
+                      fontSize="9"
+                      fontWeight={p.isDone ? "900" : "600"}
+                      textAnchor="middle"
+                    >
+                      {p.dayDate}
+                    </SvgText>
+                  </React.Fragment>
+                ))}
               </Svg>
             </View>
           </Animated.View>
