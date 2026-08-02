@@ -811,31 +811,106 @@ export default function ActivityScreen() {
               </Text>
             </Animated.View>
 
-            {/* Today's sessions summary */}
-            {workout.todaysSessions.length > 0 && (
-              <Animated.View entering={FadeInDown.delay(140).springify()} style={[T.neo, styles.tipsCard]}>
-                <Text style={[styles.tipsTitle, { color: T.textPrimary }]}>📋 Today's Sessions</Text>
-                {workout.todaysSessions.map((s, i) => (
-                  <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-                    marginTop: 8, paddingTop: 8, borderTopWidth: i > 0 ? 0.5 : 0, borderTopColor: T.border }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
-                      <Ionicons name={s.type === 'outdoor_cycle' ? 'bicycle-outline' : s.type === 'brisk_walk' ? 'footsteps-outline' : 'walk-outline'} size={14} color={T.teal} />
-                      <View>
-                        <Text style={{ fontSize: 12, fontWeight: '700', color: T.textPrimary }}>{workoutLabels[s.type]}</Text>
-                        {s.deviceName && (
-                          <Text style={{ fontSize: 9, color: T.teal, fontWeight: '600', marginTop: 1 }}>⌚ {s.deviceName}</Text>
-                        )}
+            {/* Workout History Sessions Card List */}
+            <Animated.View entering={FadeInDown.delay(140).springify()} style={[T.neo, styles.tipsCard, { marginBottom: 16 }]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <View style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: 'rgba(45,212,191,0.15)', alignItems: 'center', justifyContent: 'center' }}>
+                    <Ionicons name="time-outline" size={18} color={T.teal} />
+                  </View>
+                  <View>
+                    <Text style={[styles.tipsTitle, { color: T.textPrimary, marginBottom: 0 }]}>Workout History</Text>
+                    <Text style={{ fontSize: 10, fontWeight: '600', color: T.textMuted }}>{workout.allSessions.length} recorded workouts</Text>
+                  </View>
+                </View>
+
+                {workout.allSessions.length > 0 && (
+                  <Pressable
+                    onPress={() => {
+                      Alert.alert('Clear History', 'Delete all recorded workout history?', [
+                        { text: 'Cancel', style: 'cancel' },
+                        { text: 'Clear All', style: 'destructive', onPress: workout.clearAllSessions },
+                      ]);
+                    }}
+                    style={[T.neo, { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10, backgroundColor: 'rgba(239,68,68,0.1)' }]}
+                  >
+                    <Text style={{ fontSize: 11, fontWeight: '700', color: '#EF4444' }}>Clear All</Text>
+                  </Pressable>
+                )}
+              </View>
+
+              {workout.allSessions.length === 0 ? (
+                <View style={{ alignItems: 'center', paddingVertical: 18 }}>
+                  <Ionicons name="fitness-outline" size={32} color={T.textMuted} style={{ marginBottom: 6, opacity: 0.5 }} />
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: T.textMuted }}>No workouts recorded yet</Text>
+                  <Text style={{ fontSize: 10, color: T.textMuted, marginTop: 2 }}>Tap GO above to start tracking a workout!</Text>
+                </View>
+              ) : (
+                workout.allSessions.map((s, i) => (
+                  <View key={s.id || i} style={{
+                    paddingVertical: 12, borderTopWidth: i > 0 ? 1 : 0, borderTopColor: T.border,
+                  }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                      {/* Left Type & Time */}
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+                        <View style={{
+                          width: 38, height: 38, borderRadius: 12,
+                          backgroundColor: s.type === 'outdoor_cycle' ? 'rgba(168,85,247,0.15)' : s.type === 'outdoor_run' ? 'rgba(249,115,22,0.15)' : 'rgba(45,212,191,0.15)',
+                          alignItems: 'center', justifyContent: 'center',
+                        }}>
+                          <Ionicons
+                            name={s.type === 'outdoor_cycle' ? 'bicycle' : s.type === 'outdoor_run' ? 'flame' : 'footsteps'}
+                            size={18}
+                            color={s.type === 'outdoor_cycle' ? T.purple : s.type === 'outdoor_run' ? T.orange : T.teal}
+                          />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                            <Text style={{ fontSize: 13, fontWeight: '800', color: T.textPrimary }}>{workoutLabels[s.type]}</Text>
+                            {s.deviceName && (
+                              <View style={{ backgroundColor: 'rgba(45,212,191,0.15)', paddingHorizontal: 6, paddingVertical: 1, borderRadius: 6 }}>
+                                <Text style={{ fontSize: 9, color: T.teal, fontWeight: '700' }}>⌚ {s.deviceName}</Text>
+                              </View>
+                            )}
+                          </View>
+                          <Text style={{ fontSize: 10, fontWeight: '600', color: T.textMuted, marginTop: 2 }}>
+                            {s.date} {s.formattedTime ? `• ${s.formattedTime}` : ''}
+                          </Text>
+                        </View>
+                      </View>
+
+                      {/* Right Delete Button */}
+                      <Pressable
+                        onPress={() => workout.deleteSession(s.id)}
+                        style={{ padding: 6 }}
+                      >
+                        <Ionicons name="trash-outline" size={16} color={T.red} />
+                      </Pressable>
+                    </View>
+
+                    {/* Stats Metric Row */}
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8, paddingHorizontal: 4, paddingTop: 6, backgroundColor: T.bg, borderRadius: 10, padding: 8 }}>
+                      <View style={{ alignItems: 'center' }}>
+                        <Text style={{ fontSize: 9, fontWeight: '700', color: T.textMuted, textTransform: 'uppercase' }}>Duration</Text>
+                        <Text style={{ fontSize: 11, fontWeight: '800', color: T.teal, marginTop: 1 }}>{formatWorkoutTime(s.durationSeconds)}</Text>
+                      </View>
+                      <View style={{ alignItems: 'center' }}>
+                        <Text style={{ fontSize: 9, fontWeight: '700', color: T.textMuted, textTransform: 'uppercase' }}>Distance</Text>
+                        <Text style={{ fontSize: 11, fontWeight: '800', color: T.purple, marginTop: 1 }}>{s.distanceKm} km</Text>
+                      </View>
+                      <View style={{ alignItems: 'center' }}>
+                        <Text style={{ fontSize: 9, fontWeight: '700', color: T.textMuted, textTransform: 'uppercase' }}>Calories</Text>
+                        <Text style={{ fontSize: 11, fontWeight: '800', color: T.orange, marginTop: 1 }}>{s.calories} kcal</Text>
+                      </View>
+                      <View style={{ alignItems: 'center' }}>
+                        <Text style={{ fontSize: 9, fontWeight: '700', color: T.textMuted, textTransform: 'uppercase' }}>Steps</Text>
+                        <Text style={{ fontSize: 11, fontWeight: '800', color: T.textPrimary, marginTop: 1 }}>{s.steps.toLocaleString()}</Text>
                       </View>
                     </View>
-                    <View style={{ flexDirection: 'row', gap: 10 }}>
-                      <Text style={{ fontSize: 11, color: T.teal }}>{formatWorkoutTime(s.durationSeconds)}</Text>
-                      <Text style={{ fontSize: 11, color: T.orange }}>{s.calories}kcal</Text>
-                      <Text style={{ fontSize: 11, color: T.purple }}>{s.distanceKm}km</Text>
-                    </View>
                   </View>
-                ))}
-              </Animated.View>
-            )}
+                ))
+              )}
+            </Animated.View>
 
             {/* Tips */}
             <Animated.View entering={FadeInDown.delay(180).springify()} style={[T.neo, styles.tipsCard]}>
