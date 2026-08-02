@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import {
   View, Text, StyleSheet, Pressable, ScrollView,
-  Switch, Alert, BackHandler, Image, TextInput,
+  Switch, Alert, BackHandler, Image, TextInput, Dimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect } from "expo-router";
@@ -13,17 +13,25 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Notifications from "expo-notifications";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
+import Svg, { Path, Circle, Text as SvgText } from "react-native-svg";
 import { useTheme } from "../context/ThemeContext";
 import TabBar from "../components/TabBar";
 import { useWatchSync } from "../hooks/use-watch-sync";
 import WatchPairingModal from "../components/WatchPairingModal";
+import { useHabits } from "../hooks/use-habits";
+import { useWorkout } from "../hooks/use-workout";
+import { getActiveStreak } from "../lib/habits/streak";
 
-const DEFAULT_AVATARS = ["\uD83E\uDDD8", "\uD83C\uDFC3", "\uD83D\uDCA7", "\uD83D\uDCD6", "\uD83D\uDCAA"];
+const { width: SW } = Dimensions.get("window");
+const DEFAULT_AVATARS = ["🧘", "🏃", "💧", "📖", "💪"];
 
 export default function SettingsScreen() {
   const router = useRouter();
   const { T, isDark, toggleTheme } = useTheme();
   const { pairedDevice, disconnectDevice } = useWatchSync();
+  const { habits } = useHabits();
+  const { allSessions } = useWorkout();
+
   const [pairingModalVisible, setPairingModalVisible] = useState(false);
 
   useFocusEffect(
@@ -38,7 +46,7 @@ export default function SettingsScreen() {
   );
 
   const [profileUri,       setProfileUri]       = useState<string | null>(null);
-  const [profileEmoji,     setProfileEmoji]     = useState("\uD83E\uDDD8");
+  const [profileEmoji,     setProfileEmoji]     = useState("🧘");
   const [profileName,      setProfileName]      = useState("Himanshu");
   const [editingName,      setEditingName]      = useState(false);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
@@ -90,7 +98,7 @@ export default function SettingsScreen() {
   const handleQuietHours = async (val: boolean) => {
     setQuietHours(val);
     await AsyncStorage.setItem("SETTINGS_QUIET_HOURS", String(val));
-    if (val) Alert.alert("Quiet Hours", "Reminders muted 10 PM \u2013 7 AM.");
+    if (val) Alert.alert("Quiet Hours", "Reminders muted 10 PM – 7 AM.");
   };
 
   const handleSound = async (val: boolean) => {
@@ -99,7 +107,7 @@ export default function SettingsScreen() {
   };
 
   const handleReset = () => {
-    Alert.alert("\u26A0\uFE0F Reset All Data", "This will permanently delete all habits, streaks, and cancel all reminders.", [
+    Alert.alert("⚠️ Reset All Data", "This will permanently delete all habits, streaks, and cancel all reminders.", [
       { text: "Cancel", style: "cancel" },
       {
         text: "Reset Everything", style: "destructive",
@@ -121,10 +129,65 @@ export default function SettingsScreen() {
     toggleTheme();
   };
 
+  // ─── LIFETIME PERFORMANCE METRICS ───
+  const totalHabits = habits.length;
+  const bestStreak = habits.reduce((max, h) => Math.max(max, getActiveStreak(h)), 0);
+  const totalHabitLogs = habits.reduce((sum, h) => sum + h.completedDates.length, 0);
+  const totalWorkouts = allSessions.length;
+  const totalCalories = allSessions.reduce((sum, s) => sum + s.calories, 0);
+  const totalDistance = allSessions.reduce((sum, s) => sum + s.distanceKm, 0);
+
+  // ─── 7-DAY OVERALL ACTIVITY GRAPH CALCULATION ───
+  const getProfile7DayGraph = () => {
+    const points = [];
+    const width = SW - 70; // responsive graph width
+    const height = 80;
+    const marginX = 14;
+    const stepX = (width - 2 * marginX) / 6;
+
+    const today = new Date();
+
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      const dateStr = `${year}-${month}-${day}`;
+
+      // Count completions for this day (habits + workouts)
+      const habitCount = habits.filter(h => h.completedDates.includes(dateStr)).length;
+      const workoutCount = allSessions.filter(s => s.date === dateStr).length;
+      const totalEvents = habitCount + workoutCount;
+
+      const x = marginX + (6 - i) * stepX;
+      // Dynamic height y: 0 events = y: 60, >0 events = higher curve
+      const y = totalEvents > 0 ? Math.max(12, 55 - totalEvents * 14) : 58;
+      const dayDate = d.getDate();
+
+      points.push({ x, y, totalEvents, dateStr, dayDate });
+    }
+
+    let pathD = `M ${points[0].x} ${points[0].y}`;
+    for (let i = 1; i < points.length; i++) {
+      const prev = points[i - 1];
+      const curr = points[i];
+      const cpX = (prev.x + curr.x) / 2;
+      pathD += ` C ${cpX} ${prev.y}, ${cpX} ${curr.y}, ${curr.x} ${curr.y}`;
+    }
+
+    const areaD = `${pathD} L ${points[points.length - 1].x} 64 L ${points[0].x} 64 Z`;
+
+    return { points, pathD, areaD, width };
+  };
+
+  const profileGraph = getProfile7DayGraph();
+
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: T.bg }]}>
       <View style={[styles.root, { backgroundColor: T.bg }]}>
 
+        {/* ── HEADER ── */}
         <Animated.View entering={FadeInDown.duration(400).springify()} style={styles.header}>
           <View style={styles.headerLeft}>
             <View style={[styles.headerIconWrap, { backgroundColor: T.tealDim }]}>
@@ -132,7 +195,7 @@ export default function SettingsScreen() {
             </View>
             <View>
               <Text style={[styles.headerTitle, { color: T.textPrimary }]}>Profile</Text>
-              <Text style={[styles.headerSub, { color: T.textMuted }]}>Manage your settings</Text>
+              <Text style={[styles.headerSub, { color: T.textMuted }]}>Manage your profile & performance</Text>
             </View>
           </View>
           <Pressable onPress={() => router.push("/notifications")} style={[styles.gearBtn, { backgroundColor: T.bgCard }]}>
@@ -142,6 +205,7 @@ export default function SettingsScreen() {
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
 
+          {/* ── PROFILE CARD ── */}
           <Animated.View entering={FadeInDown.delay(60).springify()}>
             <View style={[styles.profileCard, { backgroundColor: T.bgCard, borderColor: T.border }]}>
               <Pressable onPress={() => setShowAvatarPicker(v => !v)} style={styles.avatarWrap}>
@@ -208,6 +272,113 @@ export default function SettingsScreen() {
             )}
           </Animated.View>
 
+          {/* ── PERFORMANCE OVERVIEW GRID & GRAPH ── */}
+          <Animated.View entering={FadeInDown.delay(100).springify()}>
+            <View style={styles.sectionHeaderRow}>
+              <Ionicons name="stats-chart-outline" size={13} color={T.teal} />
+              <Text style={[styles.sectionLabel, { color: T.textMuted }]}>PERFORMANCE & HISTORY OVERVIEW</Text>
+            </View>
+
+            {/* Lifetime Stats 4 Cards */}
+            <View style={styles.perfGridRow}>
+              <View style={[styles.perfCard, { backgroundColor: T.bgCard, borderColor: T.border }]}>
+                <View style={[styles.perfIconWrap, { backgroundColor: "rgba(45,212,191,0.15)" }]}>
+                  <Ionicons name="list" size={18} color={T.teal} />
+                </View>
+                <Text style={[styles.perfVal, { color: T.teal }]}>{totalHabits}</Text>
+                <Text style={[styles.perfLabel, { color: T.textMuted }]}>Active Habits</Text>
+              </View>
+
+              <View style={[styles.perfCard, { backgroundColor: T.bgCard, borderColor: T.border }]}>
+                <View style={[styles.perfIconWrap, { backgroundColor: "rgba(249,115,22,0.15)" }]}>
+                  <Ionicons name="flame" size={18} color={T.orange} />
+                </View>
+                <Text style={[styles.perfVal, { color: T.orange }]}>{bestStreak}d</Text>
+                <Text style={[styles.perfLabel, { color: T.textMuted }]}>Best Streak</Text>
+              </View>
+
+              <View style={[styles.perfCard, { backgroundColor: T.bgCard, borderColor: T.border }]}>
+                <View style={[styles.perfIconWrap, { backgroundColor: "rgba(168,85,247,0.15)" }]}>
+                  <Ionicons name="fitness" size={18} color={T.purple} />
+                </View>
+                <Text style={[styles.perfVal, { color: T.purple }]}>{totalWorkouts}</Text>
+                <Text style={[styles.perfLabel, { color: T.textMuted }]}>Workouts</Text>
+              </View>
+
+              <View style={[styles.perfCard, { backgroundColor: T.bgCard, borderColor: T.border }]}>
+                <View style={[styles.perfIconWrap, { backgroundColor: "rgba(234,179,8,0.15)" }]}>
+                  <Ionicons name="flash" size={18} color="#EAB308" />
+                </View>
+                <Text style={[styles.perfVal, { color: "#EAB308" }]}>{totalCalories}</Text>
+                <Text style={[styles.perfLabel, { color: T.textMuted }]}>Kcal Burned</Text>
+              </View>
+            </View>
+
+            {/* 7-Day Activity Trend Graph Card */}
+            <View style={[styles.graphCard, { backgroundColor: T.bgCard, borderColor: T.border }]}>
+              <View style={styles.graphCardHeader}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                  <Ionicons name="analytics" size={18} color={T.teal} />
+                  <Text style={[styles.graphCardTitle, { color: T.textPrimary }]}>7-Day Activity Trend</Text>
+                </View>
+                <Text style={{ fontSize: 11, fontWeight: "700", color: T.teal }}>
+                  {totalHabitLogs} Total Checkins
+                </Text>
+              </View>
+
+              <View style={styles.graphWrap}>
+                <Svg width={profileGraph.width} height={85} viewBox={`0 0 ${profileGraph.width} 85`}>
+                  <Path d={profileGraph.pathD} fill="none" stroke={T.teal} strokeWidth="3" strokeLinecap="round" />
+                  <Path d={profileGraph.areaD} fill="rgba(45,212,191,0.12)" />
+                  {profileGraph.points.map((p, idx) => (
+                    <React.Fragment key={idx}>
+                      <Circle
+                        cx={p.x}
+                        cy={p.y}
+                        r={idx === 6 ? 5 : 3.5}
+                        fill={p.totalEvents > 0 ? T.teal : T.bgCard}
+                        stroke={p.totalEvents > 0 ? (idx === 6 ? "#FFFFFF" : T.teal) : "#475569"}
+                        strokeWidth={idx === 6 ? 2 : 1}
+                      />
+                      <SvgText
+                        x={p.x}
+                        y={78}
+                        fill={p.totalEvents > 0 ? T.teal : "#64748B"}
+                        fontSize="9"
+                        fontWeight={p.totalEvents > 0 ? "900" : "600"}
+                        textAnchor="middle"
+                      >
+                        {p.dayDate}
+                      </SvgText>
+                    </React.Fragment>
+                  ))}
+                </Svg>
+              </View>
+            </View>
+
+            {/* Lifetime Full Summary Breakdown Card */}
+            <View style={[styles.summaryCard, { backgroundColor: T.bgCard, borderColor: T.border }]}>
+              <Text style={[styles.summaryTitle, { color: T.textPrimary }]}>Lifetime Record Details</Text>
+              <View style={styles.summaryGrid}>
+                <View style={styles.summaryRow}>
+                  <Text style={[styles.summaryLabel, { color: T.textMuted }]}>Habit Checkins Completed</Text>
+                  <Text style={[styles.summaryValue, { color: T.teal }]}>{totalHabitLogs} logs</Text>
+                </View>
+                <View style={styles.summaryRow}>
+                  <Text style={[styles.summaryLabel, { color: T.textMuted }]}>Workout Distance Covered</Text>
+                  <Text style={[styles.summaryValue, { color: T.purple }]}>{totalDistance.toFixed(1)} km</Text>
+                </View>
+                <View style={styles.summaryRow}>
+                  <Text style={[styles.summaryLabel, { color: T.textMuted }]}>Smartwatch Connection</Text>
+                  <Text style={[styles.summaryValue, { color: pairedDevice ? T.teal : T.textMuted }]}>
+                    {pairedDevice ? pairedDevice.name : "Not Connected"}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </Animated.View>
+
+          {/* ── APPEARANCE ── */}
           <Animated.View entering={FadeInDown.delay(140).springify()}>
             <View style={styles.sectionHeaderRow}>
               <Ionicons name="color-palette-outline" size={13} color={T.teal} />
@@ -231,6 +402,7 @@ export default function SettingsScreen() {
             </View>
           </Animated.View>
 
+          {/* ── NOTIFICATIONS ── */}
           <Animated.View entering={FadeInDown.delay(200).springify()}>
             <View style={styles.sectionHeaderRow}>
               <Ionicons name="notifications-outline" size={13} color={T.teal} />
@@ -265,6 +437,7 @@ export default function SettingsScreen() {
             </View>
           </Animated.View>
 
+          {/* ── DEVICE CONNECTIONS ── */}
           <Animated.View entering={FadeInDown.delay(230).springify()}>
             <View style={styles.sectionHeaderRow}>
               <Ionicons name="link-outline" size={13} color={T.teal} />
@@ -303,6 +476,7 @@ export default function SettingsScreen() {
             </View>
           </Animated.View>
 
+          {/* ── APP CONFIGURATION ── */}
           <Animated.View entering={FadeInDown.delay(260).springify()}>
             <View style={styles.sectionHeaderRow}>
               <Ionicons name="options-outline" size={13} color={T.teal} />
@@ -323,6 +497,7 @@ export default function SettingsScreen() {
             </View>
           </Animated.View>
 
+          {/* ── DANGER ZONE ── */}
           <Animated.View entering={FadeInDown.delay(320).springify()}>
             <View style={styles.sectionHeaderRow}>
               <Ionicons name="warning-outline" size={13} color="#EA5E5E" />
@@ -374,7 +549,7 @@ const styles = StyleSheet.create({
 
   group: { borderRadius: 20, paddingHorizontal: 14, paddingVertical: 4, marginBottom: 4, borderWidth: 1 },
 
-  profileCard: { borderRadius: 24, padding: 20, marginBottom: 8, flexDirection: "row", alignItems: "center", gap: 18, borderWidth: 1 },
+  profileCard: { borderRadius: 24, padding: 20, marginBottom: 4, flexDirection: "row", alignItems: "center", gap: 18, borderWidth: 1 },
   avatarWrap: { position: "relative", width: 84, height: 84 },
   avatarImg: { width: 84, height: 84, borderRadius: 42 },
   avatarEmojiBg: { width: 84, height: 84, borderRadius: 42, alignItems: "center", justifyContent: "center" },
@@ -398,6 +573,24 @@ const styles = StyleSheet.create({
   stickerBtn: { flex: 1, height: 56, borderRadius: 16, alignItems: "center", justifyContent: "center" },
   stickerEmoji: { fontSize: 28 },
 
+  perfGridRow: { flexDirection: "row", gap: 8, marginBottom: 10 },
+  perfCard: { flex: 1, borderRadius: 18, padding: 10, borderWidth: 1, alignItems: "center" },
+  perfIconWrap: { width: 32, height: 32, borderRadius: 10, alignItems: "center", justifyContent: "center", marginBottom: 6 },
+  perfVal: { fontSize: 15, fontWeight: "900", marginBottom: 2 },
+  perfLabel: { fontSize: 9, fontWeight: "700", textAlign: "center" },
+
+  graphCard: { borderRadius: 20, padding: 14, borderWidth: 1, marginBottom: 10 },
+  graphCardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
+  graphCardTitle: { fontSize: 13, fontWeight: "800" },
+  graphWrap: { alignItems: "center" },
+
+  summaryCard: { borderRadius: 20, padding: 14, borderWidth: 1, marginBottom: 4 },
+  summaryTitle: { fontSize: 13, fontWeight: "800", marginBottom: 10 },
+  summaryGrid: { gap: 8 },
+  summaryRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  summaryLabel: { fontSize: 11, fontWeight: "600" },
+  summaryValue: { fontSize: 12, fontWeight: "800" },
+
   row: { flexDirection: "row", alignItems: "center", paddingVertical: 13 },
   rowIconBubble: { width: 46, height: 46, borderRadius: 14, alignItems: "center", justifyContent: "center", marginRight: 14 },
   rowText: { flex: 1, marginRight: 10 },
@@ -407,5 +600,4 @@ const styles = StyleSheet.create({
 
   disconnectBtn: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   disconnectBtnText: { fontSize: 11, fontWeight: "700" },
-
 });
