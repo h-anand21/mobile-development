@@ -177,7 +177,7 @@ export default function ActivityScreen() {
   const { habits, loadHabits, toggleCompleteHabit, deleteHabit } = useHabits();
 
   const { pairedDevice, heartRate } = useWatchSync();
-  const [activeMode, setActiveMode] = useState<'summary' | 'habits' | 'workout'>('summary');
+  const [activeMode, setActiveMode] = useState<'summary' | 'habits' | 'workout'>('habits');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCat, setSelectedCat] = useState<'all' | 'health' | 'work' | 'mind' | 'body' | 'other'>('all');
 
@@ -633,7 +633,7 @@ export default function ActivityScreen() {
                       
                       {/* Top Info Row */}
                       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-                        <Pressable onPress={() => router.push(`/new?id=${habit.id}`)} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
+                        <Pressable onPress={() => router.push(`/habit/${habit.id}`)} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
                           <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: T.tealDim, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
                             {habit.emoji?.startsWith('file:') || habit.emoji?.startsWith('content:') || habit.emoji?.startsWith('http') || habit.emoji?.startsWith('data:') ? (
                               <Image source={{ uri: habit.emoji }} style={{ width: 44, height: 44, borderRadius: 14 }} resizeMode="cover" />
