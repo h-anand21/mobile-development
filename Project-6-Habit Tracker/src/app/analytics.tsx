@@ -256,7 +256,7 @@ export default function AnalyticsScreen() {
                   transform="rotate(-90 55 55)"
                 />
               </Svg>
-              <Text style={{ fontSize: 24, fontWeight: '900', color: '#FFFFFF', includeFontPadding: false }}>{consistency}%</Text>
+              <Text style={{ fontSize: 24, fontWeight: '900', color: T.textPrimary, includeFontPadding: false }}>{consistency}%</Text>
               <Text style={{ fontSize: 10, fontWeight: '700', color: '#94A3B8', marginTop: 1 }}>Today</Text>
             </View>
 
@@ -280,7 +280,7 @@ export default function AnalyticsScreen() {
                               ) : (
                                 <Text style={{ fontSize: 15 }}>{h.emoji}</Text>
                               )}
-                              <Text style={{ fontSize: 13, fontWeight: '800', color: '#FFFFFF', flex: 1 }} numberOfLines={1}>
+                              <Text style={{ fontSize: 13, fontWeight: '800', color: T.textPrimary, flex: 1 }} numberOfLines={1}>
                                 {h.name}
                               </Text>
                             </View>
@@ -309,7 +309,7 @@ export default function AnalyticsScreen() {
                 <Ionicons name="flame" size={18} color={T.orange} />
               </View>
               <Text style={{ fontSize: 22, fontWeight: '900', color: T.orange, marginBottom: 2 }}>{bestStreak}</Text>
-              <Text style={{ fontSize: 11, fontWeight: '800', color: '#FFFFFF', marginBottom: 2 }}>Best Streak</Text>
+              <Text style={{ fontSize: 11, fontWeight: '800', color: T.textPrimary, marginBottom: 2 }}>Best Streak</Text>
               <Text style={{ fontSize: 9, fontWeight: '600', color: '#64748B' }}>Keep going!</Text>
             </View>
 
@@ -319,7 +319,7 @@ export default function AnalyticsScreen() {
                 <Ionicons name="checkbox-outline" size={18} color={T.green} />
               </View>
               <Text style={{ fontSize: 22, fontWeight: '900', color: T.green, marginBottom: 2 }}>{totalLogs}</Text>
-              <Text style={{ fontSize: 11, fontWeight: '800', color: '#FFFFFF', marginBottom: 2 }}>Total Logs</Text>
+              <Text style={{ fontSize: 11, fontWeight: '800', color: T.textPrimary, marginBottom: 2 }}>Total Logs</Text>
               <Text style={{ fontSize: 9, fontWeight: '600', color: '#64748B' }}>This week</Text>
             </View>
 
@@ -329,7 +329,7 @@ export default function AnalyticsScreen() {
                 <Ionicons name="disc-outline" size={18} color={T.purple} />
               </View>
               <Text style={{ fontSize: 22, fontWeight: '900', color: T.purple, marginBottom: 2 }}>{total}</Text>
-              <Text style={{ fontSize: 11, fontWeight: '800', color: '#FFFFFF', marginBottom: 2 }}>Habits Tracked</Text>
+              <Text style={{ fontSize: 11, fontWeight: '800', color: T.textPrimary, marginBottom: 2 }}>Habits Tracked</Text>
               <Text style={{ fontSize: 9, fontWeight: '600', color: '#64748B' }}>Keep it up!</Text>
             </View>
           </Animated.View>
@@ -342,7 +342,7 @@ export default function AnalyticsScreen() {
                   <Ionicons name="calendar-outline" size={18} color={T.teal} />
                 </View>
                 <View>
-                  <Text style={{ fontSize: 15, fontWeight: '800', color: '#FFFFFF' }}>Weekly Activity</Text>
+                  <Text style={{ fontSize: 15, fontWeight: '800', color: T.textPrimary }}>Weekly Activity</Text>
                   <Text style={{ fontSize: 11, fontWeight: '600', color: '#64748B', marginTop: 1 }}>Past 7 days</Text>
                 </View>
               </View>
@@ -389,7 +389,7 @@ export default function AnalyticsScreen() {
                     <Ionicons name="flash-outline" size={18} color="#EAB308" />
                   </View>
                   <View>
-                    <Text style={{ fontSize: 15, fontWeight: '800', color: '#FFFFFF' }}>Habit Progress</Text>
+                    <Text style={{ fontSize: 15, fontWeight: '800', color: T.textPrimary }}>Habit Progress</Text>
                     <Text style={{ fontSize: 11, fontWeight: '600', color: '#64748B', marginTop: 1 }}>7-day completion rate</Text>
                   </View>
                 </View>
@@ -411,7 +411,7 @@ export default function AnalyticsScreen() {
                     </View>
                     <View style={styles.habitRight}>
                       <View style={styles.habitLabelRow}>
-                        <Text style={[styles.habitName, { color: '#FFFFFF' }]} numberOfLines={1}>{h.name}</Text>
+                        <Text style={[styles.habitName, { color: T.textPrimary }]} numberOfLines={1}>{h.name}</Text>
                         <Text style={[styles.habitPct, { color }]}>{rate}%</Text>
                       </View>
                       <ProgressBar pct={rate} color={color} />
@@ -432,7 +432,7 @@ export default function AnalyticsScreen() {
                   <Ionicons name="calendar" size={18} color={T.purple} />
                 </View>
                 <View>
-                  <Text style={{ fontSize: 15, fontWeight: '800', color: '#FFFFFF' }}>Calendar View</Text>
+                  <Text style={{ fontSize: 15, fontWeight: '800', color: T.textPrimary }}>Calendar View</Text>
                   <Text style={{ fontSize: 11, fontWeight: '600', color: '#64748B', marginTop: 1 }}>Monthly performance overview</Text>
                 </View>
               </View>
@@ -485,7 +485,7 @@ export default function AnalyticsScreen() {
                       ]}
                     >
                       <Text style={[
-                        { fontSize: 13, fontWeight: '700', color: '#FFFFFF' },
+                        { fontSize: 13, fontWeight: '700', color: T.textPrimary },
                         isSelected && { fontWeight: '900', color: '#0D1525', fontSize: 14 }
                       ]}>
                         {cell.dayNum}
@@ -517,7 +517,7 @@ export default function AnalyticsScreen() {
                     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)' }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                         <Ionicons name="calendar-outline" size={16} color={T.teal} />
-                        <Text style={{ fontSize: 13, fontWeight: '900', color: '#FFFFFF' }}>
+                        <Text style={{ fontSize: 13, fontWeight: '900', color: T.textPrimary }}>
                           {fullDateLabel}
                         </Text>
                       </View>
@@ -551,7 +551,7 @@ export default function AnalyticsScreen() {
                                   )}
                                 </View>
                                 <View style={{ flex: 1 }}>
-                                  <Text style={{ fontSize: 14, fontWeight: '800', color: '#FFFFFF' }} numberOfLines={1}>
+                                  <Text style={{ fontSize: 14, fontWeight: '800', color: T.textPrimary }} numberOfLines={1}>
                                     {h.name}
                                   </Text>
                                   <Text style={{ fontSize: 10, fontWeight: '600', color: '#64748B', marginTop: 1 }}>

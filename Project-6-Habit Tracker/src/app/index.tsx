@@ -248,7 +248,7 @@ function ActivityWidget({ T, router }: { T: any; router: any }) {
               <Text style={{ fontSize: 10, fontWeight: '800', color: T.teal }}>{pct}%</Text>
             </View>
             <Text
-              style={{ fontSize: 22, fontWeight: '900', color: '#FFFFFF', letterSpacing: 0.5, marginBottom: 3, paddingHorizontal: 2, includeFontPadding: false }}
+              style={{ fontSize: 22, fontWeight: '900', color: T.textPrimary, letterSpacing: 0.5, marginBottom: 3, paddingHorizontal: 2, includeFontPadding: false }}
               adjustsFontSizeToFit={true}
               numberOfLines={1}
             >
@@ -271,7 +271,7 @@ function ActivityWidget({ T, router }: { T: any; router: any }) {
               <Text style={{ fontSize: 9, fontWeight: '700', color: '#94A3B8' }}>KCAL</Text>
             </View>
             <Text
-              style={{ fontSize: 22, fontWeight: '900', color: '#FFFFFF', letterSpacing: 0.5, marginBottom: 3, paddingHorizontal: 2, includeFontPadding: false }}
+              style={{ fontSize: 22, fontWeight: '900', color: T.textPrimary, letterSpacing: 0.5, marginBottom: 3, paddingHorizontal: 2, includeFontPadding: false }}
               adjustsFontSizeToFit={true}
               numberOfLines={1}
             >
@@ -294,7 +294,7 @@ function ActivityWidget({ T, router }: { T: any; router: any }) {
               <Text style={{ fontSize: 9, fontWeight: '700', color: '#94A3B8' }}>KM</Text>
             </View>
             <Text
-              style={{ fontSize: 22, fontWeight: '900', color: '#FFFFFF', letterSpacing: 0.5, marginBottom: 3, paddingHorizontal: 2, includeFontPadding: false }}
+              style={{ fontSize: 22, fontWeight: '900', color: T.textPrimary, letterSpacing: 0.5, marginBottom: 3, paddingHorizontal: 2, includeFontPadding: false }}
               adjustsFontSizeToFit={true}
               numberOfLines={1}
             >
@@ -560,7 +560,7 @@ export default function HomeDashboard() {
                 <AnimatedRing percent={pct} size={124} strokeWidth={11} color={T.teal} bgColor="rgba(45,212,191,0.12)" />
                 <View style={{ position: 'absolute', alignItems: 'center', justifyContent: 'center' }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-                    <Text style={{ fontSize: pct >= 100 ? 26 : 36, fontWeight: '900', color: '#FFFFFF', letterSpacing: pct >= 100 ? 1.5 : -1, includeFontPadding: false }}>{pct}</Text>
+                    <Text style={{ fontSize: pct >= 100 ? 26 : 36, fontWeight: '900', color: T.isDark ? '#FFFFFF' : '#0D1525', letterSpacing: pct >= 100 ? 1.5 : -1, includeFontPadding: false }}>{pct}</Text>
                     <Text style={{ fontSize: pct >= 100 ? 13 : 18, fontWeight: '800', color: T.teal, marginLeft: 3, includeFontPadding: false }}>%</Text>
                   </View>
                   <Text style={{ fontSize: 9.5, fontWeight: '800', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 1, marginTop: 3 }}>COMPLETED</Text>

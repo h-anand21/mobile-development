@@ -69,7 +69,7 @@ function OverviewArcRing({
 
       {/* Big Number with explicit vertical spacing */}
       <Text
-        style={{ color: '#FFFFFF', fontSize: 19, fontWeight: '900', letterSpacing: 0.5, marginBottom: 3, paddingHorizontal: 2, includeFontPadding: false, textAlign: 'center' }}
+        style={{ color: color, fontSize: 19, fontWeight: '900', letterSpacing: 0.5, marginBottom: 3, paddingHorizontal: 2, includeFontPadding: false, textAlign: 'center' }}
         adjustsFontSizeToFit={true}
         numberOfLines={1}
       >
@@ -110,20 +110,20 @@ function GridMetricCard({ iconName, iconBg, color, labelColor, value, label, tre
         {/* Right Values: Big White Number on top, Subtitle word below */}
         <View style={{ flex: 1 }}>
           <Text
-            style={{ fontSize: 21, fontWeight: '900', color: '#FFFFFF', letterSpacing: 0.5, marginBottom: 2, paddingHorizontal: 1, includeFontPadding: false }}
+            style={{ fontSize: 21, fontWeight: '900', color: T.textPrimary, letterSpacing: 0.5, marginBottom: 2, paddingHorizontal: 1, includeFontPadding: false }}
             adjustsFontSizeToFit={true}
             numberOfLines={1}
           >
             {value}
           </Text>
-          <Text style={{ fontSize: 10, fontWeight: '800', color: labelColor, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+          <Text style={{ fontSize: 10, fontWeight: '800', color: T.textSub, textTransform: 'uppercase', letterSpacing: 0.8 }}>
             {label}
           </Text>
         </View>
       </View>
 
       {/* Sparkline Wave & Trend Footer */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingTop: 10, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)' }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingTop: 10, borderTopWidth: 1, borderTopColor: T.borderMid }}>
         <SparklineWave color={color} />
         <Text style={{ fontSize: 11, fontWeight: '800', color }}>{trend}</Text>
         <Text style={{ fontSize: 10, fontWeight: '600', color: '#64748B' }}>vs yesterday</Text>
