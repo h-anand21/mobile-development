@@ -163,7 +163,7 @@ export default function WatchPairingModal({ visible, onClose }: WatchPairingModa
                   {bleDevices.length > 0 ? 'Discovered Devices' : ''}
                 </Text>
                 
-                {bleDevices.map((dev) => (
+                {bleDevices.map((dev: DiscoveredDevice) => (
                   <Pressable
                     key={dev.id}
                     onPress={() => connectDevice(dev.id, dev.name)}

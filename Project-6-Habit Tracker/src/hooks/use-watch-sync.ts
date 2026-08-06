@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Alert, Platform, PermissionsAndroid } from 'react-native';
+import { Alert, Platform, PermissionsAndroid, Linking } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
+import * as Notifications from 'expo-notifications';
 
 // Safe dynamic import to prevent Expo Go from crashing on native BLE module
 let BleManagerClass: any = null;
@@ -88,6 +89,26 @@ function parseHeartRate(base64Value: string): number {
   } catch (e) {
     console.warn('[BLE] Error decoding heart rate characteristic:', e);
     return 72;
+  }
+}
+
+async function openBluetoothSettings() {
+  if (Platform.OS === 'android') {
+    try {
+      await Linking.sendIntent('android.settings.BLUETOOTH_SETTINGS');
+    } catch (e) {
+      try {
+        await Linking.openSettings();
+      } catch (err) {
+        console.warn('[BLE] Could not open Bluetooth settings:', err);
+      }
+    }
+  } else {
+    try {
+      await Linking.openURL('App-Prefs:Bluetooth');
+    } catch (e) {
+      Linking.openSettings();
+    }
   }
 }
 
@@ -193,6 +214,38 @@ export function useWatchSync() {
     };
   }, [status]);
 
+  // Prompt user & directly open OS Bluetooth Settings page if Bluetooth is OFF
+  const ensureBluetoothEnabled = async (): Promise<boolean> => {
+    if (isExpoGo || !BleManagerClass) return true;
+    try {
+      if (!managerRef.current) {
+        managerRef.current = new BleManagerClass();
+      }
+      const state = await managerRef.current.state();
+      if (state === 'PoweredOff') {
+        // Direct jump to phone OS Bluetooth Settings screen
+        openBluetoothSettings();
+
+        Alert.alert(
+          'Bluetooth Disabled 📡',
+          'Opening your phone\'s Bluetooth settings. Please turn ON Bluetooth and return to the app to continue.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Open Bluetooth Settings ⚙️',
+              onPress: () => openBluetoothSettings(),
+            },
+          ]
+        );
+        return false;
+      }
+      return state === 'PoweredOn';
+    } catch (e) {
+      console.warn('[BLE] Check state error:', e);
+      return true;
+    }
+  };
+
   // Request Bluetooth permissions dynamically on Android
   const requestPermissions = async (): Promise<boolean> => {
     if (isExpoGo) return true;
@@ -240,6 +293,21 @@ export function useWatchSync() {
 
   // Start BLE Scan
   const startScan = useCallback(async () => {
+    // 1. Check if Bluetooth is turned ON
+    const btOn = await ensureBluetoothEnabled();
+    if (!btOn) {
+      // Setup Bluetooth state listener to auto-start scan when Bluetooth is turned ON
+      if (managerRef.current && !isExpoGo) {
+        const sub = managerRef.current.onStateChange((state: string) => {
+          if (state === 'PoweredOn') {
+            sub.remove();
+            startScan();
+          }
+        }, true);
+      }
+      return;
+    }
+
     globalState.status = 'scanning';
     globalState.devices = [];
     updateListeners();
@@ -278,7 +346,6 @@ export function useWatchSync() {
         managerRef.current.startDeviceScan(null, null, (error: any, device: any) => {
           if (error) {
             console.warn('[BLE] Scan error / Not Authorized:', error.message || error);
-            // Fallback to simulation devices if BleError occurs
             if (globalState.devices.length === 0) {
               globalState.devices = MOCK_BLE_DEVICES;
             }
@@ -311,6 +378,34 @@ export function useWatchSync() {
     }
   }, [stopScan]);
 
+  // Trigger success popup & notification when watch connects successfully
+  const handleConnectionSuccess = async (watchInfo: PairedWatch) => {
+    globalState.paired = watchInfo;
+    globalState.status = 'connected';
+    updateListeners();
+    await AsyncStorage.setItem('PAIRED_WATCH_INFO', JSON.stringify(watchInfo));
+
+    // 1. In-app success alert popup
+    Alert.alert(
+      'Smartwatch Connected! 🥳',
+      `Successfully paired with ${watchInfo.name}.\n\n• Battery: ${watchInfo.battery}%\n• Live Heart Rate & Step Sync Active`
+    );
+
+    // 2. OS Notification
+    try {
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: `⌚ Watch Connected: ${watchInfo.name}`,
+          body: `Live Heart Rate & Steps syncing in real-time. Battery: ${watchInfo.battery}%`,
+          sound: undefined,
+        },
+        trigger: null,
+      });
+    } catch (e) {
+      console.warn('[BLE] Success notification warning:', e);
+    }
+  };
+
   // Connect to discovered device (Real BLE Connection & Service Discovery)
   const connectDevice = useCallback(async (id: string, name: string) => {
     stopScan();
@@ -326,18 +421,14 @@ export function useWatchSync() {
           name,
           battery: Math.floor(70 + Math.random() * 25),
           lastSync,
-          steps: Math.floor(4000 + Math.random() * 2500), // starts at 4k-6.5k steps today
+          steps: Math.floor(4000 + Math.random() * 2500),
           calories: 160,
           sleepDuration: '7h 48m',
           sleepScore: 86,
           spo2: 98,
         };
 
-        globalState.paired = watchInfo;
-        globalState.status = 'connected';
-        updateListeners();
-
-        await AsyncStorage.setItem('PAIRED_WATCH_INFO', JSON.stringify(watchInfo));
+        await handleConnectionSuccess(watchInfo);
       }, 1500);
     } else {
       // Real BLE Connection
@@ -377,17 +468,14 @@ export function useWatchSync() {
           name,
           battery: batteryLevel,
           lastSync,
-          steps: 4250, // synced starting steps from real watch
+          steps: 4250,
           calories: 170,
           sleepDuration: '7h 35m',
           sleepScore: 82,
           spo2: 98,
         };
 
-        globalState.paired = watchInfo;
-        globalState.status = 'connected';
-        updateListeners();
-        await AsyncStorage.setItem('PAIRED_WATCH_INFO', JSON.stringify(watchInfo));
+        await handleConnectionSuccess(watchInfo);
 
         // Start Heart Rate GATT service subscription (Standard Service: 0x180D, Characteristic: 0x2A37)
         const hrServiceUuid = '180d';
@@ -411,7 +499,7 @@ export function useWatchSync() {
         console.log('[BLE] Heart rate characteristic monitoring established.');
       } catch (err) {
         console.error('[BLE] Connection crash:', err);
-        Alert.alert('Connection Failed', `Could not establish connection with ${name}.`);
+        Alert.alert('Connection Failed', `Could not establish connection with ${name}. Please check if the device is nearby and powered on.`);
         globalState.status = 'disconnected';
         globalState.paired = null;
         updateListeners();
@@ -440,11 +528,7 @@ export function useWatchSync() {
         spo2: 99,
       };
 
-      globalState.paired = watchInfo;
-      globalState.status = 'connected';
-      updateListeners();
-
-      await AsyncStorage.setItem('PAIRED_WATCH_INFO', JSON.stringify(watchInfo));
+      await handleConnectionSuccess(watchInfo);
     }, 1500);
   }, [stopScan]);
 
