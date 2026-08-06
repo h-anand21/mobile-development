@@ -48,8 +48,8 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
 
     console.log('Successfully registered for Expo Push Token:', tokenData.data);
     return tokenData.data;
-  } catch (error) {
-    console.error('Error registering device for push notifications:', error);
+  } catch (error: any) {
+    console.warn('[Push] Push registration notice (FCM/EAS project setup required for remote tokens):', error?.message || error);
     return null;
   }
 }

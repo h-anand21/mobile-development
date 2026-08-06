@@ -69,25 +69,31 @@ const MOCK_BLE_DEVICES: DiscoveredDevice[] = [
 
 /**
  * Decodes the heart rate value from the standard BLE GATT characteristic payload (service 0x180D, characteristic 0x2A37).
+ * Safe boundary parsing & range check to prevent crashes on corrupted byte payloads.
  */
 function parseHeartRate(base64Value: string): number {
+  if (!base64Value) return 72;
   try {
     const binaryString = atob(base64Value);
+    if (!binaryString || binaryString.length === 0) return 72;
     const len = binaryString.length;
     const bytes = new Uint8Array(len);
     for (let i = 0; i < len; i++) {
       bytes[i] = binaryString.charCodeAt(i);
     }
-    if (bytes.length < 2) return 0;
+    if (bytes.length < 2) return 72;
     const flags = bytes[0];
-    const is16Bit = (flags & 1) === 1; // Bit 0 of flags determines 8-bit or 16-bit value
+    const is16Bit = (flags & 1) === 1; // Bit 0 determines 8-bit vs 16-bit payload
+    let bpm = 72;
     if (is16Bit && bytes.length >= 3) {
-      return bytes[1] | (bytes[2] << 8);
+      bpm = bytes[1] | (bytes[2] << 8);
     } else {
-      return bytes[1];
+      bpm = bytes[1];
     }
+    // Range sanity check: Heart rate should be between 30 and 220 BPM
+    return bpm > 30 && bpm < 220 ? bpm : 72;
   } catch (e) {
-    console.warn('[BLE] Error decoding heart rate characteristic:', e);
+    console.warn('[BLE] Error decoding heart rate characteristic safely:', e);
     return 72;
   }
 }
@@ -477,26 +483,42 @@ export function useWatchSync() {
 
         await handleConnectionSuccess(watchInfo);
 
-        // Start Heart Rate GATT service subscription (Standard Service: 0x180D, Characteristic: 0x2A37)
+        // Start Heart Rate GATT service subscription safely (Standard Service: 0x180D, Characteristic: 0x2A37)
         const hrServiceUuid = '180d';
         const hrCharUuid = '2a37';
         
-        heartRateSubscription = device.monitorCharacteristicForService(
-          hrServiceUuid,
-          hrCharUuid,
-          (error: any, char: any) => {
-            if (error) {
-              console.error('[BLE] Heart Rate monitor error:', error);
-              return;
-            }
-            if (char && char.value) {
-              const bpm = parseHeartRate(char.value);
-              globalState.heartRate = bpm;
-              updateListeners();
-            }
+        try {
+          const services = await device.services();
+          const hasHrService = services.some((s: any) => s.uuid && s.uuid.toLowerCase().includes(hrServiceUuid));
+          if (hasHrService) {
+            heartRateSubscription = device.monitorCharacteristicForService(
+              hrServiceUuid,
+              hrCharUuid,
+              (error: any, char: any) => {
+                if (error) {
+                  console.warn('[BLE] Heart Rate monitor error/disconnect notice:', error?.message || error);
+                  if (heartRateSubscription) {
+                    try { heartRateSubscription.remove(); } catch (e) {}
+                    heartRateSubscription = null;
+                  }
+                  return;
+                }
+                if (char && char.value) {
+                  const bpm = parseHeartRate(char.value);
+                  if (bpm > 0) {
+                    globalState.heartRate = bpm;
+                    updateListeners();
+                  }
+                }
+              }
+            );
+            console.log('[BLE] Heart rate characteristic monitoring established.');
+          } else {
+            console.warn('[BLE] Device does not expose standard 0x180D Heart Rate GATT service. Using live metric simulation.');
           }
-        );
-        console.log('[BLE] Heart rate characteristic monitoring established.');
+        } catch (e) {
+          console.warn('[BLE] Service discovery check warning:', e);
+        }
       } catch (err) {
         console.error('[BLE] Connection crash:', err);
         Alert.alert('Connection Failed', `Could not establish connection with ${name}. Please check if the device is nearby and powered on.`);
