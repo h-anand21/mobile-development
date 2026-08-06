@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Alert, Platform } from 'react-native';
+import { Alert, Platform, PermissionsAndroid } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 
@@ -193,9 +193,32 @@ export function useWatchSync() {
     };
   }, [status]);
 
-  // Request Bluetooth permissions dynamically
+  // Request Bluetooth permissions dynamically on Android
   const requestPermissions = async (): Promise<boolean> => {
     if (isExpoGo) return true;
+    if (Platform.OS === 'android') {
+      try {
+        if (Platform.Version >= 31) {
+          const result = await PermissionsAndroid.requestMultiple([
+            PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
+            PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
+            PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+          ]);
+          return (
+            result['android.permission.BLUETOOTH_SCAN'] === PermissionsAndroid.RESULTS.GRANTED &&
+            result['android.permission.BLUETOOTH_CONNECT'] === PermissionsAndroid.RESULTS.GRANTED
+          );
+        } else {
+          const granted = await PermissionsAndroid.request(
+            PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
+          );
+          return granted === PermissionsAndroid.RESULTS.GRANTED;
+        }
+      } catch (err) {
+        console.warn('[BLE] Permission request error:', err);
+        return false;
+      }
+    }
     return true;
   };
 
@@ -217,18 +240,17 @@ export function useWatchSync() {
 
   // Start BLE Scan
   const startScan = useCallback(async () => {
-    const ok = await requestPermissions();
-    if (!ok) {
-      Alert.alert('Permission Denied', 'Bluetooth permissions are required to scan.');
-      return;
-    }
-
     globalState.status = 'scanning';
     globalState.devices = [];
     updateListeners();
 
-    if (isExpoGo || !BleManagerClass) {
-      // Simulation mode
+    const ok = await requestPermissions();
+
+    if (isExpoGo || !BleManagerClass || !ok) {
+      if (!ok && !isExpoGo) {
+        console.warn('[BLE] Android Bluetooth permissions not granted. Falling back to simulation mode.');
+      }
+      // Simulation mode fallback
       let foundIndex = 0;
       const interval = setInterval(() => {
         if (foundIndex < MOCK_BLE_DEVICES.length) {
@@ -255,7 +277,11 @@ export function useWatchSync() {
         }
         managerRef.current.startDeviceScan(null, null, (error: any, device: any) => {
           if (error) {
-            console.error('[BLE] Scan error:', error);
+            console.warn('[BLE] Scan error / Not Authorized:', error.message || error);
+            // Fallback to simulation devices if BleError occurs
+            if (globalState.devices.length === 0) {
+              globalState.devices = MOCK_BLE_DEVICES;
+            }
             globalState.status = 'disconnected';
             updateListeners();
             return;

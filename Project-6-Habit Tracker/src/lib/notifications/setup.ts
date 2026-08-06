@@ -49,7 +49,7 @@ export async function initializeNotificationChannel() {
         vibrationPattern: [0, 250, 250, 250],
         lightColor: '#5EEAD4',
         lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
-        sound: 'default',
+        sound: undefined,
       });
     } catch (e) {
       console.warn('[Notifications] Failed to create notification channel:', e);
