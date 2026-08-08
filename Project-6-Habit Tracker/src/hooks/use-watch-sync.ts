@@ -21,7 +21,7 @@ export type ConnectionStatus = 'disconnected' | 'scanning' | 'connecting' | 'con
 
 export interface PairedWatch {
   name: string;
-  battery: number;
+  battery: number | null;
   lastSync: string;
   // Smart Watch Metrics
   steps: number;
@@ -59,7 +59,7 @@ const updateListeners = () => listeners.forEach(l => l());
 let connectedDevice: any = null;
 let heartRateSubscription: any = null;
 
-// Simulating Bluetooth scanning nearby watch list for Simulator Mode
+// Simulating Bluetooth scanning nearby watch list ONLY for Expo Go Simulator Mode
 const MOCK_BLE_DEVICES: DiscoveredDevice[] = [
   { id: '1', name: 'Garmin Fenix 7', rssi: -58 },
   { id: '2', name: 'Apple Watch S9', rssi: -62 },
@@ -83,14 +83,13 @@ function parseHeartRate(base64Value: string): number {
     }
     if (bytes.length < 2) return 72;
     const flags = bytes[0];
-    const is16Bit = (flags & 1) === 1; // Bit 0 determines 8-bit vs 16-bit payload
+    const is16Bit = (flags & 1) === 1;
     let bpm = 72;
     if (is16Bit && bytes.length >= 3) {
       bpm = bytes[1] | (bytes[2] << 8);
     } else {
       bpm = bytes[1];
     }
-    // Range sanity check: Heart rate should be between 30 and 220 BPM
     return bpm > 30 && bpm < 220 ? bpm : 72;
   } catch (e) {
     console.warn('[BLE] Error decoding heart rate characteristic safely:', e);
@@ -116,6 +115,125 @@ async function openBluetoothSettings() {
       Linking.openSettings();
     }
   }
+}
+
+/**
+ * Scans 16-bit and 128-bit GATT Battery Services (0x180F / 0x2A19) on the watch.
+ * Returns exact battery percentage (0 - 100%), or null if watch does not expose unencrypted battery GATT.
+ */
+async function readRealDeviceBatteryLevel(device: any): Promise<number | null> {
+  if (!device) return null;
+  const shortService = '180f';
+  const shortChar = '2a19';
+  const fullService = '0000180f-0000-1000-8000-00805f9b34fb';
+  const fullChar = '00002a19-0000-1000-8000-00805f9b34fb';
+
+  // 1. Try reading standard 128-bit / 16-bit Battery characteristic directly
+  try {
+    const char = await device.readCharacteristicForService(fullService, fullChar);
+    if (char && char.value) {
+      const binaryString = atob(char.value);
+      if (binaryString && binaryString.length > 0) {
+        const val = binaryString.charCodeAt(0);
+        if (val >= 0 && val <= 100) {
+          console.log(`[BLE] Real battery level read (128-bit): ${val}%`);
+          return val;
+        }
+      }
+    }
+  } catch (e1) {}
+
+  try {
+    const char = await device.readCharacteristicForService(shortService, shortChar);
+    if (char && char.value) {
+      const binaryString = atob(char.value);
+      if (binaryString && binaryString.length > 0) {
+        const val = binaryString.charCodeAt(0);
+        if (val >= 0 && val <= 100) {
+          console.log(`[BLE] Real battery level read (16-bit): ${val}%`);
+          return val;
+        }
+      }
+    }
+  } catch (e2) {}
+
+  // 2. Iterate through all discovered services & find any characteristic containing '2a19'
+  try {
+    const services = await device.services();
+    for (const service of services) {
+      const sUuid = service.uuid.toLowerCase();
+      if (sUuid.includes('180f') || sUuid.includes('battery')) {
+        const chars = await device.characteristicsForService(service.uuid);
+        for (const char of chars) {
+          if (char.uuid.toLowerCase().includes('2a19')) {
+            try {
+              const readChar = await char.read();
+              if (readChar && readChar.value) {
+                const decoded = atob(readChar.value);
+                if (decoded && decoded.length > 0) {
+                  const val = decoded.charCodeAt(0);
+                  if (val > 0 && val <= 100) {
+                    console.log(`[BLE] Real battery level found in service scan: ${val}%`);
+                    return val;
+                  }
+                }
+              }
+            } catch (e) {}
+          }
+        }
+      }
+    }
+  } catch (e3) {
+    console.warn('[BLE] Exhaustive battery scan warning:', e3);
+  }
+
+  // Return null if watch locks/hides battery GATT service
+  return null;
+}
+
+/**
+ * Scans all discovered GATT services & characteristics on the watch for step count payloads.
+ * Supports standard GATT RSC (0x1814 / 0x2A53) and common fitness band step characteristics (0xFEE0 / 0xFEE7).
+ */
+async function discoverAndReadWatchSteps(device: any): Promise<number | null> {
+  if (!device) return null;
+  try {
+    const services = await device.services();
+    for (const service of services) {
+      const sUuid = service.uuid.toLowerCase();
+      // Check standard RSC (0x1814) or fitness service (0xFE00 / 0xFEE0)
+      if (sUuid.includes('1814') || sUuid.includes('fee0') || sUuid.includes('fee7')) {
+        try {
+          const chars = await device.characteristicsForService(service.uuid);
+          for (const char of chars) {
+            if (char.isReadable) {
+              const readChar = await char.read();
+              if (readChar.value) {
+                const binary = atob(readChar.value);
+                if (binary && binary.length >= 2) {
+                  const bytes = new Uint8Array(binary.length);
+                  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+                  let stepsVal = 0;
+                  if (bytes.length >= 4) {
+                    stepsVal = bytes[0] | (bytes[1] << 8) | (bytes[2] << 16) | (bytes[3] << 24);
+                  } else if (bytes.length >= 2) {
+                    stepsVal = bytes[0] | (bytes[1] << 8);
+                  }
+                  if (stepsVal > 50 && stepsVal < 100000) {
+                    console.log(`[BLE] Successfully extracted watch steps: ${stepsVal}`);
+                    return stepsVal;
+                  }
+                }
+              }
+            }
+          }
+        } catch (e) {}
+      }
+    }
+  } catch (e) {
+    console.warn('[BLE] Could not read GATT step characteristics:', e);
+  }
+  return null;
 }
 
 export function useWatchSync() {
@@ -349,6 +467,41 @@ export function useWatchSync() {
         if (!managerRef.current) {
           managerRef.current = new BleManagerClass();
         }
+
+        // Query devices ALREADY connected at OS level using comprehensive 16-bit and 128-bit smartwatch service UUIDs
+        const SMARTWATCH_SERVICE_UUIDS = [
+          '180d', '0000180d-0000-1000-8000-00805f9b34fb',
+          '180f', '0000180f-0000-1000-8000-00805f9b34fb',
+          '1800', '00001800-0000-1000-8000-00805f9b34fb',
+          '1801', '00001801-0000-1000-8000-00805f9b34fb',
+          '180a', '0000180a-0000-1000-8000-00805f9b34fb',
+          '1814', '00001814-0000-1000-8000-00805f9b34fb',
+          'fee0', '0000fee0-0000-1000-8000-00805f9b34fb',
+          'fee7', '0000fee7-0000-1000-8000-00805f9b34fb',
+          'feea', '0000feea-0000-1000-8000-00805f9b34fb',
+          'fef5', '0000fef5-0000-1000-8000-00805f9b34fb',
+          '6e400001-b5a3-f393-e0a9-e50e24dca9e6',
+        ];
+
+        try {
+          const connected = await managerRef.current.connectedDevices(SMARTWATCH_SERVICE_UUIDS);
+          if (connected && connected.length > 0) {
+            connected.forEach((d: any) => {
+              if (d && d.id) {
+                const devName = d.name || d.localName || 'Paired Smart Watch';
+                const exists = globalState.devices.some(existing => existing.id === d.id);
+                if (!exists) {
+                  console.log('[BLE] Found OS-connected watch:', devName, d.id);
+                  globalState.devices.push({ id: d.id, name: devName, rssi: -40 });
+                  updateListeners();
+                }
+              }
+            });
+          }
+        } catch (eConn) {
+          console.warn('[BLE] Query connected devices notice:', eConn);
+        }
+
         managerRef.current.startDeviceScan(null, null, (error: any, device: any) => {
           if (error) {
             console.warn('[BLE] Scan error / Not Authorized:', error.message || error);
@@ -359,12 +512,13 @@ export function useWatchSync() {
             updateListeners();
             return;
           }
-          if (device && device.name) {
+          const dName = device ? (device.name || device.localName) : null;
+          if (device && dName) {
             const exists = globalState.devices.some(d => d.id === device.id);
             if (!exists) {
               const newDev: DiscoveredDevice = {
                 id: device.id,
-                name: device.name,
+                name: dName,
                 rssi: device.rssi || -100,
               };
               globalState.devices = [...globalState.devices, newDev];
@@ -391,10 +545,12 @@ export function useWatchSync() {
     updateListeners();
     await AsyncStorage.setItem('PAIRED_WATCH_INFO', JSON.stringify(watchInfo));
 
+    const batteryText = watchInfo.battery !== null ? `${watchInfo.battery}%` : 'Not Exposed by Watch';
+
     // 1. In-app success alert popup
     Alert.alert(
       'Smartwatch Connected! 🥳',
-      `Successfully paired with ${watchInfo.name}.\n\n• Battery: ${watchInfo.battery}%\n• Live Heart Rate & Step Sync Active`
+      `Successfully paired with ${watchInfo.name}.\n\n• Battery: ${batteryText}\n• Live Heart Rate & Step Sync Active`
     );
 
     // 2. OS Notification
@@ -402,7 +558,7 @@ export function useWatchSync() {
       await Notifications.scheduleNotificationAsync({
         content: {
           title: `⌚ Watch Connected: ${watchInfo.name}`,
-          body: `Live Heart Rate & Steps syncing in real-time. Battery: ${watchInfo.battery}%`,
+          body: `Live Sync Active • Battery: ${batteryText}`,
           sound: undefined,
         },
         trigger: null,
@@ -419,7 +575,7 @@ export function useWatchSync() {
     updateListeners();
 
     if (isExpoGo || !BleManagerClass) {
-      // Simulation Mode
+      // Simulation Mode (Expo Go only)
       setTimeout(async () => {
         const now = new Date();
         const lastSync = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -444,38 +600,39 @@ export function useWatchSync() {
         }
 
         console.log(`[BLE] Connecting to device: ${name} (${id})`);
-        const device = await managerRef.current.connectToDevice(id);
+        let device: any = null;
+        try {
+          const isConn = await managerRef.current.isDeviceConnected(id);
+          if (isConn) {
+            console.log(`[BLE] Device ${id} is already connected at OS level. Reusing GATT connection.`);
+            device = await managerRef.current.devices([id]).then((devs: any[]) => devs[0]);
+          }
+        } catch (eCheck) {}
+
+        if (!device) {
+          device = await managerRef.current.connectToDevice(id);
+        }
         connectedDevice = device;
         
         console.log('[BLE] Discovering services and characteristics...');
         await device.discoverAllServicesAndCharacteristics();
         
-        // Query battery level characteristic (Standard GATT Battery Service: 0x180F, Characteristic: 0x2A19)
-        let batteryLevel = 90;
-        try {
-          const batteryServiceUuid = '180f';
-          const batteryCharUuid = '2a19';
-          const chars = await device.characteristicsForService(batteryServiceUuid);
-          const batteryChar = chars.find((c: any) => c.uuid.toLowerCase() === batteryCharUuid);
-          if (batteryChar) {
-            const readChar = await batteryChar.read();
-            if (readChar.value) {
-              const decoded = atob(readChar.value);
-              batteryLevel = decoded.charCodeAt(0) || 90;
-            }
-          }
-        } catch (e) {
-          console.warn('[BLE] Battery characteristic not supported or failed to read:', e);
-        }
+        // Query real battery level characteristic (returns null if watch locks/hides battery GATT)
+        const realBatteryVal = await readRealDeviceBatteryLevel(device);
+
+        // Attempt to read real step count payload from GATT characteristics
+        const realWatchSteps = await discoverAndReadWatchSteps(device);
+        const initialWatchSteps = realWatchSteps !== null ? realWatchSteps : 0;
+        const initialWatchCalories = Math.round(initialWatchSteps * 0.04);
 
         const now = new Date();
         const lastSync = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         const watchInfo: PairedWatch = {
           name,
-          battery: batteryLevel,
+          battery: realBatteryVal,
           lastSync,
-          steps: 4250,
-          calories: 170,
+          steps: initialWatchSteps,
+          calories: initialWatchCalories,
           sleepDuration: '7h 35m',
           sleepScore: 82,
           spo2: 98,

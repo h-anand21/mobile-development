@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View, Text, StyleSheet, Pressable, ScrollView,
   Switch, Alert, BackHandler, Image, TextInput, Dimensions,
@@ -452,7 +452,7 @@ export default function SettingsScreen() {
                   <View style={styles.rowText}>
                     <Text style={[styles.rowTitle, { color: T.teal }]}>{pairedDevice.name}</Text>
                     <Text style={[styles.rowDesc, { color: T.textMuted }]}>
-                      Connected  Battery: {pairedDevice.battery}%  {pairedDevice.lastSync}
+                      Connected • Battery: {pairedDevice.battery !== null ? `${pairedDevice.battery}%` : 'N/A'} • {pairedDevice.lastSync}
                     </Text>
                   </View>
                   <Pressable onPress={disconnectDevice}

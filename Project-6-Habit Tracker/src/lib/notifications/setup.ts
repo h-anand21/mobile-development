@@ -14,11 +14,10 @@ import { REMINDERS_CHANNEL_ID } from '../../constants/channels';
  */
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowAlert: true,
     shouldShowBanner: true,
     shouldShowList: true,
     shouldPlaySound: true,
-    shouldSetBadge: false, // badge not supported in Expo Go
+    shouldSetBadge: false,
   }),
 });
 

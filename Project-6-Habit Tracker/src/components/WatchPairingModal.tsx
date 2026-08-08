@@ -189,44 +189,6 @@ export default function WatchPairingModal({ visible, onClose }: WatchPairingModa
                     </Text>
                   </Pressable>
                 ))}
-
-                {/* Custom Device Pairing Section */}
-                <View style={[T.neo, styles.customPairSection]}>
-                  <Text style={[styles.customLabel, { color: T.textPrimary }]}>
-                    Pair Custom Smart Watch
-                  </Text>
-                  <Text style={[styles.customSub, { color: T.textMuted }]}>
-                    Enter any smartwatch model to pair it instantly
-                  </Text>
-                  <View style={styles.inputRow}>
-                    <TextInput
-                      style={[
-                        styles.input,
-                        {
-                          color: T.textPrimary,
-                          borderColor: T.borderMid,
-                          backgroundColor: T.isDark ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.4)',
-                        },
-                      ]}
-                      placeholder="e.g., Noise Fit Active, Fire-Boltt"
-                      placeholderTextColor={T.textMuted}
-                      value={customName}
-                      onChangeText={setCustomName}
-                      maxLength={24}
-                    />
-                    <Pressable
-                      onPress={handlePairCustom}
-                      style={[
-                        styles.pairBtn,
-                        { backgroundColor: T.teal },
-                      ]}
-                    >
-                      <Text style={[styles.pairBtnText, { color: T.isDark ? T.bg : '#ffffff' }]}>
-                        Connect
-                      </Text>
-                    </Pressable>
-                  </View>
-                </View>
               </>
             )}
           </ScrollView>
