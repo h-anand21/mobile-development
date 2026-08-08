@@ -17,6 +17,7 @@ import Svg, { Path, Circle, Text as SvgText } from "react-native-svg";
 import { useTheme } from "../context/ThemeContext";
 import TabBar from "../components/TabBar";
 import { useWatchSync } from "../hooks/use-watch-sync";
+import { useHealthConnect } from "../hooks/use-health-connect";
 import WatchPairingModal from "../components/WatchPairingModal";
 import { useHabits } from "../hooks/use-habits";
 import { useWorkout } from "../hooks/use-workout";
@@ -29,6 +30,7 @@ export default function SettingsScreen() {
   const router = useRouter();
   const { T, isDark, toggleTheme } = useTheme();
   const { pairedDevice, disconnectDevice } = useWatchSync();
+  const { healthData, isSyncing, openHealthConnectSettings, syncHealthData } = useHealthConnect();
   const { habits } = useHabits();
   const { allSessions } = useWorkout();
 
@@ -468,11 +470,41 @@ export default function SettingsScreen() {
                   </View>
                   <View style={styles.rowText}>
                     <Text style={[styles.rowTitle, { color: T.textPrimary }]}>Pair Smart Watch</Text>
-                    <Text style={[styles.rowDesc, { color: T.textMuted }]}>Connect Fitbit, Apple Watch, Garmin or Noise</Text>
+                    <Text style={[styles.rowDesc, { color: T.textMuted }]}>Connect Fitbit, Apple Watch, Garmin, Noise, Evolve</Text>
                   </View>
                   <Ionicons name="chevron-forward" size={18} color={T.textMuted} />
                 </Pressable>
               )}
+
+              {/* Health Connect Bridge Row */}
+              <View style={[styles.row, { borderTopWidth: 1, borderTopColor: T.borderLight }]}>
+                <View style={[styles.rowIconBubble, { backgroundColor: "rgba(94, 234, 212, 0.15)" }]}>
+                  <Ionicons name="heart-circle-outline" size={22} color={T.teal} />
+                </View>
+                <View style={styles.rowText}>
+                  <Text style={[styles.rowTitle, { color: T.textPrimary }]}>Android Health Connect</Text>
+                  <Text style={[styles.rowDesc, { color: T.textMuted }]}>
+                    {healthData.isConnected ? `Synced • ${healthData.todaySteps.toLocaleString()} steps` : 'Sync DaFit, NoiseFit, Google Fit'}
+                  </Text>
+                </View>
+                <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
+                  <Pressable
+                    onPress={() => syncHealthData(pairedDevice?.name ? `${pairedDevice.name} via Health Connect` : 'Google Health Connect')}
+                    disabled={isSyncing}
+                    style={[styles.disconnectBtn, { backgroundColor: T.teal, paddingHorizontal: 12 }]}
+                  >
+                    <Text style={[styles.disconnectBtnText, { color: '#0A1211', fontWeight: '800' }]}>
+                      {isSyncing ? 'Syncing...' : 'Sync'}
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={openHealthConnectSettings}
+                    style={[styles.disconnectBtn, { backgroundColor: T.bgInput, paddingHorizontal: 8 }]}
+                  >
+                    <Ionicons name="settings-outline" size={15} color={T.textMuted} />
+                  </Pressable>
+                </View>
+              </View>
             </View>
           </Animated.View>
 
