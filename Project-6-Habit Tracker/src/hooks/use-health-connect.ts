@@ -16,6 +16,7 @@ export interface HealthConnectData {
 
 const HEALTH_CONNECT_PACKAGE = 'com.google.android.apps.healthdata';
 const STORAGE_KEY = 'HEALTH_CONNECT_SYNC_DATA';
+const GOOGLE_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID || '1051894445044-9eg6ejtek88cbgej5hnmg2on6c5i7dqm.apps.googleusercontent.com';
 
 export function useHealthConnect() {
   const [healthData, setHealthData] = useState<HealthConnectData>({
@@ -151,11 +152,31 @@ export function useHealthConnect() {
     }
   }, []);
 
+  /**
+   * Launch official Google OAuth login for Google Health / Fitbit Cloud
+   */
+  const loginWithGoogle = useCallback(async () => {
+    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&response_type=token&scope=https://www.googleapis.com/auth/fitness.activity.read%20https://www.googleapis.com/auth/fitness.heart_rate.read%20https://www.googleapis.com/auth/fitness.sleep.read&redirect_uri=habitflow://oauth/google`;
+    
+    try {
+      const supported = await Linking.canOpenURL(authUrl);
+      if (supported) {
+        await Linking.openURL(authUrl);
+      } else {
+        await Linking.openURL(`https://accounts.google.com/`);
+      }
+    } catch (e) {
+      console.warn('[GoogleHealth] Login error:', e);
+      Alert.alert('Google Health', 'Opening Google account permissions in browser.');
+    }
+  }, []);
+
   return {
     healthData,
     isSyncing,
     openHealthConnectSettings,
     openCompanionApp,
     syncHealthData,
+    loginWithGoogle,
   };
 }
