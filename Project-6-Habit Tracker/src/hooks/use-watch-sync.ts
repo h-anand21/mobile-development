@@ -157,29 +157,44 @@ async function readRealDeviceBatteryLevel(device: any): Promise<number | null> {
     }
   } catch (e2) {}
 
-  // 2. Iterate through all discovered services & find any characteristic containing '2a19'
+  // 2. Iterate through all discovered services & find any characteristic containing '2a19' or readable battery bytes
   try {
     const services = await device.services();
     for (const service of services) {
       const sUuid = service.uuid.toLowerCase();
-      if (sUuid.includes('180f') || sUuid.includes('battery')) {
-        const chars = await device.characteristicsForService(service.uuid);
-        for (const char of chars) {
-          if (char.uuid.toLowerCase().includes('2a19')) {
-            try {
-              const readChar = await char.read();
-              if (readChar && readChar.value) {
-                const decoded = atob(readChar.value);
-                if (decoded && decoded.length > 0) {
-                  const val = decoded.charCodeAt(0);
-                  if (val > 0 && val <= 100) {
-                    console.log(`[BLE] Real battery level found in service scan: ${val}%`);
-                    return val;
-                  }
+      const chars = await device.characteristicsForService(service.uuid);
+      for (const char of chars) {
+        if (char.uuid.toLowerCase().includes('2a19') || sUuid.includes('180f') || sUuid.includes('battery')) {
+          try {
+            const readChar = await char.read();
+            if (readChar && readChar.value) {
+              const decoded = atob(readChar.value);
+              if (decoded && decoded.length > 0) {
+                const val = decoded.charCodeAt(0);
+                if (val > 0 && val <= 100) {
+                  console.log(`[BLE] Real battery level found in service scan: ${val}%`);
+                  return val;
                 }
               }
-            } catch (e) {}
-          }
+            }
+          } catch (e) {}
+        }
+
+        // 3. Check for single-byte readable telemetry characteristics (common in JL / Realtek watch chipsets like Evolve)
+        if (char.isReadable) {
+          try {
+            const res = await char.read();
+            if (res && res.value) {
+              const bin = atob(res.value);
+              if (bin && bin.length === 1) {
+                const byteVal = bin.charCodeAt(0);
+                if (byteVal >= 15 && byteVal <= 100) {
+                  console.log(`[BLE] Real single-byte battery telemetry found: ${byteVal}%`);
+                  return byteVal;
+                }
+              }
+            }
+          } catch (eRead) {}
         }
       }
     }
