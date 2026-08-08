@@ -477,7 +477,7 @@ export default function SettingsScreen() {
               )}
 
               {/* Health Connect Bridge Row */}
-              <View style={[styles.row, { borderTopWidth: 1, borderTopColor: T.borderLight }]}>
+              <View style={[styles.row, { borderTopWidth: 1, borderTopColor: T.border }]}>
                 <View style={[styles.rowIconBubble, { backgroundColor: "rgba(94, 234, 212, 0.15)" }]}>
                   <Ionicons name="heart-circle-outline" size={22} color={T.teal} />
                 </View>
@@ -499,7 +499,7 @@ export default function SettingsScreen() {
                   </Pressable>
                   <Pressable
                     onPress={openHealthConnectSettings}
-                    style={[styles.disconnectBtn, { backgroundColor: T.bgInput, paddingHorizontal: 8 }]}
+                    style={[styles.disconnectBtn, { backgroundColor: T.isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', paddingHorizontal: 8 }]}
                   >
                     <Ionicons name="settings-outline" size={15} color={T.textMuted} />
                   </Pressable>

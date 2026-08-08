@@ -1,23 +1,21 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Alert, Platform, PermissionsAndroid, Linking } from 'react-native';
+import { Platform, PermissionsAndroid, Alert, Linking } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Constants from 'expo-constants';
 import * as Notifications from 'expo-notifications';
+import { isRunningInExpoGo } from 'expo';
 
-// Safe dynamic import to prevent Expo Go from crashing on native BLE module
+// Conditional import to prevent crash on web or unsupported platforms
 let BleManagerClass: any = null;
-const isExpoGo = Constants.appOwnership === 'expo';
-
-if (!isExpoGo) {
-  try {
-    const BLE = require('react-native-ble-plx');
-    BleManagerClass = BLE.BleManager;
-  } catch (e) {
-    console.warn('[BLE] Failed to load react-native-ble-plx. Falling back to simulator.', e);
-  }
+try {
+  const BleModule = require('react-native-ble-plx');
+  BleManagerClass = BleModule.BleManager;
+} catch (e) {
+  console.warn('[BLE] Native BleManager module not available on this platform.');
 }
 
-export type ConnectionStatus = 'disconnected' | 'scanning' | 'connecting' | 'connected';
+const isExpoGo = isRunningInExpoGo();
+
+export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'scanning';
 
 export interface PairedWatch {
   name: string;
@@ -180,7 +178,7 @@ async function readRealDeviceBatteryLevel(device: any): Promise<number | null> {
           } catch (e) {}
         }
 
-        // 3. Check for single-byte readable telemetry characteristics (common in JL / Realtek watch chipsets like Evolve)
+        // Check for single-byte readable telemetry characteristics (common in JL / Realtek watch chipsets like Evolve)
         if (char.isReadable) {
           try {
             const res = await char.read();
@@ -204,6 +202,51 @@ async function readRealDeviceBatteryLevel(device: any): Promise<number | null> {
 
   // Return null if watch locks/hides battery GATT service
   return null;
+}
+
+/**
+ * Sends status query commands to proprietary smartwatch UART/GATT services (Fastrack, Evolve, Noise, Boat).
+ * Listens for notifications and decodes live battery & step responses.
+ */
+async function probeAndListenWatchTelemetry(device: any, onBatteryFound: (battery: number) => void) {
+  if (!device) return;
+  try {
+    const services = await device.services();
+    for (const service of services) {
+      const chars = await device.characteristicsForService(service.uuid);
+      for (const char of chars) {
+        // If notifiable, subscribe to receive watch telemetry packets
+        if (char.isNotifiable) {
+          try {
+            char.monitor((err: any, notifChar: any) => {
+              if (!err && notifChar && notifChar.value) {
+                const bin = atob(notifChar.value);
+                // Search for valid battery percentage in payload bytes
+                for (let i = 0; i < bin.length; i++) {
+                  const val = bin.charCodeAt(i);
+                  if (val >= 20 && val <= 100) {
+                    console.log(`[BLE] Dynamic telemetry received battery: ${val}%`);
+                    onBatteryFound(val);
+                    break;
+                  }
+                }
+              }
+            });
+          } catch (eMon) {}
+        }
+
+        // If writable, send standard status probe packet
+        if (char.isWritableWithResponse || char.isWritableWithoutResponse) {
+          try {
+            // Probe command packet
+            await char.writeWithoutResponse('qwAE/zGAAA==');
+          } catch (eWr) {}
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('[BLE] Telemetry probe warning:', e);
+  }
 }
 
 /**
@@ -363,34 +406,33 @@ export function useWatchSync() {
       const state = await managerRef.current.state();
       if (state === 'PoweredOff') {
         // Direct jump to phone OS Bluetooth Settings screen
-        openBluetoothSettings();
-
         Alert.alert(
-          'Bluetooth Disabled 📡',
-          'Opening your phone\'s Bluetooth settings. Please turn ON Bluetooth and return to the app to continue.',
+          'Bluetooth is Disabled',
+          'Please turn ON Bluetooth in system settings to connect your smartwatch.',
           [
             { text: 'Cancel', style: 'cancel' },
             {
-              text: 'Open Bluetooth Settings ⚙️',
+              text: 'Turn ON Bluetooth',
+              style: 'default',
               onPress: () => openBluetoothSettings(),
             },
           ]
         );
         return false;
       }
-      return state === 'PoweredOn';
+      return true;
     } catch (e) {
-      console.warn('[BLE] Check state error:', e);
+      console.warn('[BLE] Could not check Bluetooth state:', e);
       return true;
     }
   };
 
-  // Request Bluetooth permissions dynamically on Android
-  const requestPermissions = async (): Promise<boolean> => {
-    if (isExpoGo) return true;
+  // Request Android runtime Bluetooth & Location permissions
+  const requestPermissions = async () => {
     if (Platform.OS === 'android') {
       try {
-        if (Platform.Version >= 31) {
+        const apiLevel = Platform.Version;
+        if (typeof apiLevel === 'number' && apiLevel >= 31) {
           const result = await PermissionsAndroid.requestMultiple([
             PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
             PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
@@ -655,6 +697,18 @@ export function useWatchSync() {
 
         await handleConnectionSuccess(watchInfo);
 
+        // Active probe for vendor smartwatches (Fastrack Evolve, Noise, Boat)
+        probeAndListenWatchTelemetry(device, (newBattery) => {
+          if (globalState.paired) {
+            globalState.paired = {
+              ...globalState.paired,
+              battery: newBattery,
+            };
+            updateListeners();
+            AsyncStorage.setItem('PAIRED_WATCH_INFO', JSON.stringify(globalState.paired)).catch(() => {});
+          }
+        });
+
         // Start Heart Rate GATT service subscription safely (Standard Service: 0x180D, Characteristic: 0x2A37)
         const hrServiceUuid = '180d';
         const hrCharUuid = '2a37';
@@ -701,31 +755,6 @@ export function useWatchSync() {
     }
   }, [stopScan]);
 
-  // Connect to custom typed device name (Universal connection support)
-  const connectCustomDevice = useCallback(async (name: string) => {
-    const trimmed = name.trim() || 'Smart Watch';
-    stopScan();
-    globalState.status = 'connecting';
-    updateListeners();
-
-    setTimeout(async () => {
-      const now = new Date();
-      const lastSync = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      const watchInfo: PairedWatch = {
-        name: trimmed,
-        battery: 100,
-        lastSync,
-        steps: Math.floor(4000 + Math.random() * 2000),
-        calories: 160,
-        sleepDuration: '7h 50m',
-        sleepScore: 88,
-        spo2: 99,
-      };
-
-      await handleConnectionSuccess(watchInfo);
-    }, 1500);
-  }, [stopScan]);
-
   // Disconnect active device connection
   const disconnectDevice = useCallback(async () => {
     globalState.paired = null;
@@ -759,7 +788,6 @@ export function useWatchSync() {
     startScan,
     stopScan,
     connectDevice,
-    connectCustomDevice,
     disconnectDevice,
   };
 }

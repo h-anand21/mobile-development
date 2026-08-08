@@ -70,10 +70,7 @@ export default function WatchPairingModal({ visible, onClose }: WatchPairingModa
     startScan,
     stopScan,
     connectDevice,
-    connectCustomDevice,
   } = useWatchSync();
-
-  const [customName, setCustomName] = useState('');
 
   // Start scan on open, stop on close
   useEffect(() => {
@@ -81,7 +78,6 @@ export default function WatchPairingModal({ visible, onClose }: WatchPairingModa
       startScan();
     } else {
       stopScan();
-      setCustomName('');
     }
   }, [visible]);
 
@@ -94,13 +90,6 @@ export default function WatchPairingModal({ visible, onClose }: WatchPairingModa
       return () => clearTimeout(timer);
     }
   }, [status, visible]);
-
-  const handlePairCustom = () => {
-    if (customName.trim()) {
-      connectCustomDevice(customName);
-      // Wait to clear the name, or clear it upon connection so they see what name they wrote
-    }
-  };
 
   return (
     <Modal
