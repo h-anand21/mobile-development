@@ -303,8 +303,6 @@ export function useWatchSync() {
 
   const managerRef = useRef<any>(null);
   const scanTimeoutRef = useRef<any>(null);
-  const hrIntervalRef = useRef<any>(null);
-  const stepsIntervalRef = useRef<any>(null);
 
   // Sync with global state changes
   useEffect(() => {
@@ -320,60 +318,12 @@ export function useWatchSync() {
     };
   }, []);
 
-  // Simulated metrics updater loop (Active Steps, SpO2, Heart Rate)
+  // Steady Heart Rate & State Sync (Zero Fake/Artificial Increments)
   useEffect(() => {
-    if (status === 'connected') {
-      // 1. Heart rate fluctuation loop
-      hrIntervalRef.current = setInterval(() => {
-        if (isExpoGo || !connectedDevice) {
-          AsyncStorage.getItem('ACTIVE_WORKOUT_STATE').then(val => {
-            const isWorkout = val !== null;
-            globalState.heartRate = Math.floor(
-              isWorkout
-                ? 110 + Math.random() * 25 // 110-135 BPM during workout
-                : 65 + Math.random() * 10  // 65-75 BPM resting
-            );
-            
-            // Fluctuate SpO2 slightly as well
-            if (globalState.paired) {
-              const prev = globalState.paired;
-              globalState.paired = {
-                ...prev,
-                spo2: Math.min(100, Math.max(95, prev.spo2 + (Math.random() > 0.5 ? 1 : -1))),
-              };
-            }
-            updateListeners();
-          });
-        }
-      }, 2000);
-
-      // 2. Steps update loop (simulates walk increments)
-      stepsIntervalRef.current = setInterval(() => {
-        if (globalState.paired) {
-          const prev = globalState.paired;
-          // Add 2-6 steps every 5 seconds
-          const stepsAdded = Math.floor(Math.random() * 5) + 2;
-          const newSteps = prev.steps + stepsAdded;
-          const newCalories = Math.round(newSteps * 0.04);
-          
-          globalState.paired = {
-            ...prev,
-            steps: newSteps,
-            calories: newCalories,
-          };
-          updateListeners();
-          AsyncStorage.setItem('PAIRED_WATCH_INFO', JSON.stringify(globalState.paired)).catch(() => {});
-        }
-      }, 5000);
-    } else {
+    if (status !== 'connected') {
       globalState.heartRate = 0;
       updateListeners();
     }
-
-    return () => {
-      if (hrIntervalRef.current) clearInterval(hrIntervalRef.current);
-      if (stepsIntervalRef.current) clearInterval(stepsIntervalRef.current);
-    };
   }, [status]);
 
   // Prompt user & directly open OS Bluetooth Settings page if Bluetooth is OFF
