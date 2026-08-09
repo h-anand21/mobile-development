@@ -18,6 +18,7 @@ const isExpoGo = isRunningInExpoGo();
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'scanning';
 
 export interface PairedWatch {
+  id?: string;
   name: string;
   battery: number | null;
   lastSync: string;
@@ -317,27 +318,6 @@ export function useWatchSync() {
     return () => {
       listeners.delete(handler);
     };
-  }, []);
-
-  // Initialize and load saved paired device from storage
-  useEffect(() => {
-    async function loadPairedDevice() {
-      try {
-        const saved = await AsyncStorage.getItem('PAIRED_WATCH_INFO');
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          globalState.paired = parsed;
-          globalState.status = 'connected';
-          updateListeners();
-        }
-      } catch (e) {
-        console.error('[BLE] Failed to load paired watch info:', e);
-      }
-    }
-    
-    if (!globalState.paired && globalState.status === 'disconnected') {
-      loadPairedDevice();
-    }
   }, []);
 
   // Simulated metrics updater loop (Active Steps, SpO2, Heart Rate)
@@ -685,6 +665,7 @@ export function useWatchSync() {
         const now = new Date();
         const lastSync = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         const watchInfo: PairedWatch = {
+          id,
           name,
           battery: realBatteryVal,
           lastSync,
@@ -754,6 +735,51 @@ export function useWatchSync() {
       }
     }
   }, [stopScan]);
+
+  // Initialize and auto-reconnect saved paired device on app startup
+  useEffect(() => {
+    async function loadAndAutoConnectPairedDevice() {
+      try {
+        const saved = await AsyncStorage.getItem('PAIRED_WATCH_INFO');
+        if (saved) {
+          const parsed: PairedWatch = JSON.parse(saved);
+          globalState.paired = parsed;
+          updateListeners();
+
+          // Check if Bluetooth is PoweredOn for real BLE reconnection
+          if (!isExpoGo && BleManagerClass && parsed.id) {
+            if (!managerRef.current) {
+              managerRef.current = new BleManagerClass();
+            }
+            const state = await managerRef.current.state();
+            if (state === 'PoweredOn') {
+              console.log(`[BLE] Auto-reconnecting to paired watch on app launch: ${parsed.name} (${parsed.id})`);
+              connectDevice(parsed.id, parsed.name);
+            } else {
+              console.log('[BLE] Bluetooth is OFF on app launch. Listening for Bluetooth state change to auto-reconnect.');
+              // Listen for when user toggles Bluetooth ON in settings/control center
+              const sub = managerRef.current.onStateChange((newState: string) => {
+                if (newState === 'PoweredOn') {
+                  sub.remove();
+                  console.log(`[BLE] Bluetooth turned ON! Auto-reconnecting to: ${parsed.name}`);
+                  connectDevice(parsed.id!, parsed.name);
+                }
+              }, true);
+            }
+          } else {
+            globalState.status = 'connected';
+            updateListeners();
+          }
+        }
+      } catch (e) {
+        console.error('[BLE] Failed to load paired watch info:', e);
+      }
+    }
+    
+    if (!globalState.paired && globalState.status === 'disconnected') {
+      loadAndAutoConnectPairedDevice();
+    }
+  }, [connectDevice]);
 
   // Disconnect active device connection
   const disconnectDevice = useCallback(async () => {
