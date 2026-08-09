@@ -177,7 +177,7 @@ export default function ActivityScreen() {
   const { habits, loadHabits, toggleCompleteHabit, deleteHabit } = useHabits();
 
   const { pairedDevice, heartRate } = useWatchSync();
-  const [activeMode, setActiveMode] = useState<'summary' | 'habits' | 'workout'>('habits');
+  const [activeMode, setActiveMode] = useState<'summary' | 'habits' | 'workout'>('summary');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCat, setSelectedCat] = useState<'all' | 'health' | 'work' | 'mind' | 'body' | 'other'>('all');
 

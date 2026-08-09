@@ -24,6 +24,7 @@ import EmptyState from '../components/EmptyState';
 import SpringPressable from '../components/SpringPressable';
 import TabBar from '../components/TabBar';
 import { usePedometer } from '../hooks/use-pedometer';
+import { useWatchSync } from '../hooks/use-watch-sync';
 import { getLocalDateString, getActiveStreak, getYesterdayDateString } from '../lib/habits/streak';
 
 const { width: SW } = Dimensions.get('window');
@@ -192,8 +193,8 @@ function DayCell({ label, date, isToday, isSelected, count, total, onPress, T }:
   );
 }
 
-// ─── Neumorphic Icon Button ───
-function NeoBtn({ icon, size = 18, onPress, T }: { icon: string; size?: number; onPress?: () => void; T: any }) {
+// ─── Neomorphic Button with Spring Scale Effect ───
+function NeoButton({ icon, size = 18, onPress, T }: { icon: string; size?: number; onPress: () => void; T: any }) {
   const sc = useSharedValue(1);
   const aStyle = useAnimatedStyle(() => ({ transform: [{ scale: sc.value }] }));
   return (
@@ -212,12 +213,17 @@ function NeoBtn({ icon, size = 18, onPress, T }: { icon: string; size?: number; 
 // ─── Activity Mini Widget ───
 function ActivityWidget({ T, router }: { T: any; router: any }) {
   const pd = usePedometer();
-  if (pd.loading) return null;
+  const { pairedDevice, heartRate } = useWatchSync();
 
-  const steps = pd.available ? pd.steps.toLocaleString() : '0';
-  const cal   = pd.available ? String(pd.calories) : '0';
-  const dist  = pd.available ? String(pd.distanceKm) : '0';
-  const pct   = pd.progressPercent;
+  const hasWatch = pairedDevice !== null;
+  const rawSteps = hasWatch && pairedDevice.steps > 0 ? pairedDevice.steps : pd.steps;
+  const rawCalories = hasWatch && pairedDevice.calories > 0 ? pairedDevice.calories : (pd.calories > 0 ? pd.calories : Math.round(rawSteps * 0.04));
+  const rawDistance = hasWatch ? (Math.round((rawSteps * 0.762) / 10) / 100) : pd.distanceKm;
+  const pct = Math.min(100, Math.round((rawSteps / (pd.goalSteps || 10000)) * 100));
+
+  const steps = rawSteps.toLocaleString();
+  const cal = String(rawCalories);
+  const dist = String(rawDistance);
 
   const CARD_WIDTH = 138;
 
@@ -229,6 +235,11 @@ function ActivityWidget({ T, router }: { T: any; router: any }) {
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
           <Ionicons name="fitness-outline" size={18} color={T.teal} />
           <Text style={{ fontSize: 15, fontWeight: '800', color: T.textPrimary }}>Activity Today</Text>
+          {hasWatch && (
+            <View style={{ backgroundColor: T.tealDim, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 }}>
+              <Text style={{ fontSize: 9, fontWeight: '800', color: T.teal }}>⌚ {pairedDevice.name}</Text>
+            </View>
+          )}
         </View>
         <Pressable onPress={() => router.replace('/activity')} style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
           <Text style={{ fontSize: 11, fontWeight: '700', color: T.teal }}>View Details</Text>
@@ -306,6 +317,33 @@ function ActivityWidget({ T, router }: { T: any; router: any }) {
             </View>
           </View>
         </Pressable>
+
+        {/* Card 4 (If Watch is connected): Watch Heart Rate & Battery */}
+        {hasWatch && (
+          <Pressable onPress={() => router.replace('/activity')}>
+            <View style={[T.neo, { width: CARD_WIDTH, borderRadius: 20, padding: 14, backgroundColor: T.bgCard }]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                <View style={{ width: 28, height: 28, borderRadius: 10, backgroundColor: 'rgba(239, 68, 68, 0.15)', alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name="heart" size={16} color="#EF4444" />
+                </View>
+                <Text style={{ fontSize: 9, fontWeight: '700', color: T.teal }}>
+                  {pairedDevice.battery !== null ? `🔋 ${pairedDevice.battery}%` : '⌚ LIVE'}
+                </Text>
+              </View>
+              <Text
+                style={{ fontSize: 22, fontWeight: '900', color: T.textPrimary, letterSpacing: 0.5, marginBottom: 3, paddingHorizontal: 2, includeFontPadding: false }}
+                adjustsFontSizeToFit={true}
+                numberOfLines={1}
+              >
+                {heartRate || 74}
+              </Text>
+              <Text style={{ fontSize: 9, fontWeight: '700', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 0.5 }}>BPM Pulse</Text>
+              <View style={{ height: 4, backgroundColor: 'rgba(239, 68, 68, 0.2)', borderRadius: 2, overflow: 'hidden', marginTop: 8 }}>
+                <View style={{ height: '100%', width: `${Math.min(100, ((heartRate || 74) / 160) * 100)}%`, backgroundColor: '#EF4444', borderRadius: 2 }} />
+              </View>
+            </View>
+          </Pressable>
+        )}
 
       </ScrollView>
     </Animated.View>
