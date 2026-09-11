@@ -25,12 +25,8 @@
         "backgroundColor": "#161616"
       },
       "package": "com.devnest.app",
-      "versionCode": 1,
-      "permissions": [
-        "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.WRITE_EXTERNAL_STORAGE",
-        "android.permission.READ_MEDIA_IMAGES"
-      ]
+      "versionCode": 2,
+      "permissions": []
     },
     "web": {
       "favicon": "./assets/favicon.png"
